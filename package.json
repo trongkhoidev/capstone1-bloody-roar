@@ -1,0 +1,30 @@
+{
+  "name": "bloody-roar",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --cwd apps/web dev",
+    "build": "bun run --cwd apps/web build",
+    "start": "bun run --cwd apps/web start",
+    "lint": "bun run --cwd apps/web lint",
+    "typecheck": "bun run --cwd apps/web typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "db:generate": "bun run --cwd packages/database db:generate",
+    "db:migrate": "bun run --cwd packages/database db:migrate",
+    "db:studio": "bun run --cwd packages/database db:studio",
+    "db:seed": "bun run --cwd packages/database db:seed",
+    "db:push": "bun run --cwd packages/database db:push",
+    "contracts:compile": "bun run --cwd apps/contracts compile",
+    "contracts:test": "bun run --cwd apps/contracts test",
+    "contracts:deploy": "bun run --cwd apps/contracts deploy:local"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "prettier": "^3.3.2",
+    "typescript": "^5.5.2"
+  }
+}

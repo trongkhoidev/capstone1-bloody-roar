@@ -1,0 +1,388 @@
+// =============================================================================
+// Bloody-Roar — Prisma Schema
+// Stack: PostgreSQL + Prisma ORM
+// Run: bun run db:migrate (local) | bun run db:migrate:prod (production)
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum UserRole {
+  CLIENT    // Can post bounties
+  DEVELOPER // Can apply for bounties
+  ADMIN     // Platform admin / arbiter
+}
+
+enum IssueStatus {
+  OPEN        // Accepting applications
+  IN_PROGRESS // Developer assigned, work started
+  COMPLETED   // Payment released, work done
+  CANCELLED   // Cancelled by client (before assignment)
+  DISPUTED    // Dispute raised, funds frozen
+}
+
+enum IssueCategory {
+  BUG_FIX
+  FEATURE
+  SMART_CONTRACT
+  AUDIT
+  UI_UX
+  DATA_SCIENCE
+  DEVOPS
+  DOCUMENTATION
+  OTHER
+}
+
+enum ApplicationStatus {
+  PENDING   // Applied, awaiting client review
+  ACCEPTED  // Client selected this developer
+  REJECTED  // Client chose another developer
+  WITHDRAWN // Developer withdrew their application
+}
+
+enum EscrowStatus {
+  AWAITING_DELIVERY    // Funds locked, dev working
+  COMPLETED            // Funds released to developer
+  CANCELLED            // Mutual cancel, refunded to client
+  DISPUTED             // Dispute raised, funds frozen
+  RESOLUTION_PROPOSED  // Arbiter proposed split, in 24h timelock
+}
+
+enum DisputeStatus {
+  OPEN      // Dispute raised, under investigation
+  ANALYZING // AI analyzing evidence
+  PROPOSED  // Resolution proposed by arbiter
+  RESOLVED  // Resolution executed on-chain
+  CHALLENGED // Resolution challenged during 24h window
+}
+
+enum NotificationType {
+  NEW_APPLICANT     // Client: someone applied to your task
+  APPLICATION_ACCEPTED // Dev: your application was accepted
+  APPLICATION_REJECTED // Dev: your application was rejected
+  TASK_ASSIGNED     // Dev: you were assigned to a task
+  PAYMENT_RECEIVED  // Dev: payment released
+  DISPUTE_RAISED    // Both: dispute was raised
+  DISPUTE_RESOLVED  // Both: dispute was resolved
+  MESSAGE_RECEIVED  // New chat message
+}
+
+enum MessageType {
+  TEXT
+  FILE
+  SYSTEM // System messages (e.g., "Task assigned")
+}
+
+// =============================================================================
+// MODELS
+// =============================================================================
+
+// User — Client / Developer / Admin
+model User {
+  id            String   @id @default(cuid())
+  walletAddress String   @unique // EVM address (checksummed)
+  role          UserRole @default(DEVELOPER)
+
+  // Profile
+  name      String?
+  email     String?  @unique
+  avatar    String?  // URL to avatar image (S3 / IPFS)
+  bio       String?
+  skills    String[] // Array of skill tags (e.g., ["React", "Solidity"])
+  location  String?
+
+  // GitHub KYC (Sprint 3)
+  githubUsername  String?  @unique
+  githubId        String?  @unique
+  isGithubVerified Boolean @default(false)
+
+  // Reputation (Sprint 4 — v1.5)
+  reputationScore   Float    @default(0)
+  completedTaskCount Int     @default(0)
+  attestationUid    String?  // EAS attestation UID
+
+  // Platform admin flags
+  isBanned     Boolean @default(false)
+  bannedReason String?
+  bannedAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  postedIssues     Issue[]        @relation("ClientIssues")
+  applications     Application[]
+  assignedIssues   Issue[]        @relation("DeveloperIssues")
+  sentMessages     Message[]
+  notifications    Notification[]
+  escrowsAsClient  Escrow[]       @relation("ClientEscrows")
+  escrowsAsDev     Escrow[]       @relation("DeveloperEscrows")
+  raisedDisputes   Dispute[]      @relation("DisputeRaiser")
+  resolvedDisputes Dispute[]      @relation("DisputeResolver")
+
+  @@index([walletAddress])
+  @@index([githubId])
+  @@map("users")
+}
+
+// Issue — A bounty task posted by a Client
+model Issue {
+  id          String        @id @default(cuid())
+  title       String
+  description String        // Markdown content
+  category    IssueCategory
+  status      IssueStatus   @default(OPEN)
+
+  // Bounty info
+  bountyAmount  Decimal  // In USDT / stablecoin
+  bountyToken   String   @default("USDT") // Token symbol
+  chainId       Int      @default(42161)  // Arbitrum One
+
+  // Client EIP-712 off-chain signature (Sprint 2)
+  commitmentSignature String? // Signed before on-chain deposit
+  commitmentNonce     String? // Nonce used in EIP-712
+
+  // Skills/tech required
+  requiredSkills String[]
+  difficulty     String?  // "Easy" | "Medium" | "Hard"
+  timeEstimate   String?  // e.g., "2-3 days"
+
+  // GitHub repo link (Sprint 3)
+  githubRepo          String?
+  githubInstallationId String?
+
+  // Relations
+  clientId     String
+  client       User          @relation("ClientIssues", fields: [clientId], references: [id])
+  developerId  String?
+  developer    User?         @relation("DeveloperIssues", fields: [developerId], references: [id])
+  applications Application[]
+  messages     Message[]
+  escrow       Escrow?
+  dispute      Dispute?
+  testCases    TestCase[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  assignedAt DateTime?
+  completedAt DateTime?
+
+  @@index([status])
+  @@index([category])
+  @@index([clientId])
+  @@index([developerId])
+  @@map("issues")
+}
+
+// Application — A Developer's application to an Issue
+model Application {
+  id      String            @id @default(cuid())
+  status  ApplicationStatus @default(PENDING)
+  message String?           // Cover letter / pitch
+
+  issueId String
+  issue   Issue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  developerId String
+  developer   User   @relation(fields: [developerId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([issueId, developerId]) // One application per dev per issue
+  @@index([issueId])
+  @@index([developerId])
+  @@map("applications")
+}
+
+// Escrow — On-chain escrow state mirrored in DB
+model Escrow {
+  id     String       @id @default(cuid())
+  status EscrowStatus @default(AWAITING_DELIVERY)
+
+  // On-chain data
+  txHashDeposit   String? // Transaction hash for deposit
+  txHashRelease   String? // Transaction hash for release
+  txHashCancel    String? // Transaction hash for cancel
+  contractAddress String? // Escrow contract address
+  onChainIssueId  String? // issueId as stored on-chain
+
+  // Amounts (mirror of on-chain state)
+  bountyAmount      Decimal
+  platformFeeAmount Decimal @default(0)
+  developerPayout   Decimal @default(0)
+  clientRefund      Decimal @default(0)
+
+  // Timelock info
+  depositedAt      DateTime?
+  releasedAt       DateTime?
+  timeoutClaimAt   DateTime? // 30 days after deposit
+
+  issueId     String @unique
+  issue       Issue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  clientId    String
+  client      User   @relation("ClientEscrows", fields: [clientId], references: [id])
+  developerId String
+  developer   User   @relation("DeveloperEscrows", fields: [developerId], references: [id])
+
+  transactions Transaction[]
+  dispute      Dispute?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([issueId])
+  @@map("escrows")
+}
+
+// Transaction — Blockchain transaction log
+model Transaction {
+  id       String  @id @default(cuid())
+  txHash   String  @unique
+  type     String  // "deposit" | "release" | "cancel" | "dispute" | "resolve"
+  status   String  @default("pending") // "pending" | "confirmed" | "failed"
+  blockNumber Int?
+  gasUsed  String?
+  chainId  Int
+
+  escrowId String
+  escrow   Escrow @relation(fields: [escrowId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([escrowId])
+  @@index([txHash])
+  @@map("transactions")
+}
+
+// Message — Chat message between Client and Developer in a task
+model Message {
+  id      String      @id @default(cuid())
+  content String      // Text content (may be masked by AI Guard)
+  type    MessageType @default(TEXT)
+
+  // For FILE type
+  fileUrl  String?
+  fileName String?
+  fileSize Int?
+  fileMime String?
+
+  // AI Guard masking info
+  wasModified   Boolean @default(false) // AI Guard changed this message
+  originalHash  String? // Hash of original content (for audit)
+
+  issueId  String
+  issue    Issue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  senderId String
+  sender   User   @relation(fields: [senderId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([issueId])
+  @@index([senderId])
+  @@map("messages")
+}
+
+// Dispute — A formal dispute raised by Client or Developer
+model Dispute {
+  id     String        @id @default(cuid())
+  status DisputeStatus @default(OPEN)
+  reason String        // Why the dispute was raised
+
+  // AI analysis results (Sprint 3)
+  aiReport          Json?    // Full AI debate result
+  suggestedRatio    Decimal? // Suggested client payout ratio (0-100)
+  aiConfidenceScore Float?   // AI confidence in the verdict
+
+  // Resolution details
+  proposedClientRatio  Decimal? // Arbiter's proposed ratio
+  finalClientRatio     Decimal? // Executed ratio after timelock
+  proposedAt           DateTime? // When arbiter proposed
+  challengeDeadline    DateTime? // proposedAt + 24h
+  resolvedAt           DateTime?
+
+  issueId    String  @unique
+  issue      Issue   @relation(fields: [issueId], references: [id])
+  escrowId   String? @unique
+  escrow     Escrow? @relation(fields: [escrowId], references: [id])
+  raisedById String
+  raisedBy   User    @relation("DisputeRaiser", fields: [raisedById], references: [id])
+  resolvedById String?
+  resolvedBy  User?   @relation("DisputeResolver", fields: [resolvedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([issueId])
+  @@map("disputes")
+}
+
+// TestCase — AI-generated test cases / acceptance criteria for an Issue (Sprint 2)
+model TestCase {
+  id          String @id @default(cuid())
+  title       String
+  description String
+  given       String // BDD: Given
+  when        String // BDD: When
+  then        String // BDD: Then
+  isEdgeCase  Boolean @default(false)
+  priority    String  @default("normal") // "critical" | "normal" | "low"
+
+  // Client review
+  isApproved   Boolean @default(false)
+  clientNotes  String?
+
+  issueId String
+  issue   Issue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([issueId])
+  @@map("test_cases")
+}
+
+// Notification — Real-time notifications (Sprint 3)
+model Notification {
+  id      String           @id @default(cuid())
+  type    NotificationType
+  title   String
+  body    String
+  isRead  Boolean          @default(false)
+  data    Json?            // Extra payload (e.g., { issueId, applicationId })
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+// AdminLog — Audit log for admin actions
+model AdminLog {
+  id     String @id @default(cuid())
+  action String // e.g., "ban_user" | "resolve_dispute" | "propose_resolution"
+  target String // Target entity type ("user" | "issue" | "dispute")
+  targetId String
+  details Json?
+
+  adminId String // Admin user ID (wallet address)
+
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+  @@map("admin_logs")
+}

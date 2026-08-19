@@ -1,0 +1,41 @@
+# =============================================================================
+# Bloody-Roar — Docker Compose (Development)
+# Starts PostgreSQL for local development
+# Usage: docker compose up -d
+# =============================================================================
+
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bloody_roar_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: bloody_roar_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis — for session cache / Socket.io adapter (Sprint 1+)
+  # Uncomment when needed
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: bloody_roar_redis
+  #   restart: unless-stopped
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+
+volumes:
+  postgres_data:
+  # redis_data:

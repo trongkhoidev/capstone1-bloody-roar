@@ -1,0 +1,60 @@
+# =============================================================================
+# Bloody-Roar .gitignore
+# =============================================================================
+
+# Environment variables — NEVER commit these
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Dependencies
+node_modules/
+.bun/
+
+# Next.js build output
+.next/
+out/
+
+# Build artifacts
+dist/
+build/
+*.tsbuildinfo
+
+# Smart contract artifacts
+apps/contracts/artifacts/
+apps/contracts/cache/
+apps/contracts/typechain-types/
+apps/contracts/gas-report.txt
+apps/contracts/coverage/
+apps/contracts/coverage.json
+
+# Database
+*.db
+*.sqlite
+
+# Prisma generated client (regenerate with: bun run db:generate)
+packages/database/node_modules/.prisma/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Test results
+playwright-report/
+test-results/
+coverage/
+
+# Turbo (if added later)
+.turbo/

@@ -37,13 +37,14 @@
 | **AI SDK** | Vercel AI SDK | Gọi nhiều model AI (Groq/Gemini/OpenAI) qua 1 API thống nhất |
 | **Smart Contract** | Solidity + Hardhat | Chuẩn EVM, Hardhat quen thuộc với team JS/TS |
 | **Storage** | AWS S3 (hoặc Supabase) | Lưu file, pre-signed URL |
-| **Blockchain** | EVM L2 (Arbitrum/Base) | Gas rẻ (< $0.01), nhanh — cần thiết vì platform trả gas cho user |
+| **Blockchain** | Ethereum L1 (Sepolia + Mainnet) | Bảo mật mạnh nhất, ecosystem EVM lớn nhất — phù hợp với ứng dụng escrow tài chính |
 
-### 1.2 Tại sao dùng L2 (Arbitrum/Base) thay vì L1 Ethereum?
+### 1.2 Tại sao dùng Ethereum L1 thay vì L2?
 
-- **Gas rẻ:** 1 giao dịch trên Ethereum L1 tốn $5-50, trên L2 tốn < $0.01. Platform phải trả gas cho user (SBT, attestation) nên gas rẻ là bắt buộc
-- **Nhanh:** Xác nhận giao dịch ~2 giây thay vì 12 giây
+- **Bảo mật cao nhất:** Ethereum L1 là layer bảo mật mạnh nhất trong hệ sinh thái EVM — phù hợp cho escrow giữ tiền của user
+- **Ecosystem lớn nhất:** MetaMask, USDT, EAS, Gitcoin Passport... đều native trên Ethereum L1
 - **Tương thích EVM:** Code Solidity chạy y hệt, không cần học ngôn ngữ mới
+- **Testnet Sepolia:** Faucet miễn phí, ổn định, đầy đủ tool (Etherscan, Alchemy, Hardhat)
 
 ---
 
@@ -56,7 +57,7 @@
 | **EVM** | Ethereum Virtual Machine — "máy ảo" chạy smart contract. Mọi chain tương thích EVM (Ethereum, Arbitrum, Base, Polygon...) đều chạy cùng 1 code Solidity |
 | **Smart Contract** | Chương trình chạy trên blockchain, không ai sửa được sau khi deploy. Dùng để giữ tiền (escrow) và phân xử tự động |
 | **Escrow** | Cơ chế ký quỹ — tiền được khóa trong smart contract, chỉ giải phóng khi đủ điều kiện (vd: client approve hoặc dispute được xử) |
-| **L1 / L2** | L1 = blockchain gốc (Ethereum). L2 = mạng "xây trên" L1 (Arbitrum, Base), kế thừa bảo mật nhưng rẻ + nhanh hơn |
+| **L1 / L2** | L1 = blockchain gốc (Ethereum). L2 = mạng "xây trên" L1 (Arbitrum, Base), kế thừa bảo mật nhưng rẻ + nhanh hơn. Bloody-Roar chạy trên **L1** — bảo mật mạnh nhất |
 | **Gas** | Phí phải trả để chạy giao dịch trên blockchain |
 | **Wallet** | Ví tiền điện tử (MetaMask, WalletConnect). Là "tài khoản" của user trên blockchain |
 | **SIWE** | Sign-In With Ethereum — user ký 1 thông điệp bằng ví để chứng minh họ sở hữu ví đó (dùng để login) |
@@ -112,7 +113,7 @@
 
 | Phương án | Là gì | Ưu điểm | Nhược điểm | Phù hợp? |
 |-----------|-------|---------|------------|----------|
-| **EAS** (Ethereum Attestation Service) | Open-source primitive cho phép tạo "lời xác nhận" on-chain/off-chain | Free, chuẩn chung (interoperable), revocable, rẻ trên L2, không cần tự deploy contract | Cần học khái niệm attestation | ✅ **Nên dùng cho reputation/skill** |
+| **EAS** (Ethereum Attestation Service) | Open-source primitive cho phép tạo "lời xác nhận" on-chain/off-chain | Free, chuẩn chung (interoperable), revocable, native trên Ethereum L1 | Cần học khái niệm attestation | ✅ **Nên dùng cho reputation/skill** |
 | **Sign Protocol** | Attestation primitive đa chain (EVM + Solana + TON) | Omnichain, được Gitcoin dùng | Chỉ cần nếu muốn đa chain; EVM thì EAS đủ | ⚠️ Alternative |
 | **TalentLayer** | Protocol chuyên dụng cho service marketplace (freelance) | Có sẵn reputation, review, network effect | Opinionated — phải build "trên" protocol họ, mất control | ⚠️ v2 nếu muốn network effect |
 | **Gitcoin/Human Passport** | Identity + chống Sybil | Free (core + GitHub stamp), ML detect Sybil | Chỉ lo chống fake, không lo reputation skill | ✅ **Nên dùng cho anti-Sybil** |

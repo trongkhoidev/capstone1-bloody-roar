@@ -166,7 +166,7 @@ Name            Signature       Date
 
 - **Client** (người thuê) đăng bài toán kèm tiền thưởng (bounty).
 - **Developer** (lập trình viên) ứng tuyển và giải quyết bài toán.
-- Việc **thanh toán được đảm bảo trustless** bằng smart contract escrow trên EVM L2.
+- Việc **thanh toán được đảm bảo trustless** bằng smart contract escrow trên **Ethereum L1**.
 - **AI** đóng vai trò: bảo vệ thông tin nhạy cảm trong chat, sinh test cases để định nghĩa "done", và phân xử tranh chấp công bằng.
 
 Điểm khác biệt cốt lõi: **không cần tin tưởng lẫn nhau** — mọi giao dịch được đảm bảo bởi blockchain (giữ tiền minh bạch) và trí tuệ nhân tạo (kiểm tra, phân xử).
@@ -269,7 +269,7 @@ flowchart TD
         GH["GitHub<br/>OAuth + Webhook"]
     end
 
-    BC["EVM L2 (Arbitrum/Base)"]
+    BC["Ethereum L1 (Sepolia / Mainnet)"]
 
     CL -->|"đăng task, nạp bounty, approve"| FE
     DV -->|"duyệt task, apply, chat, nhận tiền"| FE
@@ -317,13 +317,13 @@ flowchart TD
 | AI Guard bảo vệ secrets         | ✅          | ❌     | ❌     | ❌      | ❌          |
 | AI Test Case Generator          | ✅          | ❌     | ❌     | ❌      | ❌          |
 | AI Dispute (Multi-Agent Debate) | ✅          | ❌     | ❌     | ❌      | ❌          |
-| Phí giao dịch                   | Thấp (L2 gas) | 10–20% | 20% | 5% | —        |
+| Phí giao dịch                   | Ethereum L1 gas | 10–20% | 20% | 5% | —        |
 
 **Ưu thế cạnh tranh của Bloody-Roar:**
 - **Trustless:** Không cần tin vào nền tảng trung gian — tiền do smart contract quản lý.
 - **Rào cản thấp:** Client không cần nạp tiền trước, developer không cần đặt cọc.
 - **AI-first:** AI Guard, AI Test Gen, AI Dispute là những tính năng mà các đối thủ chưa có.
-- **Chi phí thấp:** Chạy trên EVM L2 (gas < $0.01), dùng model AI free (Groq/Gemini).
+- **Bảo mật cao nhất:** Chạy trực tiếp trên Ethereum L1 — lớp bảo mật mạnh nhất trong hệ sinh thái EVM, phù hợp với ứng dụng xử lý tài chính.
 
 ---
 
@@ -333,7 +333,7 @@ flowchart TD
 
 - **Mục tiêu 1:** Xây dựng marketplace cho phép Client đăng task và Developer duyệt, ứng tuyển, được chọn.
   - **Deliverable:** Module Marketplace hoàn chỉnh (Issue CRUD, search/filter, apply/assign) qua GraphQL + UI.
-- **Mục tiêu 2:** Triển khai escrow trustless trên EVM L2.
+- **Mục tiêu 2:** Triển khai escrow trustless trên **Ethereum L1**.
   - **Deliverable:** `BloodyRoarEscrow.sol` (deposit, release, mutual cancel, claim timeout, dispute, partial resolution, pause) với 14+ unit tests.
 - **Mục tiêu 3:** Tích hợp 5 module AI (Guard, Test Gen, Dispute Assistant, Multi-Agent Debate, Model Router).
   - **Deliverable:** AIGuardService (accuracy >95%), TestGenerator, DebateOrchestrator + DisputeAnalyzer, ModelRouter (Groq/Gemini free).
@@ -393,7 +393,7 @@ flowchart TD
 | Testing             | **Vitest** (unit/integration) + **Playwright** (E2E) + **Hardhat/Chai** (contract) |
 | Logging / Monitor   | **Pino** + **Sentry**                                                              |
 | Deploy / CI/CD      | **Railway/Fly.io** + **Neon/Supabase** · **GitHub Actions**                       |
-| Smart Contracts     | **Solidity 0.8.24 + Hardhat** (EVM L2: Arbitrum/Base) + **EAS**                    |
+| Smart Contracts     | **Solidity 0.8.24 + Hardhat** (Ethereum L1: Sepolia Testnet + Mainnet) + **EAS**  |
 
 ### Máy trạng thái Smart Contract Escrow
 
@@ -679,7 +679,7 @@ flowchart LR
 | S4-CICD-05 | Deploy Railway/Fly.io | Khôi | 2h | CICD-04 | Production URL |
 | S4-CICD-06 | Domain + SSL (Cloudflare) | Khôi | 1h | CICD-05 | HTTPS hoạt động |
 | S4-CICD-07 | Health check endpoint | Khôi | 0.5h | CICD-05 | `GET /api/health` |
-| S4-CICD-08 | Deploy contracts mainnet L2 | Kiên | 2h | SC-12 | Deployed + verified |
+| S4-CICD-08 | Deploy contracts Ethereum Mainnet (L1) | Kiên | 2h | SC-12 | Deployed + verified trên Etherscan |
 | S4-CICD-09 | Smoke test production | Cả team | 2h | CICD-05 | Flow chính hoạt động |
 | S4-POL-01 | Tối ưu gas contract | Kiên | 2h | SC-12 | Gas report giảm |
 | S4-POL-02 | Security audit checklist | Kiên | 2h | POL-01 | Reentrancy, overflow, access |
@@ -734,7 +734,7 @@ flowchart LR
 | **Technical: Smart contract có lỗ hổng bảo mật** (reentrancy, overflow, access control) | Dùng OpenZeppelin v5, unit tests 14+ cases, security audit checklist, `pause()` circuit breaker. |
 | **Technical: AI integration chậm / accuracy thấp** | Phát triển theo pha có buffer, đánh giá FP/FN liên tục, ModelRouter fallback, AI chỉ đề xuất (không tự chốt). |
 | **Technical: Độ trễ / mất kết nối Socket.io** | Auth middleware + auto-reconnect, lưu lịch sử chat vào DB, testing E2E. |
-| **Financial: Vượt ngân sách (gas, AI paid)** | Ưu tiên L2 gas rẻ (<$0.01), model free (Groq/Gemini), fallback OpenAI chỉ khi cần, quỹ dự phòng. |
+| **Financial: Gas Ethereum L1** | Ethereum L1 gas cao hơn L2 — thiết kế contract tối ưu gas (pack storage, batch operations), fallback model AI free để cân đối ngân sách. |
 | **Time: Trễ tiến độ 10 tuần** | Scrum sprint 2 tuần, ưu tiên P0, defer P1/P2, review hàng tuần. |
 | **Resource: Team availability** | Cross-train giữa BE/FE, hỗ trợ chéo (Khôi/Hiếu hỗ trợ FE, Kiên hỗ trợ BE). |
 | **Integration: Third-party thay đổi** (GitHub, Groq, Alchemy) | Fallback options, ModelRouter đa provider, monitor integration. |
@@ -753,7 +753,7 @@ flowchart LR
 | Database (Neon/Supabase) | $0 | Free tier PostgreSQL |
 | AI Service (Groq/Gemini) | $0 | Groq free 14,400 req/ngày (llama-3.1-8b), Gemini Flash free |
 | AI Fallback (OpenAI) | ~$10/tháng | GPT-4o-mini chỉ khi cần chất lượng cao |
-| Blockchain (L2 gas + Alchemy RPC) | <$5/tháng | Gas L2 < $0.01/tx, Alchemy free tier |
+| Blockchain (Ethereum L1 gas + Alchemy RPC) | ~$10–30/tháng | Gas Ethereum L1 cao hơn L2 nhưng bảo mật tốt nhất; Alchemy free tier cho RPC |
 | Storage (AWS S3 / Supabase) | $0 | AWS S3 free tier 5GB / Supabase 1GB |
 | Domain + SSL (Cloudflare) | ~$10/năm | Domain + HTTPS |
 | Monitoring (Sentry) | $0 | Free tier |
@@ -777,7 +777,7 @@ flowchart LR
 | **Môi trường** | Tác động môi trường của việc duy trì data center. | Ưu tiên giải pháp tiết kiệm năng lượng, dùng dịch vụ cloud dùng chung. |
 | **Đạo đức** | Đảm bảo quyền riêng tư, chống lạm dụng dữ liệu, tuân thủ GDPR. | Bảo vệ dữ liệu user, AI Guard che PII, không log secrets. |
 | **An toàn cộng đồng** | Hệ thống an toàn khi xử lý thanh toán. | Smart contract được audit, timelock 24h chống key bị xâm phạm. |
-| **Xã hội & toàn cầu** | Khả năng truy cập toàn cầu, tuân thủ quy định quốc tế. | Hỗ trợ Web3 wallet chuẩn (SIWE), L2 gas rẻ cho user toàn cầu. |
+| **Xã hội & toàn cầu** | Khả năng truy cập toàn cầu, tuân thủ quy định quốc tế. | Hỗ trợ Web3 wallet chuẩn (SIWE), Ethereum là chain phổ biến nhất toàn cầu. |
 | **Văn hóa** | Thiết kế không xung đột giá trị văn hóa. | Giao diện đơn giản, ngôn ngữ linh hoạt. |
 | **Bền vững** | Thiết kế để bảo trì lâu dài. | Monorepo, type-safe, documentation đầy đủ, code chuẩn sạch. |
 
@@ -791,7 +791,7 @@ Bloody-Roar không chỉ là một nền tảng thuê lập trình viên — nó
 - **Client** không cần tin Developer — họ tin vào AI kiểm tra và test cases.
 - **Cả hai** không cần tin nền tảng — họ tin vào bằng chứng và code.
 
-Bằng cách kết hợp **blockchain escrow (EVM L2)**, **định danh số (GitHub OAuth + EAS)**, và **5 module AI** (Guard, Test Gen, Dispute Assistant, Multi-Agent Debate, Model Router), Bloody-Roar giải quyết triệt để bài toán "bất đối xứng niềm tin" trong freelance với chi phí thấp và kiến trúc sẵn sàng mở rộng.
+Bằng cách kết hợp **blockchain escrow (Ethereum L1)**, **định danh số (GitHub OAuth + EAS)**, và **5 module AI** (Guard, Test Gen, Dispute Assistant, Multi-Agent Debate, Model Router), Bloody-Roar giải quyết triệt để bài toán "bất đối xứng niềm tin" trong freelance với kiến trúc bảo mật cao và sẵn sàng mở rộng.
 
 > *"Bloody-Roar: Thay thế niềm tin bằng toán học và trí tuệ nhân tạo."*
 

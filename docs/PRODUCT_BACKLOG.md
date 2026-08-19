@@ -59,7 +59,7 @@
 
 ### Epic 4: Smart Contract Escrow
 
-> **Mục tiêu:** Thanh toán trustless qua smart contract trên EVM L2.
+> **Mục tiêu:** Thanh toán trustless qua smart contract trên **Ethereum L1**.
 
 | ID     | User Story                                                                         | Priority |
 | ------ | ---------------------------------------------------------------------------------- | -------- |
@@ -540,7 +540,7 @@
 | **S4-CICD-05** | Deploy app lên Railway/Fly.io             | Khôi    | 2h       | S4-CICD-04 | App chạy production URL              |
 | **S4-CICD-06** | Cấu hình domain + SSL (Cloudflare)       | Khôi    | 1h       | S4-CICD-05 | HTTPS hoạt động                    |
 | **S4-CICD-07** | Viết Health check endpoint                | Khôi    | 0.5h     | S4-CICD-05 | `GET /api/health` → status         |
-| **S4-CICD-08** | Deploy smart contracts lên mainnet L2     | Kiên    | 2h       | S1-SC-12   | Contracts deployed + verified         |
+| **S4-CICD-08** | Deploy smart contracts lên Ethereum Mainnet (L1) | Kiên    | 2h       | S1-SC-12   | Contracts deployed + verified trên Etherscan |
 | **S4-CICD-09** | Smoke test production                      | Cả team | 2h       | S4-CICD-05 | Tất cả flow chính hoạt động     |
 
 #### S4-EPIC-POL: Polish
@@ -580,7 +580,7 @@
 
 | Task ID             | Task                                              | Owner         | Estimate | Deps                 | AC                                                        |
 | ------------------- | ------------------------------------------------- | ------------- | -------- | -------------------- | --------------------------------------------------------- |
-| **S4-REP-01** | Research EAS SDK + cấu hình trên Base/Arbitrum | Kiên         | 2h       | —                   | EAS SDK hoạt động                                      |
+| **S4-REP-01** | Research EAS SDK + cấu hình trên Ethereum L1     | Kiên         | 2h       | —                   | EAS SDK hoạt động                                      |
 | **S4-REP-02** | Thiết kế Reputation Schema (attestation)        | Kiên         | 2h       | S4-REP-01            | Schema:`{completedTask, rating, skills}`                |
 | **S4-REP-03** | Viết`attestCompletion()` helper                | Kiên         | 3h       | S4-REP-02            | Gọi EAS.attest() khi task complete                       |
 | **S4-REP-04** | Viết`revokeAttestation()`                      | Kiên         | 2h       | S4-REP-02            | Revoke khi phát hiện gian lận                          |
@@ -662,7 +662,7 @@
 ✅ CI/CD GitHub Actions: lint → type-check → test → build
 ✅ Sentry error tracking
 ✅ Deploy production (Railway/Fly.io + Neon/Supabase)
-✅ Smart contracts deployed mainnet L2 + verified
+✅ Smart contracts deployed trên Ethereum Mainnet (L1) + verified trên Etherscan
 ✅ EAS Reputation Attestation on-chain (v1.5)
 ✅ Domain + SSL (Cloudflare)
 ✅ Health check endpoint

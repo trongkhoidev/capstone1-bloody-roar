@@ -10,9 +10,12 @@
 [![GraphQL](<https://img.shields.io/badge/API-GraphQL%20Yoga-E10098?logo=graphql>)](https://the-guild.dev/graphql/yoga-server)
 [![Prisma](<https://img.shields.io/badge/DB-PostgreSQL%20%2B%20Prisma-2D3748?logo=prisma>)](https://www.prisma.io)
 [![Solidity](<https://img.shields.io/badge/Contracts-Solidity%200.8.24-363636?logo=solidity>)](https://soliditylang.org)
+[![Ethereum](<https://img.shields.io/badge/Network-Ethereum%20Sepolia-3C3C3D?logo=ethereum>)](https://sepolia.etherscan.io)
 [![License](<https://img.shields.io/badge/License-Internal%20Use-red>)](./LICENSE)
 
-**Bloody-Roar** is a *trustless* freelance marketplace where a **Client** posts a bug/feature bounty with a USDT reward, a **Developer** applies and delivers the work, and **payment is guaranteed by a smart-contract escrow** on an EVM L2 — while **AI** protects secrets in chat, generates acceptance test cases, and assists with dispute resolution. No trust required — only code and math.
+**Bloody-Roar** is a *trustless* freelance marketplace where a **Client** posts a bug/feature bounty with a USDT reward, a **Developer** applies and delivers the work, and **payment is guaranteed by a smart-contract escrow** on **Ethereum L1** — while **AI** protects secrets in chat, generates acceptance test cases, and assists with dispute resolution. No trust required — only code and math.
+
+> 🔗 **Network:** Currently deployed on **Ethereum Sepolia Testnet** (`chainId: 11155111`). Production target: Ethereum Mainnet.
 
 ---
 
@@ -130,7 +133,7 @@ flowchart TD
         GH["GitHub<br/>OAuth + Webhook"]
     end
 
-    BC["EVM L2 (Arbitrum / Base)"]
+    BC["Ethereum L1 (Mainnet / Sepolia)"]
 
     CL -->|post bounty · deposit · approve| FE
     DV -->|browse · apply · chat · claim| FE
@@ -171,7 +174,7 @@ stateDiagram-v2
     CANCELLED --> [*]
 ```
 
-Safety features: OpenZeppelin `Pausable` + `ReentrancyGuard` + `Ownable`, a 2.5% platform fee, a 30-day claim timeout, and a 24-hour challenge window that protects against a compromised arbiter.
+Safety features: OpenZeppelin `Pausable` + `ReentrancyGuard` + `Ownable`, a 2.5% platform fee, a 30-day claim timeout, and a 24-hour challenge window that protects against a compromised arbiter. Contracts are deployed on **Ethereum Mainnet** (production) and **Sepolia** (testnet).
 
 ---
 
@@ -189,7 +192,7 @@ Safety features: OpenZeppelin `Pausable` + `ReentrancyGuard` + `Ownable`, a 2.5%
 | Real-time       | **Socket.io**                                                                       |
 | AI              | **Vercel AI SDK** (Groq + Gemini free + OpenAI fallback)                            |
 | Storage         | **AWS S3** (presigned URLs) / Supabase                                              |
-| Blockchain      | **Solidity 0.8.24** + **Hardhat** (Arbitrum / Base)                           |
+| Blockchain      | **Solidity 0.8.24** + **Hardhat** (Ethereum L1: Mainnet / Sepolia)            |
 | Testing         | **Vitest** + **Playwright** + **Hardhat/Chai**                          |
 | Logging         | **Pino**                                                                            |
 
@@ -313,11 +316,19 @@ bun run dev
 cd apps/contracts
 bun install
 
-bun run compile          # hardhat compile
-bun run test             # hardhat test
-bun run node             # start local node (http://127.0.0.1:8545)
-bun run deploy:local     # deploy to localhost
+bun run compile           # hardhat compile
+bun run test              # hardhat test
+bun run node              # start local node (http://127.0.0.1:8545)
+bun run deploy:local      # deploy to localhost
+
+# Deploy to Ethereum Sepolia Testnet (current target)
+bun run deploy:sepolia    # npx hardhat run scripts/deploy.ts --network sepolia
+
+# Deploy to Ethereum Mainnet (production — Sprint 4)
+bun run deploy:mainnet    # npx hardhat run scripts/deploy.ts --network mainnet
 ```
+
+> Set `ALCHEMY_RPC_URL_TESTNET` (or `INFURA_RPC_URL_TESTNET`) + `DEPLOYER_PRIVATE_KEY` in `.env` before deploying to Sepolia.
 
 ---
 

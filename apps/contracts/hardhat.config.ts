@@ -14,6 +14,7 @@ const DEPLOYER_PRIVATE_KEY =
 const ALCHEMY_RPC_TESTNET = process.env.ALCHEMY_RPC_URL_TESTNET || "";
 const ALCHEMY_RPC_MAINNET = process.env.ALCHEMY_RPC_URL_MAINNET || "";
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || "";
+const INFURA_RPC_TESTNET = process.env.INFURA_RPC_URL_TESTNET || "";
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -33,32 +34,23 @@ const config: HardhatUserConfig = {
       url: "http://127.0.0.1:8545",
     },
 
-    // Arbitrum Sepolia Testnet
-    arbitrumSepolia: {
-      url: ALCHEMY_RPC_TESTNET || "https://sepolia-rollup.arbitrum.io/rpc",
+    // Ethereum Sepolia Testnet (L1)
+    sepolia: {
+      url:
+        ALCHEMY_RPC_TESTNET ||
+        INFURA_RPC_TESTNET ||
+        "https://rpc.sepolia.org",
       accounts: [DEPLOYER_PRIVATE_KEY],
-      chainId: 421614,
+      chainId: 11155111,
     },
 
-    // Base Sepolia Testnet
-    baseSepolia: {
-      url: ALCHEMY_RPC_TESTNET || "https://sepolia.base.org",
+    // Ethereum Mainnet (L1)
+    mainnet: {
+      url:
+        ALCHEMY_RPC_MAINNET ||
+        "https://eth.llamarpc.com",
       accounts: [DEPLOYER_PRIVATE_KEY],
-      chainId: 84532,
-    },
-
-    // Arbitrum One Mainnet
-    arbitrumOne: {
-      url: ALCHEMY_RPC_MAINNET || "https://arb1.arbitrum.io/rpc",
-      accounts: [DEPLOYER_PRIVATE_KEY],
-      chainId: 42161,
-    },
-
-    // Base Mainnet
-    base: {
-      url: ALCHEMY_RPC_MAINNET || "https://mainnet.base.org",
-      accounts: [DEPLOYER_PRIVATE_KEY],
-      chainId: 8453,
+      chainId: 1,
     },
   },
 
@@ -71,29 +63,10 @@ const config: HardhatUserConfig = {
 
   etherscan: {
     apiKey: {
-      arbitrumOne: ETHERSCAN_API_KEY,
-      arbitrumSepolia: ETHERSCAN_API_KEY,
-      base: ETHERSCAN_API_KEY,
-      baseSepolia: ETHERSCAN_API_KEY,
+      mainnet: ETHERSCAN_API_KEY,
+      sepolia: ETHERSCAN_API_KEY,
     },
-    customChains: [
-      {
-        network: "arbitrumSepolia",
-        chainId: 421614,
-        urls: {
-          apiURL: "https://api-sepolia.arbiscan.io/api",
-          browserURL: "https://sepolia.arbiscan.io",
-        },
-      },
-      {
-        network: "baseSepolia",
-        chainId: 84532,
-        urls: {
-          apiURL: "https://api-sepolia.basescan.org/api",
-          browserURL: "https://sepolia.basescan.org",
-        },
-      },
-    ],
+    // No customChains needed — mainnet + sepolia are natively supported by hardhat-verify
   },
 
   paths: {

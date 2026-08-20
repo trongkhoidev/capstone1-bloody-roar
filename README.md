@@ -7,12 +7,12 @@
 [![GraphQL](<https://img.shields.io/badge/API-GraphQL%20Yoga-E10098?logo=graphql>)](https://the-guild.dev/graphql/yoga-server)
 [![Prisma](<https://img.shields.io/badge/DB-PostgreSQL%20%2B%20Prisma-2D3748?logo=prisma>)](https://www.prisma.io)
 [![Solidity](<https://img.shields.io/badge/Contracts-Solidity%200.8.24-363636?logo=solidity>)](https://soliditylang.org)
-[![Ethereum](<https://img.shields.io/badge/Network-Ethereum%20Sepolia-3C3C3D?logo=ethereum>)](https://sepolia.etherscan.io)
+[![Base](<https://img.shields.io/badge/Network-Base%20Sepolia-0052FF?logo=base>)](https://sepolia.basescan.org)
 [![License](<https://img.shields.io/badge/License-Internal%20Use-red>)](./LICENSE)
 
-**Bloody-Roar** is a *trustless* freelance marketplace where a **Client** posts a bug/feature bounty with a USDT reward, a **Developer** applies and delivers the work, and **payment is guaranteed by a smart-contract escrow** on **Ethereum L1** — while **AI** protects secrets in chat, generates acceptance test cases, and assists with dispute resolution. No trust required — only code and math.
+**Bloody-Roar** is a *trustless* freelance marketplace where a **Client** posts a bug/feature bounty with a USDT/stablecoin reward, a **Developer** applies and delivers the work, and **payment is guaranteed by a smart-contract escrow** on **Base Sepolia (L2)** — while **AI** protects secrets in chat, generates acceptance test cases, and assists with dispute resolution. No trust required — only code and math.
 
-> 🔗 **Network:** Currently deployed on **Ethereum Sepolia Testnet** (`chainId: 11155111`). Production target: Ethereum Mainnet.
+> 🔗 **Network:** Currently deployed on **Base Sepolia Testnet** (`chainId: 84532`). Production target: TBD (Mainnet/L2).
 
 ---
 
@@ -127,7 +127,7 @@ flowchart TD
         GH["GitHub<br/>OAuth + Webhook"]
     end
 
-    BC["Ethereum L1 (Mainnet / Sepolia)"]
+    BC["Base Sepolia (L2)"]
 
     CL -->|post bounty · deposit · approve| FE
     DV -->|browse · apply · chat · claim| FE
@@ -168,7 +168,7 @@ stateDiagram-v2
     CANCELLED --> [*]
 ```
 
-Safety features: OpenZeppelin `Pausable` + `ReentrancyGuard` + `Ownable`, a 2.5% platform fee, a 30-day claim timeout, and a 24-hour challenge window that protects against a compromised arbiter. Contracts are deployed on **Ethereum Mainnet** (production) and **Sepolia** (testnet).
+Safety features: OpenZeppelin `Pausable` + `ReentrancyGuard` + `Ownable`, a 2.5% platform fee, a 30-day claim timeout, and a 24-hour challenge window that protects against a compromised arbiter. Contracts are deployed on **Base Sepolia** (testnet).
 
 ---
 
@@ -186,7 +186,7 @@ Safety features: OpenZeppelin `Pausable` + `ReentrancyGuard` + `Ownable`, a 2.5%
 | Real-time       | **Socket.io**                                                                       |
 | AI              | **Vercel AI SDK** (Groq + Gemini free + OpenAI fallback)                            |
 | Storage         | **AWS S3** (presigned URLs) / Supabase                                              |
-| Blockchain      | **Solidity 0.8.24** + **Hardhat** (Ethereum L1: Mainnet / Sepolia)            |
+| Blockchain      | **Solidity 0.8.24** + **Hardhat** (Base Sepolia L2)            |
 | Testing         | **Vitest** + **Playwright** + **Hardhat/Chai**                          |
 | Logging         | **Pino**                                                                            |
 
@@ -214,7 +214,7 @@ capstone1/
 │       └── scripts/deploy.ts
 ├── packages/
 │   ├── database/                   # Prisma client + schema + seed
-│   │   ├── prisma/schema.prisma    # 10 models · 7 enums
+│   │   ├── prisma/schema.prisma    # 17 models · 12 enums
 │   │   └── src/index.ts            # Singleton Prisma client
 │   └── shared/                     # Shared types, constants, utils
 │       └── src/{types,constants,utils}
@@ -283,14 +283,14 @@ bun run test              # hardhat test
 bun run node              # start local node (http://127.0.0.1:8545)
 bun run deploy:local      # deploy to localhost
 
-# Deploy to Ethereum Sepolia Testnet (current target)
-bun run deploy:sepolia    # npx hardhat run scripts/deploy.ts --network sepolia
+# Deploy to Base Sepolia Testnet (current target)
+bun run deploy:base-sepolia    # npx hardhat run scripts/deploy.ts --network baseSepolia
 
 # Deploy to Ethereum Mainnet (production — Sprint 4)
 bun run deploy:mainnet    # npx hardhat run scripts/deploy.ts --network mainnet
 ```
 
-> Set `ALCHEMY_RPC_URL_TESTNET` (or `INFURA_RPC_URL_TESTNET`) + `DEPLOYER_PRIVATE_KEY` in `.env` before deploying to Sepolia.
+> Set `BASE_SEPOLIA_RPC_URL` + `DEPLOYER_PRIVATE_KEY` in `.env` before deploying to Base Sepolia.
 
 ---
 
@@ -367,18 +367,25 @@ bunx shadcn@latest add button input select dialog card table badge tabs toast dr
 
 ## Data Model
 
-10 Prisma models (Sprint 0, complete):
+17 Prisma models (Sprint 0, complete):
 
 | Model            | Description                                                          |
 | ---------------- | -------------------------------------------------------------------- |
 | `User`         | Client / Developer / Admin accounts (wallet, GitHub KYC, reputation) |
+| `Session`      | JWT Session management                                               |
 | `Issue`        | Bounty tasks posted by clients                                       |
 | `Application`  | Developer applications to issues                                     |
+| `Token`        | Supported ERC-20 tokens (e.g. USDT)                                  |
 | `Escrow`       | On-chain escrow state mirrored in DB                                 |
 | `Transaction`  | Blockchain transaction log                                           |
 | `Message`      | Chat messages (AI Guard aware)                                       |
+| `Attachment`   | File attachments in chat and issues                                  |
+| `AILog`        | Audit log of AI actions and guard results                            |
+| `Submission`   | Developer task submissions                                           |
+| `Review`       | Client review of submissions                                         |
 | `Dispute`      | Formal disputes with AI analysis                                     |
 | `TestCase`     | AI-generated test cases per issue                                    |
+| `Attestation`  | On-chain identity/reputation attestations                            |
 | `Notification` | Real-time notification records                                       |
 | `AdminLog`     | Audit log for admin actions                                          |
 

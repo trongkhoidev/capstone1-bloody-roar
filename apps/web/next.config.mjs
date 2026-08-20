@@ -1,6 +1,5 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   // Use standalone output for Docker deployment (Sprint 4)
   // output: "standalone",
 
@@ -9,7 +8,9 @@ const nextConfig: NextConfig = {
 
   // External packages that should not be bundled by Next.js
   // (they're used in the custom server, not in the browser)
-  serverExternalPackages: ["pino", "pino-pretty", "socket.io"],
+  experimental: {
+    serverComponentsExternalPackages: ["pino", "pino-pretty", "socket.io"],
+  },
 
   // Image optimization
   images: {

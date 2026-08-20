@@ -63,6 +63,29 @@ async function main() {
   console.log(`✅ Developer user: ${developer.id}`);
 
   // -----------------------------------------------------------------------
+  // 3.5. Supported Token (whitelist)
+  // -----------------------------------------------------------------------
+  const usdc = await prisma.token.upsert({
+    where: {
+      chainId_address: {
+        chainId: 84532,
+        address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+      },
+    },
+    update: {},
+    create: {
+      symbol: "USDC",
+      name: "USD Coin",
+      address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+      decimals: 6,
+      chainId: 84532,
+      isActive: true,
+      sortOrder: 1,
+    },
+  });
+  console.log(`✅ Token: ${usdc.symbol} (${usdc.chainId})`);
+
+  // -----------------------------------------------------------------------
   // 4. Sample Issues (Bounties)
   // -----------------------------------------------------------------------
   const issue1 = await prisma.issue.upsert({
@@ -91,7 +114,7 @@ Show a user-friendly error message and prevent the upload.
       category: IssueCategory.BUG_FIX,
       status: IssueStatus.OPEN,
       bountyAmount: 200,
-      bountyToken: "USDT",
+      tokenId: usdc.id,
       requiredSkills: ["React", "TypeScript"],
       difficulty: "Easy",
       timeEstimate: "1-2 days",
@@ -123,7 +146,7 @@ Build a Solidity smart contract for token vesting with the following specs:
       category: IssueCategory.SMART_CONTRACT,
       status: IssueStatus.OPEN,
       bountyAmount: 800,
-      bountyToken: "USDT",
+      tokenId: usdc.id,
       requiredSkills: ["Solidity", "Hardhat", "OpenZeppelin"],
       difficulty: "Hard",
       timeEstimate: "5-7 days",
@@ -153,7 +176,7 @@ Convert the Figma design to a pixel-perfect, responsive pricing page.
       category: IssueCategory.UI_UX,
       status: IssueStatus.IN_PROGRESS,
       bountyAmount: 350,
-      bountyToken: "USDT",
+      tokenId: usdc.id,
       requiredSkills: ["Next.js", "Tailwind CSS", "Framer Motion", "shadcn/ui"],
       difficulty: "Medium",
       timeEstimate: "2-3 days",

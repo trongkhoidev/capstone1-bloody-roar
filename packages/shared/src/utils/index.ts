@@ -106,7 +106,7 @@ export const updateProfileSchema = z.object({
 
 export const sendMessageSchema = z.object({
   content: z.string().min(1).max(10_000),
-  issueId: z.string().cuid(),
+  issueId: z.string().min(1),
   type: z.enum(["TEXT", "FILE"]).default("TEXT"),
   fileUrl: z.string().url().optional(),
   fileName: z.string().max(255).optional(),
@@ -115,7 +115,7 @@ export const sendMessageSchema = z.object({
 });
 
 export const applyIssueSchema = z.object({
-  issueId: z.string().cuid(),
+  issueId: z.string().min(1),
   message: z.string().min(20, "Please write at least 20 characters").max(1000).optional(),
 });
 

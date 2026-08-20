@@ -25,8 +25,8 @@ async function main() {
   console.log(`   Arbiter:       ${arbiter}`);
   console.log(`   Fee Recipient: ${feeRecipient}`);
 
-  // Verify on Etherscan (run separately after deployment)
-  console.log("\nTo verify on Etherscan:");
+  // Verify on Basescan (run separately after deployment)
+  console.log("\nTo verify on Basescan:");
   console.log(`npx hardhat verify --network ${process.env.HARDHAT_NETWORK || "localhost"} ${address} "${arbiter}" "${feeRecipient}"`);
 }
 

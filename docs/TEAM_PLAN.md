@@ -187,7 +187,7 @@ Tất cả các task liên quan đến Docker sandbox, code-server, CI/CD test r
 
 ### Vai trò
 
-Chịu trách nhiệm chính layer blockchain: thiết kế, phát triển, kiểm thử và triển khai smart contract trên **Ethereum L1 (Sepolia Testnet + Mainnet)**. Đồng thời **hỗ trợ backend** cho Khôi và Hiếu: review code, hỗ trợ tích hợp contract vào BE, hỗ trợ EIP-712 flow, Oracle/Relayer.
+Chịu trách nhiệm chính layer blockchain: thiết kế, phát triển, kiểm thử và triển khai smart contract trên **Base Sepolia (L2)**. Đồng thời **hỗ trợ backend** cho Khôi và Hiếu: review code, hỗ trợ tích hợp contract vào BE, hỗ trợ EIP-712 flow, Oracle/Relayer.
 
 ### Công cụ & Công nghệ
 
@@ -197,8 +197,8 @@ Chịu trách nhiệm chính layer blockchain: thiết kế, phát triển, ki�
 | Framework             | **Hardhat**                                       | JS/TS-based, console.log debug  |
 | Testing               | **Hardhat + Chai**                                | Unit tests + gas report         |
 | Network (dev)         | Hardhat local node                                      | `npx hardhat node`            |
-| Network (testnet)     | **Ethereum Sepolia** (chainId: 11155111)    | Faucet lấy test ETH, Etherscan verify    |
-| Network (mainnet)     | **Ethereum Mainnet** (chainId: 1)           | L1 EVM, bảo mật cao nhất               |
+| Network (testnet)     | **Base Sepolia** (chainId: 84532)    | Faucet lấy test ETH, Basescan verify    |
+| Network (mainnet)     | **TBD**           | Sẽ quyết định sau               |
 | RPC Provider          | **Alchemy** hoặc **Infura**               | Free tier đủ dùng              |
 | Contract Verification | **Etherscan**                              | Verify source code              |
 | Wallet (dev)          | Hardhat accounts                                        | Private key từ local node      |
@@ -256,7 +256,7 @@ Chịu trách nhiệm chính layer blockchain: thiết kế, phát triển, ki�
 
 | #     | Task                                 | Mô tả                                                              | Deliverable     |
 | ----- | ------------------------------------ | -------------------------------------------------------------------- | --------------- |
-| K-4.1 | Research EAS SDK                     | Đọc tài liệu EAS, cấu hình SDK trên Ethereum L1           | Knowledge base  |
+| K-4.1 | Research EAS SDK                     | Đọc tài liệu EAS, cấu hình SDK trên mạng tương thích           | Knowledge base  |
 | K-4.2 | Thiết kế Reputation Schema         | Định nghĩa schema attestation:`{completedTask, rating, skills}` | Schema design   |
 | K-4.3 | Viết`attestCompletion()` helper   | Gọi EAS.attest() khi task complete                                  | Helper function |
 | K-4.4 | Viết`revokeAttestation()`         | Revoke khi dispute phát hiện gian lận                             | Helper function |
@@ -913,4 +913,4 @@ chore(deps): update prisma to 5.x
 | Logging         | **Pino + Sentry**                                                                                       |
 | Deploy          | **Railway/Fly.io + Neon/Supabase**                                                                      |
 | CI/CD           | **GitHub Actions**                                                                                      |
-| Smart Contracts | **Solidity + Hardhat** (Ethereum L1: Sepolia + Mainnet) + **EAS**                 |
+| Smart Contracts | **Solidity + Hardhat** (Base Sepolia L2) + **EAS**                 |

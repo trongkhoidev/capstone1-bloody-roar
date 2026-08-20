@@ -27,8 +27,8 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 /**
  * @title BloodyRoarEscrow
- * @notice Trustless escrow for developer bounties on EVM L2
- * @dev Implements lazy-deposit pattern with EIP-712 off-chain commitments
+ * @notice Trustless escrow for developer bounties on Base Sepolia (Ethereum L2)
+ * @dev Implements lazy-deposit pattern with EIP-712 off-chain commitments. EVM-compatible for mainnet later.
  */
 contract BloodyRoarEscrow is Pausable, ReentrancyGuard, Ownable, EIP712 {
     using SafeERC20 for IERC20;

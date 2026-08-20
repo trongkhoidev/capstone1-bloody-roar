@@ -82,7 +82,7 @@ export default function HomePage() {
           <ul className="space-y-2">
             {[
               { label: "Bun Monorepo Workspaces", done: true },
-              { label: "Prisma Schema (10+ models)", done: true },
+              { label: "Prisma Schema (17 models)", done: true },
               { label: "Next.js Custom Server", done: true },
               { label: "GraphQL Yoga + Pothos", done: true },
               { label: "Socket.io Attached", done: true },

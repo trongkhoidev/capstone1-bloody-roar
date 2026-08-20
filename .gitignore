@@ -60,7 +60,6 @@ coverage/
 .turbo/
 
 # Documents & Project Notes
-docs/
 *.pdf
 *.doc
 *.docx

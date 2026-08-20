@@ -2,20 +2,44 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["dom", "dom.iterable", "ES2022"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "ES2022"
+    ],
     "jsx": "preserve",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "allowJs": true,
     "resolveJsonModule": true,
     "incremental": true,
-    "plugins": [{ "name": "next" }],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@bloody-roar/shared": ["../../packages/shared/src"],
-      "@bloody-roar/database": ["../../packages/database/src"]
-    }
+      "@/*": [
+        "./src/*"
+      ],
+      "@bloody-roar/shared": [
+        "../../packages/shared/src"
+      ],
+      "@bloody-roar/database": [
+        "../../packages/database/src"
+      ]
+    },
+    "noEmit": true,
+    "isolatedModules": true
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "server.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "server.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

@@ -15,12 +15,12 @@ export const PLATFORM_FEE_PERCENT = 2.5; // 2.5% platform fee
 export const ESCROW_TIMEOUT_DAYS = 30; // Days before dev can auto-claim
 export const DISPUTE_CHALLENGE_HOURS = 24; // Hours to challenge a resolution
 export const SUPPORTED_CHAIN_IDS = {
-  ARBITRUM_ONE: 42161,
-  BASE: 8453,
-  ARBITRUM_SEPOLIA: 421614, // Testnet
-  BASE_SEPOLIA: 84532,       // Testnet
+  BASE_SEPOLIA: 84532,
   LOCALHOST: 31337,
+  // mainnet (1/8453) sẽ thêm khi lên production
 } as const;
+
+export const ACTIVE_CHAIN_ID = 84532;
 
 // =============================================================================
 // ISSUE / BOUNTY

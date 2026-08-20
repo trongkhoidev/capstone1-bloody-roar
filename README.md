@@ -1,10 +1,7 @@
 # 🩸 Bloody-Roar — Decentralized Bounty Marketplace
 
 > *"Replace trust with mathematics and artificial intelligence."*
->
-> **Capstone Project 1** 
 
-[![Sprint](<https://img.shields.io/badge/Sprint-0%20Foundation-orange>)](#project-status)
 [![Bun](https://img.shields.io/badge/Workspace-Bun-14151a?logo=bun)](https://bun.sh)
 [![Next.js](<https://img.shields.io/badge/Frontend-Next.js%2014-black?logo=next.js>)](https://nextjs.org)
 [![GraphQL](<https://img.shields.io/badge/API-GraphQL%20Yoga-E10098?logo=graphql>)](https://the-guild.dev/graphql/yoga-server)
@@ -28,15 +25,12 @@
 5. [Smart Contract Escrow](#smart-contract-escrow)
 6. [Tech Stack](#tech-stack)
 7. [Project Structure](#project-structure)
-8. [Project Status](#project-status)
-9. [Getting Started](#getting-started)
-10. [Smart Contracts](#smart-contracts)
-11. [Development Guide](#development-guide)
-12. [Available Scripts](#available-scripts)
-13. [Data Model](#data-model)
-14. [Team](#team)
-15. [Documentation](#documentation)
-16. [License](#license)
+8. [Getting Started](#getting-started)
+9. [Smart Contracts](#smart-contracts)
+10. [Development Guide](#development-guide)
+11. [Available Scripts](#available-scripts)
+12. [Data Model](#data-model)
+13. [License](#license)
 
 ---
 
@@ -224,42 +218,10 @@ capstone1/
 │   │   └── src/index.ts            # Singleton Prisma client
 │   └── shared/                     # Shared types, constants, utils
 │       └── src/{types,constants,utils}
-├── docs/                           # Proposal, backlog, research, team plan
 ├── docker-compose.yml              # PostgreSQL
 ├── .env.example                    # Environment template
 └── package.json                    # Bun workspaces root
 ```
-
----
-
-## Project Status
-
-**Current: Sprint 0 — Foundation (in progress).** The repository is a working scaffold; business logic lands in Sprints 1–4.
-
-### ✅ Completed (Sprint 0)
-
-| Deliverable                                                                | Status               |
-| -------------------------------------------------------------------------- | -------------------- |
-| Bun monorepo workspaces (`apps/*`, `packages/*`)                       | ✅ Done              |
-| Prisma schema — 10 models, 7 enums, full relations                        | ✅ Done              |
-| Next.js 14 custom server (GraphQL + Socket.io attached)                    | ✅ Done              |
-| GraphQL Yoga + Pothos scaffold (`hello` query, context)                  | ✅ Done              |
-| Socket.io handlers (rooms, message skeleton)                               | ✅ Done              |
-| `BloodyRoarEscrow.sol` — full structure (state machine, events, errors) | ✅ Skeleton compiles |
-| Shared package — types, constants, Zod schemas, 10+ AI Guard regex        | ✅ Done              |
-| AI prompt templates (Guard, Test Gen)                                      | ✅ Done              |
-| Pino logger, Docker Compose Postgres,`.env.example`                      | ✅ Done              |
-
-### 🚧 Planned (Sprints 1–4)
-
-| Sprint             | Focus                                                                                                                     |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| **Sprint 1** | Auth (Thirdweb SIWE), User module, Marketplace (Issue CRUD + apply/assign), Escrow contract logic + 14+ tests, chat rooms |
-| **Sprint 2** | Escrow E2E, EIP-712 sign/verify, real-time chat, AI Guard, AI Test Gen, Model Router                                      |
-| **Sprint 3** | AI Multi-Agent Debate, GitHub OAuth + webhook, notifications, admin & analytics                                           |
-| **Sprint 4** | CI/CD, EAS reputation, polish, security audit, production deploy                                                          |
-
-> The full backlog and acceptance criteria live in [`docs/PRODUCT_BACKLOG.md`](docs/PRODUCT_BACKLOG.md).
 
 ---
 
@@ -422,30 +384,6 @@ bunx shadcn@latest add button input select dialog card table badge tabs toast dr
 
 ---
 
-## Team
-
-| Member          | Role                       | Responsibilities                                                                     |
-| --------------- | -------------------------- | ------------------------------------------------------------------------------------ |
-| **Kiên** | Smart Contract Engineer    | Solidity, Hardhat, EIP-712, EAS attestation, contract testing & deployment           |
-| **Khôi** | Backend Lead & AI Engineer | Prisma, Socket.io, AI Guard, AI Dispute (Multi-Agent Debate), Test Gen, Model Router |
-| **Hiếu** | Backend Engineer           | GraphQL server, auth, marketplace, escrow, notifications, analytics, GitHub          |
-| **Hân**  | UI/UX Designer & QA        | Frontend pages, design system, responsive, Playwright E2E                            |
-| **Trâm** | UI/UX Designer & Test      | Component library, design tokens, Vitest, accessibility                              |
-
----
-
-## Documentation
-
-| Document                                                                  | Description                                                          |
-| ------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| [`docs/PROPOSAL.md`](docs/PROPOSAL.md)                                   | Full project proposal (goals, architecture, timeline, risks, budget) |
-| [`docs/PRODUCT_BACKLOG.md`](docs/PRODUCT_BACKLOG.md)                     | Epics, user stories & per-sprint backlog with acceptance criteria    |
-| [`docs/RESEARCH.md`](docs/RESEARCH.md)                                   | Technology research & decision rationale                             |
-| [`docs/TEAM_PLAN.md`](docs/TEAM_PLAN.md)                                 | Team roles, module ownership & coordination plan                     |
-| [`docs/documentation_bloody-roar.md`](docs/documentation_bloody-roar.md) | Non-technical product description (Vietnamese)                       |
-
----
-
 ## License
 
-Internal use only — Capstone Project 1
+Internal use only

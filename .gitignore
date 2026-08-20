@@ -58,3 +58,13 @@ coverage/
 
 # Turbo (if added later)
 .turbo/
+
+# Documents & Project Notes
+docs/
+*.pdf
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx

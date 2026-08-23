@@ -5,6 +5,9 @@
     "plugin:jsx-a11y/recommended"
   ],
   "plugins": ["jsx-a11y"],
+  "parserOptions": {
+    "project": true
+  },
   "rules": {
     // TypeScript strict rules
     "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],

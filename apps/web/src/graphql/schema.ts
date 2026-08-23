@@ -6,7 +6,8 @@ import SchemaBuilder from "@pothos/core";
 import PrismaPlugin from "@pothos/plugin-prisma";
 import ZodPlugin from "@pothos/plugin-zod";
 import WithInputPlugin from "@pothos/plugin-with-input";
-import type PrismaTypes from "@pothos/plugin-prisma/generated";
+import type PrismaTypes from "./generated/pothos-types";
+import { getDatamodel } from "./generated/pothos-types";
 import { prisma } from "@bloody-roar/database";
 import type { GraphQLContext } from "./context";
 
@@ -18,8 +19,8 @@ export const builder = new SchemaBuilder<{
   plugins: [PrismaPlugin, ZodPlugin, WithInputPlugin],
   prisma: {
     client: prisma,
-    // Expose Prisma schema types to Pothos
-    dmmf: prisma._dmmf,
+    // Use generated datamodel instead of internal _dmmf
+    dmmf: getDatamodel(),
   },
 });
 
@@ -53,7 +54,7 @@ builder.queryField("hello", (t) =>
 // -----------------------------------------------------------------------
 
 // Sprint 1+: uncomment as modules are built
-// import "./modules/user/user.module";
+import "./modules/user/user.module";
 // import "./modules/issue/issue.module";
 // import "./modules/application/application.module";
 // import "./modules/escrow/escrow.module";

@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: process.env.NEXT_PUBLIC_APP_URL,
+    url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
     siteName: "Bloody-Roar",
     title: "Bloody-Roar — Decentralized Bounty Marketplace",
     description:

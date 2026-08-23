@@ -395,6 +395,9 @@ CREATE UNIQUE INDEX "tokens_chainId_address_key" ON "tokens"("chainId", "address
 CREATE UNIQUE INDEX "sessions_refreshHash_key" ON "sessions"("refreshHash");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "sessions_nonce_key" ON "sessions"("nonce");
+
+-- CreateIndex
 CREATE INDEX "sessions_userId_idx" ON "sessions"("userId");
 
 -- CreateIndex

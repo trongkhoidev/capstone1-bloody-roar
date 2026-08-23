@@ -11,6 +11,7 @@ import type {
   ClientToServerEvents,
 } from "@bloody-roar/shared";
 import { createLogger } from "../lib/logger";
+import { verifyJWT } from "../lib/auth";
 
 const log = createLogger("socket.io");
 
@@ -25,17 +26,15 @@ export function registerSocketHandlers(
 
   // -----------------------------------------------------------------------
   // Global middleware — runs before any event handler
-  // Sprint 1: Replace with Thirdweb JWT auth middleware
   // -----------------------------------------------------------------------
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     const token = socket.handshake.auth.token as string | undefined;
 
-    // TODO Sprint 1: Verify JWT token
-    // const user = await verifyJWT(token);
-    // if (!user) return next(new Error("Unauthorized"));
-    // socket.data.user = user;
-
-    if (!token) {
+    if (token) {
+      const user = await verifyJWT(token);
+      if (!user) return next(new Error("Unauthorized"));
+      socket.data.user = user;
+    } else {
       // Allow unauthenticated connections in dev (Sprint 0)
       log.debug({ socketId: socket.id }, "Anonymous socket connection");
     }
@@ -54,13 +53,13 @@ export function registerSocketHandlers(
     // -------------------------------------------------------------------
     socket.on("task:join", (issueId: string) => {
       const roomName = `task:${issueId}`;
-      socket.join(roomName);
+      void socket.join(roomName);
       log.debug({ socketId: socket.id, roomName }, "Joined task room");
     });
 
     socket.on("task:leave", (issueId: string) => {
       const roomName = `task:${issueId}`;
-      socket.leave(roomName);
+      void socket.leave(roomName);
       log.debug({ socketId: socket.id, roomName }, "Left task room");
     });
 
@@ -89,8 +88,8 @@ export function registerSocketHandlers(
           senderName: socket.data.user?.name || "Anonymous",
           issueId: data.issueId,
           wasModified: false,
-          fileUrl: data.fileUrl,
-          fileName: data.fileName,
+          ...(data.fileUrl ? { fileUrl: data.fileUrl } : {}),
+          ...(data.fileName ? { fileName: data.fileName } : {}),
           createdAt: new Date().toISOString(),
         });
 

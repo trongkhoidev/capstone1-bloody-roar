@@ -566,6 +566,7 @@ model Attestation {
 | **A-3 middleware** | Verify JWT dùng chung | `lib/auth.ts` → `verifyJWT()` (authenticate + revoke check qua `refreshHash`); dùng ở `graphql/context.ts` + `socket/handlers.ts` |
 | **A-4 me/updateProfile** | User module GraphQL | `graphql/modules/user/user.module.ts` (`prismaFieldWithInput`, Zod) |
 | **0. E2E Login Test** | Kịch bản tự động test luồng Auth | `apps/web/scripts/e2e-login.ts`: Dùng `PrivateKeyWallet`, fetch nonce, ký payload, đăng nhập, gọi GraphQL `me`, test replay protection, check DB `sessions` & `users` (tất cả 9/9 assertions pass). |
+| **1. DB Cloud (Pre-C2)** | Thiết lập Supabase | Cấu hình Supabase PostgreSQL (IPv4 Pooler: `aws-0-ap-northeast-2...`), đẩy schema 17 bảng, seed dữ liệu mẫu để team Hân/Trâm dùng chung qua `DATABASE_URL`. |
 
 ### 7.2 Đối chiếu code với tài liệu cũ
 

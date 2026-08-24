@@ -67,3 +67,6 @@ coverage/
 *.xlsx
 *.ppt
 *.pptx
+# Bỏ qua các file tracking cá nhân
+docs/HIEU_TASKS.md
+docs/WORKFLOW_STATUS.md

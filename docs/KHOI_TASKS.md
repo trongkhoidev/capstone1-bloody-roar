@@ -461,16 +461,19 @@ model Attestation {
 
 ### 📅 Tuần 1 (20/8 → 26/8): Database + Authentication
 
-| # | Task | Chi tiết / logic | AC | Est |
+| # | Task | Chi tiết / logic | Trạng thái / Đã thực hiện thế nào | Est |
 | --- | --- | --- | --- | --- |
-| C-1 | Chạy migrate + generate + seed | `bun run db:migrate` (một lần) + `db:generate` + `db:seed` (đã cập nhật seed theo schema mới) | DB đủ 17 bảng, seed chạy sạch | 1h |
-| C-2 | Review schema cùng Hiếu + đóng băng | Rà constraints/index, chốt §2.8 | Schema final | 1h |
-| A-1 | `nonce` endpoint (SIWE) | `POST /api/auth/nonce` trả nonce, lưu `Session.nonce` | Trả nonce hợp lệ | 1h |
-| A-2 | `login` endpoint | Verify chữ ký (Thirdweb) → upsert `User` theo `walletAddress` → tạo `Session` + cấp JWT (access + refresh) | Login thành công → user + JWT + session | 3h |
-| A-3 | JWT verify middleware | 1 hàm verify dùng chung cho GraphQL context + Socket | Request không JWT → Unauthorized | 2h |
-| A-4 | GraphQL `me` + `updateProfile` | `me` trả user từ JWT; update profile | Gọi được, update thành công | 2h |
+| C-1 | Chạy migrate + generate + seed | `bun run db:migrate` (một lần) + `db:generate` + `db:seed` | ✅ **Done:** 17 bảng + 12 enum. Migration duy nhất `20260823035635_init`. Generator output absolute (`env("POTHOS_OUTPUT")`). Seed OK. | 1h |
+| C-2 | Review schema cùng Hiếu + đóng băng | Rà constraints/index, chốt §2.8 | ⏳ **Pending:** Chờ chốt vài điểm nhỏ trước khi sang Tuần 2. | 1h |
+| A-1 | `nonce` endpoint (SIWE) | `POST /api/auth/nonce` trả nonce, lưu `Session.nonce` | ✅ **Done:** Trả `thirdwebAuth().payload()`. | 1h |
+| A-2 | `login` endpoint | Verify chữ ký (Thirdweb) → upsert `User` theo `walletAddress` → tạo `Session` + cấp JWT | ✅ **Done:** Verify → upsert (DTO public fields) → generate JWT. Lưu Session (`nonce` = SIWE @unique, `refreshHash` = sha256). Chặn replay tốt. | 3h |
+| A-3 | JWT verify middleware | 1 hàm verify dùng chung cho GraphQL context + Socket | ✅ **Done:** `verifyJWT()` dùng `authenticate(token)` + lookup revoke qua `refreshHash` O(1). | 2h |
+| A-4 | GraphQL `me` + `updateProfile` | `me` trả user từ JWT; update profile | ✅ **Done:** Gọi qua `user.module.ts`. JWT hỏng trả null. | 2h |
 
-> **Cột mốc cuối tuần 1:** DB migrate + seed sạch; login bằng ví → JWT → `me`/`updateProfile`.
+> **Cột mốc cuối tuần 1:**
+> - ✅ DB migrate + seed sạch, typecheck/lint pass 100%.
+> - ✅ Login ví → JWT → Session lưu DB (chống replay + revoke).
+> - ⏳ Đang chờ: E2E Test Login thật bằng ví.
 
 ### 📅 Tuần 2 (27/8 → 2/9): Homepage + Marketplace
 

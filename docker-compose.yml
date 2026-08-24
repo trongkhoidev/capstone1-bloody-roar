@@ -12,7 +12,7 @@ services:
     container_name: bloody_roar_postgres
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "5433:5432"  # Use 5433 to avoid conflict with local Homebrew Postgres on 5432
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres

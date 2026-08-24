@@ -5,6 +5,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { prisma, type User } from "@bloody-roar/database";
 import { createLogger } from "../lib/logger";
+import { verifyJWT } from "../lib/auth";
 
 const log = createLogger("graphql-context");
 
@@ -27,30 +28,18 @@ function extractToken(req: IncomingMessage): string | null {
 
 /**
  * Verify JWT and return user, or null if invalid
- * Sprint 1: Replace stub with Thirdweb Auth JWT verification
  */
 async function verifyToken(token: string): Promise<User | null> {
-  try {
-    // TODO Sprint 1: Implement Thirdweb Auth JWT verification
-    // const payload = await thirdwebAuth.verifyJWT(token);
-    // return prisma.user.findUnique({ where: { walletAddress: payload.sub } });
-    
-    // Stub: return null (unauthenticated) until Sprint 1
-    void token;
-    return null;
-  } catch (error) {
-    log.warn({ error }, "JWT verification failed");
-    return null;
-  }
+  return verifyJWT(token);
 }
 
 /**
  * GraphQL context factory — called on every request
  */
 export async function createContext(
-  req: IncomingMessage,
-  res: ServerResponse
+  initialContext: { req: IncomingMessage; res: ServerResponse }
 ): Promise<GraphQLContext> {
+  const { req, res } = initialContext;
   const token = extractToken(req);
   const user = token ? await verifyToken(token) : null;
 

@@ -1,4 +1,4 @@
-import { builder } from "../../schema";
+import { builder } from "../../builder";
 import { requireAuth } from "../../context";
 import { z } from "zod";
 

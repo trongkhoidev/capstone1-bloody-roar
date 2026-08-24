@@ -4,6 +4,8 @@
 // Attaches: GraphQL Yoga + Socket.io
 // =============================================================================
 
+import "./src/lib/env";
+
 import { createServer } from "node:http";
 import { parse } from "node:url";
 import next from "next";

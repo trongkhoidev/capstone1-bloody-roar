@@ -14,6 +14,7 @@
 4. [Definition of Done — 10/9](#4-definition-of-done--109)
 5. [Sau 10/9 (tham khảo, chưa cần làm)](#5-sau-109-tham-khảo-chưa-cần-làm)
 6. [Ràng buộc chung](#6-ràng-buộc-chung)
+7. [Nhật ký thực hiện & phần việc tiếp theo (23/8)](#7-nhật-ký-thực-hiện--phần-việc-tiếp-theo-238)
 
 ---
 
@@ -174,7 +175,7 @@ model Session {
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   refreshHash String    @unique // hash refresh token (không lưu bản rõ)
-  nonce       String?   // SIWE nonce (chống replay)
+  nonce       String?   @unique // SIWE nonce (chống replay)
   userAgent   String?
   ip          String?
   expiresAt   DateTime
@@ -387,7 +388,7 @@ model Attestation {
 | --- | --- | --- |
 | User | `walletAddress` unique, `githubId` unique | Identity key |
 | Token | unique(`chainId`,`address`), `isActive` | Chống trùng token, lọc whitelist |
-| Session | `refreshHash` unique, `userId` index | Thu hồi token |
+| Session | `refreshHash` unique, `nonce` unique, `userId` index | Thu hồi token + chống replay login payload |
 | Issue | `status`, `category`, `clientId`, `developerId`, `tokenId` | Lọc homepage |
 | Message | `issueId`, `senderId`, `clientMessageId` | Lịch sử chat + chống trùng |
 | Attachment | `issueId`, `messageId`, `uploaderId` | List file |
@@ -454,10 +455,12 @@ model Attestation {
 
 ### ✅ Đã xong
 
-- Monorepo Bun, `packages/shared`, Docker Compose, Pino logger, `.env.example`
+- Monorepo Bun, `packages/shared`, Docker Compose (port 5433), Pino logger, `.env.example`
 - Custom server Next.js + GraphQL Yoga + Socket.io attach
 - Shared types/constants/Zod
-- **Prisma schema đầy đủ 17 bảng + 12 enum** (đã pass `prisma validate`) — chỉ còn chạy migrate + seed
+- **Prisma schema đầy đủ 17 bảng + 12 enum** (đã pass `prisma validate`)
+- **C — DB:** migrate + generate + seed chạy sạch (migration duy nhất `20260823035635_init`), DB đủ 17 bảng + seed (3 user, 1 token, 3 issue, 3 message)
+- **A — Auth:** nonce + login (Thirdweb SIWE) + verifyJWT middleware + GraphQL `me`/`updateProfile`
 
 ### 📅 Tuần 1 (20/8 → 26/8): Database + Authentication
 
@@ -506,8 +509,8 @@ model Attestation {
 
 ## 4. Definition of Done — 10/9
 
-- [ ] **DB:** 17 bảng + 12 enum, `migrate` + `seed` chạy sạch, không còn `TODO`, không phải migrate lại.
-- [ ] **Auth:** đăng nhập bằng ví → JWT → `me` đúng user; request sai JWT bị chặn (GraphQL + Socket).
+- [x] **DB:** 17 bảng + 12 enum, `migrate` + `seed` chạy sạch, không còn `TODO`, không phải migrate lại.
+- [x] **Auth:** đăng nhập bằng ví → JWT → `me` đúng user; request sai JWT bị chặn (GraphQL + Socket).
 - [ ] **Homepage:** hiển thị task từ DB, lọc + tìm + phân trang, xem chi tiết.
 - [ ] **Chat:** 2 người nhắn qua lại **trong cùng room** realtime, lịch sử lưu DB và load lại được, chặn user không liên quan.
 - [ ] **BE:** `bun run lint` + `bun run typecheck` pass, không còn `TODO` trong code BE.
@@ -543,3 +546,60 @@ model Attestation {
 9. **`.env` không commit.**
 10. **Validate bằng Zod** — mọi input FE phải qua Zod.
 11. **Push phải sạch** — `lint` + `typecheck` pass trước khi push.
+
+---
+
+## 7. Nhật ký thực hiện & phần việc tiếp theo (23/8)
+
+> **Trạng thái hiện tại:** Foundation + C (Database) + A (Auth) đã **done và commit**. Còn B (Homepage) và D (Chat).
+
+### 7.1 Các việc đã làm — thực hiện thế nào
+
+| Mảng | Đã làm gì | Thực hiện thế nào (file / cơ chế) |
+| --- | --- | --- |
+| **Foundation** | Monorepo, custom server, logger, DB dev | `server.ts` (Next + GraphQL Yoga + Socket.io cùng HTTP server), `lib/logger.ts` (Pino), `docker-compose.yml` (Postgres port **5433**) |
+| **C — Schema** | 17 bảng + 12 enum | `packages/database/prisma/schema.prisma` |
+| **C — Generator** | Type-safe GraphQL↔Prisma | `generator pothos` (provider `prisma-pothos-types`), output qua `env("POTHOS_OUTPUT")`; `@pothos/plugin-prisma` nằm trong `packages/database` devDeps để generator resolvable |
+| **C — Migrate/Seed** | DB 17 bảng + dữ liệu mẫu | Migration duy nhất `20260823035635_init`; `seed.ts` (admin/client/dev, USDC, 3 issue, 3 message) |
+| **A-1 nonce** | Endpoint trả login payload | `app/api/auth/nonce/route.ts` → `thirdwebAuth().payload()` |
+| **A-2 login** | Verify chữ ký → upsert User → JWT → Session | `app/api/auth/login/route.ts`: `verify()` → `upsert` (DTO `USER_PUBLIC_SELECT`) → `generate()` → `session.create` (`nonce`=SIWE nonce `@unique`, `refreshHash`=sha256(token)) |
+| **A-3 middleware** | Verify JWT dùng chung | `lib/auth.ts` → `verifyJWT()` (authenticate + revoke check qua `refreshHash`); dùng ở `graphql/context.ts` + `socket/handlers.ts` |
+| **A-4 me/updateProfile** | User module GraphQL | `graphql/modules/user/user.module.ts` (`prismaFieldWithInput`, Zod) |
+| **0. E2E Login Test** | Kịch bản tự động test luồng Auth | `apps/web/scripts/e2e-login.ts`: Dùng `PrivateKeyWallet`, fetch nonce, ký payload, đăng nhập, gọi GraphQL `me`, test replay protection, check DB `sessions` & `users` (tất cả 9/9 assertions pass). |
+| **1. DB Cloud (Pre-C2)** | Thiết lập Supabase | Cấu hình Supabase PostgreSQL (IPv4 Pooler: `aws-0-ap-northeast-2...`), đẩy schema 17 bảng, seed dữ liệu mẫu để team Hân/Trâm dùng chung qua `DATABASE_URL`. |
+
+### 7.2 Đối chiếu code với tài liệu cũ
+
+**✅ Đúng theo doc (đã giữ đúng thiết kế):**
+- Thứ tự **C → A → B → D**; auth chặn mọi thứ; type-safe xuyên suốt; Zod validate.
+- `Session.refreshHash @unique` (revoke), `Session.nonce` (chống replay) — đúng §2.5/§2.8.
+- Login bằng ví (SIWE Thirdweb) → JWT → `me`; sai JWT bị chặn (GraphQL + Socket) — đúng AC §1.A.
+- "Migrate một lần" — đã tái tạo migration init duy nhất khớp schema (hết drift).
+
+**⚠️ Điểm lệch/chốt mới so với doc cũ (đã cập nhật vào §2):**
+1. `Session.nonce` thêm `@unique` (doc §2.5 cũ chưa có) — để `findUnique` chặn replay login payload.
+2. **Auth dùng JWT của Thirdweb (1 token)** — doc A-2 ghi "access + refresh". Hiện chỉ phát 1 JWT; **refresh/logout chưa làm** (dời sau 10/9, dùng `thirdwebAuth.refresh()`).
+3. Docker Postgres đổi port **5432 → 5433** (tránh xung đột Homebrew Postgres local).
+4. Generator Pothos dùng `env("POTHOS_OUTPUT")` thay đường dẫn tương đối (tránh sinh thư mục rác `packages/apps/`).
+
+### 7.3 Các fix phát sinh trong review
+
+1. **Schema drift** — `nonce @unique` từng bị áp bằng `db push` mà không có migration → đã tái tạo migration init sạch.
+2. **Chống replay login payload** — check `nonce @unique` sau `verify()`, trước `generate()`.
+3. **DTO login** — `USER_PUBLIC_SELECT`, không lộ `email`/`githubAccessTokenEncrypted`/`isBanned`.
+4. **`auth.ts` lazy-init** — không crash server khi thiếu `AUTH_PRIVATE_KEY`.
+5. **`AUTH_PRIVATE_KEY`** — dùng key random (không phải Hardhat mặc định).
+6. **Generator path** — `.env` `POTHOS_OUTPUT=../../../apps/web/...` (3 cấp, resolve theo schema dir).
+7. **FE Lưu ý (cho Hân/Trâm)** — Endpoint `GET /api/auth/nonce` yêu cầu truyền `?address=...` (địa chỉ ví user) để server ký đúng payload cho user thay vì ví admin. FE lưu ý gọi đúng format: `fetch('/api/auth/nonce?address=' + walletAddress)`.
+8. **Circular Dependency trong GraphQL Schema** — Fix lỗi server crash khi boot bằng cách tách `builder` instance ra file `graphql/builder.ts` riêng biệt.
+9. **Load `.env` an toàn** — Dùng `import.meta.dir` kết hợp `fs.existsSync` trong `env.ts` để load đúng file `.env` root bất chấp CWD khi chạy script.
+10. **Pothos Zod Plugin** — Gỡ bỏ `@pothos/plugin-zod` vì thừa thãi (chỉ dùng manual validation) và gây lỗi khởi tạo `zod.looseObject`.
+
+### 7.4 Phần việc tiếp theo
+
+| Bước | Nội dung | Est |
+| --- | --- | --- |
+| ✅ **0. E2E login test** | Đã hoàn thành kịch bản tự động E2E test cho Auth (pass toàn bộ) | 1h |
+| **1. C-2** | Review schema cùng Hiếu + đóng băng: enum hoá `priority/status/prState`, `gasUsed/gasPrice` → BigInt/Decimal, index `Message(issueId, createdAt)`, thống nhất `onDelete` | 1h |
+| **2. B — Homepage** | B-1 `issues` query (filter+sort+cursor) → B-2 `issue(id)` → B-3 `createIssue`; UI B-4→B-6 do Hân/Trâm | 13h |
+| **3. D — Chat** | D-1 socket auth → D-2 room + quyền → D-3 message handler → D-4 `messages(issueId)` → D-5 UI → D-6 test 2 user → D-7 tổng kiểm | 12h |

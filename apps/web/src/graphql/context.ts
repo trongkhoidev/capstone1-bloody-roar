@@ -5,6 +5,7 @@
 import { prisma, type User } from "@bloody-roar/database";
 import { createLogger } from "../lib/logger";
 import { verifyJWT } from "../lib/auth";
+import { gqlError } from "./errors";
 
 const log = createLogger("graphql-context");
 
@@ -56,7 +57,7 @@ export async function createContext(
  */
 export function requireAuth(ctx: GraphQLContext): User {
   if (!ctx.user) {
-    throw new Error("UNAUTHORIZED: Authentication required");
+    throw gqlError("Authentication required", "UNAUTHORIZED");
   }
   return ctx.user;
 }
@@ -67,7 +68,7 @@ export function requireAuth(ctx: GraphQLContext): User {
 export function requireAdmin(ctx: GraphQLContext): User {
   const user = requireAuth(ctx);
   if (user.role !== "ADMIN") {
-    throw new Error("FORBIDDEN: Admin access required");
+    throw gqlError("Admin access required", "FORBIDDEN");
   }
   return user;
 }

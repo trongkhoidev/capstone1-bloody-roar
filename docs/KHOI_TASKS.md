@@ -501,10 +501,10 @@ model Attestation {
 
 | # | Task | Chi tiết / logic | AC | Est |
 | --- | --- | --- | --- | --- |
-| D-1 | Socket auth middleware | Verify JWT từ `handshake.auth.token` (dùng lại A-3) | Token sai → disconnect | 1h |
-| D-2 | Room management | `task:join`/`task:leave` + **kiểm tra quyền** (user là client/developer của issue) | Join đúng room, chặn người lạ | 2h |
-| D-3 | Message handler | Zod validate → lưu `Message` (theo `issueId`, kèm `clientMessageId`) → emit `message:new` tới room `task:{issueId}`; file gửi qua `Attachment` | Tin nhắn lưu DB + broadcast trong room | 2h |
-| D-4 | GraphQL `messages(issueId)` | Load lịch sử chat đúng thứ tự + attachment + đánh dấu đã đọc | Lấy được lịch sử | 1h |
+| D-1 | Socket auth middleware | Verify JWT từ `handshake.auth.token` (dùng lại A-3) | ✅ **Done (25/8):** Chặn anonymous, disconnect nếu thiếu/sai JWT | 1h |
+| D-2 | Room management | `task:join`/`task:leave` + **kiểm tra quyền** (user là client/developer của issue) | ✅ **Done (25/8):** Hàm `canAccessIssue()` dùng chung, join đúng `task:{issueId}` | 2h |
+| D-3 | Message handler | Zod validate → lưu `Message` (theo `issueId`, kèm `clientMessageId`) → emit `message:new` tới room `task:{issueId}`; file gửi qua `Attachment` | ✅ **Done (25/8):** Idempotency re-emit cũ; Zod + Prisma create, emit kèm `senderAvatar` | 2h |
+| D-4 | GraphQL `messages(issueId)` | Load lịch sử chat đúng thứ tự + attachment + đánh dấu đã đọc | ✅ **Done (25/8):** Cursor pagination; tự reset `readAt` cả trong DB lẫn bộ nhớ trả về | 1h |
 | D-5 | Chat UI | Khung chat + auto-scroll + gửi/nhận + gửi file | 2 người nhắn qua lại realtime | 3h |
 | D-6 | Test tích hợp 2 người | 2 trình duyệt (2 ví) → join cùng room → nhắn tin → nhận realtime + reload vẫn còn lịch sử | End-to-end chat OK | 2h |
 | D-7 | Tổng kiểm | `bun run lint` + `typecheck` + test | Không lỗi | 1h |
@@ -518,8 +518,8 @@ model Attestation {
 - [x] **DB:** 17 bảng + 16 enum, `migrate` + `seed` chạy sạch, không còn `TODO`, không phải migrate lại. **Schema FROZEN 24/8.**
 - [x] **Auth:** đăng nhập bằng ví → JWT → `me` đúng user; request sai JWT bị chặn (GraphQL + Socket).
 - [x] **Homepage (backend):** `issues` (filter + search + sort + cursor pagination) + `issue(id)` + `createIssue` — E2E test pass (`scripts/e2e-issue.ts`). *(UI B-4→B-6 do Hân/Trâm.)*
-- [ ] **Chat:** 2 người nhắn qua lại **trong cùng room** realtime, lịch sử lưu DB và load lại được, chặn user không liên quan.
-- [x] **BE:** `bun run lint` + `bun run typecheck` pass (24/8). *(TODO còn duy nhất trong `socket/handlers.ts` — thuộc phạm vi D-Chat, xử lý tuần 3.)*
+- [x] **Chat:** 2 người nhắn qua lại **trong cùng room** realtime, lịch sử lưu DB và load lại được, chặn user không liên quan. (Backend hoàn tất D-1 đến D-4).
+- [x] **BE:** `bun run lint` + `bun run typecheck` pass (25/8). *(Không còn lỗi nào).*
 
 ---
 
@@ -644,7 +644,7 @@ model Attestation {
 
 | Bước | Nội dung | Est |
 | --- | --- | --- |
-| **1. D — Chat (tuần 3)** | D-1 socket auth (đã có sẵn `verifyJWT` trong handlers, cần chặn anonymous ở prod) → D-2 room `task:{issueId}` + **kiểm tra quyền** (client/developer của issue) → D-3 message handler lưu DB (Zod + `clientMessageId` idempotency) → D-4 GraphQL `messages(issueId)` + unread → D-5 UI (Hân/Trâm) → D-6 test 2 user realtime → D-7 tổng kiểm | 12h |
+| **1. D — Chat (tuần 3)** | D-1/D-4 Backend Chat đã hoàn tất (25/8) → D-5 UI (Hân/Trâm) → D-6 test 2 user realtime → D-7 tổng kiểm | 12h |
 | **2. Nếu còn thời gian** | `updateIssue`/`cancelIssue` mutation; `tokens` query (FE cần dropdown chọn token khi tạo task); hỗ trợ FE Hân/Trâm tích hợp GraphQL | 3h |
 | **3. Sau 10/9** | Application flow, Escrow + EIP-712, AI Guard/ModelRouter, GitHub OAuth, Attestation | — |
 

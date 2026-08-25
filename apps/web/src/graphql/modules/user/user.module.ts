@@ -15,7 +15,6 @@ export const UserRef = builder.prismaObject("User", {
     walletAddress: t.exposeString("walletAddress"),
     role: t.string({ resolve: (user) => user.role }),
     name: t.exposeString("name", { nullable: true }),
-    email: t.exposeString("email", { nullable: true }),
     avatar: t.exposeString("avatar", { nullable: true }),
     bio: t.exposeString("bio", { nullable: true }),
     skills: t.exposeStringList("skills"),

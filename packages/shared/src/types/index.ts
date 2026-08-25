@@ -65,8 +65,8 @@ export type ClientToServerEvents = {
   "message:send": (data: SendMessagePayload, callback: (err?: string) => void) => void;
 
   // Room management
-  "task:join": (issueId: string) => void;
-  "task:leave": (issueId: string) => void;
+  "task:join": (issueId: string, callback: (err?: string) => void) => void;
+  "task:leave": (issueId: string, callback: (err?: string) => void) => void;
 };
 
 export interface ChatMessagePayload {
@@ -80,6 +80,7 @@ export interface ChatMessagePayload {
   wasModified: boolean;
   fileUrl?: string;
   fileName?: string;
+  replyToId?: string;
   createdAt: string;
 }
 
@@ -87,6 +88,8 @@ export interface SendMessagePayload {
   content: string;
   type: "TEXT" | "FILE";
   issueId: string;
+  clientMessageId?: string;
+  replyToId?: string;
   fileUrl?: string;
   fileName?: string;
   fileSize?: number;

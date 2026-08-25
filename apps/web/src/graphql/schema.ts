@@ -23,7 +23,7 @@ import "./modules/user/user.module";
 import "./modules/issue/issue.module";
 // import "./modules/application/application.module";
 // import "./modules/escrow/escrow.module";
-// import "./modules/chat/chat.module";
+import "./modules/chat/chat.module";
 // import "./modules/dispute/dispute.module";
 // import "./modules/notification/notification.module";
 // import "./modules/analytics/analytics.module";

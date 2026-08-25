@@ -37,6 +37,21 @@ builder.queryField("me", (t) =>
     },
   })
 );
+builder.queryField("user", (t) =>
+  t.prismaField({
+    type: "User",
+    nullable: true,
+    args: {
+      id: t.arg.string({ required: true }),
+    },
+    resolve: async (query, _root, args, ctx) => {
+      return ctx.db.user.findUnique({
+        ...query,
+        where: { id: args.id },
+      });
+    },
+  })
+);
 
 builder.mutationField("updateProfile", (t) =>
   t.prismaFieldWithInput({

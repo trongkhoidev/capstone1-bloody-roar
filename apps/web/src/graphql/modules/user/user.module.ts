@@ -1,5 +1,6 @@
 import { builder } from "../../builder";
 import { requireAuth } from "../../context";
+import { parseOrThrow } from "../../errors";
 import { z } from "zod";
 
 // Zod validation schemas
@@ -8,13 +9,12 @@ const UpdateProfileSchema = z.object({
   bio: z.string().max(200).optional(),
 });
 
-builder.prismaObject("User", {
+export const UserRef = builder.prismaObject("User", {
   fields: (t) => ({
     id: t.exposeID("id"),
     walletAddress: t.exposeString("walletAddress"),
     role: t.string({ resolve: (user) => user.role }),
     name: t.exposeString("name", { nullable: true }),
-    email: t.exposeString("email", { nullable: true }),
     avatar: t.exposeString("avatar", { nullable: true }),
     bio: t.exposeString("bio", { nullable: true }),
     skills: t.exposeStringList("skills"),
@@ -41,6 +41,7 @@ builder.queryField("me", (t) =>
 builder.mutationField("updateProfile", (t) =>
   t.prismaFieldWithInput({
     type: "User",
+    typeOptions: { name: "UpdateProfileInput" },
     input: {
       name: t.input.string({ required: false }),
       bio: t.input.string({ required: false }),
@@ -49,7 +50,7 @@ builder.mutationField("updateProfile", (t) =>
       const user = requireAuth(ctx);
 
       // Validate with Zod
-      const validated = UpdateProfileSchema.parse({
+      const validated = parseOrThrow(UpdateProfileSchema, {
         name: args.input.name ?? undefined,
         bio: args.input.bio ?? undefined,
       });

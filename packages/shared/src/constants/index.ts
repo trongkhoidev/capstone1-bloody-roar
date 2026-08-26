@@ -38,6 +38,16 @@ export const ISSUE_CATEGORIES = [
   "OTHER",
 ] as const;
 
+export const ISSUE_STATUSES = [
+  "OPEN",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "CANCELLED",
+  "DISPUTED",
+] as const;
+
+export const ISSUE_SORT_BY = ["CREATED_AT", "BOUNTY_AMOUNT", "VIEW_COUNT"] as const;
+
 export const ISSUE_DIFFICULTY = ["Easy", "Medium", "Hard", "Expert"] as const;
 
 export const BOUNTY_MIN_AMOUNT = 10; // Minimum 10 USDT

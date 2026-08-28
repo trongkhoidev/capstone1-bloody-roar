@@ -14,7 +14,7 @@
 4. [Definition of Done — 10/9](#4-definition-of-done--109)
 5. [Sau 10/9 (tham khảo, chưa cần làm)](#5-sau-109-tham-khảo-chưa-cần-làm)
 6. [Ràng buộc chung](#6-ràng-buộc-chung)
-7. [Nhật ký thực hiện & phần việc tiếp theo (23/8)](#7-nhật-ký-thực-hiện--phần-việc-tiếp-theo-238)
+7. [Nhật ký thực hiện & phần việc tiếp theo (23/8 → 24/8)](#7-nhật-ký-thực-hiện--phần-việc-tiếp-theo-238--248)
 
 ---
 
@@ -36,7 +36,7 @@ Tới **10/9**, Khôi phải **done BE** cho 4 mảng sau. Tất cả AI/Smart-c
 
 ## 2. Thảo luận thiết kế Database
 
-> **Mục tiêu phần này:** phân tích **toàn bộ nhu cầu dữ liệu** của hệ thống (smart contract, backend, AI, frontend), thiết kế đầy đủ mọi bảng + mọi field ngay từ đầu, để **hạn chế tối đa việc phải thêm migration về sau**. Schema hoàn chỉnh đã được viết trong `packages/database/prisma/schema.prisma` (**17 bảng · 12 enum**) và đã pass `prisma validate`.
+> **Mục tiêu phần này:** phân tích **toàn bộ nhu cầu dữ liệu** của hệ thống (smart contract, backend, AI, frontend), thiết kế đầy đủ mọi bảng + mọi field ngay từ đầu, để **hạn chế tối đa việc phải thêm migration về sau**. Schema hoàn chỉnh đã được viết trong `packages/database/prisma/schema.prisma` (**17 bảng · 16 enum**) và đã pass `prisma validate`. **Schema đã FROZEN từ 24/8** (xem §7.5).
 
 ### 2.1 Nguyên tắc thiết kế
 
@@ -365,7 +365,7 @@ model Attestation {
 
 `action`/`target`/`targetId`/`details` (Json)/`adminId`/`createdAt`.
 
-### 2.6 Enum đầy đủ (12)
+### 2.6 Enum đầy đủ (16)
 
 | Enum | Giá trị |
 | --- | --- |
@@ -381,6 +381,10 @@ model Attestation {
 | `TransactionStatus` | `PENDING` · `CONFIRMED` · `FAILED` |
 | `SubmissionStatus` | `SUBMITTED` · `UNDER_REVIEW` · `APPROVED` · `REJECTED` |
 | `AttestationType` | `COMPLETION` · `SKILL` · `CERTIFICATION` |
+| `TestCasePriority` 🆕 | `CRITICAL` · `NORMAL` · `LOW` (thay String "critical"/"normal"/"low") |
+| `TestCaseSource` 🆕 | `AI` · `MANUAL` (thay String "AI"/"manual") |
+| `PRState` 🆕 | `OPEN` · `MERGED` · `CLOSED` (thay String prState của Submission) |
+| `AILogStatus` 🆕 | `SUCCESS` · `ERROR` · `FALLBACK` (thay String status của AILog) |
 
 ### 2.7 Index & unique constraints (tổng hợp)
 
@@ -443,31 +447,33 @@ model Attestation {
 
 ### 2.10 Kết luận thiết kế
 
-- **17 bảng, 12 enum, đầy đủ field cho smart contract + backend + AI + frontend** — đã viết + pass `prisma validate`.
+- **17 bảng, 16 enum, đầy đủ field cho smart contract + backend + AI + frontend** — đã viết + pass `prisma validate`.
+- **ĐÃ ĐÓNG BĂNG (FROZEN) 24/8** — migration init duy nhất `20260824120000_init`, DB Supabase đã reset + seed lại. Không sửa schema nữa trừ khi có lý do bắt buộc.
 - **Trước 10/9 chỉ cần dùng:** `User`, `Session`, `Token`, `Issue`, `Message`, `Attachment` + enum `UserRole/IssueStatus/IssueCategory/MessageType`. Phần còn lại **đã có sẵn** nên Sprint sau KHÔNG cần migrate thêm bảng.
-- **Mục tiêu:** chạy `migrate` một lần duy nhất.
+- **Mục tiêu:** chạy `migrate` một lần duy nhất — **ĐÃ ĐẠT**.
 
 ---
 
 ## 3. Todo list chi tiết đến 10/9
 
-> Hôm nay: **20/8**. Còn ~3 tuần. Thứ tự ưu tiên: **C (DB) → A (Auth) → B (Homepage) → D (Chat)**.
+> **Cập nhật 24/8.** Còn ~2.5 tuần. Thứ tự ưu tiên: **C (DB) → A (Auth) → B (Homepage) → D (Chat)**. C + A đã xong, B backend đã xong (24/8).
 
 ### ✅ Đã xong
 
 - Monorepo Bun, `packages/shared`, Docker Compose (port 5433), Pino logger, `.env.example`
-- Custom server Next.js + GraphQL Yoga + Socket.io attach
+- Custom server Next.js (Socket.io) + GraphQL Yoga qua App Router `/api/graphql` (GraphiQL ở dev)
 - Shared types/constants/Zod
-- **Prisma schema đầy đủ 17 bảng + 12 enum** (đã pass `prisma validate`)
-- **C — DB:** migrate + generate + seed chạy sạch (migration duy nhất `20260823035635_init`), DB đủ 17 bảng + seed (3 user, 1 token, 3 issue, 3 message)
-- **A — Auth:** nonce + login (Thirdweb SIWE) + verifyJWT middleware + GraphQL `me`/`updateProfile`
+- **Prisma schema đầy đủ 17 bảng + 16 enum — FROZEN 24/8**
+- **C — DB:** migrate + generate + seed chạy sạch (migration duy nhất `20260824120000_init`, reset + seed Supabase), DB đủ 17 bảng + seed (3 user, 1 token, 3 issue, 3 message)
+- **A — Auth:** nonce + login (Thirdweb SIWE) + verifyJWT middleware + GraphQL `me`/`updateProfile` + E2E login test (9/9 pass)
+- **B — Homepage backend (24/8):** `issues` (filter/search/sort/cursor) + `issue(id)` + `createIssue` + errors chuẩn `extensions.code` + E2E issue test (10/10 pass)
 
 ### 📅 Tuần 1 (20/8 → 26/8): Database + Authentication
 
 | # | Task | Chi tiết / logic | Trạng thái / Đã thực hiện thế nào | Est |
 | --- | --- | --- | --- | --- |
-| C-1 | Chạy migrate + generate + seed | `bun run db:migrate` (một lần) + `db:generate` + `db:seed` | ✅ **Done:** 17 bảng + 12 enum. Migration duy nhất `20260823035635_init`. Generator output absolute (`env("POTHOS_OUTPUT")`). Seed OK. | 1h |
-| C-2 | Review schema cùng Hiếu + đóng băng | Rà constraints/index, chốt §2.8 | ⏳ **Pending:** Chờ chốt vài điểm nhỏ trước khi sang Tuần 2. | 1h |
+| C-1 | Chạy migrate + generate + seed | `bun run db:migrate` (một lần) + `db:generate` + `db:seed` | ✅ **Done:** 17 bảng + 16 enum. Migration duy nhất `20260824120000_init`. Generator output absolute (`env("POTHOS_OUTPUT")`). Seed OK. | 1h |
+| C-2 | Review schema cùng Hiếu + đóng băng | Rà constraints/index, chốt §2.8 | ✅ **Done (24/8, tự chốt):** enum hoá `TestCasePriority`/`TestCaseSource`/`PRState`/`AILogStatus`; `Transaction.gasUsed`/`gasPrice` → `BigInt`; `Message` index composite `(issueId, createdAt)`; thêm `onDelete: Cascade` cho `Dispute.issue`/`Dispute.escrow`/`Transaction.escrow`. Tái tạo migration init + reset + seed Supabase. **Schema FROZEN.** | 1h |
 | A-1 | `nonce` endpoint (SIWE) | `POST /api/auth/nonce` trả nonce, lưu `Session.nonce` | ✅ **Done:** Trả `thirdwebAuth().payload()`. | 1h |
 | A-2 | `login` endpoint | Verify chữ ký (Thirdweb) → upsert `User` theo `walletAddress` → tạo `Session` + cấp JWT | ✅ **Done:** Verify → upsert (DTO public fields) → generate JWT. Lưu Session (`nonce` = SIWE @unique, `refreshHash` = sha256). Chặn replay tốt. | 3h |
 | A-3 | JWT verify middleware | 1 hàm verify dùng chung cho GraphQL context + Socket | ✅ **Done:** `verifyJWT()` dùng `authenticate(token)` + lookup revoke qua `refreshHash` O(1). | 2h |
@@ -478,16 +484,16 @@ model Attestation {
 > - ✅ Login ví → JWT → Session lưu DB (chống replay + revoke).
 > - ⏳ Đang chờ: E2E Test Login thật bằng ví.
 
-### 📅 Tuần 2 (27/8 → 2/9): Homepage + Marketplace
+### 📅 Tuần 2 (27/8 → 2/9): Homepage + Marketplace — backend xong sớm 24/8
 
 | # | Task | Chi tiết / logic | AC | Est |
 | --- | --- | --- | --- | --- |
-| B-1 | GraphQL `issues` query | List: filter (`category`, `status`, bounty range, skill) + sort + cursor pagination | List + filter + phân trang | 3h |
-| B-2 | GraphQL `issue(id)` query | Chi tiết + client + applicants + token | Trả đúng task | 1h |
-| B-3 | GraphQL `createIssue` | Zod validate → insert + lưu `Attachment` nếu có ảnh + chọn `tokenId` | Tạo task + đính kèm ảnh | 2h |
-| B-4 | Homepage UI | Card list (title, bounty+symbol, category, skills, viewCount) | Trang chủ render list | 3h |
-| B-5 | Filter/search UI | Lọc category/status + search keyword | Lọc + search OK | 2h |
-| B-6 | Issue detail UI | Mô tả, bounty, người đăng, ảnh đính kèm | Xem chi tiết task | 2h |
+| B-1 | GraphQL `issues` query | List: filter (`category`, `status`, bounty range, skill) + sort + cursor pagination | List + filter + phân trang | ✅ **Done 24/8** (`issue.module.ts`: `issues(first, after, category, status, bountyMin/Max, skill, search, sortBy, sortOrder)` → `IssueConnection{edges, pageInfo, totalCount}`) |
+| B-2 | GraphQL `issue(id)` query | Chi tiết + client + applicants + token | Trả đúng task | ✅ **Done 24/8** (kèm `applicationCount`, tự tăng `viewCount`, ẩn draft với người lạ) |
+| B-3 | GraphQL `createIssue` | Zod validate → insert + chọn `tokenId` (whitelist) | Tạo task + đính kèm ảnh | ✅ **Done 24/8** (Zod + `requireAuth` + check `Token.isActive`; `bountyAmount` expose `Float`; attachment upload dời sang lúc làm S3/Supabase Storage — schema `Attachment` đã sẵn) |
+| B-4 | Homepage UI | Card list (title, bounty+symbol, category, skills, viewCount) | Trang chủ render list | 3h — Hân/Trâm |
+| B-5 | Filter/search UI | Lọc category/status + search keyword | Lọc + search OK | 2h — Hân/Trâm |
+| B-6 | Issue detail UI | Mô tả, bounty, người đăng, ảnh đính kèm | Xem chi tiết task | 2h — Hân/Trâm |
 
 > **Cột mốc cuối tuần 2:** homepage hiển thị task thật từ DB, lọc/tìm/chi tiết hoạt động.
 
@@ -495,10 +501,10 @@ model Attestation {
 
 | # | Task | Chi tiết / logic | AC | Est |
 | --- | --- | --- | --- | --- |
-| D-1 | Socket auth middleware | Verify JWT từ `handshake.auth.token` (dùng lại A-3) | Token sai → disconnect | 1h |
-| D-2 | Room management | `task:join`/`task:leave` + **kiểm tra quyền** (user là client/developer của issue) | Join đúng room, chặn người lạ | 2h |
-| D-3 | Message handler | Zod validate → lưu `Message` (theo `issueId`, kèm `clientMessageId`) → emit `message:new` tới room `task:{issueId}`; file gửi qua `Attachment` | Tin nhắn lưu DB + broadcast trong room | 2h |
-| D-4 | GraphQL `messages(issueId)` | Load lịch sử chat đúng thứ tự + attachment + đánh dấu đã đọc | Lấy được lịch sử | 1h |
+| D-1 | Socket auth middleware | Verify JWT từ `handshake.auth.token` (dùng lại A-3) | ✅ **Done (25/8):** Chặn anonymous, disconnect nếu thiếu/sai JWT | 1h |
+| D-2 | Room management | `task:join`/`task:leave` + **kiểm tra quyền** (user là client/developer của issue) | ✅ **Done (25/8):** Hàm `canAccessIssue()` dùng chung, join đúng `task:{issueId}` | 2h |
+| D-3 | Message handler | Zod validate → lưu `Message` (theo `issueId`, kèm `clientMessageId`) → emit `message:new` tới room `task:{issueId}`; file gửi qua `Attachment` | ✅ **Done (25/8):** Idempotency re-emit cũ; Zod + Prisma create, emit kèm `senderAvatar` | 2h |
+| D-4 | GraphQL `messages(issueId)` | Load lịch sử chat đúng thứ tự + attachment + đánh dấu đã đọc | ✅ **Done (25/8):** Cursor pagination; tự reset `readAt` cả trong DB lẫn bộ nhớ trả về | 1h |
 | D-5 | Chat UI | Khung chat + auto-scroll + gửi/nhận + gửi file | 2 người nhắn qua lại realtime | 3h |
 | D-6 | Test tích hợp 2 người | 2 trình duyệt (2 ví) → join cùng room → nhắn tin → nhận realtime + reload vẫn còn lịch sử | End-to-end chat OK | 2h |
 | D-7 | Tổng kiểm | `bun run lint` + `typecheck` + test | Không lỗi | 1h |
@@ -509,11 +515,11 @@ model Attestation {
 
 ## 4. Definition of Done — 10/9
 
-- [x] **DB:** 17 bảng + 12 enum, `migrate` + `seed` chạy sạch, không còn `TODO`, không phải migrate lại.
+- [x] **DB:** 17 bảng + 16 enum, `migrate` + `seed` chạy sạch, không còn `TODO`, không phải migrate lại. **Schema FROZEN 24/8.**
 - [x] **Auth:** đăng nhập bằng ví → JWT → `me` đúng user; request sai JWT bị chặn (GraphQL + Socket).
-- [ ] **Homepage:** hiển thị task từ DB, lọc + tìm + phân trang, xem chi tiết.
-- [ ] **Chat:** 2 người nhắn qua lại **trong cùng room** realtime, lịch sử lưu DB và load lại được, chặn user không liên quan.
-- [ ] **BE:** `bun run lint` + `bun run typecheck` pass, không còn `TODO` trong code BE.
+- [x] **Homepage (backend):** `issues` (filter + search + sort + cursor pagination) + `issue(id)` + `createIssue` — E2E test pass (`scripts/e2e-issue.ts`). *(UI B-4→B-6 do Hân/Trâm.)*
+- [x] **Chat:** 2 người nhắn qua lại **trong cùng room** realtime, lịch sử lưu DB và load lại được, chặn user không liên quan. (Backend hoàn tất D-1 đến D-4).
+- [x] **BE:** `bun run lint` + `bun run typecheck` pass (25/8). *(Không còn lỗi nào).*
 
 ---
 
@@ -549,9 +555,9 @@ model Attestation {
 
 ---
 
-## 7. Nhật ký thực hiện & phần việc tiếp theo (23/8)
+## 7. Nhật ký thực hiện & phần việc tiếp theo (23/8 → 24/8)
 
-> **Trạng thái hiện tại:** Foundation + C (Database) + A (Auth) đã **done và commit**. Còn B (Homepage) và D (Chat).
+> **Trạng thái hiện tại (24/8):** Foundation + **C (Database, FROZEN)** + **A (Auth)** + **B backend (Homepage)** đã **done và test E2E pass**. Còn duy nhất **D (Chat)** — tuần 3 (3/9 → 10/9). UI Homepage (B-4→B-6) do Hân/Trâm.
 
 ### 7.1 Các việc đã làm — thực hiện thế nào
 
@@ -595,11 +601,51 @@ model Attestation {
 9. **Load `.env` an toàn** — Dùng `import.meta.dir` kết hợp `fs.existsSync` trong `env.ts` để load đúng file `.env` root bất chấp CWD khi chạy script.
 10. **Pothos Zod Plugin** — Gỡ bỏ `@pothos/plugin-zod` vì thừa thãi (chỉ dùng manual validation) và gây lỗi khởi tạo `zod.looseObject`.
 
-### 7.4 Phần việc tiếp theo
+### 7.4 Phần việc tiếp theo (đặt ra ngày 23/8)
+
+| Bước | Nội dung | Est | Kết quả |
+| --- | --- | --- | --- |
+| ✅ **0. E2E login test** | Kịch bản tự động E2E test cho Auth | 1h | ✅ Pass toàn bộ |
+| ✅ **1. C-2** | Review schema + đóng băng: enum hoá `priority/source/status/prState`, `gasUsed/gasPrice` → BigInt, index `Message(issueId, createdAt)`, thống nhất `onDelete` | 1h | ✅ Xong 24/8 (tự chốt, xem §7.5) |
+| ✅ **2. B — Homepage backend** | B-1 `issues` query (filter+sort+cursor) → B-2 `issue(id)` → B-3 `createIssue` | 13h | ✅ Xong sớm 24/8 (UI B-4→B-6 do Hân/Trâm) |
+| **3. D — Chat** | D-1 socket auth → D-2 room + quyền → D-3 message handler → D-4 `messages(issueId)` → D-5 UI → D-6 test 2 user → D-7 tổng kiểm | 12h | ⏳ Tuần 3 (3/9 → 10/9) |
+
+### 7.5 Nhật ký 24/8 — Merge main + đóng băng schema + Homepage backend
+
+**1. Đồng bộ main (PR #1 #2 #3 đã merge):**
+- Pull `origin/main` vào `Khoi/backend` (fast-forward, không conflict — do 3 nhánh sửa vùng file khác nhau; giải thích chi tiết: Git chỉ bắt conflict khi 2 nhánh cùng sửa cùng dòng).
+- Hiếu thêm `apps/web/src/app/api/graphql/route.ts` (App Router) + `directUrl` cho Supabase.
+- **Fix trùng lặp `/api/graphql`:** bỏ GraphQL khỏi custom `server.ts` (giờ chỉ lo Socket.io), App Router route.ts chịu trách nhiệm serve GraphQL cho cả dev lẫn prod.
+- **Fix bug nghiêm trọng context:** `createContext` viết cho Node `IncomingMessage` sẽ crash ở chế độ Web Fetch API của App Router (Yoga v5 truyền `{ request: Request }`, không có `req/res`). Đã đổi sang `request.headers.get("authorization")` + bỏ `req/res` khỏi `GraphQLContext`.
+- Thêm `DIRECT_URL` vào `.env`/`.env.example` (port 5433 local khớp docker; Supabase dùng pooler 5432).
+- Commit: `c3cf027 fix: resolve GraphQL routing conflicts and config drift`.
+
+**2. C-2 — Đóng băng schema (tự chốt, không đợi):**
+- Thêm 4 enum: `TestCasePriority`, `TestCaseSource`, `PRState`, `AILogStatus` (16 enum tổng).
+- `Transaction.gasUsed`/`gasPrice` `String?` → `BigInt?`.
+- `Message` đổi `@@index([issueId])` → `@@index([issueId, createdAt])` (composite phục vụ load lịch sử chat đúng thứ tự).
+- Thống nhất `onDelete: Cascade`: thêm cho `Dispute.issue`, `Dispute.escrow`, `Transaction.escrow` (Issue subtree cascade hoàn chỉnh; User relations để Restrict vì user soft-ban không hard-delete).
+- Tái tạo migration init duy nhất `20260824120000_init` (via `prisma migrate diff --from-empty`), reset + seed lại Supabase, `prisma validate` + `generate` pass.
+
+**3. B — Homepage backend (xong sớm so với kế hoạch tuần 2):**
+- File mới `apps/web/src/graphql/modules/issue/issue.module.ts`:
+  - **B-1** `issues(first, after, category, status, bountyMin/Max, skill, search, sortBy, sortOrder)` → `IssueConnection { edges { node, cursor }, pageInfo, totalCount }`. Cursor = base64(issue.id), orderBy luôn kèm `{ id: "asc" }` tiebreaker cho phân trang ổn định với mọi sort.
+  - **B-2** `issue(id)`: chi tiết + `token` + `client` + `developer` + `applicationCount`; tự tăng `viewCount`; draft chỉ hiện với chủ task; không tồn tại → null.
+  - **B-3** `createIssue(input)`: `requireAuth` → Zod validate → check `Token.isActive` → insert (status OPEN, publishedAt now). `bountyAmount` expose GraphQL `Float` (Decimal → toNumber).
+  - `Token` object + `User` ref tái sử dụng; relations include 1 query duy nhất (không N+1).
+- File mới `apps/web/src/graphql/errors.ts`: `gqlError(message, code, details)` + `parseOrThrow(schema, data)` — throw `GraphQLError` với `extensions.code` (`UNAUTHORIZED`/`FORBIDDEN`/`BAD_USER_INPUT`/`INVALID_TOKEN`) thay vì plain Error (Yoga mask plain Error thành "Unexpected error.", FE không phân loại được).
+- Đổi tên input type: `MutationCreateIssueInput` → `CreateIssueInput`, `MutationUpdateProfileInput` → `UpdateProfileInput` (option `typeOptions.name` của with-input plugin).
+- Shared: thêm `ISSUE_STATUSES`, `ISSUE_SORT_BY` constants (FE filter dùng chung).
+- E2E test mới `apps/web/scripts/e2e-issue.ts` — 10 nhóm assertion: auth chặn, BAD_USER_INPUT, INVALID_TOKEN, tạo OK, viewCount tăng, filter/search/sort, cursor pagination 2 trang, cleanup. **Pass toàn bộ.**
+
+**4. Kiểm tra tổng:** `typecheck` + `lint` pass; E2E login (9/9) + E2E issue (10/10) pass; `migrate status` = 1 migration, schema up to date.
+
+### 7.6 Phần việc tiếp theo (từ 24/8)
 
 | Bước | Nội dung | Est |
 | --- | --- | --- |
-| ✅ **0. E2E login test** | Đã hoàn thành kịch bản tự động E2E test cho Auth (pass toàn bộ) | 1h |
-| **1. C-2** | Review schema cùng Hiếu + đóng băng: enum hoá `priority/status/prState`, `gasUsed/gasPrice` → BigInt/Decimal, index `Message(issueId, createdAt)`, thống nhất `onDelete` | 1h |
-| **2. B — Homepage** | B-1 `issues` query (filter+sort+cursor) → B-2 `issue(id)` → B-3 `createIssue`; UI B-4→B-6 do Hân/Trâm | 13h |
-| **3. D — Chat** | D-1 socket auth → D-2 room + quyền → D-3 message handler → D-4 `messages(issueId)` → D-5 UI → D-6 test 2 user → D-7 tổng kiểm | 12h |
+| **1. D — Chat (tuần 3)** | D-1/D-4 Backend Chat đã hoàn tất (25/8) → D-5 UI (Hân/Trâm) → D-6 test 2 user realtime → D-7 tổng kiểm | 12h |
+| **2. Nếu còn thời gian** | `updateIssue`/`cancelIssue` mutation; `tokens` query (FE cần dropdown chọn token khi tạo task); hỗ trợ FE Hân/Trâm tích hợp GraphQL | 3h |
+| **3. Sau 10/9** | Application flow, Escrow + EIP-712, AI Guard/ModelRouter, GitHub OAuth, Attestation | — |
+
+> **Lưu ý cho team FE (Hân/Trâm):** endpoint `POST /api/graphql` (đã có GraphiQL ở `/api/graphql` khi dev). Query mẫu xem trong `scripts/e2e-issue.ts`. Lỗi trả về có `extensions.code` — xử lý theo code (`UNAUTHORIZED` → redirect login, `BAD_USER_INPUT` → hiển thị lỗi field).

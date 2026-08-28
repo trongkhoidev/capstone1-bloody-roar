@@ -113,7 +113,21 @@ Name            Signature       Date
 11. [Ngân sách và nguồn lực](#11-ngân-sách-và-nguồn-lực)
 12. [Ràng buộc dự án](#12-ràng-buộc-dự-án)
 13. [Kết luận](#13-kết-luận)
-14. [Tài liệu tham khảo](#14-tài-liệu-tham-khảo)
+14. [Tài liệu tham khảo](#14-tài-liệu-tham-khảo)Msg 1785, Level 16, State 0, Line 1265
+Introducing FOREIGN KEY constraint 'FK_attachments_messages' on table 'attachments' may cause cycles or multiple cascade paths. Specify ON DELETE NO ACTION or ON UPDATE NO ACTION, or modify other FOREIGN KEY constraints.
+Msg 1750, Level 16, State 1, Line 1265
+Could not create constraint or index. See previous errors.
+Msg 1785, Level 16, State 0, Line 1292
+Introducing FOREIGN KEY constraint 'FK_disputes_escrows' on table 'disputes' may cause cycles or multiple cascade paths. Specify ON DELETE NO ACTION or ON UPDATE NO ACTION, or modify other FOREIGN KEY constraints.
+Msg 1750, Level 16, State 1, Line 1292
+Could not create constraint or index. See previous errors.
+
+(27 rows affected)
+
+(1 row affected)
+==============================================
+BloodyRoar SQL Server schema created!
+Expected tables: 17
 15. [Phụ lục: MÔ TẢ YÊU CẦU SẢN PHẨM](#15-phụ-lục-mô-tả-yêu-cầu-sản-phẩm)
     - 15.1 [Mô tả ngắn ý tưởng sản phẩm](#151-mô-tả-ngắn-ý-tưởng-sản-phẩm)
     - 15.2 [Yêu cầu](#152-yêu-cầu)

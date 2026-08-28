@@ -22,6 +22,22 @@ async function gql(query: string, token?: string) {
   return res.json();
 }
 
+async function gqlRaw<T = any>(
+  query: string,
+  token?: string,
+  variables?: Record<string, unknown>
+): Promise<T> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  
+  const res = await fetch(`${base}/api/graphql`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ query, ...(variables ? { variables } : {}) })
+  });
+  return res.json();
+}
+
 async function run() {
   console.log("🩸 Starting E2E Login Test...");
   const wallet = new PrivateKeyWallet(TEST_CLIENT_KEY);
@@ -62,6 +78,22 @@ async function run() {
   const meRes = await gql("me", token);
   assert(meRes.data?.me?.walletAddress, "Failed to fetch me with JWT");
   assert.strictEqual(meRes.data.me.walletAddress.toLowerCase(), walletAddress.toLowerCase(), "Wallet address mismatch in me response");
+
+  // 4b. Test updateProfile
+  console.log("4b. Testing updateProfile...");
+  const updateRes = await gqlRaw(`
+    mutation($input: UpdateProfileInput!) {
+      updateProfile(input: $input) { name }
+    }
+  `, token, { input: { name: "E2E Updated" } });
+  assert.strictEqual(updateRes.data?.updateProfile?.name, "E2E Updated", "updateProfile failed");
+
+  const updateNoAuth = await gqlRaw(`
+    mutation($input: UpdateProfileInput!) {
+      updateProfile(input: $input) { name }
+    }
+  `, undefined, { input: { name: "Hacked" } });
+  assert.strictEqual(updateNoAuth.errors?.[0]?.extensions?.code, "UNAUTHORIZED", "updateProfile should be UNAUTHORIZED without token");
 
   // 5. replay -> 401
   console.log("5. Replaying login payload (should fail)...");

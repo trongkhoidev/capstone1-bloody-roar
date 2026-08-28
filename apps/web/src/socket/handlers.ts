@@ -12,6 +12,9 @@ import type {
 } from "@bloody-roar/shared";
 import { createLogger } from "../lib/logger";
 import { verifyJWT } from "../lib/auth";
+import { prisma } from "@bloody-roar/database";
+import { canAccessIssue } from "../lib/access";
+import { z } from "zod";
 
 const log = createLogger("socket.io");
 
@@ -35,8 +38,7 @@ export function registerSocketHandlers(
       if (!user) return next(new Error("Unauthorized"));
       socket.data.user = user;
     } else {
-      // Allow unauthenticated connections in dev (Sprint 0)
-      log.debug({ socketId: socket.id }, "Anonymous socket connection");
+      return next(new Error("Unauthorized"));
     }
 
     next();
@@ -51,16 +53,24 @@ export function registerSocketHandlers(
     // -------------------------------------------------------------------
     // Room Management — join/leave task chat rooms
     // -------------------------------------------------------------------
-    socket.on("task:join", (issueId: string) => {
+    socket.on("task:join", async (issueId: string, callback) => {
+      const user = socket.data.user;
+      if (!user) return callback?.("Unauthorized");
+      
+      const hasAccess = await canAccessIssue(prisma, issueId, user.id);
+      if (!hasAccess) return callback?.("Forbidden");
+
       const roomName = `task:${issueId}`;
       void socket.join(roomName);
       log.debug({ socketId: socket.id, roomName }, "Joined task room");
+      callback?.();
     });
 
-    socket.on("task:leave", (issueId: string) => {
+    socket.on("task:leave", (issueId: string, callback) => {
       const roomName = `task:${issueId}`;
       void socket.leave(roomName);
       log.debug({ socketId: socket.id, roomName }, "Left task room");
+      callback?.();
     });
 
     // -------------------------------------------------------------------
@@ -71,32 +81,113 @@ export function registerSocketHandlers(
       try {
         log.debug({ issueId: data.issueId, type: data.type }, "Incoming message");
 
-        // TODO Sprint 1: Save message to DB via Prisma
-        // const message = await prisma.message.create({ data: { ... } });
+        const user = socket.data.user;
+        if (!user) return callback?.("Unauthorized");
 
-        // TODO Sprint 2: Run AI Guard scan before broadcasting
-        // const guardResult = await aiGuard.scan(data.content);
-        // if (guardResult.wasModified) { ... }
+        const parsed = z.object({
+          content: z.string().min(1).max(4000),
+          type: z.enum(["TEXT", "FILE"]),
+          issueId: z.string().min(1),
+          clientMessageId: z.string().optional(),
+          replyToId: z.string().optional(),
+          fileUrl: z.string().optional(),
+          fileName: z.string().optional(),
+          fileSize: z.number().optional(),
+          fileMime: z.string().optional(),
+        }).safeParse(data);
 
-        // Broadcast to all users in the task room
-        const roomName = `task:${data.issueId}`;
-        io.to(roomName).emit("message:new", {
-          id: crypto.randomUUID(),
-          content: data.content,
-          type: data.type,
-          senderId: socket.data.user?.id || "anonymous",
-          senderName: socket.data.user?.name || "Anonymous",
-          issueId: data.issueId,
-          wasModified: false,
-          ...(data.fileUrl ? { fileUrl: data.fileUrl } : {}),
-          ...(data.fileName ? { fileName: data.fileName } : {}),
-          createdAt: new Date().toISOString(),
+        if (!parsed.success) {
+          return callback?.("Invalid message format");
+        }
+
+        const {
+          content,
+          type,
+          issueId,
+          clientMessageId,
+          replyToId,
+          fileUrl,
+          fileName,
+          fileSize,
+          fileMime
+        } = parsed.data;
+
+        const hasAccess = await canAccessIssue(prisma, issueId, user.id);
+        if (!hasAccess) return callback?.("Forbidden");
+
+        // Idempotency check
+        // Note: clientMessageId only has an @@index, not @unique, so there is a minor race condition 
+        // if two concurrent requests share the same id, but it is acceptable here.
+        if (clientMessageId) {
+          const existing = await prisma.message.findFirst({
+            where: { clientMessageId, senderId: user.id },
+            include: { attachments: true }
+          });
+          if (existing) {
+            const roomName = `task:${issueId}`;
+            io.to(roomName).emit("message:new", {
+              id: existing.id,
+              content: existing.content,
+              type: existing.type as "TEXT" | "FILE",
+              senderId: user.id,
+              senderName: user.name || "Anonymous",
+              senderAvatar: user.avatar || undefined,
+              issueId: existing.issueId,
+              wasModified: existing.wasModified,
+              ...(existing.attachments?.[0]?.fileUrl ? { fileUrl: existing.attachments[0].fileUrl } : {}),
+              ...(existing.attachments?.[0]?.fileName ? { fileName: existing.attachments[0].fileName } : {}),
+              ...(existing.replyToId ? { replyToId: existing.replyToId } : {}),
+              createdAt: existing.createdAt.toISOString(),
+            });
+            callback?.(); // Already processed
+            return;
+          }
+        }
+
+        const message = await prisma.message.create({
+          data: {
+            content,
+            type,
+            issueId,
+            senderId: user.id,
+            clientMessageId: clientMessageId || null,
+            replyToId: replyToId || null,
+          }
         });
 
-        callback(); // No error
+        if (type === "FILE" && fileUrl && fileName && fileSize && fileMime) {
+          await prisma.attachment.create({
+            data: {
+              messageId: message.id,
+              uploaderId: user.id,
+              fileName,
+              fileUrl,
+              fileSize,
+              fileMime,
+            }
+          });
+        }
+
+        const roomName = `task:${issueId}`;
+        io.to(roomName).emit("message:new", {
+          id: message.id,
+          content: message.content,
+          type: message.type as "TEXT" | "FILE",
+          senderId: user.id,
+          senderName: user.name || "Anonymous",
+          senderAvatar: user.avatar || undefined,
+          issueId: message.issueId,
+          wasModified: message.wasModified,
+          ...(fileUrl ? { fileUrl } : {}),
+          ...(fileName ? { fileName } : {}),
+          ...(message.replyToId ? { replyToId: message.replyToId } : {}),
+          createdAt: message.createdAt.toISOString(),
+        });
+
+        callback?.();
       } catch (error) {
         log.error({ error }, "Failed to process message");
-        callback("Failed to send message");
+        callback?.("Failed to send message");
       }
     });
 

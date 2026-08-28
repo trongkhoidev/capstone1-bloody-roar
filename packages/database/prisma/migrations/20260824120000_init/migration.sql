@@ -34,6 +34,18 @@ CREATE TYPE "SubmissionStatus" AS ENUM ('SUBMITTED', 'UNDER_REVIEW', 'APPROVED',
 -- CreateEnum
 CREATE TYPE "AttestationType" AS ENUM ('COMPLETION', 'SKILL', 'CERTIFICATION');
 
+-- CreateEnum
+CREATE TYPE "TestCasePriority" AS ENUM ('CRITICAL', 'NORMAL', 'LOW');
+
+-- CreateEnum
+CREATE TYPE "TestCaseSource" AS ENUM ('AI', 'MANUAL');
+
+-- CreateEnum
+CREATE TYPE "PRState" AS ENUM ('OPEN', 'MERGED', 'CLOSED');
+
+-- CreateEnum
+CREATE TYPE "AILogStatus" AS ENUM ('SUCCESS', 'ERROR', 'FALLBACK');
+
 -- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
@@ -176,8 +188,8 @@ CREATE TABLE "transactions" (
     "from" TEXT,
     "to" TEXT,
     "blockNumber" INTEGER,
-    "gasUsed" TEXT,
-    "gasPrice" TEXT,
+    "gasUsed" BIGINT,
+    "gasPrice" BIGINT,
     "chainId" INTEGER NOT NULL,
     "escrowId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -256,8 +268,8 @@ CREATE TABLE "test_cases" (
     "when" TEXT NOT NULL,
     "then" TEXT NOT NULL,
     "isEdgeCase" BOOLEAN NOT NULL DEFAULT false,
-    "priority" TEXT NOT NULL DEFAULT 'normal',
-    "source" TEXT,
+    "priority" "TestCasePriority" NOT NULL DEFAULT 'NORMAL',
+    "source" "TestCaseSource",
     "isApproved" BOOLEAN NOT NULL DEFAULT false,
     "clientNotes" TEXT,
     "issueId" TEXT NOT NULL,
@@ -275,7 +287,7 @@ CREATE TABLE "submissions" (
     "description" TEXT,
     "pullRequestUrl" TEXT,
     "prNumber" INTEGER,
-    "prState" TEXT,
+    "prState" "PRState",
     "commitSha" TEXT,
     "status" "SubmissionStatus" NOT NULL DEFAULT 'SUBMITTED',
     "submittedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -331,7 +343,7 @@ CREATE TABLE "ai_logs" (
     "costUsd" DECIMAL(65,30),
     "inputHash" TEXT,
     "outputHash" TEXT,
-    "status" TEXT NOT NULL DEFAULT 'success',
+    "status" "AILogStatus" NOT NULL DEFAULT 'SUCCESS',
     "errorMessage" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -449,7 +461,7 @@ CREATE INDEX "transactions_escrowId_idx" ON "transactions"("escrowId");
 CREATE INDEX "transactions_txHash_idx" ON "transactions"("txHash");
 
 -- CreateIndex
-CREATE INDEX "messages_issueId_idx" ON "messages"("issueId");
+CREATE INDEX "messages_issueId_createdAt_idx" ON "messages"("issueId", "createdAt");
 
 -- CreateIndex
 CREATE INDEX "messages_senderId_idx" ON "messages"("senderId");
@@ -551,7 +563,7 @@ ALTER TABLE "escrows" ADD CONSTRAINT "escrows_clientId_fkey" FOREIGN KEY ("clien
 ALTER TABLE "escrows" ADD CONSTRAINT "escrows_developerId_fkey" FOREIGN KEY ("developerId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "transactions" ADD CONSTRAINT "transactions_escrowId_fkey" FOREIGN KEY ("escrowId") REFERENCES "escrows"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "transactions" ADD CONSTRAINT "transactions_escrowId_fkey" FOREIGN KEY ("escrowId") REFERENCES "escrows"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "messages" ADD CONSTRAINT "messages_issueId_fkey" FOREIGN KEY ("issueId") REFERENCES "issues"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -569,10 +581,10 @@ ALTER TABLE "attachments" ADD CONSTRAINT "attachments_messageId_fkey" FOREIGN KE
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_uploaderId_fkey" FOREIGN KEY ("uploaderId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "disputes" ADD CONSTRAINT "disputes_issueId_fkey" FOREIGN KEY ("issueId") REFERENCES "issues"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "disputes" ADD CONSTRAINT "disputes_issueId_fkey" FOREIGN KEY ("issueId") REFERENCES "issues"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "disputes" ADD CONSTRAINT "disputes_escrowId_fkey" FOREIGN KEY ("escrowId") REFERENCES "escrows"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "disputes" ADD CONSTRAINT "disputes_escrowId_fkey" FOREIGN KEY ("escrowId") REFERENCES "escrows"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "disputes" ADD CONSTRAINT "disputes_raisedById_fkey" FOREIGN KEY ("raisedById") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -603,3 +615,4 @@ ALTER TABLE "attestations" ADD CONSTRAINT "attestations_developerId_fkey" FOREIG
 
 -- AddForeignKey
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+

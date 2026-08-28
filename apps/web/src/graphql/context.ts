@@ -2,26 +2,24 @@
 // GraphQL context factory — injected into every resolver
 // Contains: database client, authenticated user, socket.io instance
 
-import type { IncomingMessage, ServerResponse } from "node:http";
 import { prisma, type User } from "@bloody-roar/database";
 import { createLogger } from "../lib/logger";
 import { verifyJWT } from "../lib/auth";
+import { gqlError } from "./errors";
 
 const log = createLogger("graphql-context");
 
 export interface GraphQLContext {
   db: typeof prisma;
   user: User | null; // null = unauthenticated
-  req: IncomingMessage;
-  res: ServerResponse;
 }
 
 /**
  * Extract JWT token from request headers
  * Supports: Authorization: Bearer <token>
  */
-function extractToken(req: IncomingMessage): string | null {
-  const authHeader = req.headers.authorization;
+function extractToken(request: Request): string | null {
+  const authHeader = request.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) return null;
   return authHeader.slice(7);
 }
@@ -37,10 +35,10 @@ async function verifyToken(token: string): Promise<User | null> {
  * GraphQL context factory — called on every request
  */
 export async function createContext(
-  initialContext: { req: IncomingMessage; res: ServerResponse }
+  initialContext: { request: Request }
 ): Promise<GraphQLContext> {
-  const { req, res } = initialContext;
-  const token = extractToken(req);
+  const { request } = initialContext;
+  const token = extractToken(request);
   const user = token ? await verifyToken(token) : null;
 
   if (user) {
@@ -50,8 +48,6 @@ export async function createContext(
   return {
     db: prisma,
     user,
-    req,
-    res,
   };
 }
 
@@ -61,7 +57,7 @@ export async function createContext(
  */
 export function requireAuth(ctx: GraphQLContext): User {
   if (!ctx.user) {
-    throw new Error("UNAUTHORIZED: Authentication required");
+    throw gqlError("Authentication required", "UNAUTHORIZED");
   }
   return ctx.user;
 }
@@ -72,7 +68,7 @@ export function requireAuth(ctx: GraphQLContext): User {
 export function requireAdmin(ctx: GraphQLContext): User {
   const user = requireAuth(ctx);
   if (user.role !== "ADMIN") {
-    throw new Error("FORBIDDEN: Admin access required");
+    throw gqlError("Admin access required", "FORBIDDEN");
   }
   return user;
 }

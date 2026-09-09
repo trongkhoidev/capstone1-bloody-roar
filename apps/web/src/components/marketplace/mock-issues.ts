@@ -1,0 +1,123 @@
+// apps/web/src/components/marketplace/mock-issues.ts
+// Realistic mock bounty issues for development, testing, and fallback
+// Trâm (UI/UX Designer & Test Engineer)
+
+import { IssueItem } from "./issue-card";
+
+export const MOCK_ISSUES: IssueItem[] = [
+  {
+    id: "iss-1",
+    title: "[Bảo Mật] Kiểm toán & Vá lỗi Reentrancy trong Escrow mutualCancel",
+    description:
+      "Phát hiện nguy cơ reentrancy trong hàm mutualCancel khi người dùng yêu cầu rút tiền cọc. Cần bổ sung modifier nonReentrant, tuân thủ Checks-Effects-Interactions pattern và viết 5 unit test kiểm chứng bằng Hardhat.",
+    category: "SECURITY",
+    status: "OPEN",
+    bountyAmount: 750,
+    token: { symbol: "USDT", name: "Tether USD" },
+    requiredSkills: ["solidity", "security-audit", "hardhat", "reentrancy"],
+    difficulty: "EXPERT",
+    timeEstimate: "2 ngày",
+    viewCount: 342,
+    applicationCount: 4,
+    createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+    client: {
+      id: "cl-1",
+      name: "Satoshi_Labs",
+      walletAddress: "0x8a90CAB1c62ada3699546a3daEEf0C55F7A2600E",
+      reputationScore: 185,
+      isGithubVerified: true,
+    },
+  },
+  {
+    id: "iss-2",
+    title: "Tối ưu hóa GraphQL Yoga Resolver với DataLoader chống N+1 Query",
+    description:
+      "Query danh sách Issue và Application đang bị nghẽn do N+1 database queries khi load thông tin Client và Token. Cần triển khai Pothos dataloader plugin hoặc custom batch loader cho Prisma client.",
+    category: "BACKEND",
+    status: "OPEN",
+    bountyAmount: 400,
+    token: { symbol: "USDT", name: "Tether USD" },
+    requiredSkills: ["graphql", "typescript", "prisma", "nodejs"],
+    difficulty: "INTERMEDIATE",
+    timeEstimate: "3 ngày",
+    viewCount: 189,
+    applicationCount: 2,
+    createdAt: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
+    client: {
+      id: "cl-2",
+      name: "Alex Nguyen",
+      walletAddress: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      reputationScore: 92,
+      isGithubVerified: true,
+    },
+  },
+  {
+    id: "iss-3",
+    title: "Xây dựng Chat Realtime Sidebar bằng Socket.io + Monaco Code Preview",
+    description:
+      "Dựng khung chat tương tác trực tiếp giữa Client và Developer trong màn hình chi tiết bài toán. Tích hợp Monaco Editor preview snippet code, hỗ trợ đính kèm file và che thông tin nhạy cảm (AI Guard).",
+    category: "FRONTEND",
+    status: "OPEN",
+    bountyAmount: 600,
+    token: { symbol: "USDT", name: "Tether USD" },
+    requiredSkills: ["nextjs", "react", "socketio", "tailwind", "monaco"],
+    difficulty: "INTERMEDIATE",
+    timeEstimate: "4 ngày",
+    viewCount: 275,
+    applicationCount: 5,
+    createdAt: new Date(Date.now() - 12 * 3600 * 1000).toISOString(),
+    client: {
+      id: "cl-3",
+      name: "CyberPunk_DAO",
+      walletAddress: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      reputationScore: 210,
+      isGithubVerified: false,
+    },
+  },
+  {
+    id: "iss-4",
+    title: "Triển khai EIP-712 Typed Data Off-chain Signature Verification",
+    description:
+      "Viết hàm verifyCommitment trên Smart Contract BloodyRoarEscrow để xác thực chữ ký off-chain của Client trước khi gửi giao dịch nạp tiền ký quỹ (lazy deposit pattern).",
+    category: "SMART_CONTRACT",
+    status: "OPEN",
+    bountyAmount: 850,
+    token: { symbol: "USDT", name: "Tether USD" },
+    requiredSkills: ["solidity", "eip712", "cryptography", "base-sepolia"],
+    difficulty: "EXPERT",
+    timeEstimate: "2 ngày",
+    viewCount: 420,
+    applicationCount: 6,
+    createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+    client: {
+      id: "cl-1",
+      name: "Satoshi_Labs",
+      walletAddress: "0x8a90CAB1c62ada3699546a3daEEf0C55F7A2600E",
+      reputationScore: 185,
+      isGithubVerified: true,
+    },
+  },
+  {
+    id: "iss-5",
+    title: "Tích hợp Gemini 1.5 Flash sinh tự động Bộ Test Cases Given-When-Then",
+    description:
+      "Tạo AI Prompt pipeline nhận mô tả yêu cầu bài toán từ Client, tự động phân tích và sinh ra 5-8 test cases theo cú pháp BDD Given/When/Then, lưu vào DB và hiển thị trên giao diện review.",
+    category: "AI_ML",
+    status: "OPEN",
+    bountyAmount: 500,
+    token: { symbol: "USDT", name: "Tether USD" },
+    requiredSkills: ["ai-llm", "gemini-api", "prompt-engineering", "typescript"],
+    difficulty: "INTERMEDIATE",
+    timeEstimate: "3 ngày",
+    viewCount: 310,
+    applicationCount: 3,
+    createdAt: new Date(Date.now() - 36 * 3600 * 1000).toISOString(),
+    client: {
+      id: "cl-4",
+      name: "DevGuild_VN",
+      walletAddress: "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      reputationScore: 145,
+      isGithubVerified: true,
+    },
+  },
+];

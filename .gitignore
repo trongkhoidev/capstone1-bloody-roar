@@ -67,6 +67,12 @@ coverage/
 *.xlsx
 *.ppt
 *.pptx
+
 # Bỏ qua các file tracking cá nhân
 docs/HIEU_TASKS.md
 docs/WORKFLOW_STATUS.md
+docs/TRAM_TASKS.md
+docs/PLAN_LOGIN_HOMEPAGE.md
+docs/HAN_TASKS.md
+DOCKER_SETUP_GUIDE.md
+tanstack-react-query-5.51.21.tgz

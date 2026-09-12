@@ -3,6 +3,8 @@
 // - issues(query): filter + sort + cursor pagination
 // - issue(id): detail (client + token + applicationCount)
 // - createIssue(input): post a new bounty (auth required)
+// - updateIssue(input): update an existing bounty
+// - cancelIssue(id): cancel an open bounty
 
 import { builder } from "../../builder";
 import { requireAuth } from "../../context";
@@ -76,7 +78,7 @@ const ISSUE_INCLUDE = {
 /** Shape của 1 dòng Issue sau khi include relations */
 type IssueNode = Prisma.IssueGetPayload<{ include: typeof ISSUE_INCLUDE }>;
 
-const IssueRef = builder.prismaObject("Issue", {
+export const IssueRef = builder.prismaObject("Issue", {
   description: "Bounty task posted by a client",
   include: ISSUE_INCLUDE,
   fields: (t) => ({
@@ -228,6 +230,18 @@ const CreateIssueSchema = z.object({
     })
     .nullish(),
   githubRepo: z.string().url().max(200).nullish(),
+});
+
+// Zod Schema để validate input khi cập nhật Task (từ HEAD)
+const UpdateIssueSchema = z.object({
+  title: z.string().min(10).max(120).optional(),
+  description: z.string().min(30).max(5000).optional(),
+  category: z.enum(ISSUE_CATEGORIES).optional(),
+  bountyAmount: z.number().min(BOUNTY_MIN_AMOUNT).max(BOUNTY_MAX_AMOUNT).optional(),
+  tokenId: z.string().min(1).optional(),
+  requiredSkills: z.array(z.string().min(1).max(40)).max(10).optional(),
+  difficulty: z.enum(ISSUE_DIFFICULTY).optional(),
+  timeEstimate: z.string().max(50).optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -382,6 +396,10 @@ builder.mutationField("createIssue", (t) =>
     },
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
+      // Only Client can post issues
+      if (user.role !== "CLIENT" && user.role !== "ADMIN") {
+        throw gqlError("Chỉ có Client mới có thể đăng bounty", "FORBIDDEN");
+      }
 
       const input = parseOrThrow(CreateIssueSchema, args.input);
 
@@ -413,6 +431,117 @@ builder.mutationField("createIssue", (t) =>
           clientId: user.id,
           status: IssueStatus.OPEN,
           publishedAt: new Date(),
+        },
+        include: ISSUE_INCLUDE,
+      });
+    },
+  })
+);
+// ---------------------------------------------------------------------------
+// updateIssue: Cập nhật task (Client only)
+// ---------------------------------------------------------------------------
+
+builder.mutationField("updateIssue", (t) =>
+  t.fieldWithInput({
+    type: IssueRef,
+    description: "Cập nhật bounty hiện tại (chỉ dành cho chủ sở hữu)",
+    input: {
+      id: t.input.id({ required: true }),
+      title: t.input.string({ required: false }),
+      description: t.input.string({ required: false }),
+      category: t.input.field({ type: IssueCategoryEnum, required: false }),
+      bountyAmount: t.input.float({ required: false }),
+      tokenId: t.input.string({ required: false }),
+      requiredSkills: t.input.stringList({ required: false }),
+      difficulty: t.input.string({ required: false }),
+      timeEstimate: t.input.string({ required: false }),
+    },
+    resolve: async (_root, args, ctx) => {
+      const user = requireAuth(ctx);
+      
+      const issue = await ctx.db.issue.findUnique({
+        where: { id: String(args.input.id) },
+      });
+
+      if (!issue) throw gqlError("Issue not found", "NOT_FOUND");
+      
+      // only the task owner or admin have the right to fix
+      if (issue.clientId !== user.id && user.role !== "ADMIN") {
+        throw gqlError("You do not own this issue", "FORBIDDEN");
+      }
+      
+      //Editing is only allowed when the task is open (chưa có ai assign)
+      if (issue.status !== IssueStatus.OPEN) {
+        throw gqlError("Can only update OPEN issues", "BAD_REQUEST");
+      }
+
+      const input = parseOrThrow(UpdateIssueSchema, args.input);
+
+      // Validate token if provided
+      if (input.tokenId) {
+        const token = await ctx.db.token.findUnique({
+          where: { id: input.tokenId },
+        });
+        if (!token || !token.isActive) {
+          throw gqlError(
+            "Bounty token không tồn tại hoặc không được hỗ trợ",
+            "INVALID_TOKEN"
+          );
+        }
+      }
+
+      return ctx.db.issue.update({
+        where: { id: issue.id },
+        data: {
+          ...(input.title && { title: input.title }),
+          ...(input.description && { description: input.description }),
+          ...(input.category && { category: input.category }),
+          ...(input.bountyAmount && { bountyAmount: input.bountyAmount }),
+          ...(input.tokenId && { tokenId: input.tokenId }),
+          ...(input.requiredSkills && { requiredSkills: input.requiredSkills }),
+          ...(input.difficulty && { difficulty: input.difficulty }),
+          ...(input.timeEstimate && { timeEstimate: input.timeEstimate }),
+        },
+        include: ISSUE_INCLUDE,
+      });
+    },
+  })
+);
+
+// ---------------------------------------------------------------------------
+// cancelIssue: Hủy bỏ task (Client only)
+// ---------------------------------------------------------------------------
+
+builder.mutationField("cancelIssue", (t) =>
+  t.field({
+    type: IssueRef,
+    description: "Hủy bỏ bounty (chỉ dành cho chủ sở hữu, khi chưa có developer nhận)",
+    args: {
+      id: t.arg.id({ required: true }),
+    },
+    resolve: async (_root, args, ctx) => {
+      const user = requireAuth(ctx);
+      
+      const issue = await ctx.db.issue.findUnique({
+        where: { id: String(args.id) },
+      });
+
+      if (!issue) throw gqlError("Issue not found", "NOT_FOUND");
+      
+      //Only the task owner or Admin can cancel
+      if (issue.clientId !== user.id && user.role !== "ADMIN") {
+        throw gqlError("You do not own this issue", "FORBIDDEN");
+      }
+      
+      //Cancellation is not allowed if someone has already accepted the job
+      if (issue.status !== IssueStatus.OPEN) {
+        throw gqlError("Only OPEN issues without assigned developers can be cancelled", "BAD_REQUEST");
+      }
+
+      return ctx.db.issue.update({
+        where: { id: issue.id },
+        data: {
+          status: IssueStatus.CANCELLED,
         },
         include: ISSUE_INCLUDE,
       });

@@ -1,16 +1,18 @@
-// apps/web/src/components/ui/skeleton.tsx
-// Trâm (Test & UX) — Skeleton Loading Indicator (Zero layout shift)
+import { cn } from "@/lib/utils";
 
-import * as React from "react";
-
-export function Skeleton({
-  className = "",
+function Skeleton({
+  className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={`skeleton rounded-md bg-[hsl(var(--muted))] ${className}`}
+      className={cn(
+        "animate-pulse rounded-md bg-[hsl(var(--secondary)/0.6)]",
+        className
+      )}
       {...props}
     />
   );
 }
+
+export { Skeleton };

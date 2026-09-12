@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { Inter, Outfit, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import { Navbar } from "@/components/layout/Navbar";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -78,8 +79,11 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body className="min-h-screen bg-background font-sans antialiased">
-        <Providers>{children}</Providers>
+      <body className="min-h-screen flex flex-col bg-background font-sans antialiased">
+        <Providers>
+          <Navbar />
+          <main className="flex-1">{children}</main>
+        </Providers>
       </body>
     </html>
   );

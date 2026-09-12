@@ -396,7 +396,6 @@ builder.mutationField("createIssue", (t) =>
     },
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
-      
       // Only Client can post issues
       if (user.role !== "CLIENT" && user.role !== "ADMIN") {
         throw gqlError("Chỉ có Client mới có thể đăng bounty", "FORBIDDEN");
@@ -438,7 +437,6 @@ builder.mutationField("createIssue", (t) =>
     },
   })
 );
-
 // ---------------------------------------------------------------------------
 // updateIssue: Cập nhật task (Client only)
 // ---------------------------------------------------------------------------

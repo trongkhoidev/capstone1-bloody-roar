@@ -196,7 +196,7 @@ contract BloodyRoarEscrow is Pausable, ReentrancyGuard, Ownable, EIP712 {
         // - Transfer tokens from client to contract
         // - Store escrow state
         // - Emit Deposited event
-        revert("Not implemented — Sprint 1");
+        revert("Not implemented - Sprint 1");
     }
 
     /**
@@ -216,7 +216,7 @@ contract BloodyRoarEscrow is Pausable, ReentrancyGuard, Ownable, EIP712 {
         // - Transfer fee to feeRecipient
         // - Set state to COMPLETED
         // - Emit FundsReleased event
-        revert("Not implemented — Sprint 1");
+        revert("Not implemented - Sprint 1");
     }
 
     /**
@@ -233,7 +233,7 @@ contract BloodyRoarEscrow is Pausable, ReentrancyGuard, Ownable, EIP712 {
         // TODO Sprint 1: Implement mutual cancel logic
         // - Mark caller's approval
         // - If both approved: refund to client, set CANCELLED
-        revert("Not implemented — Sprint 1");
+        revert("Not implemented - Sprint 1");
     }
 
     /**
@@ -250,7 +250,7 @@ contract BloodyRoarEscrow is Pausable, ReentrancyGuard, Ownable, EIP712 {
         // - Require caller is developer
         // - Require 30 days elapsed since deposit
         // - Transfer funds to developer
-        revert("Not implemented — Sprint 1");
+        revert("Not implemented - Sprint 1");
     }
 
     /**
@@ -267,7 +267,7 @@ contract BloodyRoarEscrow is Pausable, ReentrancyGuard, Ownable, EIP712 {
         // TODO Sprint 1: Implement dispute raising
         // - Set state to DISPUTED
         // - Emit DisputeRaised event
-        revert("Not implemented — Sprint 1");
+        revert("Not implemented - Sprint 1");
     }
 
     /**
@@ -287,7 +287,7 @@ contract BloodyRoarEscrow is Pausable, ReentrancyGuard, Ownable, EIP712 {
         // - Set state to RESOLUTION_PROPOSED
         // - Record proposedAt timestamp
         // - Emit ResolutionProposed event
-        revert("Not implemented — Sprint 1");
+        revert("Not implemented - Sprint 1");
     }
 
     /**
@@ -304,7 +304,7 @@ contract BloodyRoarEscrow is Pausable, ReentrancyGuard, Ownable, EIP712 {
         // - Require within 24h window
         // - Set state back to DISPUTED
         // - Emit ResolutionChallenged event
-        revert("Not implemented — Sprint 1");
+        revert("Not implemented - Sprint 1");
     }
 
     /**
@@ -322,7 +322,7 @@ contract BloodyRoarEscrow is Pausable, ReentrancyGuard, Ownable, EIP712 {
         // - Split funds per clientRatio
         // - Set state to COMPLETED
         // - Emit ResolutionExecuted event
-        revert("Not implemented — Sprint 1");
+        revert("Not implemented - Sprint 1");
     }
 
     /**

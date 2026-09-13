@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "bun run --cwd apps/web dev",
+    "dev": "PORT=4000 NEXT_PUBLIC_APP_URL=http://localhost:4000 bun run --cwd apps/web dev",
     "build": "bun run --cwd apps/web build",
     "start": "bun run --cwd apps/web start",
     "lint": "bun run --cwd apps/web lint",

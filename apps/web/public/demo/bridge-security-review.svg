@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-labelledby="title desc">
+  <title id="title">Bridge security review</title>
+  <desc id="desc">Abstract blue security diagram for a cross-chain bridge review bounty.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#071526"/><stop offset="1" stop-color="#123d65"/></linearGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#44d2ff"/><stop offset="1" stop-color="#4c83ff"/></linearGradient>
+  </defs>
+  <rect width="800" height="450" rx="28" fill="url(#bg)"/>
+  <circle cx="650" cy="92" r="150" fill="#1da6d5" opacity=".12"/>
+  <circle cx="118" cy="376" r="128" fill="#4c83ff" opacity=".12"/>
+  <path d="M200 225h400" stroke="url(#line)" stroke-width="8" stroke-linecap="round"/>
+  <path d="m545 191 38 34-38 34" fill="none" stroke="#72dcff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="118" y="155" width="150" height="140" rx="24" fill="#0f2b46" stroke="#3cbce8" stroke-width="3"/>
+  <rect x="534" y="155" width="150" height="140" rx="24" fill="#0f2b46" stroke="#658cff" stroke-width="3"/>
+  <path d="M163 202h60M163 224h60M163 246h37" stroke="#8adfff" stroke-width="8" stroke-linecap="round"/>
+  <path d="M578 201h62M578 223h62M578 245h38" stroke="#a6baff" stroke-width="8" stroke-linecap="round"/>
+  <text x="400" y="365" fill="#eff8ff" font-family="Arial,sans-serif" font-size="26" font-weight="700" text-anchor="middle">CROSS-CHAIN SECURITY</text>
+  <text x="400" y="401" fill="#9eb9d2" font-family="Arial,sans-serif" font-size="17" text-anchor="middle">Replay protection · signatures · threat model</text>
+</svg>

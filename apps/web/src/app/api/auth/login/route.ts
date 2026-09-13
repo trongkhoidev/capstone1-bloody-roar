@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
-import { thirdwebAuth } from "../../../../lib/auth";
+import { AUTH_COOKIE_NAME, thirdwebAuth } from "../../../../lib/auth";
+import { authDomain, issueAuthToken, verifySiweLogin } from "../../../../lib/auth/siwe";
 import { prisma } from "@bloody-roar/database";
 import crypto from "crypto";
 import { headers } from "next/headers";
+import { createLogger } from "../../../../lib/logger";
+
+const log = createLogger("auth-login");
 
 /** Fields safe to return to the client */
 const USER_PUBLIC_SELECT = {
@@ -25,9 +29,15 @@ export async function POST(req: Request) {
     const auth = thirdwebAuth();
     const payload = await req.json();
 
-    // 1. Verify the signed login payload → returns wallet address as string
-    const walletAddress = await auth.verify(payload);
+    // Thirdweb compares recovered signer with `===` (checksum vs lowercase),
+    // which rejects valid MetaMask signatures. Verify case-insensitively.
+    const walletAddress = verifySiweLogin(payload, authDomain());
     const checksumAddress = walletAddress.toLowerCase();
+
+    const existingUser = await prisma.user.findUnique({ where: { walletAddress: checksumAddress } });
+    if (existingUser?.isBanned) {
+      return NextResponse.json({ error: "This account is suspended" }, { status: 403 });
+    }
 
     // 2. Check if this SIWE nonce has already been used (Payload Replay Protection)
     const siweNonce = payload.payload.nonce;
@@ -56,7 +66,7 @@ export async function POST(req: Request) {
     });
 
     // Generate JWT
-    const token = await auth.generate(payload);
+    const token = await issueAuthToken(walletAddress);
 
     // Parse token to extract exp
     const parsedToken = auth.parseToken(token);
@@ -87,9 +97,19 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({ token, user });
+    const response = NextResponse.json({ user });
+    response.cookies.set(AUTH_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: Math.max(1, Math.floor((expiresAt.getTime() - Date.now()) / 1000)),
+      expires: expiresAt,
+    });
+    return response;
   } catch (error) {
-    console.error("Login error:", error);
+    console.error("Wallet login verification failed with exact error:", error);
+    log.warn({ error: error instanceof Error ? error.message : String(error) }, "Wallet login verification failed");
     return NextResponse.json(
       { error: "Invalid login payload" },
       { status: 401 },

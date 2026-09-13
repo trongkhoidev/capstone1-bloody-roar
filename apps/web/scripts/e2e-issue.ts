@@ -16,15 +16,15 @@ import "../src/lib/env";
 const TEST_CLIENT_KEY =
   process.env.TEST_CLIENT_KEY ||
   "0x0000000000000000000000000000000000000000000000000000000000000001";
-const base = "http://localhost:3000";
+const base = "http://localhost:4000";
 
 async function gql<T = any>(
   query: string,
-  token?: string,
+  cookie?: string,
   variables?: Record<string, unknown>
 ): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (cookie) headers.Cookie = cookie;
   const res = await fetch(`${base}/api/graphql`, {
     method: "POST",
     headers,
@@ -46,9 +46,9 @@ async function login(): Promise<string> {
     headers: { "Content-Type": "application/json" },
   });
   assert.strictEqual(loginRes.status, 200, "Login failed");
-  const { token } = await loginRes.json();
-  assert(token, "Missing token");
-  return token;
+  const cookie = loginRes.headers.get("set-cookie")?.split(";")[0] ?? "";
+  assert(cookie.startsWith("bloody_token="), "Missing HttpOnly session cookie");
+  return cookie;
 }
 
 async function run() {
@@ -65,6 +65,16 @@ async function run() {
 
   console.log("0. Logging in...");
   const token = await login();
+  const clientAddress = (await new PrivateKeyWallet(TEST_CLIENT_KEY).getAddress()).toLowerCase();
+  const client = await prisma.user.findUnique({ where: { walletAddress: clientAddress }, select: { role: true } });
+  assert(client, "Test client account was not created");
+  const originalRole = client.role;
+  const switchedRole = await gql(
+    `mutation($input: UpdateProfileInput!) { updateProfile(input: $input) { role } }`,
+    token,
+    { input: { role: "CLIENT" } }
+  );
+  assert.strictEqual(switchedRole.data?.updateProfile?.role, "CLIENT");
 
   // -------------------------------------------------------------------
   // B-3.1 — createIssue KHÔNG auth → UNAUTHORIZED
@@ -273,6 +283,9 @@ async function run() {
   await prisma.issue.delete({ where: { id: createdId } }).catch(() => {});
   const afterCleanup = await prisma.issue.findUnique({ where: { id: createdId } });
   assert(!afterCleanup, "Test issue should be deleted");
+  await prisma.user.update({ where: { walletAddress: clientAddress }, data: { role: originalRole } });
+  await fetch(`${base}/api/auth/logout`, { method: "POST", headers: { Cookie: token } });
+  await prisma.$disconnect();
 
   console.log("\n✅ All E2E Issue Module assertions passed!");
   process.exit(0);

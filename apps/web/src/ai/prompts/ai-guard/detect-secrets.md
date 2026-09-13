@@ -1,5 +1,5 @@
 # AI Guard — System Prompt
-# Model: Groq llama-3.1-8b-instant (fast, free)
+# Model: model router (Groq GPT-OSS 20B → OpenAI-compatible fallback)
 # Trigger: Every chat message before broadcast
 # =============================================================================
 # Task: Detect and mask sensitive information in chat messages.

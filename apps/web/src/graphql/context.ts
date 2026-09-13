@@ -4,7 +4,7 @@
 
 import { prisma, type User } from "@bloody-roar/database";
 import { createLogger } from "../lib/logger";
-import { verifyJWT } from "../lib/auth";
+import { tokenFromRequest, verifyJWT } from "../lib/auth";
 import { gqlError } from "./errors";
 
 const log = createLogger("graphql-context");
@@ -18,19 +18,6 @@ export interface GraphQLContext {
  * Extract JWT token from request headers
  * Supports: Authorization: Bearer <token>
  */
-function extractToken(request: Request): string | null {
-  const authHeader = request.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) return null;
-  return authHeader.slice(7);
-}
-
-/**
- * Verify JWT and return user, or null if invalid
- */
-async function verifyToken(token: string): Promise<User | null> {
-  return verifyJWT(token);
-}
-
 /**
  * GraphQL context factory — called on every request
  */
@@ -38,8 +25,8 @@ export async function createContext(
   initialContext: { request: Request }
 ): Promise<GraphQLContext> {
   const { request } = initialContext;
-  const token = extractToken(request);
-  const user = token ? await verifyToken(token) : null;
+  const token = tokenFromRequest(request);
+  const user = token ? await verifyJWT(token) : null;
 
   if (user) {
     log.debug({ userId: user.id }, "Authenticated GraphQL request");

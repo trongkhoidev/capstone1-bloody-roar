@@ -5,19 +5,22 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuthStore } from "../../lib/store/use-auth-store";
 import { shortenAddress } from "../../lib/web3/client";
 import { ConnectModal } from "../auth/connect-modal";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
+import { useUiPreferences } from "@/lib/ui-preferences";
 
 export function UserMenu() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const { user, token, logout } = useAuthStore();
-  const isAuthenticated = Boolean(token && user);
+  const { user, logout } = useAuthStore();
+  const { t } = useUiPreferences();
+  const isAuthenticated = Boolean(user);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -40,11 +43,10 @@ export function UserMenu() {
           variant="primary"
           size="sm"
           onClick={() => setIsModalOpen(true)}
-          className="font-semibold shadow-[var(--shadow-glow)]"
+          className="font-semibold"
           data-testid="connect-wallet-btn"
         >
-          <span className="text-base leading-none">⚡</span>
-          <span>Connect Wallet</span>
+          <span>{t("connectWallet")}</span>
         </Button>
         <ConnectModal
           isOpen={isModalOpen}
@@ -64,11 +66,14 @@ export function UserMenu() {
         data-testid="user-menu-btn"
       >
         {/* Avatar */}
-        <div className="h-7 w-7 rounded-full bg-gradient-to-tr from-[hsl(var(--primary))] to-[hsl(var(--accent))] flex items-center justify-center text-xs font-bold text-white shadow-sm overflow-hidden">
+        <div className="h-7 w-7 rounded-full bg-[hsl(var(--primary))] flex items-center justify-center text-xs font-bold text-white overflow-hidden">
           {user.avatar ? (
-            <img
+            <Image
               src={user.avatar}
               alt={user.name || "User Avatar"}
+              width={28}
+              height={28}
+              unoptimized
               className="h-full w-full object-cover"
             />
           ) : (
@@ -83,7 +88,7 @@ export function UserMenu() {
           </div>
           <div className="text-[10px] text-[hsl(var(--foreground-muted))] flex items-center gap-1">
             <span className="text-[hsl(var(--warning))]">⭐</span>
-            <span>{user.reputationScore}</span>
+            <span>{user.reputationScore.toFixed(1)}/5</span>
             {user.isGithubVerified && (
               <span className="text-[hsl(var(--success))]" title="GitHub Verified">
                 ✓
@@ -112,12 +117,12 @@ export function UserMenu() {
               </Badge>
             </div>
             <div className="mt-1.5 flex items-center gap-2 text-xs">
-              <span className="text-[hsl(var(--foreground-subtle))]">Reputation:</span>
+              <span className="text-[hsl(var(--foreground-subtle))]">{t("reputation")}:</span>
               <span className="font-semibold text-[hsl(var(--foreground))]">
-                {user.reputationScore} pts
+                {user.reputationScore.toFixed(1)} / 5
               </span>
               <span className="text-[hsl(var(--foreground-subtle))]">·</span>
-              <span className="text-[hsl(var(--foreground-subtle))]">Tasks:</span>
+              <span className="text-[hsl(var(--foreground-subtle))]">{t("completedTasks")}:</span>
               <span className="font-semibold text-[hsl(var(--foreground))]">
                 {user.completedTaskCount}
               </span>
@@ -132,26 +137,27 @@ export function UserMenu() {
               className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-[hsl(var(--foreground))] hover:bg-[hsl(var(--background-secondary))] transition-colors"
             >
               <span>👤</span>
-              <span>Hồ sơ cá nhân (Profile)</span>
+              <span>{t("profile")}</span>
             </Link>
 
             <Link
-              href="/dashboard"
+              href={user.role === "ADMIN" ? "/admin" : "/dashboard"}
               onClick={() => setIsDropdownOpen(false)}
               className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-[hsl(var(--foreground))] hover:bg-[hsl(var(--background-secondary))] transition-colors"
             >
               <span>📊</span>
-              <span>Bảng công việc (Dashboard)</span>
+              <span>{user.role === "ADMIN" ? t("admin") : t("dashboard")}</span>
             </Link>
 
-            <Link
+            {user.role !== "ADMIN" && <Link
               href="/issues/create"
               onClick={() => setIsDropdownOpen(false)}
               className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-[hsl(var(--foreground))] hover:bg-[hsl(var(--background-secondary))] transition-colors"
             >
               <span>➕</span>
-              <span>Đăng bài toán mới</span>
-            </Link>
+              <span>{t("createBounty")}</span>
+            </Link>}
+            {user.role === "ADMIN" && <Link href="/admin" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-[hsl(var(--warning))] hover:bg-[hsl(var(--background-secondary))]"><span>🛡️</span><span>{t("admin")}</span></Link>}
           </div>
 
           {/* Logout */}
@@ -166,7 +172,7 @@ export function UserMenu() {
               data-testid="logout-btn"
             >
               <span>🚪</span>
-              <span>Ngắt kết nối (Disconnect)</span>
+              <span>{t("disconnect")}</span>
             </button>
           </div>
         </div>

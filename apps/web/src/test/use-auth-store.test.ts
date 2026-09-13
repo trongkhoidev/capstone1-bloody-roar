@@ -3,7 +3,8 @@
 // Trâm (Test Engineer) — Sprint 1 (S2-TST-04 / S1-AUTH-08)
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { useAuthStore, AuthUser } from "../lib/store/use-auth-store";
+import { createLoginMessage, useAuthStore } from "../lib/store/use-auth-store";
+import type { AuthUser } from "../lib/store/use-auth-store";
 
 describe("useAuthStore", () => {
   const mockUser: AuthUser = {
@@ -26,40 +27,56 @@ describe("useAuthStore", () => {
     vi.restoreAllMocks();
   });
 
+  it("formats every Thirdweb SIWE field, including Not Before and Resources", () => {
+    const message = createLoginMessage({
+      domain: "localhost:4000",
+      address: "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+      statement: "Please ensure that the domain above matches the URL of the current website.",
+      version: "1",
+      uri: "http://localhost:4000",
+      chain_id: "84532",
+      nonce: "nonce-123",
+      issued_at: "2026-09-12T00:00:00.000Z",
+      expiration_time: "2026-09-12T00:10:00.000Z",
+      invalid_before: "2026-09-11T23:50:00.000Z",
+      resources: ["https://example.test/task/1"],
+    });
+
+    expect(message).toContain("Please ensure that the domain above matches the URL of the current website.\n\nURI: http://localhost:4000");
+    expect(message).toContain("Not Before: 2026-09-11T23:50:00.000Z");
+    expect(message).toContain("Resources:\n- https://example.test/task/1");
+  });
+
   it("should initialize with default unauthenticated state", () => {
     const state = useAuthStore.getState();
     expect(state.user).toBeNull();
-    expect(state.token).toBeNull();
     expect(state.status).toBe("idle");
     expect(state.error).toBeNull();
   });
 
   it("should set authenticated state upon calling setAuth", () => {
-    useAuthStore.getState().setAuth("mock-jwt-token-xyz", mockUser);
+    useAuthStore.getState().setAuth(mockUser);
 
     const state = useAuthStore.getState();
-    expect(state.token).toBe("mock-jwt-token-xyz");
     expect(state.user).toEqual(mockUser);
     expect(state.status).toBe("authenticated");
     expect(state.error).toBeNull();
   });
 
-  it("should clear user, token, and status on logout", () => {
-    useAuthStore.getState().setAuth("mock-jwt-token-xyz", mockUser);
-    expect(useAuthStore.getState().token).toBe("mock-jwt-token-xyz");
+  it("should clear user and status on logout", () => {
+    useAuthStore.getState().setAuth(mockUser);
 
     useAuthStore.getState().logout();
 
     const state = useAuthStore.getState();
     expect(state.user).toBeNull();
-    expect(state.token).toBeNull();
     expect(state.status).toBe("idle");
   });
 
   it("should handle successful SIWE loginWithSignature flow", async () => {
     // 1. Mock fetch for nonce & login
     const mockPayload = {
-      domain: "localhost:3000",
+      domain: "localhost:4000",
       address: "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
       nonce: "mock-nonce-123",
       issued_at: new Date().toISOString(),
@@ -79,7 +96,6 @@ describe("useAuthStore", () => {
           status: 200,
           json: () =>
             Promise.resolve({
-              token: "verified-jwt-token",
               user: mockUser,
             }),
         });
@@ -97,7 +113,6 @@ describe("useAuthStore", () => {
     expect(mockSigner).toHaveBeenCalled();
     const state = useAuthStore.getState();
     expect(state.status).toBe("authenticated");
-    expect(state.token).toBe("verified-jwt-token");
     expect(state.user?.walletAddress).toBe(mockUser.walletAddress);
   });
 
@@ -122,6 +137,5 @@ describe("useAuthStore", () => {
     const state = useAuthStore.getState();
     expect(state.status).toBe("error");
     expect(state.error).toContain("từ chối ký");
-    expect(state.token).toBeNull();
   });
 });

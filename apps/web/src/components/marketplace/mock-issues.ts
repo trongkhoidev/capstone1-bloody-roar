@@ -2,7 +2,7 @@
 // Realistic mock bounty issues for development, testing, and fallback
 // Trâm (UI/UX Designer & Test Engineer)
 
-import { IssueItem } from "./issue-card";
+import type { IssueItem } from "./issue-card";
 
 export const MOCK_ISSUES: IssueItem[] = [
   {
@@ -10,7 +10,7 @@ export const MOCK_ISSUES: IssueItem[] = [
     title: "[Bảo Mật] Kiểm toán & Vá lỗi Reentrancy trong Escrow mutualCancel",
     description:
       "Phát hiện nguy cơ reentrancy trong hàm mutualCancel khi người dùng yêu cầu rút tiền cọc. Cần bổ sung modifier nonReentrant, tuân thủ Checks-Effects-Interactions pattern và viết 5 unit test kiểm chứng bằng Hardhat.",
-    category: "SECURITY",
+    category: "AUDIT",
     status: "OPEN",
     bountyAmount: 750,
     token: { symbol: "USDT", name: "Tether USD" },
@@ -33,7 +33,7 @@ export const MOCK_ISSUES: IssueItem[] = [
     title: "Tối ưu hóa GraphQL Yoga Resolver với DataLoader chống N+1 Query",
     description:
       "Query danh sách Issue và Application đang bị nghẽn do N+1 database queries khi load thông tin Client và Token. Cần triển khai Pothos dataloader plugin hoặc custom batch loader cho Prisma client.",
-    category: "BACKEND",
+    category: "BUG_FIX",
     status: "OPEN",
     bountyAmount: 400,
     token: { symbol: "USDT", name: "Tether USD" },
@@ -56,7 +56,7 @@ export const MOCK_ISSUES: IssueItem[] = [
     title: "Xây dựng Chat Realtime Sidebar bằng Socket.io + Monaco Code Preview",
     description:
       "Dựng khung chat tương tác trực tiếp giữa Client và Developer trong màn hình chi tiết bài toán. Tích hợp Monaco Editor preview snippet code, hỗ trợ đính kèm file và che thông tin nhạy cảm (AI Guard).",
-    category: "FRONTEND",
+    category: "FEATURE",
     status: "OPEN",
     bountyAmount: 600,
     token: { symbol: "USDT", name: "Tether USD" },
@@ -102,7 +102,7 @@ export const MOCK_ISSUES: IssueItem[] = [
     title: "Tích hợp Gemini 1.5 Flash sinh tự động Bộ Test Cases Given-When-Then",
     description:
       "Tạo AI Prompt pipeline nhận mô tả yêu cầu bài toán từ Client, tự động phân tích và sinh ra 5-8 test cases theo cú pháp BDD Given/When/Then, lưu vào DB và hiển thị trên giao diện review.",
-    category: "AI_ML",
+    category: "DATA_SCIENCE",
     status: "OPEN",
     bountyAmount: 500,
     token: { symbol: "USDT", name: "Tether USD" },
@@ -125,7 +125,7 @@ export const MOCK_ISSUES: IssueItem[] = [
     title: "Xây dựng Dashboard Quản lý Bounty dành cho Client (My Tasks Overview)",
     description:
       "Thiết kế và triển khai trang /dashboard/client hiển thị danh sách task đã đăng, trạng thái ký quỹ Escrow, số đơn ứng tuyển, và hành động nhanh (chọn Developer, release bounty). Dùng TanStack Table để render bảng dữ liệu phân trang.",
-    category: "FRONTEND",
+    category: "FEATURE",
     status: "IN_PROGRESS",
     bountyAmount: 0.35,
     token: { symbol: "ETH", name: "Ethereum" },
@@ -148,7 +148,7 @@ export const MOCK_ISSUES: IssueItem[] = [
     title: "Thiết lập CI/CD Pipeline với GitHub Actions: Lint, Test & Deploy Preview",
     description:
       "Cấu hình workflow GitHub Actions tự động chạy bun run lint, bun run typecheck và bun run test trên mọi PR. Tích hợp Vercel Preview Deployment cho nhánh feature và Slack notification khi build thất bại.",
-    category: "BACKEND",
+    category: "DEVOPS",
     status: "COMPLETED",
     bountyAmount: 250,
     token: { symbol: "USDC", name: "USD Coin" },
@@ -171,7 +171,7 @@ export const MOCK_ISSUES: IssueItem[] = [
     title: "Phân tích & Phát hiện Wallet Drainer Pattern bằng Machine Learning",
     description:
       "Xây dựng mô hình phân loại giao dịch on-chain nghi ngờ sử dụng scikit-learn + Python, tích hợp API endpoint FastAPI để frontend gọi kiểm tra địa chỉ ví trước khi ký giao dịch. Độ chính xác tối thiểu 90% trên test set Ethereum Mainnet.",
-    category: "AI_ML",
+    category: "DATA_SCIENCE",
     status: "OPEN",
     bountyAmount: 1200,
     token: { symbol: "USDC", name: "USD Coin" },
@@ -217,7 +217,7 @@ export const MOCK_ISSUES: IssueItem[] = [
     title: "Tối ưu Performance Trang Marketplace: Code Splitting, Image Lazy Load & LCP < 2s",
     description:
       "Phân tích Lighthouse report hiện tại (LCP ~4.2s, TTI ~5.8s) và áp dụng các kỹ thuật tối ưu: dynamic import cho heavy components, next/image với blur placeholder, font subsetting, và preloading critical CSS. Mục tiêu đạt Lighthouse Performance score ≥ 90.",
-    category: "FRONTEND",
+    category: "UI_UX",
     status: "OPEN",
     bountyAmount: 300,
     token: { symbol: "USDC", name: "USD Coin" },

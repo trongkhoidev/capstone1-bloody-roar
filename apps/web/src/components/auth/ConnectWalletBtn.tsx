@@ -25,7 +25,7 @@ import Link from "next/link";
 import { LogOut, User, ListTodo, AlertTriangle, Loader2, Copy, Check } from "lucide-react";
 import { useState } from "react";
 
-const TARGET_CHAIN_ID = 11155111; // Sepolia
+const TARGET_CHAIN_ID = 84532; // Base Sepolia
 
 export function ConnectWalletBtn() {
   const address = useAddress();
@@ -80,17 +80,17 @@ export function ConnectWalletBtn() {
         className="h-10 gap-2 bg-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.9)] text-white shadow-md transition-all animate-pulse"
       >
         <AlertTriangle className="h-4 w-4" />
-        <span className="text-xs font-semibold">Switch to Sepolia</span>
+        <span className="text-xs font-semibold">Switch to Base Sepolia</span>
       </Button>
     );
   }
 
-  // 4. Trạng thái Đã kết nối & Đúng mạng Sepolia
+  // 4. Trạng thái Đã kết nối & Đúng mạng Base Sepolia
   const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
 
   const copyAddress = () => {
     if (address) {
-      navigator.clipboard.writeText(address);
+      void navigator.clipboard.writeText(address).catch(() => undefined);
       setHasCopied(true);
       setTimeout(() => setHasCopied(false), 2000);
     }
@@ -104,7 +104,7 @@ export function ConnectWalletBtn() {
         className="hidden sm:inline-flex items-center gap-1.5 border-[hsl(var(--border))] bg-[hsl(var(--card))] px-2.5 py-1 text-xs text-[hsl(var(--foreground-muted))]"
       >
         <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-        {chain?.name || "Sepolia"}
+        {chain?.name || "Base Sepolia"}
       </Badge>
 
       {/* User Dropdown */}

@@ -13,12 +13,15 @@ const badgeVariants = cva(
           "border-transparent bg-[hsl(var(--secondary))] text-[hsl(var(--secondary-foreground))]",
         destructive:
           "border-transparent bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))] shadow",
+        danger:
+          "border-transparent bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))] shadow",
         outline: "text-[hsl(var(--foreground))] border-[hsl(var(--border))]",
         success:
           "border-transparent bg-[hsl(var(--success)/0.15)] text-[hsl(var(--success))] border-[hsl(var(--success)/0.3)]",
         warning:
           "border-transparent bg-[hsl(var(--warning)/0.15)] text-[hsl(var(--warning))] border-[hsl(var(--warning)/0.3)]",
         glow: "border-[hsl(var(--primary)/0.4)] bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))]",
+        tag: "border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] text-[hsl(var(--foreground-muted))] hover:border-[hsl(var(--accent)/0.4)] hover:text-[hsl(var(--accent))]",
       },
     },
     defaultVariants: {

@@ -3,7 +3,6 @@
 // Trâm (UI/UX Designer & Test Engineer) — Sprint 1 (S1-AUTH-08)
 
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
 
 export interface AuthUser {
   id: string;
@@ -22,6 +21,7 @@ export interface AuthUser {
 
 export type AuthStatus =
   | "idle"
+  | "restoring"
   | "connecting"
   | "requesting_nonce"
   | "signing"
@@ -29,17 +29,49 @@ export type AuthStatus =
   | "authenticated"
   | "error";
 
+type LoginPayload = {
+  domain: string;
+  address: string;
+  statement?: string;
+  version: string;
+  uri?: string;
+  chain_id?: string;
+  nonce: string;
+  issued_at: string;
+  expiration_time: string;
+  invalid_before?: string;
+  resources?: string[];
+};
+
+/** Mirrors Thirdweb Auth's EIP-4361/CAIP-122 message formatter. */
+export function createLoginMessage(payload: LoginPayload): string {
+  const header = `${payload.domain} wants you to sign in with your Ethereum account:`;
+  let prefix = `${header}\n${payload.address}\n\n${payload.statement ?? ""}`;
+  if (payload.statement) prefix += "\n";
+
+  const suffix: string[] = [];
+  if (payload.uri) suffix.push(`URI: ${payload.uri}`);
+  suffix.push(`Version: ${payload.version}`);
+  if (payload.chain_id) suffix.push(`Chain ID: ${payload.chain_id}`);
+  suffix.push(`Nonce: ${payload.nonce}`);
+  suffix.push(`Issued At: ${payload.issued_at}`);
+  suffix.push(`Expiration Time: ${payload.expiration_time}`);
+  if (payload.invalid_before) suffix.push(`Not Before: ${payload.invalid_before}`);
+  if (payload.resources?.length) suffix.push(["Resources:", ...payload.resources.map((resource) => `- ${resource}`)].join("\n"));
+  return `${prefix}\n${suffix.join("\n")}`;
+}
+
 interface AuthState {
   user: AuthUser | null;
-  token: string | null;
   status: AuthStatus;
   error: string | null;
 
   // Actions
-  setAuth: (token: string, user: AuthUser) => void;
+  setAuth: (user: AuthUser) => void;
   setStatus: (status: AuthStatus, error?: string | null) => void;
   clearError: () => void;
   logout: () => void;
+  restoreSession: () => Promise<void>;
 
   // Full SIWE flow helper
   loginWithSignature: (
@@ -49,16 +81,13 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>()(
-  persist(
     (set, get) => ({
       user: null,
-      token: null,
       status: "idle",
       error: null,
 
-      setAuth: (token: string, user: AuthUser) => {
+      setAuth: (user: AuthUser) => {
         set({
-          token,
           user,
           status: "authenticated",
           error: null,
@@ -70,33 +99,47 @@ export const useAuthStore = create<AuthState>()(
       },
 
       clearError: () => {
-        set({ error: null, status: get().token ? "authenticated" : "idle" });
+        set({ error: null, status: get().user ? "authenticated" : "idle" });
       },
 
       logout: () => {
-        // Clear local cookies if needed
-        if (typeof document !== "undefined") {
-          document.cookie =
-            "bloody_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+        if (get().user) {
+          void fetch("/api/auth/logout", {
+            method: "POST",
+          }).catch(() => undefined);
         }
         set({
           user: null,
-          token: null,
           status: "idle",
           error: null,
         });
+      },
+
+      restoreSession: async () => {
+        if (get().status === "authenticated") return;
+        set({ status: "restoring", error: null });
+        try {
+          const response = await fetch("/api/auth/session", { cache: "no-store" });
+          if (!response.ok) {
+            set({ user: null, status: "idle", error: null });
+            return;
+          }
+          const data = await response.json() as { user?: AuthUser };
+          set({ user: data.user ?? null, status: data.user ? "authenticated" : "idle", error: null });
+        } catch {
+          set({ user: null, status: "idle", error: null });
+        }
       },
 
       loginWithSignature: async (
         walletAddress: string,
         signerFn: (message: string) => Promise<string>
       ): Promise<boolean> => {
-        const normalizedAddress = walletAddress.toLowerCase();
         try {
           // 1. Fetch Nonce from Backend
           set({ status: "requesting_nonce", error: null });
           const nonceRes = await fetch(
-            `/api/auth/nonce?address=${normalizedAddress}`
+            `/api/auth/nonce?address=${encodeURIComponent(walletAddress)}`
           );
 
           if (!nonceRes.ok) {
@@ -108,20 +151,7 @@ export const useAuthStore = create<AuthState>()(
           // 2. Format SIWE / Thirdweb EIP-4361 message to sign
           set({ status: "signing" });
           
-          // Construct SIWE message body from Thirdweb payload format
-          const domain = loginPayload.domain || (typeof window !== "undefined" ? window.location.host : "localhost:3000");
-          const uri = loginPayload.uri || (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
-          const statement =
-            loginPayload.statement ||
-            "Sign in with Ethereum to Bloody-Roar Bounty Marketplace.";
-          const nonce = loginPayload.nonce;
-          const issuedAt = loginPayload.issued_at || new Date().toISOString();
-          const expirationTime = loginPayload.expiration_time;
-
-          let messageToSign = `${domain} wants you to sign in with your Ethereum account:\n${normalizedAddress}\n\n${statement}\n\nURI: ${uri}\nVersion: 1\nChain ID: ${loginPayload.chain_id || 84532}\nNonce: ${nonce}\nIssued At: ${issuedAt}`;
-          if (expirationTime) {
-            messageToSign += `\nExpiration Time: ${expirationTime}`;
-          }
+          const messageToSign = createLoginMessage(loginPayload as LoginPayload);
 
           const signature = await signerFn(messageToSign);
 
@@ -144,31 +174,26 @@ export const useAuthStore = create<AuthState>()(
           }
 
           const data = await loginRes.json();
-          const { token, user } = data;
+          const { user } = data;
 
-          if (!token || !user) {
+          if (!user) {
             throw new Error("Dữ liệu phản hồi xác thực không hợp lệ.");
           }
 
-          // Save token in cookie for Next.js SSR / API requests
-          if (typeof document !== "undefined") {
-            document.cookie = `bloody_token=${token}; path=/; max-age=604800; SameSite=Lax`;
-          }
-
           set({
-            token,
             user,
             status: "authenticated",
             error: null,
           });
 
           return true;
-        } catch (err: any) {
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err ?? "");
           const errorMessage =
-            err?.message?.includes("User rejected") ||
-            err?.message?.includes("ACTION_REJECTED")
+            message.includes("User rejected") ||
+            message.includes("ACTION_REJECTED")
               ? "Bạn đã từ chối ký xác thực trong ví."
-              : err?.message || "Đã xảy ra lỗi trong quá trình đăng nhập.";
+              : message || "Đã xảy ra lỗi trong quá trình đăng nhập.";
 
           set({
             status: "error",
@@ -177,14 +202,5 @@ export const useAuthStore = create<AuthState>()(
           return false;
         }
       },
-    }),
-    {
-      name: "bloody-roar-auth",
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        token: state.token,
-        user: state.user,
-      }),
-    }
-  )
+    })
 );

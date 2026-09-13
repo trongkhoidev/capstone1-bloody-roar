@@ -1,7 +1,7 @@
 // apps/web/src/app/marketplace/page.tsx
-// Marketplace Bounties Directory Page
+// Direct URL for the marketplace; the same listing is also the homepage.
 
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import { MarketplaceView } from "../../components/marketplace/marketplace-view";
 
 export const metadata: Metadata = {

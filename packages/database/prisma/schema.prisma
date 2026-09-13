@@ -197,6 +197,7 @@ model User {
   reviewsReceived  Review[]       @relation("ReviewDeveloper")
   submissions      Submission[]
   attestations     Attestation[]
+  issueComments    IssueComment[]
 
   @@index([walletAddress])
   @@index([githubId])
@@ -290,6 +291,7 @@ model Issue {
   testCases    TestCase[]
   submissions  Submission[]
   review       Review?
+  comments     IssueComment[]
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -553,6 +555,22 @@ model Review {
 
   @@index([developerId])
   @@map("reviews")
+}
+
+// IssueComment — public discussion and clarifying questions on a bounty
+model IssueComment {
+  id        String   @id @default(cuid())
+  body      String
+  issueId   String
+  issue     Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([issueId, createdAt])
+  @@index([userId])
+  @@map("issue_comments")
 }
 
 // Attestation — EAS on-chain reputation/certificate (v1.5)

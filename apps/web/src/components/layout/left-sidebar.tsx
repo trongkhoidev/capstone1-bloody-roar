@@ -15,7 +15,7 @@ interface NavItem {
 }
 
 const PUBLIC_NAV: NavItem[] = [
-  { label: "Marketplace", href: "/marketplace", icon: "🌐" },
+  { label: "Marketplace", href: "/", icon: "🌐" },
   { label: "Kỹ năng (Tags)", href: "/tags", icon: "🏷️" },
   { label: "Bảng xếp hạng", href: "/leaderboard", icon: "🏆" },
 ];
@@ -45,7 +45,7 @@ export function LeftSidebar() {
           </div>
           <nav className="space-y-1">
             {PUBLIC_NAV.map((item) => {
-              const isActive = pathname === item.href || (item.href === "/marketplace" && pathname === "/");
+              const isActive = pathname === item.href || (item.href === "/" && pathname === "/marketplace");
               return (
                 <Link
                   key={item.href}

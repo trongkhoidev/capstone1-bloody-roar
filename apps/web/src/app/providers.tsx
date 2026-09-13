@@ -4,10 +4,12 @@
 // Global providers wrapper
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ThirdwebProvider } from "@thirdweb-dev/react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { useAuthStore } from "@/lib/store/use-auth-store";
+import { UiPreferencesProvider } from "@/lib/ui-preferences";
 
 export function Providers({ children }: { children: ReactNode }) {
+  const restoreSession = useAuthStore((state) => state.restoreSession);
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -20,22 +22,16 @@ export function Providers({ children }: { children: ReactNode }) {
       })
   );
 
+  useEffect(() => {
+    // Remove JWTs persisted by older builds. Authentication now uses an
+    // HttpOnly cookie managed by the server.
+    window.localStorage.removeItem("bloody-roar-auth");
+    void restoreSession();
+  }, [restoreSession]);
+
   return (
-    <ThirdwebProvider
-      clientId={process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || ""}
-      activeChain="sepolia"
-      authConfig={{
-        domain:
-          typeof window !== "undefined"
-            ? window.location.host
-            : process.env.NEXT_PUBLIC_APP_URL?.replace(/^https?:\/\//, "") ??
-              "localhost:3000",
-        authUrl: "/api/auth",
-      }}
-    >
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
-    </ThirdwebProvider>
+    <UiPreferencesProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    </UiPreferencesProvider>
   );
 }

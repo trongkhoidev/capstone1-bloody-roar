@@ -8,8 +8,9 @@ import { builder } from "../../builder";
 import { requireAuth } from "../../context";
 import { gqlError, parseOrThrow } from "../../errors";
 import type { Prisma } from "@bloody-roar/database";
-import { IssueCategory, IssueStatus } from "@bloody-roar/database";
+import { IssueCategory, IssueStatus, UserRole } from "@bloody-roar/database";
 import { UserRef } from "../user/user.module";
+import { AttachmentRef } from "../chat/chat.module";
 import { z } from "zod";
 import {
   ISSUE_CATEGORIES,
@@ -66,17 +67,18 @@ const TokenRef = builder.prismaObject("Token", {
 // ---------------------------------------------------------------------------
 
 /** Include dùng chung cho mọi query Issue (relations + count) */
-const ISSUE_INCLUDE = {
+export const ISSUE_INCLUDE = {
   token: true,
   client: true,
   developer: true,
+  attachments: { where: { fileMime: { startsWith: "image/" } } },
   _count: { select: { applications: true } },
 } satisfies Prisma.IssueInclude;
 
 /** Shape của 1 dòng Issue sau khi include relations */
 type IssueNode = Prisma.IssueGetPayload<{ include: typeof ISSUE_INCLUDE }>;
 
-const IssueRef = builder.prismaObject("Issue", {
+export const IssueRef = builder.prismaObject("Issue", {
   description: "Bounty task posted by a client",
   include: ISSUE_INCLUDE,
   fields: (t) => ({
@@ -93,6 +95,8 @@ const IssueRef = builder.prismaObject("Issue", {
     difficulty: t.exposeString("difficulty", { nullable: true }),
     timeEstimate: t.exposeString("timeEstimate", { nullable: true }),
     viewCount: t.exposeInt("viewCount"),
+    clientId: t.exposeString("clientId"),
+    developerId: t.exposeString("developerId", { nullable: true }),
     isDraft: t.exposeBoolean("isDraft"),
     githubRepo: t.exposeString("githubRepo", { nullable: true }),
     expiresAt: t.string({
@@ -129,6 +133,11 @@ const IssueRef = builder.prismaObject("Issue", {
       description: "Number of applications",
       select: { _count: { select: { applications: true } } },
       resolve: (issue) => issue._count.applications,
+    }),
+    attachments: t.field({
+      type: [AttachmentRef],
+      description: "Public image attachments used as bounty previews",
+      resolve: (issue) => issue.attachments,
     }),
   }),
 });
@@ -193,6 +202,60 @@ const IssueConnectionRef =
     }),
   });
 
+type MarketplaceStats = {
+  openBounties: number;
+  bountyPool: Array<{ symbol: string; amount: number }>;
+  activeHunters: number;
+};
+
+const MarketplaceTokenAmountRef = builder.objectRef<{ symbol: string; amount: number }>("MarketplaceTokenAmount").implement({
+  fields: (t) => ({
+    symbol: t.exposeString("symbol"),
+    amount: t.exposeFloat("amount"),
+  }),
+});
+
+const MarketplaceStatsRef = builder.objectRef<MarketplaceStats>("MarketplaceStats").implement({
+  fields: (t) => ({
+    openBounties: t.exposeInt("openBounties"),
+    bountyPool: t.field({ type: [MarketplaceTokenAmountRef], resolve: (stats) => stats.bountyPool }),
+    activeHunters: t.exposeInt("activeHunters"),
+  }),
+});
+
+builder.queryField("marketplaceStats", (t) =>
+  t.field({
+    type: MarketplaceStatsRef,
+    resolve: async (_root, _args, ctx) => {
+      const where = { status: IssueStatus.OPEN, isDraft: false };
+      const [openBounties, bountyByToken, hunters] = await Promise.all([
+        ctx.db.issue.count({ where }),
+        ctx.db.issue.groupBy({ by: ["tokenId"], where, _sum: { bountyAmount: true } }),
+        ctx.db.application.findMany({
+          where: { issue: { status: IssueStatus.OPEN, isDraft: false } },
+          distinct: ["developerId"],
+          select: { developerId: true },
+        }),
+      ]);
+      const tokens = await ctx.db.token.findMany({
+        where: { id: { in: bountyByToken.map((row) => row.tokenId) } },
+        select: { id: true, symbol: true },
+      });
+      const symbolById = new Map(tokens.map((token) => [token.id, token.symbol]));
+      return {
+        openBounties,
+        bountyPool: bountyByToken.flatMap((row) => {
+          const symbol = symbolById.get(row.tokenId);
+          return symbol && row._sum.bountyAmount
+            ? [{ symbol, amount: row._sum.bountyAmount.toNumber() }]
+            : [];
+        }),
+        activeHunters: hunters.length,
+      };
+    },
+  })
+);
+
 // ---------------------------------------------------------------------------
 // Zod validation
 // ---------------------------------------------------------------------------
@@ -227,7 +290,10 @@ const CreateIssueSchema = z.object({
       message: "expiresAt phải ở tương lai",
     })
     .nullish(),
-  githubRepo: z.string().url().max(200).nullish(),
+  githubRepo: z.string().url().max(200).refine((value) => {
+    const repositoryUrl = new URL(value);
+    return repositoryUrl.protocol === "https:" && repositoryUrl.hostname === "github.com";
+  }, "Repository URL must be an HTTPS GitHub URL").nullish(),
 });
 
 // ---------------------------------------------------------------------------
@@ -281,14 +347,14 @@ builder.queryField("issues", (t) =>
       // Sort (luôn kèm id tiebreaker để cursor phân trang ổn định)
       const direction: Prisma.SortOrder = (q.sortOrder ?? "DESC") === "ASC" ? "asc" : "desc";
       const sortBy = q.sortBy ?? "CREATED_AT";
-      const orderBy: Prisma.IssueOrderByWithRelationInput[] = [
+      const orderBy: Prisma.IssueOrderByWithRelationInput[] =
         sortBy === "BOUNTY_AMOUNT"
-          ? { bountyAmount: direction }
+          ? [{ bountyAmount: direction }, { id: "asc" }]
           : sortBy === "VIEW_COUNT"
-            ? { viewCount: direction }
-            : { createdAt: direction },
-        { id: "asc" },
-      ];
+            ? [{ viewCount: direction }, { id: "asc" }]
+            : sortBy === "DEADLINE"
+              ? [{ expiresAt: "asc" }, { createdAt: "desc" }, { id: "asc" }]
+              : [{ createdAt: direction }, { id: "asc" }];
 
       // Fetch take + 1 để tính hasNextPage
       const take = q.first ?? DEFAULT_PAGE_SIZE;
@@ -320,6 +386,36 @@ builder.queryField("issues", (t) =>
         },
         totalCount,
       };
+    },
+  })
+);
+
+// Active bounty tokens for create-task forms.
+builder.queryField("tokens", (t) =>
+  t.prismaField({
+    type: [TokenRef],
+    resolve: (query, _root, _args, ctx) =>
+      ctx.db.token.findMany({
+        ...query,
+        where: { isActive: true },
+        orderBy: [{ sortOrder: "asc" }, { symbol: "asc" }],
+      }),
+  })
+);
+
+// Personal work queue includes drafts and assigned issues; never expose another
+// user's private drafts through the public marketplace query.
+builder.queryField("myIssues", (t) =>
+  t.prismaField({
+    type: [IssueRef],
+    resolve: (query, _root, _args, ctx) => {
+      const user = requireAuth(ctx);
+      return ctx.db.issue.findMany({
+        ...query,
+        where: { OR: [{ clientId: user.id }, { developerId: user.id }] },
+        orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
+        include: ISSUE_INCLUDE,
+      });
     },
   })
 );
@@ -382,6 +478,7 @@ builder.mutationField("createIssue", (t) =>
     },
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
+      if (user.role !== UserRole.CLIENT) throw gqlError("Switch your profile to the client role before posting a bounty", "CLIENT_ROLE_REQUIRED");
 
       const input = parseOrThrow(CreateIssueSchema, args.input);
 
@@ -416,6 +513,91 @@ builder.mutationField("createIssue", (t) =>
         },
         include: ISSUE_INCLUDE,
       });
+    },
+  })
+);
+
+const UpdateIssueSchema = CreateIssueSchema.partial().extend({
+  title: z.string().min(10).max(120).optional(),
+  description: z.string().min(30).max(5000).optional(),
+  category: z.enum(ISSUE_CATEGORIES).optional(),
+  bountyAmount: z.number().min(BOUNTY_MIN_AMOUNT).max(BOUNTY_MAX_AMOUNT).optional(),
+  tokenId: z.string().min(1).optional(),
+});
+
+builder.mutationField("updateIssue", (t) =>
+  t.fieldWithInput({
+    type: IssueRef,
+    nullable: true,
+    typeOptions: { name: "UpdateIssueInput" },
+    input: {
+      id: t.input.id({ required: true }),
+      title: t.input.string({ required: false }),
+      description: t.input.string({ required: false }),
+      category: t.input.field({ type: IssueCategoryEnum, required: false }),
+      bountyAmount: t.input.float({ required: false }),
+      tokenId: t.input.id({ required: false }),
+      requiredSkills: t.input.stringList({ required: false }),
+      difficulty: t.input.string({ required: false }),
+      timeEstimate: t.input.string({ required: false }),
+      expiresAt: t.input.string({ required: false }),
+      githubRepo: t.input.string({ required: false }),
+    },
+    resolve: async (_root, args, ctx) => {
+      const user = requireAuth(ctx);
+      const current = await ctx.db.issue.findUnique({
+        where: { id: String(args.input.id) },
+        include: ISSUE_INCLUDE,
+      });
+      if (!current) return null;
+      if (current.clientId !== user.id) throw gqlError("Chỉ chủ bài toán mới được chỉnh sửa", "FORBIDDEN");
+      if (current.status !== IssueStatus.OPEN) throw gqlError("Không thể chỉnh sửa bài toán đã được nhận", "ISSUE_NOT_EDITABLE");
+
+      const raw = Object.fromEntries(Object.entries(args.input).filter(([key, value]) => key !== "id" && value !== null));
+      const input = parseOrThrow(UpdateIssueSchema, raw);
+      if (input.tokenId) {
+        const token = await ctx.db.token.findFirst({ where: { id: input.tokenId, isActive: true } });
+        if (!token) throw gqlError("Bounty token không tồn tại hoặc không được hỗ trợ", "INVALID_TOKEN");
+      }
+
+      const updateData: Prisma.IssueUpdateInput = {};
+      if (input.title !== undefined) updateData.title = input.title;
+      if (input.description !== undefined) updateData.description = input.description;
+      if (input.category !== undefined) updateData.category = input.category;
+      if (input.bountyAmount !== undefined) updateData.bountyAmount = input.bountyAmount;
+      if (input.tokenId !== undefined) updateData.token = { connect: { id: input.tokenId } };
+      if (input.requiredSkills != null) updateData.requiredSkills = input.requiredSkills;
+      if (input.difficulty !== undefined) updateData.difficulty = input.difficulty;
+      if (input.timeEstimate !== undefined) updateData.timeEstimate = input.timeEstimate;
+      if (input.expiresAt != null) updateData.expiresAt = new Date(input.expiresAt);
+      if (input.githubRepo !== undefined) updateData.githubRepo = input.githubRepo;
+
+      return ctx.db.issue.update({
+        where: { id: current.id },
+        data: updateData,
+        include: ISSUE_INCLUDE,
+      });
+    },
+  })
+);
+
+builder.mutationField("cancelIssue", (t) =>
+  t.field({
+    type: IssueRef,
+    nullable: true,
+    args: { id: t.arg.id({ required: true }) },
+    resolve: async (_root, args, ctx) => {
+      const user = requireAuth(ctx);
+      const issue = await ctx.db.issue.findUnique({ where: { id: String(args.id) } });
+      if (!issue) return null;
+      if (issue.clientId !== user.id) throw gqlError("Chỉ chủ bài toán mới được hủy", "FORBIDDEN");
+      if (issue.status !== IssueStatus.OPEN) throw gqlError("Chỉ có thể hủy bài toán đang mở", "ISSUE_NOT_CANCELLABLE");
+      const cancelled = await ctx.db.issue.updateMany({
+        where: { id: issue.id, clientId: user.id, status: IssueStatus.OPEN, developerId: null },
+        data: { status: IssueStatus.CANCELLED },
+      });
+      if (cancelled.count !== 1) throw gqlError("Bài toán vừa được nhận và không thể hủy", "ISSUE_NOT_CANCELLABLE");
+      return ctx.db.issue.findUnique({ where: { id: issue.id }, include: ISSUE_INCLUDE });
     },
   })
 );

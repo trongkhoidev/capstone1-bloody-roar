@@ -16,6 +16,8 @@ node_modules/
 # Next.js build output
 .next/
 out/
+apps/web/public/uploads/
+apps/web/.uploads/
 
 # Build artifacts
 dist/

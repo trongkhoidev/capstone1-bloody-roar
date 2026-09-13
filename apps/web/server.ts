@@ -15,7 +15,10 @@ import { logger } from "./src/lib/logger";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = process.env.HOSTNAME || "localhost";
-const port = parseInt(process.env.PORT || "3000", 10);
+const port = Number.parseInt(process.env.PORT || "4000", 10);
+const appUrl = dev
+  ? `http://localhost:${port}`
+  : process.env.NEXT_PUBLIC_APP_URL ?? `http://${hostname}:${port}`;
 
 // Initialize Next.js
 const app = next({ dev, hostname, port });
@@ -24,7 +27,7 @@ const handle = app.getRequestHandler();
 // GraphQL is now handled by Next.js App Router API routes (/api/graphql/route.ts)
 
 app.prepare().then(() => {
-  const httpServer = createServer((req, res) => {
+  const httpServer = createServer(async (req, res) => {
     const parsedUrl = parse(req.url!, true);
     const { pathname } = parsedUrl;
 
@@ -32,8 +35,16 @@ app.prepare().then(() => {
 
     // Health check endpoint
     if (pathname === "/api/health") {
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ status: "ok", timestamp: new Date().toISOString() }));
+      try {
+        const { prisma } = await import("@bloody-roar/database");
+        await prisma.$queryRaw`SELECT 1`;
+        res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+        res.end(JSON.stringify({ status: "ok", database: "connected", timestamp: new Date().toISOString() }));
+      } catch (error) {
+        logger.error({ error }, "Database health check failed");
+        res.writeHead(503, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+        res.end(JSON.stringify({ status: "error", database: "disconnected", timestamp: new Date().toISOString() }));
+      }
       return;
     }
 
@@ -44,7 +55,7 @@ app.prepare().then(() => {
   // Attach Socket.io to the HTTP server
   const io = new SocketIOServer(httpServer, {
     cors: {
-      origin: dev ? ["http://localhost:3000"] : [process.env.NEXT_PUBLIC_APP_URL!],
+      origin: dev ? [appUrl, `http://127.0.0.1:${port}`] : [appUrl],
       credentials: true,
     },
     transports: ["websocket", "polling"],
@@ -61,8 +72,8 @@ app.prepare().then(() => {
     logger.info(
       {
         mode: dev ? "development" : "production",
-        url: `http://${hostname}:${port}`,
-        graphql: `http://${hostname}:${port}/api/graphql`,
+        url: appUrl,
+        graphql: `${appUrl}/api/graphql`,
       },
       `🩸 Bloody-Roar server started`
     );

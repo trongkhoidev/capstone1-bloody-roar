@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "bun run server.ts",
+    "dev": "PORT=4000 NEXT_PUBLIC_APP_URL=http://localhost:4000 bun run server.ts",
     "build": "next build",
     "start": "NODE_ENV=production bun run server.ts",
     "lint": "next lint",
@@ -13,6 +13,8 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1131.0",
+    "@aws-sdk/s3-request-presigner": "^3.1131.0",
     "@bloody-roar/database": "workspace:*",
     "@bloody-roar/shared": "workspace:*",
     "@graphql-yoga/node": "latest",
@@ -51,19 +53,20 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.45.3",
-    "@testing-library/react": "^16.0.0",
+    "@tailwindcss/postcss": "4.3.3",
     "@testing-library/jest-dom": "^6.4.6",
+    "@testing-library/react": "^16.0.0",
     "@types/node": "^20.14.14",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.5",
     "eslint-plugin-jsx-a11y": "^6.9.0",
     "jsdom": "^24.1.1",
-    "tailwindcss": "^4.0.0-alpha.16",
+    "tailwindcss": "4.3.3",
     "typescript": "^5.5.2",
-    "vitest": "^2.0.5",
-    "@vitejs/plugin-react": "^4.3.1"
+    "vitest": "^2.0.5"
   }
 }

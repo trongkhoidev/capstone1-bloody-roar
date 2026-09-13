@@ -5,10 +5,12 @@
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { IssueCard, IssueItem } from "../components/marketplace/issue-card";
+import { IssueCard } from "../components/marketplace/issue-card";
+import type { IssueItem } from "../components/marketplace/issue-card";
 import { MarketplaceFilterBar } from "../components/marketplace/filter-bar";
 import { MarketplaceEmpty } from "../components/marketplace/marketplace-empty";
 import { ConnectModal } from "../components/auth/connect-modal";
+import { Button } from "../components/ui/button";
 
 const mockIssue: IssueItem = {
   id: "test-issue-1",
@@ -41,7 +43,7 @@ describe("IssueCard (StackOverflow Vibe)", () => {
     expect(screen.getByText("$500")).toBeInTheDocument();
     expect(screen.getByText("USDT")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
-    expect(screen.getByText("đơn ứng tuyển")).toBeInTheDocument();
+    expect(screen.getByText("applications")).toBeInTheDocument();
     expect(screen.getByText("142")).toBeInTheDocument();
   });
 
@@ -67,8 +69,8 @@ describe("IssueCard (StackOverflow Vibe)", () => {
     render(<IssueCard issue={mockIssue} />);
 
     expect(screen.getByText("Satoshi")).toBeInTheDocument();
-    expect(screen.getByText("⭐ 150")).toBeInTheDocument();
-    expect(screen.getByTitle("Đã xác thực GitHub")).toBeInTheDocument();
+    expect(screen.getByText("150 rep")).toBeInTheDocument();
+    expect(screen.getByTitle("Verified GitHub account")).toBeInTheDocument();
   });
 });
 
@@ -135,10 +137,10 @@ describe("MarketplaceEmpty", () => {
 });
 
 describe("ConnectModal", () => {
-  it("should render wallet options and switch between tabs", () => {
+  it("should render wallet options and explain wallet-first account linking", () => {
     render(<ConnectModal isOpen={true} onClose={vi.fn()} />);
 
-    expect(screen.getByText("Đăng nhập Bloody-Roar")).toBeInTheDocument();
+    expect(screen.getByText("Sign in to Bloody-Roar")).toBeInTheDocument();
     expect(screen.getByTestId("wallet-btn-metamask")).toBeInTheDocument();
     expect(screen.getByTestId("wallet-btn-coinbase")).toBeInTheDocument();
 
@@ -146,8 +148,15 @@ describe("ConnectModal", () => {
     const socialTab = screen.getByTestId("tab-social-btn");
     fireEvent.click(socialTab);
 
-    expect(screen.getByTestId("social-btn-google")).toBeInTheDocument();
-    expect(screen.getByTestId("social-btn-github")).toBeInTheDocument();
-    expect(screen.getByTestId("email-input")).toBeInTheDocument();
+    expect(screen.queryByTestId("social-btn-google")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("email-input")).not.toBeInTheDocument();
+    expect(screen.getByText(/link GitHub from your profile/i)).toBeInTheDocument();
+  });
+});
+
+describe("Button", () => {
+  it("keeps the child link as the single slotted element", () => {
+    render(<Button asChild><a href="/marketplace">Open marketplace</a></Button>);
+    expect(screen.getByRole("link", { name: "Open marketplace" })).toHaveAttribute("href", "/marketplace");
   });
 });

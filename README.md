@@ -10,9 +10,9 @@
 [![Base](<https://img.shields.io/badge/Network-Base%20Sepolia-0052FF?logo=base>)](https://sepolia.basescan.org)
 [![License](<https://img.shields.io/badge/License-Internal%20Use-red>)](./LICENSE)
 
-**Bloody-Roar** is a *trustless* freelance marketplace where a **Client** posts a bug/feature bounty with a USDT/stablecoin reward, a **Developer** applies and delivers the work, and **payment is guaranteed by a smart-contract escrow** on **Base Sepolia (L2)** — while **AI** protects secrets in chat, generates acceptance test cases, and assists with dispute resolution. No trust required — only code and math.
+**Bloody-Roar** is a decentralized bounty marketplace. The current app supports wallet sign-in, task discovery and posting, applications, client selection of a developer, private persistent chat, work submissions, profile/GitHub verification, notifications, and off-chain dispute records. On-chain escrow and payout actions are waiting for Kiên's contract interface. AI features call hosted models through a replaceable model router; model training and self-hosting are deferred.
 
-> 🔗 **Network:** Currently deployed on **Base Sepolia Testnet** (`chainId: 84532`). Production target: TBD (Mainnet/L2).
+> 🔗 **Network:** Base Sepolia is the target network (`chainId: 84532`). The web app currently records bounties off-chain and does not submit escrow transactions.
 
 ---
 
@@ -44,7 +44,7 @@ Freelance markets face a fundamental **"asymmetric trust"** problem: *who pays f
 
 Traditional platforms (Upwork, Fiverr, Freelancer) solve this by acting as a **centralized escrow middleman** — which introduces high fees (10–20%), centralized power over disputes, and zero transparency.
 
-**Bloody-Roar's answer:** replace *trust in people/organizations* with *trust in technology* — a **smart-contract escrow** that holds funds transparently and an **AI layer** that verifies code and arbitrates disputes.
+**Bloody-Roar's intended answer:** use wallet identity, clear acceptance criteria, and an escrow contract. This implementation covers the marketplace and off-chain workflow; contract calls remain pending Kiên's interface, and AI outputs are advisory only.
 
 ---
 
@@ -54,56 +54,55 @@ Three actors drive the platform:
 
 | Role                                    | Does                                                   | Guaranteed by                                                     |
 | --------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------- |
-| **Client** (Người thuê)        | Posts a bounty, selects a developer, approves delivery | Smart-contract escrow — funds can't be withdrawn without consent |
-| **Developer** (Lập trình viên) | Applies, delivers the fix, gets paid                   | 30-day auto-claim if the client goes silent                       |
-| **Admin / Arbiter** (Trọng tài) | Reviews disputes, proposes a payout ratio              | 24h challenge timelock + on-chain audit trail                     |
+| **Client** (Người thuê)        | Posts a bounty, selects a developer, reviews submissions | Database records until escrow is integrated |
+| **Developer** (Lập trình viên) | Applies, chats, submits work or a GitHub PR              | SIWE wallet identity; payout is not active yet |
+| **Admin / Arbiter** (Trọng tài) | Reviews disputes and records a proposed resolution      | Off-chain record; contract execution is pending |
 
 The core lifecycle:
 
 ```mermaid
 flowchart LR
-    A["Client posts bounty<br/>(signs EIP-712, no deposit)"] --> B["Developer applies<br/>(Zero-Stake)"]
-    B --> C["Client selects developer<br/>& deposits 100% on-chain"]
-    C --> D["Developer works<br/>(AI Guard on chat)"]
-    D --> E{"Client approves?"}
-    E -- Yes --> F["Release to developer"]
-    E -- 30d silent --> F
-    E -- Dispute --> G["AI dispute report"]
-    G --> H["Arbiter proposes ratio"]
-    H --> I["24h timelock → execute"]
+    A["Client posts bounty<br/>(database record)"] --> B["Developer applies"]
+    B --> C["Client selects developer<br/>(assignment recorded)"]
+    C --> D["Developer works<br/>(chat secrets are masked)"]
+    D --> E["Developer submits work / PR"]
+    E --> F{"Client reviews"}
+    F -- Changes --> D
+    F -- Approves --> G["Approval recorded off-chain"]
+    C -. "escrow integration pending" .-> H["Kiên's contract"]
 ```
 
 ---
 
 ## Key Features
 
-### 🔒 Smart-Contract Escrow
+### 🔒 Smart-Contract Escrow — integration pending
 
-Funds live in `BloodyRoarEscrow.sol`, not with the platform. Payouts are automatic and auditable on-chain.
+The Prisma model and planned user flow are documented, but the app does not send escrow or payout transactions yet. Those controls will be connected after the contract interface and deployment details are supplied by Kiên.
 
-### 💤 Lazy-Deposit (for Clients)
+### 💤 Lazy-Deposit — planned
 
-Clients post a bounty by signing an **off-chain EIP-712 commitment** (no gas). 100% of the bounty is only locked on-chain when they *actually select a developer*.
+The task form stores a whitelisted token and bounty amount in the database. EIP-712 commitments and deposits are not active yet.
 
 ### 🤝 Zero-Stake (for Developers)
 
 No 10–20% collateral required. Verified identity (GitHub OAuth, later EAS attestations) acts as reputation collateral instead of capital.
 
-### 🛡️ AI Guard
+### 🛡️ Secret masking in chat
 
-A two-layer (regex + LLM) scanner masks API keys, private keys, and PII in real-time chat and uploads before they are broadcast.
+The real-time chat path runs deterministic secret/PII rules first, then asks a configured hosted model to suggest additional exact redactions before persistence and broadcast. If the model is unavailable, the local rules still apply. Provider calls are logged with hashes and usage metadata, not raw messages. File contents are not scanned.
 
 ### 🧪 AI Test-Case Generator
 
-When a client posts a bounty, AI generates BDD test cases (`given/when/then`) to define *"done"* upfront — preventing scope disputes.
+Clients can generate BDD-style acceptance-test drafts for an open task, edit them, and approve them before developers see them. AI suggestions are not executed tests and do not alter the task automatically.
 
-### ⚖️ AI Dispute Assistant
+### ⚖️ Disputes — off-chain records
 
-On dispute, a **multi-agent debate** (Client Advocate, Dev Advocate, Critic, Judge, Verifier) analyzes chat, code, and commits to propose a fair payout ratio — the human arbiter only approves.
+Task participants can create a dispute record. An administrator can ask a hosted model to summarize task, chat, submission, and acceptance-test evidence, review the suggested client-refund ratio, then manually record a proposal and challenge window. AI does not resolve the dispute or execute a payment.
 
-### 👤 Trust & Reputation (roadmap)
+### 👤 Trust & Reputation
 
-GitHub OAuth verified badge (MVP) → EAS on-chain attestations (v1.5) → Gitcoin Passport anti-Sybil (v2).
+Wallet identity is verified with SIWE. GitHub OAuth links a verified account; EAS attestations and Gitcoin Passport remain roadmap items.
 
 ---
 
@@ -121,21 +120,21 @@ flowchart TD
         FE["Frontend<br/>Next.js + Tailwind + shadcn/ui"]
         BE["Custom Server<br/>GraphQL Yoga + Socket.io"]
         DB["PostgreSQL + Prisma"]
-        AI["AI Layer<br/>Guard · Test Gen · Dispute Debate"]
-        SC["Smart Contract<br/>BloodyRoarEscrow.sol"]
+        AI["Hosted model router<br/>training deferred"]
+        SC["Smart Contract<br/>Kiên integration pending"]
         ST["Storage<br/>AWS S3 (presigned)"]
         GH["GitHub<br/>OAuth + Webhook"]
     end
 
     BC["Base Sepolia (L2)"]
 
-    CL -->|post bounty · deposit · approve| FE
-    DV -->|browse · apply · chat · claim| FE
-    AD -->|arbitrate · administer| FE
+    CL -->|post · assign · review| FE
+    DV -->|browse · apply · chat · submit| FE
+    AD -->|administer · record disputes| FE
     FE --> BE
     BE --> DB
     BE --> AI
-    BE --> SC
+    BE -. contract interface pending .-> SC
     BE --> ST
     BE --> GH
     SC --> BC
@@ -144,6 +143,10 @@ flowchart TD
 ---
 
 ## Smart Contract Escrow
+
+The existing contract code and database mirror are separate from the web flows implemented here. The marketplace currently does not submit transactions; connect those flows after Kiên provides the ABI, deployed address, and event interface.
+
+The planned contract state machine is:
 
 `BloodyRoarEscrow.sol` manages every bounty through a five-state machine:
 
@@ -168,7 +171,7 @@ stateDiagram-v2
     CANCELLED --> [*]
 ```
 
-Safety features: OpenZeppelin `Pausable` + `ReentrancyGuard` + `Ownable`, a 2.5% platform fee, a 30-day claim timeout, and a 24-hour challenge window that protects against a compromised arbiter. Contracts are deployed on **Base Sepolia** (testnet).
+Safety requirements for the contract are tracked in the contract project. They are not active in the web app until the integration is complete.
 
 ---
 
@@ -184,7 +187,7 @@ Safety features: OpenZeppelin `Pausable` + `ReentrancyGuard` + `Ownable`, a 2.5%
 | Database        | **PostgreSQL** + **Prisma**                                                   |
 | State / Forms   | **Zustand** + **TanStack Query** · **React Hook Form** + **Zod** |
 | Real-time       | **Socket.io**                                                                       |
-| AI              | **Vercel AI SDK** (Groq + Gemini free + OpenAI fallback)                            |
+| Guard           | Local rules + optional hosted-model scan (training deferred) |
 | Storage         | **AWS S3** (presigned URLs) / Supabase                                              |
 | Blockchain      | **Solidity 0.8.24** + **Hardhat** (Base Sepolia L2)            |
 | Testing         | **Vitest** + **Playwright** + **Hardhat/Chai**                          |
@@ -246,29 +249,25 @@ bun install
 cp .env.example .env
 # Fill in at minimum:
 #   DATABASE_URL  — default works with Docker Compose
-#   JWT_SECRET    — any random string ≥ 32 chars
+#   AUTH_PRIVATE_KEY — Thirdweb Auth signing key; keep it private
+#   NEXT_PUBLIC_APP_URL — http://localhost:4000 for local development
 ```
 
-### 4. Start Database
+### 4. Start the Database and App
 
 ```bash
-docker compose up -d
-bun run db:generate
-bun run db:migrate
-bun run db:seed
+./start.sh
 ```
 
-### 5. Start Development Server
-
-```bash
-bun run dev
-```
+The starter script exports the root `.env` to Prisma commands, waits for the local database, applies migrations, seeds development records, and then runs `bun run dev`. If you manage those services yourself, export the root `.env` before running database commands.
 
 | Endpoint           | URL                               |
 | ------------------ | --------------------------------- |
-| App                | http://localhost:3000             |
-| GraphQL Playground | http://localhost:3000/api/graphql |
-| Health             | http://localhost:3000/api/health  |
+| App                | http://localhost:4000             |
+| GraphQL Playground | http://localhost:4000/api/graphql |
+| Health             | http://localhost:4000/api/health  |
+
+`GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_CALLBACK_URL`, and a random 32-byte `GITHUB_TOKEN_ENCRYPTION_KEY` enable GitHub linking. AWS credentials enable S3 uploads; local development uses an authenticated file-upload fallback. Marketplace flows and secret masking do not need AI provider keys. Run `bun run --cwd apps/web test` for the frontend/unit tests.
 
 ---
 

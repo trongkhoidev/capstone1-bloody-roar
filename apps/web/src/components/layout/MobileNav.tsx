@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, Search, Compass, PlusCircle, ShieldCheck } from "lucide-react";
+import { Menu, Search, Compass, LayoutDashboard, PlusCircle, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,10 +12,15 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ConnectWalletBtn } from "@/components/auth/ConnectWalletBtn";
+import { UserMenu } from "@/components/layout/user-menu";
+import { useAuthStore } from "@/lib/store/use-auth-store";
+import { useUiPreferences } from "@/lib/ui-preferences";
+import { UiPreferenceControls } from "@/components/layout/ui-preference-controls";
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
+  const user = useAuthStore((state) => state.user);
+  const { t } = useUiPreferences();
 
   const handleLinkClick = () => {
     setOpen(false);
@@ -45,14 +50,15 @@ export function MobileNav() {
           </SheetHeader>
 
           {/* Search bar on Mobile */}
-          <div className="relative">
+          <form action="/" method="get" className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-[hsl(var(--muted-foreground))]" />
             <Input
               type="search"
-              placeholder="Search tasks..."
+              name="search"
+              placeholder={t("searchTasks")}
               className="w-full bg-[hsl(var(--card))] pl-9 border-[hsl(var(--border))]"
             />
-          </div>
+          </form>
 
           {/* Navigation Links */}
           <nav className="flex flex-col space-y-3 pt-2">
@@ -62,28 +68,33 @@ export function MobileNav() {
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[hsl(var(--foreground))] transition-colors hover:bg-[hsl(var(--primary)/0.1)] hover:text-[hsl(var(--primary))]"
             >
               <Compass className="h-4 w-4" />
-              Marketplace
+              {t("marketplace")}
             </Link>
 
-            <Link
-              href="/tasks/create"
+            {user?.role !== "ADMIN" && <Link
+              href="/issues/create"
               onClick={handleLinkClick}
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--primary)/0.1)] hover:text-[hsl(var(--primary))]"
             >
               <PlusCircle className="h-4 w-4" />
-              Create Task
-            </Link>
+              {t("createBounty")}
+            </Link>}
+            {user && <Link href={user.role === "ADMIN" ? "/admin" : "/dashboard"} onClick={handleLinkClick} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[hsl(var(--foreground-muted))] transition-colors hover:bg-[hsl(var(--primary)/0.1)] hover:text-[hsl(var(--primary))]">
+              <LayoutDashboard className="h-4 w-4" />
+              {user.role === "ADMIN" ? t("admin") : t("dashboard")}
+            </Link>}
           </nav>
         </div>
 
         {/* Footer with Wallet button */}
         <div className="border-t border-[hsl(var(--border))] pt-4">
+          <UiPreferenceControls />
           <div className="flex flex-col gap-2">
             <span className="text-xs text-[hsl(var(--muted-foreground))] font-medium uppercase tracking-wider">
               Account / Wallet
             </span>
             <div className="flex justify-start">
-              <ConnectWalletBtn />
+              <UserMenu />
             </div>
           </div>
         </div>

@@ -46,7 +46,12 @@ export const ISSUE_STATUSES = [
   "DISPUTED",
 ] as const;
 
-export const ISSUE_SORT_BY = ["CREATED_AT", "BOUNTY_AMOUNT", "VIEW_COUNT"] as const;
+export const ISSUE_SORT_BY = [
+  "CREATED_AT",
+  "BOUNTY_AMOUNT",
+  "VIEW_COUNT",
+  "DEADLINE",
+] as const;
 
 export const ISSUE_DIFFICULTY = ["Easy", "Medium", "Hard", "Expert"] as const;
 

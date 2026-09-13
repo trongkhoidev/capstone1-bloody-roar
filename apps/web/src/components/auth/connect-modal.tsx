@@ -4,16 +4,17 @@
 "use client";
 
 import React, { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "../../lib/store/use-auth-store";
 import {
   WALLET_OPTIONS,
-  SOCIAL_OPTIONS,
   hasInjectedProvider,
   connectInjectedWallet,
+  ensureBaseSepolia,
   signMessageWithInjected,
-  WalletOption,
 } from "../../lib/web3/client";
-import { Button } from "../ui/button";
+import type { WalletOption } from "../../lib/web3/client";
+import { useUiPreferences } from "@/lib/ui-preferences";
 
 interface ConnectModalProps {
   isOpen: boolean;
@@ -22,10 +23,11 @@ interface ConnectModalProps {
 
 export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
   const [activeTab, setActiveTab] = useState<"web3" | "social">("web3");
-  const [emailInput, setEmailInput] = useState("");
-  const [emailSent, setEmailSent] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const { t } = useUiPreferences();
 
-  const { status, error, loginWithSignature, clearError } = useAuthStore();
+  const { status, error, loginWithSignature, clearError, setStatus } = useAuthStore();
 
   if (!isOpen) return null;
 
@@ -34,66 +36,34 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
 
     if (option.type === "injected" || option.type === "coinbase") {
       try {
-        if (!hasInjectedProvider()) {
+        if (!hasInjectedProvider(option.id)) {
           alert(
-            "Không tìm thấy ví Web3 trên trình duyệt! Vui lòng cài đặt MetaMask hoặc Rabby extension."
+            option.id === "coinbase"
+              ? "Không tìm thấy Coinbase Wallet Extension."
+              : option.id === "metamask"
+                ? "Không tìm thấy MetaMask Extension."
+                : "Không tìm thấy ví Web3 trên trình duyệt! Vui lòng cài đặt MetaMask hoặc Rabby extension."
           );
           return;
         }
 
-        const address = await connectInjectedWallet();
+        const address = await connectInjectedWallet(option.id);
+        await ensureBaseSepolia(option.id);
         const success = await loginWithSignature(address, (msg) =>
-          signMessageWithInjected(address, msg)
+          signMessageWithInjected(address, msg, option.id)
         );
 
         if (success) {
-          setTimeout(() => {
-            onClose();
-          }, 800);
+          onClose();
+          // Preserve the current internal URL without forcing every route that
+          // renders the global navbar into client-side rendering at build time.
+          router.replace(`${pathname}${window.location.search}`);
+          router.refresh();
         }
-      } catch (err: any) {
-        console.error("Wallet connection failed:", err);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Không thể kết nối ví. Vui lòng thử lại.";
+        setStatus("error", message);
       }
-    }
-  };
-
-  const handleSocialSelect = async (option: WalletOption) => {
-    clearError();
-    if (option.provider === "email") {
-      setEmailSent(false);
-      return;
-    }
-
-    // Mock social SIWE flow with deterministic social wallet for development/preview
-    const socialAddress = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"; // Test developer address
-    const mockSigner = async (message: string) => {
-      // In local dev/demo, sign via simulated client signature
-      return "0x307556a3194090b853cb6ff0ca22d251bc27f677d2d385be66a01dfb3b55c65f2cb78018e6c4ea6b39bfadbbfe02eb5bc7ef506d396a849764516ba423f05ce71b";
-    };
-
-    const success = await loginWithSignature(socialAddress, mockSigner);
-    if (success) {
-      setTimeout(() => {
-        onClose();
-      }, 800);
-    }
-  };
-
-  const handleEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!emailInput || !emailInput.includes("@")) return;
-
-    setEmailSent(true);
-    // Simulate Email OTP flow
-    const emailWallet = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC";
-    const mockSigner = async () =>
-      "0x307556a3194090b853cb6ff0ca22d251bc27f677d2d385be66a01dfb3b55c65f2cb78018e6c4ea6b39bfadbbfe02eb5bc7ef506d396a849764516ba423f05ce71b";
-
-    const success = await loginWithSignature(emailWallet, mockSigner);
-    if (success) {
-      setTimeout(() => {
-        onClose();
-      }, 800);
     }
   };
 
@@ -101,11 +71,6 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in"
       data-testid="connect-modal-backdrop"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && status !== "signing" && status !== "verifying") {
-          onClose();
-        }
-      }}
     >
       <div
         className="relative w-full max-w-md rounded-2xl border border-[hsl(var(--card-border))] bg-[hsl(var(--card))] p-6 shadow-[var(--shadow-lg)] overflow-hidden"
@@ -115,10 +80,10 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
         <div className="flex items-center justify-between pb-4 border-b border-[hsl(var(--border)/0.5)]">
           <div>
             <h2 className="text-lg font-bold text-[hsl(var(--foreground))]">
-              Đăng nhập Bloody-Roar
+              {t("signInTitle")}
             </h2>
             <p className="text-xs text-[hsl(var(--foreground-muted))] mt-0.5">
-              Kết nối ví Web3 hoặc đăng nhập bằng tài khoản mạng xã hội
+              {t("signInWalletDesc")}
             </p>
           </div>
           <button
@@ -192,7 +157,7 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
             }`}
             data-testid="tab-web3-btn"
           >
-            Ví Web3
+            {t("web3Wallets")}
           </button>
           <button
             type="button"
@@ -204,7 +169,7 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
             }`}
             data-testid="tab-social-btn"
           >
-            Mạng xã hội / Email
+            {t("linkedAccounts")}
           </button>
         </div>
 
@@ -230,9 +195,9 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
                     </div>
                     <div className="text-[11px] text-[hsl(var(--foreground-subtle))]">
                       {wallet.id === "metamask"
-                        ? "Phổ biến nhất · Ethereum / Base"
+                        ? "Phổ biến nhất · Base Sepolia"
                         : wallet.id === "coinbase"
-                        ? "Smart Wallet · Khuyên dùng"
+                        ? "Coinbase browser extension"
                         : "Tương thích EVM Wallet"}
                     </div>
                   </div>
@@ -245,61 +210,10 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
           </div>
         )}
 
-        {/* Tab 2: Social Login & Email */}
+        {/* Social providers are account linking, not wallet authentication. */}
         {activeTab === "social" && (
-          <div className="space-y-3">
-            {SOCIAL_OPTIONS.filter((s) => s.provider !== "email").map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleSocialSelect(item)}
-                disabled={status === "signing" || status === "verifying"}
-                className="w-full flex items-center justify-between p-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] hover:bg-[hsl(var(--background-tertiary))] hover:border-[hsl(var(--accent)/0.4)] transition-all text-left disabled:opacity-50 group"
-                data-testid={`social-btn-${item.id}`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">{item.icon}</span>
-                  <span className="text-sm font-medium text-[hsl(var(--foreground))]">
-                    {item.name}
-                  </span>
-                </div>
-                <span className="text-xs text-[hsl(var(--foreground-muted))] group-hover:text-[hsl(var(--accent))]">
-                  Đăng nhập
-                </span>
-              </button>
-            ))}
-
-            <div className="relative my-4 text-center">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[hsl(var(--border)/0.5)]" />
-              </div>
-              <span className="relative bg-[hsl(var(--card))] px-2 text-[11px] text-[hsl(var(--foreground-subtle))] uppercase tracking-wider">
-                hoặc email
-              </span>
-            </div>
-
-            {/* Email OTP form */}
-            <form onSubmit={handleEmailSubmit} className="space-y-2">
-              <input
-                type="email"
-                value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
-                placeholder="developer@example.com"
-                required
-                className="w-full h-10 px-3 rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--background-secondary))] text-sm text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--foreground-subtle))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]"
-                data-testid="email-input"
-              />
-              <Button
-                type="submit"
-                variant="primary"
-                size="sm"
-                className="w-full"
-                isLoading={emailSent}
-                data-testid="email-submit-btn"
-              >
-                Gửi mã xác thực OTP
-              </Button>
-            </form>
+          <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] p-4 text-sm leading-6 text-[hsl(var(--foreground-muted))]">
+            {t("socialLoginUnavailable")}
           </div>
         )}
 
@@ -307,7 +221,7 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
         <div className="mt-5 pt-4 border-t border-[hsl(var(--border)/0.5)] text-center">
           <div className="inline-flex items-center gap-1.5 text-[11px] text-[hsl(var(--foreground-subtle))]">
             <span>🛡️</span>
-            <span>Bảo mật bằng mật mã học EIP-712 & Thirdweb Auth trên Base L2</span>
+            <span>Chữ ký SIWE chỉ xác minh quyền sở hữu ví, không tạo giao dịch hay trừ tiền</span>
           </div>
         </div>
       </div>

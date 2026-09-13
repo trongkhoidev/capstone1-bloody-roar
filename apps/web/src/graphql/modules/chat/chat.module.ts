@@ -1,6 +1,6 @@
 import { builder } from "../../builder";
 import { GraphQLError } from "graphql";
-import { canAccessIssue } from "../../../lib/access";
+import { canReadIssueChat } from "../../../lib/chat-access";
 import { parseOrThrow } from "../../errors";
 import { z } from "zod";
 import type { Prisma } from "@bloody-roar/database";
@@ -134,8 +134,11 @@ builder.queryFields((t) => ({
         throw new GraphQLError("Unauthorized", { extensions: { code: "UNAUTHORIZED" } });
       }
 
-      const hasAccess = await canAccessIssue(ctx.db, args.issueId, ctx.user.id);
-      if (!hasAccess) {
+      const issue = await ctx.db.issue.findUnique({
+        where: { id: args.issueId },
+        select: { clientId: true, developerId: true, status: true },
+      });
+      if (!issue || !canReadIssueChat(issue, ctx.user)) {
         throw new GraphQLError("Forbidden", { extensions: { code: "FORBIDDEN" } });
       }
 
@@ -144,31 +147,29 @@ builder.queryFields((t) => ({
 
       const rows = await ctx.db.message.findMany({
         where: { issueId: args.issueId },
-        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         take: take + 1,
         ...(q.after ? { cursor: { id: decodeCursor(q.after) }, skip: 1 } : {}),
         include: MESSAGE_INCLUDE,
       });
 
       const hasNextPage = rows.length > take;
-      const messages = hasNextPage ? rows.slice(0, take) : rows;
+      const messages = (hasNextPage ? rows.slice(0, take) : rows).reverse();
 
-      // Set readAt on fetched messages & reset unread asynchronously in DB
-      const now = new Date();
-      messages.forEach((msg) => {
-        if (msg.senderId !== ctx.user?.id && !msg.readAt) {
-          msg.readAt = now;
-        }
-      });
-
-      ctx.db.message.updateMany({
-        where: {
-          issueId: args.issueId,
-          senderId: { not: ctx.user.id },
-          readAt: null,
-        },
-        data: { readAt: now },
-      }).catch(() => null);
+      const unreadIds = messages
+        .filter((message) => message.senderId !== ctx.user?.id && !message.readAt)
+        .map((message) => message.id);
+      if (unreadIds.length) {
+        const now = new Date();
+        await ctx.db.message.updateMany({
+          where: { id: { in: unreadIds }, issueId: args.issueId, readAt: null },
+          data: { readAt: now },
+        });
+        const unread = new Set(unreadIds);
+        messages.forEach((message) => {
+          if (unread.has(message.id)) message.readAt = now;
+        });
+      }
 
       const firstItem = messages[0];
       const lastItem = messages[messages.length - 1];

@@ -121,21 +121,7 @@ Msg 1785, Level 16, State 0, Line 1292
 Introducing FOREIGN KEY constraint 'FK_disputes_escrows' on table 'disputes' may cause cycles or multiple cascade paths. Specify ON DELETE NO ACTION or ON UPDATE NO ACTION, or modify other FOREIGN KEY constraints.
 Msg 1750, Level 16, State 1, Line 1292
 Could not create constraint or index. See previous errors.
-Msg 1785, Level 16, State 0, Line 1265
-Introducing FOREIGN KEY constraint 'FK_attachments_messages' on table 'attachments' may cause cycles or multiple cascade paths. Specify ON DELETE NO ACTION or ON UPDATE NO ACTION, or modify other FOREIGN KEY constraints.
-Msg 1750, Level 16, State 1, Line 1265
-Could not create constraint or index. See previous errors.
-Msg 1785, Level 16, State 0, Line 1292
-Introducing FOREIGN KEY constraint 'FK_disputes_escrows' on table 'disputes' may cause cycles or multiple cascade paths. Specify ON DELETE NO ACTION or ON UPDATE NO ACTION, or modify other FOREIGN KEY constraints.
-Msg 1750, Level 16, State 1, Line 1292
-Could not create constraint or index. See previous errors.
 
-(27 rows affected)
-
-(1 row affected)
-==============================================
-BloodyRoar SQL Server schema created!
-Expected tables: 17
 (27 rows affected)
 
 (1 row affected)

@@ -10,12 +10,24 @@ import type { GraphQLContext } from "./context";
 export const builder = new SchemaBuilder<{
   Context: GraphQLContext;
   PrismaTypes: PrismaTypes;
+  Scalars: {
+    DateTime: { Input: Date; Output: Date };
+  };
 }>({
   plugins: [PrismaPlugin, WithInputPlugin],
   prisma: {
     client: prisma,
     // Use generated datamodel instead of internal _dmmf
     dmmf: getDatamodel(),
+  },
+});
+
+// Implement DateTime scalar
+builder.scalarType("DateTime", {
+  serialize: (n) => (n as Date).toISOString(),
+  parseValue: (n) => {
+    if (typeof n === "string") return new Date(n);
+    throw new Error("Invalid DateTime format");
   },
 });
 

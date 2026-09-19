@@ -4,15 +4,25 @@
   "private": true,
   "scripts": {
     "compile": "hardhat compile",
-    "test": "hardhat test",
+    "typecheck": "tsc --noEmit",
+    "format:check": "forge fmt --check",
+    "test": "hardhat test test/BloodyRoarEscrow.test.ts",
+    "test:fuzz": "forge test --offline",
+    "test:fork": "forge test --match-contract BaseSepoliaForkTest --fork-url https://sepolia.base.org",
+    "coverage": "hardhat coverage && node scripts/check-coverage.mjs",
+    "static": "uvx --from slither-analyzer slither . --config-file slither.config.json",
+    "audit:dependencies": "bun audit --audit-level=high",
+    "validate": "npm run compile && npm run typecheck && npm run format:check && npm test && npm run test:fuzz && npm run coverage && npm run deploy:dry-run",
     "test:gas": "REPORT_GAS=true hardhat test",
+    "deploy:dry-run": "hardhat run scripts/deploy.ts --network hardhat",
     "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
     "deploy:base-sepolia": "hardhat run scripts/deploy.ts --network baseSepolia",
-    "deploy:mainnet": "hardhat run scripts/deploy.ts --network mainnet",
     "node": "hardhat node",
     "clean": "hardhat clean",
-    "verify:base-sepolia": "hardhat verify --network baseSepolia",
-    "verify:mainnet": "hardhat verify --network mainnet"
+    "verify:base-sepolia": "hardhat verify --network baseSepolia"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "5.6.1"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.7",
@@ -20,7 +30,6 @@
     "@nomicfoundation/hardhat-network-helpers": "^1.0.11",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@nomicfoundation/hardhat-verify": "^2.0.9",
-    "@openzeppelin/contracts": "^5.0.2",
     "@typechain/ethers-v6": "^0.5.1",
     "@typechain/hardhat": "^9.1.0",
     "@types/chai": "^4.3.16",
@@ -31,6 +40,7 @@
     "hardhat": "^2.22.8",
     "hardhat-gas-reporter": "^1.0.10",
     "solidity-coverage": "^0.8.12",
+    "ts-node": "^10.9.2",
     "typechain": "^8.3.2",
     "typescript": "^5.5.2"
   }

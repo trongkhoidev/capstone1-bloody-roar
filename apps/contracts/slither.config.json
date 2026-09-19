@@ -1,0 +1,6 @@
+{
+  "exclude_dependencies": true,
+  "fail_on": "medium",
+  "filter_paths": "contracts/MockSafe.sol|contracts/MockToken.sol|contracts/MockUSDC.sol|test/",
+  "solc_remaps": ["@openzeppelin/=node_modules/@openzeppelin/"]
+}

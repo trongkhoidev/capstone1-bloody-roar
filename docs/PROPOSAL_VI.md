@@ -1,6 +1,6 @@
-# ĐỀ XUẤT DỰ ÁN BLOODY-ROAR
+# BLOODY-ROAR — DECENTRALIZED BOUNTY MARKETPLACE
 
-## Nền tảng kết nối khách hàng và lập trình viên với cơ chế escrow trên blockchain
+## Đề xuất nền tảng bounty marketplace với on-chain Escrow
 
 | Thông tin | Nội dung |
 | --- | --- |
@@ -12,69 +12,75 @@
 | Thời gian thực hiện | 10 tuần, ngày bắt đầu và kết thúc [CẦN BỔ SUNG] |
 | Phiên bản | 2.0 |
 | Ngày cập nhật | 19/09/2026 |
+| MVP chain | Base Sepolia |
+| Settlement token | Một ERC-20 tương thích USDC, chính xác 6 decimals |
+| Contract address | Chưa deployment; tài liệu không công bố địa chỉ |
 
-> **Trạng thái tài liệu.** Đây là đề xuất độc lập bằng tiếng Việt. Các nhận định về phần mềm đã có được đối chiếu với nhánh `main` tại commit [`33aed2e1028d9fd89bb6d62b47a3df65ea1cb328`](https://github.com/trongkhoidev/capstone1-bloody-roar/commit/33aed2e1028d9fd89bb6d62b47a3df65ea1cb328). Chức năng chỉ có trong nhánh hoặc pull request riêng không được xem là đã có trên upstream.
+> **Trạng thái tài liệu.** Đây là đề xuất sản phẩm độc lập bằng tiếng Việt; các phần mô tả architecture và contract flow tuân theo `Bloody_Roar_Proposal_Revised.docx`. Các nhận định về phần mềm đã có trên upstream được đối chiếu với nhánh `main` tại commit [`33aed2e1028d9fd89bb6d62b47a3df65ea1cb328`](https://github.com/trongkhoidev/capstone1-bloody-roar/commit/33aed2e1028d9fd89bb6d62b47a3df65ea1cb328). Solidity Escrow và deployment tooling của revision được triển khai và test ở local branch riêng; chúng chưa có trên upstream và chưa được deployment lên Base Sepolia. Backend integration, database Projection, Indexer, cloud deployment, monitoring và public-chain deployment được mô tả như **Target — not implemented** trừ khi có bằng chứng repository riêng.
+
+> **Quy ước thuật ngữ.** Các domain và engineering terms giữ nguyên bằng tiếng Anh, gồm `Client`, `Developer`, `Issue`, `Application`, `Funding Reservation`, `Escrow`, `Transaction Intent`, `Chain Event`, `Projection`, `Submission`, `Settlement`, `Dispute`, `Ruling`, `state machine`, `invariant`, `frontend`, `backend`, `Indexer`, `deployment` và `multisig Safe`. Phần diễn giải còn lại dùng tiếng Việt tự nhiên.
 
 ## 1. Tóm tắt đề xuất
 
-Bloody-Roar là nền tảng kết nối khách hàng có nhu cầu phát triển phần mềm với lập trình viên phù hợp. Khách hàng đăng một công việc (Issue), lập trình viên ứng tuyển, khách hàng chọn người thực hiện và theo dõi quá trình bàn giao. Điểm khác biệt của sản phẩm là tiền thưởng được giữ bằng smart contract escrow thay vì do nền tảng trực tiếp nắm giữ.
+Bloody-Roar là nền tảng kết nối `Client` có nhu cầu phát triển phần mềm với `Developer` phù hợp. `Client` đăng một `Issue`, `Developer` gửi `Application`, `Client` chọn người thực hiện và theo dõi `Submission`. Điểm khác biệt của sản phẩm là tiền thưởng được giữ bằng smart contract `Escrow` thay vì do nền tảng trực tiếp nắm giữ.
 
 Sản phẩm hướng đến ba giá trị chính:
 
-1. giảm rủi ro khách hàng trả tiền nhưng không nhận được kết quả;
-2. giảm rủi ro lập trình viên hoàn thành công việc nhưng không được thanh toán;
+1. giảm rủi ro `Client` trả tiền nhưng không nhận được kết quả;
+2. giảm rủi ro `Developer` hoàn thành công việc nhưng không được thanh toán;
 3. tạo lịch sử trao đổi và trạng thái công việc có thể kiểm tra khi phát sinh bất đồng.
 
-MVP tập trung vào marketplace, xác thực bằng ví, ứng tuyển và lựa chọn lập trình viên, chat theo từng công việc, escrow trên Base Sepolia và quy trình khiếu nại có người phân xử. Các chức năng AI, GitHub integration, phân tích nâng cao và chứng thực danh tiếng chỉ được đưa vào khi những luồng cốt lõi đã ổn định và có đủ thời gian kiểm chứng.
+MVP tập trung vào marketplace, xác thực bằng ví, `Application` và lựa chọn `Developer`, chat theo từng `Issue`, `Escrow` trên Base Sepolia và quy trình `Dispute` do `Arbiter Safe` xử lý. Các chức năng AI, GitHub integration, phân tích nâng cao và chứng thực danh tiếng chỉ được đưa vào khi những luồng cốt lõi đã ổn định và có đủ thời gian kiểm chứng.
 
 ## 2. Bối cảnh và vấn đề
 
-Trong giao dịch freelance, hai bên thường phải chấp nhận một trong hai rủi ro: khách hàng trả trước và phụ thuộc vào người thực hiện, hoặc lập trình viên bàn giao trước và phụ thuộc vào thiện chí thanh toán. Các nền tảng tập trung giảm rủi ro bằng cách giữ tiền và xử lý tranh chấp, nhưng người dùng phải tin vào chính sách, khả năng vận hành và quyết định của nền tảng.
+Trong giao dịch freelance, hai bên thường phải chấp nhận một trong hai rủi ro: `Client` trả trước và phụ thuộc vào người thực hiện, hoặc `Developer` gửi `Submission` trước và phụ thuộc vào thiện chí thanh toán. Các nền tảng tập trung giảm rủi ro bằng cách giữ tiền và xử lý `Dispute`, nhưng người dùng phải tin vào chính sách, khả năng vận hành và quyết định của nền tảng.
 
 Đối với các nhóm nhỏ hoặc giao dịch xuyên biên giới, vấn đề còn rõ hơn:
 
 - điều khoản hoàn thành thường thiếu tiêu chí đo được;
 - tiến độ, trao đổi và bằng chứng nằm rải rác ở nhiều công cụ;
 - trạng thái thanh toán khó kiểm chứng độc lập;
-- quy trình khiếu nại thiếu thời hạn và lối thoát rõ ràng;
+- `Dispute` process thiếu deadline và exit rõ ràng;
 - chi phí trung gian có thể không phù hợp với công việc giá trị nhỏ.
 
-Bloody-Roar không đặt mục tiêu loại bỏ mọi yếu tố tin cậy. Sản phẩm chuyển việc giữ và phân phối tiền sang smart contract, đồng thời công khai các quy tắc về thời hạn, giải ngân, hoàn tiền và phán quyết. Những phần còn phụ thuộc vào con người, như đánh giá chất lượng sản phẩm hoặc phân xử bằng chứng, được mô tả rõ thay vì gắn nhãn “trustless”.
+Bloody-Roar không đặt mục tiêu loại bỏ mọi yếu tố tin cậy. Sản phẩm chuyển việc giữ và phân phối tiền sang smart contract, đồng thời công khai các rules về deadline, release, refund và `Ruling`. Những phần còn phụ thuộc vào con người, như đánh giá chất lượng sản phẩm hoặc review evidence, được mô tả rõ thay vì gắn nhãn “trustless”.
 
 ## 3. Người dùng và nhu cầu
 
 | Nhóm liên quan | Nhu cầu chính |
 | --- | --- |
-| Khách hàng | Đăng yêu cầu rõ ràng, chọn lập trình viên, bảo toàn tiền trước khi có kết quả, giải ngân hoặc khiếu nại theo quy tắc xác định |
-| Lập trình viên | Tìm công việc phù hợp, ứng tuyển, trao đổi, bàn giao và nhận tiền mà không phụ thuộc hoàn toàn vào quyết định đơn phương của khách hàng |
-| Người phân xử | Tiếp cận hồ sơ bằng chứng đầy đủ, đưa ra phán quyết trong phạm vi quyền hạn đã công bố |
-| Quản trị viên | Vận hành marketplace, xử lý nội dung và sự cố mà không có quyền tùy ý chiếm dụng tiền escrow |
+| `Client` | Đăng yêu cầu rõ ràng, chọn `Developer`, bảo toàn tiền trước khi có kết quả, gọi `releaseFunds` hoặc mở `Dispute` theo quy tắc xác định |
+| `Developer` | Tìm `Issue` phù hợp, gửi `Application`, trao đổi, gửi `Submission` và nhận tiền mà không phụ thuộc hoàn toàn vào quyết định đơn phương của `Client` |
+| `Arbiter Safe` | Tiếp cận evidence manifest, đăng initial/final `Ruling` trong phạm vi quyền hạn đã công bố; không có quyền deposit, release hoặc `Settlement` thay hai bên |
+| `Owner Safe` | Pause deposit mới và thực hiện two-step rotation cho arbiter hoặc fee recipient; không có arbitrary withdrawal |
+| Platform operator | Vận hành marketplace và xử lý sự cố nhưng không có authority đối với participant funds hoặc `Ruling` |
 | Nhóm phát triển | Có phạm vi MVP, tiêu chí chấp nhận, trạng thái triển khai và trách nhiệm kỹ thuật minh bạch |
 
 ## 4. Giải pháp đề xuất và giá trị khác biệt
 
 ### 4.1 Marketplace theo vòng đời công việc
 
-Khách hàng tạo Issue với mô tả, lĩnh vực, tiền thưởng và thời hạn. Lập trình viên tìm kiếm, lọc và gửi Application. Khách hàng xem ứng viên rồi chọn một người thực hiện. Mỗi thay đổi trạng thái phải có điều kiện quyền hạn rõ ràng; ví dụ, chỉ chủ Issue được sửa hoặc hủy trước khi đã chọn lập trình viên.
+`Client` tạo `Issue` với mô tả, lĩnh vực, tiền thưởng và thời hạn. `Developer` tìm kiếm, lọc và gửi `Application`. `Client` xem ứng viên rồi chọn một `Developer`. Mỗi thay đổi trạng thái phải có điều kiện authority rõ ràng; ví dụ, chỉ chủ `Issue` được sửa hoặc hủy trước khi đã chọn `Developer`.
 
 ### 4.2 Escrow do ví người dùng kiểm soát
 
-Khi hai bên thống nhất, khách hàng dùng ví để nạp token vào smart contract. Backend có thể chuẩn bị dữ liệu giao dịch và hiển thị trạng thái, nhưng không giữ khóa và không ký thay người dùng. Một giao dịch chỉ được xem là thành công sau khi có xác nhận on-chain; yêu cầu ký hoặc transaction hash chưa phải bằng chứng hoàn tất.
+Khi hai bên thống nhất, `Client` dùng ví để deposit token vào smart contract. Backend có thể validate input và trả về `{ contractAddress, method, typedArgs }` cùng intent expiry, nhưng không giữ khóa, không broadcast participant transaction và không ký thay người dùng. `Transaction Intent` hoặc transaction hash chưa phải bằng chứng hoàn tất; chỉ receipt và canonical `Chain Event` mới cho phép `Projection` chuyển sang trạng thái confirmed.
 
 ### 4.3 Trao đổi và bằng chứng theo từng Issue
 
-Socket.IO cung cấp chat theo phòng gắn với Issue. Tin nhắn được lưu để hai bên có thể xem lại bối cảnh. File đính kèm và bằng chứng khiếu nại là mục tiêu của MVP, nhưng phải dùng vùng lưu trữ riêng tư và kiểm soát quyền truy cập; blockchain chỉ lưu dấu băm cần thiết, không lưu nội dung nhạy cảm.
+Socket.IO cung cấp chat theo room gắn với `Issue`. Tin nhắn được lưu để hai bên có thể xem lại bối cảnh. File đính kèm và `Dispute` evidence phải dùng private storage và access control; blockchain chỉ lưu deterministic `bytes32` digest, không lưu nội dung nhạy cảm.
 
-### 4.4 Khiếu nại có giới hạn quyền lực
+### 4.4 Dispute với authority được giới hạn
 
-Khi một bên mở khiếu nại, các lối giải ngân thông thường bị đóng băng. Người phân xử công bố tỷ lệ phân chia và dấu băm của quyết định. Cơ chế challenge, thời gian chờ và lối thoát khi người phân xử không hành động phải được kiểm thử trước khi triển khai công khai. AI, nếu được sử dụng, chỉ hỗ trợ tổng hợp và đề xuất; AI không ký giao dịch và không tự quyết định việc chuyển tiền.
+Khi một bên mở `Dispute`, các exit thông thường bị đóng băng. `Arbiter Safe` đăng initial `Ruling` gồm payout ratio và decision hash. Một challenge hợp lệ trong notice window yêu cầu final `Ruling`; nếu arbiter không hành động sau challenge, contract phải cung cấp permissionless timeout exit. AI, nếu được sử dụng, chỉ hỗ trợ tổng hợp và đề xuất; AI không ký transaction và không quyết định việc chuyển tiền.
 
 ### 4.5 So sánh định hướng
 
 | Nhóm giải pháp | Ưu điểm | Khoảng trống Bloody-Roar hướng tới |
 | --- | --- | --- |
 | Marketplace tập trung | Trải nghiệm quen thuộc, có hệ thống tìm việc và hỗ trợ | Quy tắc giữ tiền và phân xử phụ thuộc vào một nhà vận hành |
-| Thanh toán trực tiếp | Đơn giản, ít thành phần | Không bảo vệ đồng thời cả hai bên trước khi bàn giao |
+| Thanh toán trực tiếp | Đơn giản, ít thành phần | Không bảo vệ đồng thời cả hai bên trước `Submission` |
 | Marketplace dùng blockchain | Dòng tiền có thể kiểm tra on-chain | Thường phức tạp với người dùng và vẫn cần quy trình xử lý chất lượng công việc |
 | Bloody-Roar | Kết hợp marketplace, chat và escrow do ví kiểm soát | Phải chứng minh trải nghiệm sử dụng, an toàn smart contract và tính khả thi của cơ chế phân xử |
 
@@ -87,17 +93,17 @@ So sánh này nêu vị trí sản phẩm, không khẳng định ưu thế đ�
 - đăng nhập bằng ví và duy trì phiên;
 - hồ sơ người dùng cơ bản;
 - tạo, sửa, hủy, tìm kiếm và xem Issue;
-- ứng tuyển, xem ứng viên và chọn lập trình viên;
+- gửi `Application`, xem ứng viên và chọn `Developer`;
 - chat thời gian thực và xem lại lịch sử theo Issue;
-- nạp tiền, bàn giao, giải ngân, hoàn tiền, thỏa thuận dàn xếp và khiếu nại trên Base Sepolia;
-- hiển thị trạng thái giao dịch dựa trên sự kiện on-chain đã xác nhận;
+- deposit, `Submission`, release, refund, `Settlement` và `Dispute` trên Base Sepolia;
+- hiển thị trạng thái transaction dựa trên canonical `Chain Event` đã xác nhận;
 - kiểm thử các luồng nghiệp vụ chính và tài liệu chạy dự án.
 
 ### 5.2 Ngoài phạm vi MVP cốt lõi
 
 - giao dịch bằng tiền pháp định hoặc triển khai mainnet;
 - hệ thống eKYC đầy đủ và ứng dụng di động native;
-- tự động giải ngân chỉ vì pull request được merge hoặc AI đưa ra đề xuất;
+- auto-release chỉ vì pull request được merge hoặc AI đưa ra đề xuất;
 - lưu mã nguồn riêng tư hay bằng chứng nhạy cảm công khai trên blockchain;
 - cam kết về AI đa tác tử, analytics, EAS reputation hoặc bộ công cụ quản trị nâng cao trước khi luồng cốt lõi đạt tiêu chí chấp nhận.
 
@@ -105,110 +111,171 @@ So sánh này nêu vị trí sản phẩm, không khẳng định ưu thế đ�
 
 | Mục tiêu | Kết quả có thể kiểm tra |
 | --- | --- |
-| Hoàn thiện luồng marketplace | Người dùng có thể tạo Issue, ứng tuyển và chọn lập trình viên với kiểm tra quyền phù hợp |
-| Hoàn thiện luồng escrow | Các nhánh giải ngân, hoàn tiền, dàn xếp, khiếu nại và timeout vượt qua unit test và test tích hợp đã định nghĩa |
-| Bảo đảm quyền kiểm soát ví | Backend không lưu private key và không đánh dấu thành công trước receipt/event đã xác nhận |
+| Hoàn thiện marketplace flow | Người dùng có thể tạo `Issue`, gửi `Application` và chọn `Developer` với access-control phù hợp |
+| Hoàn thiện `Escrow` flow | Các nhánh release, refund, `Settlement`, `Dispute`, `Ruling` và timeout vượt qua unit test và integration test đã định nghĩa |
+| Bảo đảm wallet authority | Backend không lưu private key và không đánh dấu thành công trước receipt/canonical `Chain Event` |
 | Cung cấp trao đổi theo công việc | Chỉ thành viên hợp lệ truy cập phòng chat; tin nhắn được lưu và tải lại |
 | Tạo bản MVP có thể đánh giá | Có hướng dẫn thiết lập, môi trường demo, báo cáo test và danh sách giới hạn còn lại |
 
 Sản phẩm bàn giao dự kiến gồm mã nguồn monorepo, giao diện web, GraphQL API, Socket.IO service, schema và migration PostgreSQL, smart contract cùng bộ test, script deployment có kiểm soát, tài liệu API/thiết lập và báo cáo kiểm thử. Địa chỉ contract hoặc URL production chỉ được công bố khi có bằng chứng triển khai tương ứng.
 
-## 7. Luồng sử dụng đại diện
+## 7. Numbered lifecycle use cases
 
-### 7.1 Tạo Issue và chọn lập trình viên
+### UC-01 — Selection and wallet deposit
 
-1. Khách hàng đăng nhập và tạo Issue với mô tả, tiền thưởng, token và thời hạn.
-2. Lập trình viên tìm Issue và gửi Application.
-3. Khách hàng xem hồ sơ ứng viên và chọn một lập trình viên.
-4. Hệ thống chuẩn bị yêu cầu nạp tiền; khách hàng xác nhận bằng ví.
-5. Issue chỉ chuyển sang đang thực hiện sau khi sự kiện nạp tiền được xác nhận.
+1. `Client` tạo `Issue`; trước khi trả funding calldata, backend phải validate một EIP-712 listing intent còn hạn và khớp signer, token, amount, terms hash, `Developer` và delivery deadline hiện tại.
+2. `Developer` tìm `Issue` và gửi `Application`.
+3. Khi `Client` chọn một `Developer`, backend tạo `Funding Reservation` ở trạng thái `AWAITING_FUNDING` trong 24 giờ; các `Application` khác vẫn được giữ nguyên.
+4. Backend trả contract address, ABI method và typed arguments; `Client` tự xác nhận transaction bằng ví.
+5. Chỉ canonical `Deposited` event mới chuyển `Issue` sang `IN_PROGRESS` và finalize selection. Reservation hết hạn sẽ mở lại `Issue`.
 
-### 7.2 Bàn giao và giải ngân
+### UC-02 — Submission, Client release, and review timeout
 
-1. Lập trình viên trao đổi và gửi dấu băm của sản phẩm bàn giao trước hạn.
-2. Khách hàng kiểm tra kết quả và chủ động giải ngân nếu chấp nhận.
-3. Nếu khách hàng không phản hồi, lối thoát theo thời hạn của contract được áp dụng.
-4. Nếu chưa có bàn giao khi quá hạn, khách hàng dùng lối hoàn tiền tương ứng.
+1. `Developer` gọi `submitWork` và có thể thay thế delivery hash đến hết delivery deadline.
+2. Sau `Submission` đầu tiên, `Client` có thể gọi `releaseFunds` cho phiên bản mới nhất; release áp dụng platform fee 2,5%.
+3. Nếu `Client` không phản hồi, `Developer` có thể gọi `claimReviewTimeout` sau mốc cố định `deliveryDeadline + 7 days` và nhận toàn bộ amount.
+4. `Submission` ở phút cuối không được dời review deadline vì deadline này luôn tính từ delivery deadline ban đầu.
 
-### 7.3 Dàn xếp và khiếu nại
+### UC-03 — Missed delivery
 
-1. Hai bên có thể đề xuất và chấp nhận một tỷ lệ dàn xếp.
-2. Nếu không thống nhất, một bên mở khiếu nại và cung cấp dấu băm bằng chứng.
-3. Người phân xử đưa ra phán quyết trong thời hạn công bố.
-4. Bên tham gia có quyền challenge theo quy tắc của contract.
-5. Phán quyết hợp lệ được thực thi sau thời gian chờ; contract phải có lối thoát nếu quá trình phân xử đình trệ.
+Nếu không có `Submission` sau delivery deadline, `Client` gọi `claimMissedDeliveryRefund` để nhận full refund. Exit này fee-free và độc lập với review timeout vì chưa có work được submit.
+
+### UC-04 — Mutual Settlement
+
+Một participant có thể gọi `proposeSettlement` với Client payout ratio từ 0 đến 10.000 basis points. Chỉ counterparty được accept; proposer có thể revoke. Khi accept, contract phân phối đúng ratio, không thu platform fee. `Settlement` khả dụng trong mọi non-terminal phase, kể cả `Dispute` và ruling-notice phase.
+
+### UC-05 — Dispute, challenge, and arbiter timeout
+
+1. Một participant mở `Dispute` với evidence-manifest hash; participant còn lại có thể submit manifest của mình.
+2. `Arbiter Safe` đăng initial `Ruling` gồm Client payout ratio và decision hash, bắt đầu notice window 24 giờ.
+3. Mỗi `Escrow` chỉ cho phép một challenge trong notice window đầu tiên. Sau challenge, `Arbiter Safe` phải đăng final `Ruling`, bắt đầu notice window thứ hai 24 giờ và không thể challenge tiếp.
+4. Bất kỳ địa chỉ nào cũng có thể execute một `Ruling` đã đủ notice period.
+5. Nếu không có final `Ruling` trong 30 ngày sau challenge, một participant có thể gọi arbiter-timeout exit để thực hiện split 50/50, fee-free.
 
 ## 8. Yêu cầu sản phẩm
 
 ### 8.1 Yêu cầu chức năng
 
-- **FR-01 — Xác thực:** xác minh chữ ký ví, tạo phiên và bảo vệ resolver cần đăng nhập.
-- **FR-02 — Hồ sơ:** xem và cập nhật thông tin hồ sơ được cho phép.
-- **FR-03 — Marketplace:** tạo, đọc, cập nhật, hủy, lọc, sắp xếp và phân trang Issue.
-- **FR-04 — Ứng tuyển:** lập trình viên ứng tuyển; khách hàng xem và chọn ứng viên.
-- **FR-05 — Chat:** xác thực kết nối, kiểm tra quyền vào phòng, lưu và phát tin nhắn.
-- **FR-06 — Nạp tiền:** ví khách hàng nạp đúng token và số tiền cho escrow duy nhất.
-- **FR-07 — Bàn giao:** lập trình viên ghi nhận hoặc cập nhật sản phẩm bàn giao trước hạn.
-- **FR-08 — Kết thúc thông thường:** hỗ trợ giải ngân, hoàn tiền quá hạn và nhận tiền sau thời gian xem xét.
-- **FR-09 — Dàn xếp:** một bên đề xuất, bên còn lại chấp nhận hoặc bên đề xuất thu hồi đề nghị.
-- **FR-10 — Khiếu nại:** ghi nhận bằng chứng, phán quyết, challenge, thực thi và timeout của người phân xử.
-- **FR-11 — Đồng bộ:** trạng thái hiển thị ngoài blockchain được dựng lại từ event và có thể đối soát.
+- **FR-01 — Authentication:** xác minh chữ ký ví, tạo session và bảo vệ resolver cần đăng nhập.
+- **FR-02 — Profile:** xem và cập nhật profile fields được cho phép.
+- **FR-03 — Marketplace:** tạo, đọc, cập nhật, hủy, filter, sort và paginate `Issue`.
+- **FR-04 — Application:** `Developer` gửi `Application`; `Client` xem và chọn ứng viên.
+- **FR-05 — Chat:** authenticate connection, kiểm tra room membership, persist và broadcast message.
+- **FR-06 — Deposit:** ví `Client` gọi `deposit(escrowId, developer, amount, deliveryDeadline, termsHash)` với đúng token, amount và deadline tương lai.
+- **FR-07 — Submission:** `Developer` gọi `submitWork` để ghi nhận hoặc cập nhật delivery hash trước deadline.
+- **FR-08 — Normal exits:** hỗ trợ `releaseFunds`, `claimMissedDeliveryRefund` và `claimReviewTimeout` theo đúng timing rules.
+- **FR-09 — Settlement:** một participant gọi `proposeSettlement`; counterparty accept hoặc proposer revoke.
+- **FR-10 — Dispute:** hỗ trợ evidence hashes, initial/final `Ruling`, một challenge, notice periods, execution và arbiter timeout.
+- **FR-11 — Projection:** trạng thái hiển thị ngoài blockchain được dựng lại từ canonical `Chain Event`, có checkpoint, replay và reorg recovery.
 
 ### 8.2 Yêu cầu phi chức năng
 
 - **An toàn:** áp dụng kiểm soát truy cập, checks-effects-interactions, chống reentrancy và chuyển token an toàn; không ghi log secret.
-- **Nhất quán:** PostgreSQL là mô hình truy vấn, còn trạng thái tiền và escrow lấy blockchain làm căn cứ.
-- **Khả năng kiểm thử:** unit test, integration test và E2E test bao phủ các luồng chính và trường hợp lỗi.
+- **Nhất quán:** PostgreSQL là query `Projection`; blockchain là authority cho funds và `Escrow` lifecycle.
+- **Numeric safety:** token values, ratios và deadlines dùng integer hoặc decimal string; không dùng JavaScript floating-point.
+- **Khả năng kiểm thử:** unit test, integration test, fuzz/invariant test và E2E test bao phủ các flow chính và failure case.
 - **Khả năng truy cập:** các luồng cốt lõi dùng được bằng bàn phím, có nhãn và trạng thái lỗi rõ ràng.
-- **Khả năng vận hành:** có health check, log có cấu trúc, cấu hình qua biến môi trường và quy trình deployment tái lập.
-- **Hiệu năng:** danh sách Issue dùng phân trang; thao tác mạng chậm có trạng thái chờ, retry có giới hạn và thông báo dễ hiểu.
+- **Khả năng vận hành:** có health check, structured log, environment configuration và reproducible deployment process.
+- **Hiệu năng:** danh sách `Issue` dùng pagination; thao tác mạng chậm có pending state, bounded retry và thông báo dễ hiểu.
 - **Riêng tư:** file và bằng chứng không công khai mặc định; chỉ lưu tối thiểu dữ liệu cần thiết on-chain.
+- **Realtime safety:** Socket.IO chỉ phát `{ escrowId, projectionVersion }` để invalidate cache; Client phải refetch canonical GraphQL state. Mất socket message chỉ ảnh hưởng freshness, không ảnh hưởng funds hoặc lifecycle correctness.
 
 ## 9. Trạng thái hiện tại và kiến trúc mục tiêu
 
-### 9.1 Bằng chứng đã có trên upstream
+### 9.1 Evidence baseline và implementation status
 
 Tại mốc audit, repository đã có nền tảng Bun workspace, Prisma/PostgreSQL, Next.js custom server, GraphQL Yoga/Pothos, Socket.IO và Pino. Backend đã có các phần chính của xác thực, marketplace, application và chat. Chi tiết trạng thái theo từng công việc được ghi trong [`PRODUCT_BACKLOG.md`](PRODUCT_BACKLOG.md).
 
-Smart contract trên upstream mới là bộ khung Hardhat/OpenZeppelin và chưa chứng minh vòng đời escrow hoàn chỉnh. Các thay đổi contract phong phú hơn đang được xử lý trong nhánh hoặc pull request riêng nên không được tính là trạng thái upstream của đề xuất này.
+Smart contract trên upstream mới là bộ khung Hardhat/OpenZeppelin và chưa chứng minh `Escrow` lifecycle hoàn chỉnh. Revision trong local branch riêng triển khai non-upgradeable Solidity singleton và deployment/test tooling; trạng thái này là **Implemented locally — not on upstream**, không phải bằng chứng merged hoặc public deployment.
 
-### 9.2 Kiến trúc mục tiêu
+Tài liệu dùng ba status labels:
 
-| Thành phần | Trách nhiệm |
+| Status | Ý nghĩa |
 | --- | --- |
-| Web frontend | Giao diện marketplace, chat, trạng thái escrow và yêu cầu chữ ký ví |
-| GraphQL API | Xác thực, nghiệp vụ off-chain, truy vấn dữ liệu và chuẩn bị tham số giao dịch |
-| Socket.IO | Kết nối thời gian thực và kiểm soát phòng chat |
-| PostgreSQL/Prisma | Người dùng, Issue, Application, tin nhắn và read model từ blockchain |
-| Smart contract escrow | Giữ token và thực thi các chuyển trạng thái liên quan đến tiền |
-| Indexer/worker | Đọc event đã đủ xác nhận, xử lý replay/reorg và cập nhật projection |
-| Vùng lưu trữ riêng tư | File chat và hồ sơ bằng chứng có kiểm soát truy cập |
-| Ví và multisig Safe | Ký giao dịch của người dùng, chủ sở hữu hoặc người phân xử |
+| **Implemented** | Có bằng chứng bằng source, test, deployment tooling hoặc repository artifact tại baseline được nêu rõ |
+| **Target — not implemented** | Architecture bắt buộc trong tương lai nhưng chưa có bằng chứng implementation ở baseline |
+| **Deferred** | Nằm ngoài MVP và không được ngầm hiểu là một phần của target hiện tại |
+
+### 9.2 Component inventory
+
+| Component | Responsibility / trust boundary | Status |
+| --- | --- | --- |
+| `BloodyRoarEscrow` | Giữ token; authority cho on-chain funds và phase | **Implemented locally — not on upstream** |
+| Wallet / Safe | Ký participant hoặc governance transaction; keys ở lại với user/Safe | **Target** |
+| Web frontend | Marketplace, chat, `Escrow` state và wallet-signing request | **Target** |
+| GraphQL API | Validate input, trả typed calldata, query `Projection`; không đánh dấu transaction success | **Target** |
+| Socket.IO | Projection invalidation và chat realtime; không phải state authority | **Target** |
+| Indexer worker | Đọc safe logs, decode, replay, reconcile; không có payout authority | **Target** |
+| PostgreSQL/Prisma | User, `Issue`, `Application`, message, append-only `ChainEvent` và query `Projection` | **Target** |
+| Supabase Storage | Private evidence manifest/file; không dùng public bucket | **Target** |
+| Railway web service | Next.js, GraphQL và Socket.IO tại stateless boundary | **Target** |
+| Railway worker | Indexing, retry, checkpoint và reconciliation | **Target** |
+| Alchemy Base Sepolia RPC | Safe-head read; provider không phải state authority | **Target** |
+
+Trong bảng này, **Target** đánh giá capability tích hợp với `Escrow` theo revised architecture, không phủ nhận rằng repository đã có skeleton hoặc một phần backend capability ở upstream baseline.
 
 ### 9.3 Ranh giới tin cậy và invariant thiết yếu
 
-1. Backend và indexer không giữ khóa để hành động thay khách hàng hoặc lập trình viên.
-2. Tổng tiền chuyển ra từ một escrow không vượt quá số tiền đã nạp và mỗi escrow chỉ kết thúc một lần.
-3. Pause chỉ ngăn escrow mới; tiền đã khóa vẫn phải có lối thoát an toàn.
-4. Quyền thực hiện hành động được kiểm tra bằng địa chỉ gọi contract và trạng thái hiện tại.
-5. Thay đổi người phân xử hoặc nơi nhận phí không được làm thay đổi trái phép quyền đối với escrow đang tồn tại.
-6. Không coi dữ liệu off-chain là bằng chứng thanh toán nếu chưa đối chiếu event on-chain.
-7. Token, thời hạn, tỷ lệ và phép làm tròn phải có giới hạn rõ ràng và được kiểm thử ở biên.
+Contract `state machine` bắt đầu ở `FUNDED`. Phase này cho phép delivery revision, Client release, missed-delivery refund sau deadline, Developer review-timeout claim sau `deliveryDeadline + 7 days`, mutual `Settlement` hoặc `Dispute`. `DISPUTED` dẫn đến initial-ruling notice; một challenge chuyển `Escrow` sang `CHALLENGED`, nơi `Arbiter Safe` phải đăng final `Ruling` hoặc participant dùng 30-day 50/50 fallback. Mọi terminal phase reject exit lần hai.
+
+Contract controls của revision gồm `SafeERC20`, checks-effects-interactions, `ReentrancyGuard`, explicit custom errors và exact balance-delta check. Contract không upgrade và không có arbitrary withdrawal; `Owner Safe` chỉ pause deposit mới hoặc khởi tạo two-step role rotation.
+
+1. Participant authority đến từ `msg.sender`; backend, Indexer, authentication và deployment credentials không thể impersonate `Client`, `Developer` hoặc `Arbiter Safe`.
+2. Tổng transfer từ một `Escrow` bằng đúng deposit amount; không terminal transition nào được execute hai lần.
+3. Refund, timeout, `Settlement`, `Ruling` và arbiter-stall exits là fee-free; các path này không gọi fee recipient.
+4. Review deadline cố định tại `deliveryDeadline + 7 days`; last-minute `Submission` không dời deadline.
+5. Pause chỉ chặn `deposit`; mọi funded exit vẫn phải khả dụng khi paused.
+6. Receipt chưa có safe-head canonical `Chain Event` vẫn là pending; off-chain data không phải payment authority.
+7. Exact received-balance delta phải reject fee-on-transfer token thay vì tạo underfunded `Escrow`.
+8. Token address, yêu cầu 6 decimals, fee rate, review/challenge/stall periods là immutable contract rules của revision.
+
+### 9.4 Backend boundary — Target, not implemented
+
+- User wallet submit participant transaction; `Arbiter Safe` submit arbiter action.
+- GraphQL validate input và trả `{ contractAddress, method, typedArgs }` cùng intent expiry. GraphQL không broadcast participant transaction và không đánh dấu `Escrow` thành công chỉ vì transaction đã submit.
+- Trước khi trả funding calldata, backend phải verify EIP-712 listing intent còn hạn và khớp signer, token, amount, terms hash, `Developer` và delivery deadline hiện tại. Material edit yêu cầu signature mới.
+- Web `ADMIN` authorization tách biệt hoàn toàn với `Owner Safe` và `Arbiter Safe` authority.
+- MVP không có oracle/relayer và không có GitHub-merge auto-payment. GitHub webhook hoặc AI recommendation có thể là evidence cho user nhưng không được gọi `releaseFunds` hoặc thay đổi `Escrow` outcome.
+
+### 9.5 Database và Indexer — Target, not implemented
+
+`ChainEvent` là append-only record với unique identity `(chainId, contractAddress, txHash, logIndex)`. Record lưu block number/hash, transaction index, decoded event/payload, escrow key, canonical status, safe-head finality, first-seen time và last reconciliation time. Reorged event được giữ lại cho audit nhưng đánh dấu non-canonical, không bị xóa.
+
+`ProjectionCheckpoint` dùng key `(chainId, contractAddress)` và lưu last scanned block, last safe block, last canonical block hash, decoder version cùng replay status. `EscrowProjection` lưu participant addresses, raw integer token amount, delivery/review deadlines, hashes, phase, outcome, payout/refund/fee totals, finality, projection version và last projected block. Initial và final arbiter proposal phải là historical records riêng; overwrite initial ratio sẽ làm mất challenge history.
+
+Indexer chỉ fold logs đến RPC provider `safe` head vào authoritative `Projection`. Event processing phải ordered theo block number, transaction index và log index; idempotent theo `ChainEvent` identity; replayable từ checkpoint; và reorg-aware qua block-hash comparison. `TransactionIntent` chỉ theo dõi pending wallet submission, không được dùng làm confirmation.
+
+Private `Dispute` evidence đặt trong private Supabase Storage bucket. On-chain digest là `keccak256` của UTF-8 RFC 8785 canonical JSON; manifest entries có content hash, MIME metadata và deterministic ordering. Signed URL phải scoped và expiring, không phải on-chain authority.
+
+### 9.6 Cloud và operations — Target, not implemented
+
+Target topology gồm một single-replica Railway web service cho Next.js, GraphQL và Socket.IO; một Railway worker riêng cho indexing, retry, checkpoint và reconciliation; Supabase PostgreSQL; private Supabase Storage; và Alchemy Base Sepolia RPC. Redis, horizontal web scaling và Socket.IO Redis adapter là **Deferred**.
+
+- Web health check xác minh process liveness và database connectivity, không tuyên bố chain success.
+- Worker health check expose last safe head, checkpoint age, RPC latency, retry queue size và projection lag.
+- Structured log có chain ID, contract address, escrow ID, event identity, projection version và correlation ID; không log private evidence hoặc secret.
+- RPC outage phải giữ checkpoint, retry với bounded backoff và catch up từ safe head khi service trở lại.
+- Deployment rollback quay web/worker image về known artifact trước đó. Contract không upgrade; contract mới cần migration decision riêng.
+- Base Sepolia deployment cần explicit environment guard và địa chỉ token, `Owner Safe`, `Arbiter Safe`, fee recipient. Public deployment chỉ hợp lệ khi có reproducible constructor arguments, chain ID, transaction hash và verified contract address.
 
 ## 10. Thuật ngữ sử dụng
 
 | Thuật ngữ | Nghĩa trong dự án |
 | --- | --- |
-| Issue | Thực thể phần mềm biểu diễn một công việc do khách hàng đăng |
-| Application | Đơn ứng tuyển của lập trình viên cho một Issue |
-| Escrow | Cơ chế giữ và phân phối tiền theo điều kiện của smart contract |
-| Bàn giao | Kết quả công việc do lập trình viên gửi để khách hàng xem xét |
-| Dàn xếp | Tỷ lệ phân chia tiền do hai bên tự nguyện chấp nhận |
-| Khiếu nại | Trạng thái đóng băng các lối kết thúc thông thường để chờ phân xử |
-| Phán quyết | Tỷ lệ phân chia và dấu băm quyết định do người phân xử công bố |
-| Projection | Mô hình dữ liệu phục vụ truy vấn, được dựng từ event on-chain |
-| Transaction intent | Yêu cầu người dùng ký hoặc gửi giao dịch; chưa phải kết quả on-chain |
-| Invariant | Điều kiện luôn phải đúng trong mọi chuyển trạng thái hợp lệ |
+| `Client` | Wallet owner tạo `Issue`, fund `Escrow`, approve `Submission`, mở `Dispute`, đề xuất/chấp nhận `Settlement` hoặc claim missed-delivery refund |
+| `Developer` | Wallet owner được chỉ định trong `deposit`; gửi `Submission`, evidence, `Settlement` và claim review timeout |
+| `Issue` | Client work, terms, deadline và `Application`; thuộc marketplace read model |
+| `Application` | Developer application cho một `Issue` |
+| `Funding Reservation` | Selection hold 24 giờ trước funding; thuộc off-chain marketplace service |
+| `Escrow` | On-chain funds và lifecycle của một cặp `Client`/`Developer` |
+| `Transaction Intent` | Pending wallet request hoặc signed off-chain intent; không authoritative trước receipt |
+| `Chain Event` | Contract log có identity theo chain, address, transaction và log index |
+| `Projection` | Query model được fold từ canonical `Chain Event`; không phải funds authority |
+| `Submission` | Developer delivery hash, có thể thay thế đến delivery deadline |
+| `Settlement` | Fee-free payout ratio do proposer đưa ra và counterparty accept |
+| `Dispute` | Frozen phase chứa evidence-manifest hashes |
+| `Ruling` | Arbiter Safe payout ratio và decision hash |
+| `Invariant` | Điều kiện luôn đúng trong mọi valid state transition |
 
 ## 11. Phương pháp thực hiện và kế hoạch 10 tuần
 
@@ -219,7 +286,7 @@ Nhóm áp dụng Scrum theo sprint hai tuần. Product Backlog là nguồn theo 
 | Sprint 0 | Nền tảng kỹ thuật và thiết kế | Workspace, database, server, quy ước mã nguồn và khung contract |
 | Sprint 1 | Xác thực và marketplace | Đăng nhập, hồ sơ, Issue, Application và chat backend cơ bản |
 | Sprint 2 | Escrow và luồng giao tiếp | Vòng đời contract, tích hợp ví, chat/file và các test trọng yếu |
-| Sprint 3 | Khiếu nại và kiểm thử liên luồng | Phân xử, đồng bộ event, E2E cho luồng người dùng chính |
+| Sprint 3 | `Dispute` và cross-flow testing | `Ruling`, event sync, E2E cho user flow chính |
 | Sprint 4 | Ổn định và bàn giao | Sửa lỗi, bảo mật, accessibility, deployment, tài liệu và demo |
 
 Mỗi sprint gồm lập kế hoạch, cập nhật hằng ngày, review và retrospective. Pull request cần mô tả phạm vi, bằng chứng test và giới hạn còn lại; thay đổi liên quan đến tiền phải có review chéo.
@@ -249,11 +316,12 @@ Phân công có thể thay đổi theo năng lực và tiến độ; quyền s�
 
 | Rủi ro | Mức ảnh hưởng | Biện pháp |
 | --- | --- | --- |
-| Lỗi smart contract làm khóa hoặc phân phối sai tiền | Rất cao | Giới hạn mạng thử nghiệm; unit/fuzz/invariant test; review độc lập; kiểm tra deployment và tham số |
-| Backend hiển thị trạng thái khác blockchain | Cao | Dựng projection từ event; chờ đủ xác nhận; hỗ trợ replay và đối soát |
+| Lỗi smart contract làm khóa hoặc phân phối sai tiền | Rất cao | Non-upgradeable code; unit/fuzz/invariant test; coverage; static analysis; review độc lập; authorized deployment |
+| Participant ký stale terms | Cao | Bind amount, token, deadline, `Developer` và terms hash vào EIP-712 intent còn hạn |
+| Backend hiển thị trạng thái khác blockchain | Cao | Dựng `Projection` từ safe-head `Chain Event`; block-hash comparison; canonical flag; replay checkpoint |
 | Mất hoặc lộ khóa | Rất cao | Không giữ private key người dùng; dùng secret manager; multisig cho vai trò quản trị |
-| Người phân xử không phản hồi hoặc lạm quyền | Cao | Giới hạn quyền, thời hạn rõ ràng, challenge và lối thoát khi đình trệ |
-| Bằng chứng hoặc file chat bị lộ | Cao | Lưu trữ riêng tư, URL ngắn hạn, kiểm tra quyền và chính sách lưu giữ |
+| `Arbiter Safe` không phản hồi hoặc lạm quyền | Cao | Giới hạn authority; một challenge; final notice; 30-day fee-free 50/50 exit |
+| Evidence hoặc file chat bị lộ | Cao | Private Storage bucket, expiring URL, access control; chỉ content hash được đưa on-chain |
 | Phạm vi AI làm trễ MVP | Trung bình | Đặt AI sau luồng cốt lõi; cho phép cắt khỏi MVP mà không ảnh hưởng thanh toán |
 | Tiêu chí hoàn thành không rõ | Cao | Gắn acceptance criteria vào từng backlog item và review trước khi triển khai |
 | Dịch vụ miễn phí thay đổi giới hạn | Trung bình | Tách lớp tích hợp, cấu hình provider và chuẩn bị phương án thay thế |
@@ -262,20 +330,23 @@ Phân công có thể thay đổi theo năng lực và tiến độ; quyền s�
 
 MVP được xem là sẵn sàng để đánh giá khi:
 
-- các luồng tạo Issue, ứng tuyển, chọn lập trình viên, chat, nạp tiền và kết thúc escrow chạy được trên môi trường demo;
-- quyền truy cập sai bị từ chối ở API, Socket.IO và smart contract;
-- mọi nhánh chuyển tiền có test thành công, bao gồm các trường hợp timeout và khiếu nại;
-- giao diện phân biệt rõ trạng thái đang chờ ký, đã gửi, đang xác nhận, thành công và thất bại;
+- các flow tạo `Issue`, gửi `Application`, chọn `Developer`, chat, deposit và terminal `Escrow` chạy được trên môi trường demo;
+- unauthorized access bị reject ở API, Socket.IO và smart contract;
+- contract suite test deployment roles, token decimals, duplicate IDs, authorization, allowance/balance failures, future deadlines, fee-on-transfer rejection, revision cutoff, latest-hash release, fee accounting, missed-delivery refund, fixed review timeout, arbitrary `Settlement` ratios, `Settlement` trong `Dispute`, `Ruling` paths, một challenge, final notice, arbiter stall, pause semantics và two-step governance;
+- CI gate chạy compile, unit test, fuzz/invariant test, coverage, static analysis và deployment-script dry run; các invariant bắt buộc gồm total outflow không vượt deposit, không repeated terminal exit, không unauthorized role action và fee-free exit không trả fee recipient;
+- frontend phân biệt rõ waiting-for-signature, submitted, pending-safe-head, confirmed và failed;
 - không có secret trong repository và không có backend key có thể ký thay người dùng;
 - tài liệu thiết lập cho phép một người đánh giá tái tạo môi trường;
 - báo cáo cuối kỳ nêu rõ phần đã làm, phần chưa làm và bằng chứng tương ứng;
-- mọi tuyên bố deployment có URL hoặc địa chỉ, mạng, transaction/receipt và liên kết kiểm chứng.
+- mọi tuyên bố deployment có reproducible address, constructor arguments, chain ID, transaction hash và verification link;
+- Markdown và DOCX dùng cùng lifecycle names, events, fee, ratio và deadline như Solidity API; current implementation và target architecture luôn được label riêng;
+- final DOCX có cover page, table of contents, heading/table/caption nhất quán và đã được kiểm tra clipped diagram, broken table, missing glyph cùng pagination lỗi.
 
 ## 16. Kết luận
 
-Bloody-Roar đề xuất một marketplace trong đó quy trình tìm người thực hiện vẫn quen thuộc, nhưng việc giữ và phân phối tiền tuân theo smart contract có thể kiểm tra. Giá trị của dự án không nằm ở việc đưa mọi dữ liệu lên blockchain hoặc tự động hóa mọi quyết định bằng AI, mà ở việc xác định đúng ranh giới: ví người dùng kiểm soát giao dịch, contract kiểm soát tiền, backend điều phối trải nghiệm và dữ liệu off-chain, còn người phân xử chịu trách nhiệm cho quyết định cần đánh giá bằng chứng.
+Bloody-Roar đề xuất một marketplace trong đó quy trình tìm `Developer` vẫn quen thuộc, nhưng việc giữ và phân phối tiền tuân theo smart contract có thể kiểm tra. Giá trị của dự án không nằm ở việc đưa mọi dữ liệu lên blockchain hoặc tự động hóa mọi quyết định bằng AI, mà ở việc xác định đúng ranh giới: user wallet kiểm soát participant transaction, contract kiểm soát funds, backend điều phối trải nghiệm và off-chain data, còn `Arbiter Safe` chịu trách nhiệm cho `Ruling` cần review evidence.
 
-Phạm vi MVP đủ để chứng minh ý tưởng nếu nhóm ưu tiên luồng cốt lõi, kiểm thử vòng đời escrow và trình bày trung thực trạng thái triển khai. Product Backlog đi kèm là căn cứ để theo dõi tiến độ theo bằng chứng thay vì theo kế hoạch hoặc tuyên bố chưa được kiểm chứng.
+Phạm vi MVP đủ để chứng minh ý tưởng nếu nhóm ưu tiên core flow, test `Escrow` lifecycle và trình bày trung thực implementation status. Product Backlog đi kèm là căn cứ để theo dõi tiến độ theo evidence thay vì theo kế hoạch hoặc tuyên bố chưa được kiểm chứng.
 
 ## 17. Tài liệu tham khảo
 

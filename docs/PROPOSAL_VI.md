@@ -57,6 +57,10 @@ Bloody-Roar không đặt mục tiêu loại bỏ mọi yếu tố tin cậy. S�
 | Platform operator | Vận hành marketplace và xử lý sự cố nhưng không có authority đối với participant funds hoặc `Ruling` |
 | Nhóm phát triển | Có phạm vi MVP, tiêu chí chấp nhận, trạng thái triển khai và trách nhiệm kỹ thuật minh bạch |
 
+![Figure 1 — System context and external trust boundaries](diagrams/rendered/01-system-context.png)
+
+*Figure 1. System context and external trust boundaries.*
+
 ## 4. Giải pháp đề xuất và giá trị khác biệt
 
 ### 4.1 Marketplace theo vòng đời công việc
@@ -129,6 +133,10 @@ Sản phẩm bàn giao dự kiến gồm mã nguồn monorepo, giao diện web, 
 4. Backend trả contract address, ABI method và typed arguments; `Client` tự xác nhận transaction bằng ví.
 5. Chỉ canonical `Deposited` event mới chuyển `Issue` sang `IN_PROGRESS` và finalize selection. Reservation hết hạn sẽ mở lại `Issue`.
 
+![Figure 4 — Selection, funding reservation, and wallet deposit](diagrams/rendered/05-selection-funding-deposit.png)
+
+*Figure 4. Selection, 24-hour funding reservation, and wallet deposit.*
+
 ### UC-02 — Submission, Client release, and review timeout
 
 1. `Developer` gọi `submitWork` và có thể thay thế delivery hash đến hết delivery deadline.
@@ -136,13 +144,25 @@ Sản phẩm bàn giao dự kiến gồm mã nguồn monorepo, giao diện web, 
 3. Nếu `Client` không phản hồi, `Developer` có thể gọi `claimReviewTimeout` sau mốc cố định `deliveryDeadline + 7 days` và nhận toàn bộ amount.
 4. `Submission` ở phút cuối không được dời review deadline vì deadline này luôn tính từ delivery deadline ban đầu.
 
+![Figure 5 — Submission revisions, release, and review timeout](diagrams/rendered/06-submission-release-review.png)
+
+*Figure 5. Submission revisions, Client release, and review-timeout claim.*
+
 ### UC-03 — Missed delivery
 
 Nếu không có `Submission` sau delivery deadline, `Client` gọi `claimMissedDeliveryRefund` để nhận full refund. Exit này fee-free và độc lập với review timeout vì chưa có work được submit.
 
+![Figure 6 — Missed-delivery refund](diagrams/rendered/07-missed-delivery.png)
+
+*Figure 6. Missed-delivery refund.*
+
 ### UC-04 — Mutual Settlement
 
 Một participant có thể gọi `proposeSettlement` với Client payout ratio từ 0 đến 10.000 basis points. Chỉ counterparty được accept; proposer có thể revoke. Khi accept, contract phân phối đúng ratio, không thu platform fee. `Settlement` khả dụng trong mọi non-terminal phase, kể cả `Dispute` và ruling-notice phase.
+
+![Figure 7 — Mutual Settlement](diagrams/rendered/08-mutual-settlement.png)
+
+*Figure 7. Mutual Settlement.*
 
 ### UC-05 — Dispute, challenge, and arbiter timeout
 
@@ -151,6 +171,10 @@ Một participant có thể gọi `proposeSettlement` với Client payout ratio 
 3. Mỗi `Escrow` chỉ cho phép một challenge trong notice window đầu tiên. Sau challenge, `Arbiter Safe` phải đăng final `Ruling`, bắt đầu notice window thứ hai 24 giờ và không thể challenge tiếp.
 4. Bất kỳ địa chỉ nào cũng có thể execute một `Ruling` đã đủ notice period.
 5. Nếu không có final `Ruling` trong 30 ngày sau challenge, một participant có thể gọi arbiter-timeout exit để thực hiện split 50/50, fee-free.
+
+![Figure 8 — Dispute and Ruling lifecycle](diagrams/rendered/09-dispute-rulings.png)
+
+*Figure 8. Initial Ruling, challenge, final Ruling, and arbiter-timeout exit.*
 
 ## 8. Yêu cầu sản phẩm
 
@@ -214,9 +238,17 @@ Tài liệu dùng ba status labels:
 
 Trong bảng này, **Target** đánh giá capability tích hợp với `Escrow` theo revised architecture, không phủ nhận rằng repository đã có skeleton hoặc một phần backend capability ở upstream baseline.
 
+![Figure 2 — Target container and component architecture](diagrams/rendered/02-container-architecture.png)
+
+*Figure 2. Target container and component architecture.*
+
 ### 9.3 Ranh giới tin cậy và invariant thiết yếu
 
 Contract `state machine` bắt đầu ở `FUNDED`. Phase này cho phép delivery revision, Client release, missed-delivery refund sau deadline, Developer review-timeout claim sau `deliveryDeadline + 7 days`, mutual `Settlement` hoặc `Dispute`. `DISPUTED` dẫn đến initial-ruling notice; một challenge chuyển `Escrow` sang `CHALLENGED`, nơi `Arbiter Safe` phải đăng final `Ruling` hoặc participant dùng 30-day 50/50 fallback. Mọi terminal phase reject exit lần hai.
+
+![Figure 3 — BloodyRoarEscrow state machine](diagrams/rendered/04-contract-state-machine.png)
+
+*Figure 3. BloodyRoarEscrow state machine.*
 
 Contract controls của revision gồm `SafeERC20`, checks-effects-interactions, `ReentrancyGuard`, explicit custom errors và exact balance-delta check. Contract không upgrade và không có arbitrary withdrawal; `Owner Safe` chỉ pause deposit mới hoặc khởi tạo two-step role rotation.
 
@@ -245,11 +277,19 @@ Contract controls của revision gồm `SafeERC20`, checks-effects-interactions,
 
 Indexer chỉ fold logs đến RPC provider `safe` head vào authoritative `Projection`. Event processing phải ordered theo block number, transaction index và log index; idempotent theo `ChainEvent` identity; replayable từ checkpoint; và reorg-aware qua block-hash comparison. `TransactionIntent` chỉ theo dõi pending wallet submission, không được dùng làm confirmation.
 
+![Figure 9 — Event ingestion and reorg recovery](diagrams/rendered/10-event-ingestion.png)
+
+*Figure 9. Event ingestion, safe-head confirmation, replay, and reorg recovery.*
+
 Private `Dispute` evidence đặt trong private Supabase Storage bucket. On-chain digest là `keccak256` của UTF-8 RFC 8785 canonical JSON; manifest entries có content hash, MIME metadata và deterministic ordering. Signed URL phải scoped và expiring, không phải on-chain authority.
 
 ### 9.6 Cloud và operations — Target, not implemented
 
 Target topology gồm một single-replica Railway web service cho Next.js, GraphQL và Socket.IO; một Railway worker riêng cho indexing, retry, checkpoint và reconciliation; Supabase PostgreSQL; private Supabase Storage; và Alchemy Base Sepolia RPC. Redis, horizontal web scaling và Socket.IO Redis adapter là **Deferred**.
+
+![Figure 10 — Railway, Supabase, and Alchemy topology](diagrams/rendered/03-railway-topology.png)
+
+*Figure 10. Target Railway/Supabase deployment topology.*
 
 - Web health check xác minh process liveness và database connectivity, không tuyên bố chain success.
 - Worker health check expose last safe head, checkpoint age, RPC latency, retry queue size và projection lag.
@@ -257,6 +297,10 @@ Target topology gồm một single-replica Railway web service cho Next.js, Grap
 - RPC outage phải giữ checkpoint, retry với bounded backoff và catch up từ safe head khi service trở lại.
 - Deployment rollback quay web/worker image về known artifact trước đó. Contract không upgrade; contract mới cần migration decision riêng.
 - Base Sepolia deployment cần explicit environment guard và địa chỉ token, `Owner Safe`, `Arbiter Safe`, fee recipient. Public deployment chỉ hợp lệ khi có reproducible constructor arguments, chain ID, transaction hash và verified contract address.
+
+![Figure 11 — Deployment and Safe handover](diagrams/rendered/11-deployment-handover.png)
+
+*Figure 11. Contract deployment, verification, and Safe role handover.*
 
 ## 10. Thuật ngữ sử dụng
 

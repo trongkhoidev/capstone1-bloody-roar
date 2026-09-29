@@ -1,0 +1,14 @@
+**/node_modules
+**/.next
+**/.env
+**/.env.*
+!.env.example
+.git
+apps/web/.uploads
+apps/contracts/artifacts
+apps/contracts/cache
+apps/contracts/typechain-types
+apps/contracts/out
+apps/contracts/coverage
+**/*.docx
+**/*.pdf

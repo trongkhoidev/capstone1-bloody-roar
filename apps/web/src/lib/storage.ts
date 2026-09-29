@@ -17,6 +17,11 @@ export function getS3Storage(): S3Storage | null {
     client: new S3Client({
       region: process.env.AWS_REGION || "ap-southeast-1",
       credentials: { accessKeyId, secretAccessKey },
+      // Supabase Storage (S3 protocol): https://<project>.supabase.co/storage/v1/s3, path-style URLs
+      ...(process.env.S3_ENDPOINT && {
+        endpoint: process.env.S3_ENDPOINT,
+        forcePathStyle: process.env.S3_FORCE_PATH_STYLE !== "false",
+      }),
     }),
   };
 }

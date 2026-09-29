@@ -14,7 +14,8 @@ import { registerSocketHandlers } from "./src/socket/handlers";
 import { logger } from "./src/lib/logger";
 
 const dev = process.env.NODE_ENV !== "production";
-const hostname = process.env.HOSTNAME || "localhost";
+// Containers (Railway/Docker) set HOSTNAME to the container id, so never use it to bind.
+const hostname = process.env.BIND_HOST || (dev ? "localhost" : "0.0.0.0");
 const port = Number.parseInt(process.env.PORT || "4000", 10);
 const appUrl = dev
   ? `http://localhost:${port}`
@@ -68,7 +69,16 @@ app.prepare().then(() => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (global as any).__socketIO = io;
 
-  httpServer.listen(port, () => {
+  const shutdown = (signal: string) => {
+    logger.info({ signal }, "Shutting down");
+    io.close();
+    httpServer.close(() => process.exit(0));
+    setTimeout(() => process.exit(1), 10_000).unref();
+  };
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+
+  httpServer.listen(port, hostname, () => {
     logger.info(
       {
         mode: dev ? "development" : "production",

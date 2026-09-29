@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { AUTH_COOKIE_NAME, thirdwebAuth } from "../../../../lib/auth";
 import { authDomain, issueAuthToken, verifySiweLogin } from "../../../../lib/auth/siwe";
-import { prisma } from "@bloody-roar/database";
+import { prisma, UserRole } from "@bloody-roar/database";
+import { isConfiguredAdmin } from "../../../../lib/admin-wallets";
 import crypto from "crypto";
 import { createLogger } from "../../../../lib/logger";
 
@@ -54,14 +55,17 @@ export async function POST(req: Request) {
     }
 
     // Upsert user (select only public fields)
+    const promoteToAdmin = isConfiguredAdmin(checksumAddress);
     const user = await prisma.user.upsert({
       where: { walletAddress: checksumAddress },
       create: {
         walletAddress: checksumAddress,
         lastLoginAt: new Date(),
+        ...(promoteToAdmin && { role: UserRole.ADMIN }),
       },
       update: {
         lastLoginAt: new Date(),
+        ...(promoteToAdmin && { role: UserRole.ADMIN }),
       },
       select: USER_PUBLIC_SELECT,
     });

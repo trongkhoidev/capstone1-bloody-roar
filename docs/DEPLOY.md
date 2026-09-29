@@ -35,12 +35,10 @@ Mỗi lần deploy, Railway tự làm:
 | `DATABASE_URL` | Session pooler Supabase (mục 1) | |
 | `DIRECT_URL` | Như trên | |
 | `NEXT_PUBLIC_APP_URL` | `https://<domain-railway>` | **Không có dấu `/` ở cuối.** Domain đăng nhập SIWE lấy từ đây; sai là không login được. Đổi giá trị thì phải redeploy vì biến này được đóng vào bundle lúc build. |
-| `NEXT_PUBLIC_THIRDWEB_CLIENT_ID` | Client ID trên thirdweb dashboard | Thêm domain Railway vào Allowed Domains của key. Cũng được đóng vào bundle lúc build. |
-| `THIRDWEB_SECRET_KEY` | Secret key cùng project thirdweb | |
 | `AUTH_PRIVATE_KEY` | Private key **mới, riêng** cho việc ký JWT | Tạo bằng `cast wallet new` hoặc `node -e "console.log('0x'+require('crypto').randomBytes(32).toString('hex'))"`. Không dùng lại key deployer hay ví cá nhân. |
 | `ADMIN_WALLETS` | `0xabc…,0xdef…` | Ví trong danh sách được nâng lên ADMIN khi đăng nhập. |
 
-`NODE_ENV` và `PORT` không cần điền: image đã set `NODE_ENV=production`, Railway tự cấp `PORT`.
+Không cần key thirdweb: đăng nhập dùng ví injected (MetaMask, Coinbase) và backend tự verify chữ ký SIWE bằng `AUTH_PRIVATE_KEY`. `NODE_ENV` và `PORT` cũng không cần điền: image đã set `NODE_ENV=production`, Railway tự cấp `PORT`.
 
 ### Tùy chọn
 

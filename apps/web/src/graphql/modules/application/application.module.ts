@@ -230,6 +230,46 @@ builder.mutationField("withdrawApplication", (t) =>
   }),
 );
 
+builder.mutationField("rejectApplication", (t) =>
+  t.field({
+    type: ApplicationRef,
+    args: { id: t.arg.id({ required: true }) },
+    resolve: async (_root, args, ctx) => {
+      const user = requireAuth(ctx);
+      const application = await ctx.db.application.findUnique({
+        where: { id: String(args.id) },
+        include: { issue: { select: { id: true, clientId: true, title: true, status: true } } },
+      });
+      if (!application) throw gqlError("Đơn ứng tuyển không tồn tại", "NOT_FOUND");
+      if (application.issue.clientId !== user.id)
+        throw gqlError("Chỉ chủ task mới được từ chối đơn này", "FORBIDDEN");
+      if (application.issue.status !== IssueStatus.OPEN)
+        throw gqlError("Task không còn mở để xử lý ứng viên", "ISSUE_NOT_OPEN");
+      const rejected = await ctx.db.application.updateMany({
+        where: { id: application.id, status: ApplicationStatus.PENDING },
+        data: { status: ApplicationStatus.REJECTED },
+      });
+      if (rejected.count !== 1)
+        throw gqlError("Chỉ có thể từ chối đơn đang chờ duyệt", "APPLICATION_NOT_REJECTABLE");
+
+      await createNotificationSafely(ctx.db, {
+        userId: application.developerId,
+        type: "APPLICATION_REJECTED",
+        title: "Đơn ứng tuyển không được chọn",
+        body: `Đơn của bạn cho “${application.issue.title}” đã không được chọn.`,
+        actorId: user.id,
+        link: `/issues/${application.issue.id}`,
+        data: { issueId: application.issue.id, applicationId: application.id },
+      });
+
+      return ctx.db.application.findUniqueOrThrow({
+        where: { id: application.id },
+        include: APPLICATION_INCLUDE,
+      });
+    },
+  }),
+);
+
 builder.mutationField("assignDeveloper", (t) =>
   t.fieldWithInput({
     type: IssueRef,

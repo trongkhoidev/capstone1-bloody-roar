@@ -1,6 +1,4 @@
 // apps/web/src/components/auth/connect-modal.tsx
-// Trâm (UI/UX Designer & Test Engineer) — Connect Wallet & Social Login Modal (S1-AUTH-08)
-
 "use client";
 
 import React, { useState } from "react";
@@ -23,6 +21,8 @@ interface ConnectModalProps {
 
 export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
   const [activeTab, setActiveTab] = useState<"web3" | "social">("web3");
+  const [selectedWallet, setSelectedWallet] = useState<WalletOption | null>(null);
+  
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useUiPreferences();
@@ -33,6 +33,7 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
 
   const handleWalletSelect = async (option: WalletOption) => {
     clearError();
+    setSelectedWallet(option);
 
     if (option.type === "injected" || option.type === "coinbase") {
       try {
@@ -41,9 +42,10 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
             option.id === "coinbase"
               ? "Không tìm thấy Coinbase Wallet Extension."
               : option.id === "metamask"
-                ? "Không tìm thấy MetaMask Extension."
-                : "Không tìm thấy ví Web3 trên trình duyệt! Vui lòng cài đặt MetaMask hoặc Rabby extension."
+              ? "Không tìm thấy MetaMask Extension."
+              : "Không tìm thấy ví Web3 trên trình duyệt! Vui lòng cài đặt extension."
           );
+          setSelectedWallet(null);
           return;
         }
 
@@ -55,8 +57,6 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
 
         if (success) {
           onClose();
-          // Preserve the current internal URL without forcing every route that
-          // renders the global navbar into client-side rendering at build time.
           router.replace(`${pathname}${window.location.search}`);
           router.refresh();
         }
@@ -67,162 +67,169 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
     }
   };
 
+  const handleBack = () => {
+    clearError();
+    setSelectedWallet(null);
+    setStatus("idle");
+  };
+
+  // Cờ kiểm tra xem có đang trong quá trình xử lý không
+  const isProcessing = status === "signing" || status === "requesting_nonce" || status === "verifying" || status === "authenticated";
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in"
       data-testid="connect-modal-backdrop"
     >
       <div
-        className="relative w-full max-w-md rounded-2xl border border-[hsl(var(--card-border))] bg-[hsl(var(--card))] p-6 shadow-[var(--shadow-lg)] overflow-hidden"
+        className="relative w-full max-w-md h-auto min-h-[420px] flex flex-col rounded-2xl border border-[hsl(var(--card-border))] bg-[hsl(var(--card))] shadow-[var(--shadow-lg)] overflow-hidden transition-all duration-300"
         data-testid="connect-modal"
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-[hsl(var(--border)/0.5)]">
+        <div className="flex-none flex items-center justify-between p-6 pb-4 border-b border-[hsl(var(--border)/0.5)]">
           <div>
             <h2 className="text-lg font-bold text-[hsl(var(--foreground))]">
-              {t("signInTitle")}
+              {isProcessing && selectedWallet ? "Đang kết nối..." : t("signInTitle")}
             </h2>
             <p className="text-xs text-[hsl(var(--foreground-muted))] mt-0.5">
-              {t("signInWalletDesc")}
+              {isProcessing ? "Vui lòng hoàn thành thao tác trên ví" : t("signInWalletDesc")}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-md text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--background-secondary))] transition-colors"
-            data-testid="close-modal-btn"
+            disabled={status === "authenticated"}
+            className="p-1.5 rounded-md text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--background-secondary))] transition-colors disabled:opacity-50"
           >
             ✕
           </button>
         </div>
 
-        {/* Status Indicator */}
-        {status === "signing" && (
-          <div className="my-4 p-3 rounded-lg border border-[hsl(var(--warning)/0.4)] bg-[hsl(var(--warning)/0.1)] flex items-center gap-3 animate-fade-in">
-            <span className="h-3 w-3 rounded-full bg-[hsl(var(--warning))] animate-ping" />
-            <div className="text-xs text-[hsl(var(--warning))] font-medium">
-              Vui lòng xác nhận chữ ký SIWE trong cửa sổ ví của bạn...
-            </div>
-          </div>
-        )}
-
-        {status === "requesting_nonce" && (
-          <div className="my-4 p-3 rounded-lg border border-[hsl(var(--primary)/0.3)] bg-[hsl(var(--primary)/0.1)] flex items-center gap-3 animate-fade-in">
-            <span className="h-3 w-3 rounded-full bg-[hsl(var(--primary))] animate-pulse" />
-            <div className="text-xs text-[hsl(var(--foreground))] font-medium">
-              Đang lấy mã Nonce bảo mật từ máy chủ...
-            </div>
-          </div>
-        )}
-
-        {status === "verifying" && (
-          <div className="my-4 p-3 rounded-lg border border-[hsl(var(--accent)/0.4)] bg-[hsl(var(--accent)/0.1)] flex items-center gap-3 animate-fade-in">
-            <span className="h-3 w-3 rounded-full bg-[hsl(var(--accent))] animate-pulse" />
-            <div className="text-xs text-[hsl(var(--accent))] font-medium">
-              Đang xác minh chữ ký & khởi tạo phiên đăng nhập...
-            </div>
-          </div>
-        )}
-
-        {status === "authenticated" && (
-          <div className="my-4 p-3 rounded-lg border border-[hsl(var(--success)/0.4)] bg-[hsl(var(--success)/0.1)] flex items-center gap-3 animate-fade-in">
-            <span className="text-sm">✓</span>
-            <div className="text-xs text-[hsl(var(--success))] font-medium">
-              Đăng nhập thành công! Đang chuyển hướng...
-            </div>
-          </div>
-        )}
-
-        {error && (
-          <div className="my-4 p-3 rounded-lg border border-[hsl(var(--destructive)/0.4)] bg-[hsl(var(--destructive)/0.1)] text-xs text-[hsl(var(--destructive))] flex items-center justify-between">
-            <span>{error}</span>
-            <button
-              onClick={clearError}
-              className="text-xs underline hover:no-underline ml-2"
-            >
-              Thử lại
-            </button>
-          </div>
-        )}
-
-        {/* Tab Switcher */}
-        <div className="flex gap-2 my-4 p-1 rounded-lg bg-[hsl(var(--background-secondary))]">
-          <button
-            type="button"
-            onClick={() => setActiveTab("web3")}
-            className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
-              activeTab === "web3"
-                ? "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-sm"
-                : "text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))]"
-            }`}
-            data-testid="tab-web3-btn"
-          >
-            {t("web3Wallets")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("social")}
-            className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
-              activeTab === "social"
-                ? "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-sm"
-                : "text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))]"
-            }`}
-            data-testid="tab-social-btn"
-          >
-            {t("linkedAccounts")}
-          </button>
-        </div>
-
-        {/* Tab 1: Web3 Wallets */}
-        {activeTab === "web3" && (
-          <div className="space-y-2.5">
-            {WALLET_OPTIONS.map((wallet) => (
-              <button
-                key={wallet.id}
-                type="button"
-                onClick={() => handleWalletSelect(wallet)}
-                disabled={status === "signing" || status === "verifying"}
-                className="w-full flex items-center justify-between p-3.5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] hover:bg-[hsl(var(--background-tertiary))] hover:border-[hsl(var(--primary)/0.4)] transition-all text-left disabled:opacity-50 group active:scale-[0.99]"
-                data-testid={`wallet-btn-${wallet.id}`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl group-hover:scale-110 transition-transform">
-                    {wallet.icon}
-                  </span>
-                  <div>
-                    <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
-                      {wallet.name}
-                    </div>
-                    <div className="text-[11px] text-[hsl(var(--foreground-subtle))]">
-                      {wallet.id === "metamask"
-                        ? "Phổ biến nhất · Base Sepolia"
-                        : wallet.id === "coinbase"
-                        ? "Coinbase browser extension"
-                        : "Tương thích EVM Wallet"}
-                    </div>
-                  </div>
+        {/* Bố cục nội dung chính - Giữ chiều cao ổn định */}
+        <div className="flex-1 p-6 relative flex flex-col">
+          
+          {/* MÀN HÌNH CHỜ / LỖI (Khi đang kết nối) */}
+          {(isProcessing || error) ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center animate-fade-in h-full py-4">
+              {status === "authenticated" ? (
+                <div className="h-16 w-16 mb-4 rounded-full bg-[hsl(var(--success)/0.1)] text-[hsl(var(--success))] flex items-center justify-center text-3xl">
+                  ✓
                 </div>
-                <span className="text-[hsl(var(--foreground-subtle))] group-hover:text-[hsl(var(--primary))] group-hover:translate-x-1 transition-all">
-                  →
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
+              ) : error ? (
+                <div className="h-16 w-16 mb-4 rounded-full bg-[hsl(var(--destructive)/0.1)] text-[hsl(var(--destructive))] flex items-center justify-center text-3xl">
+                  ✕
+                </div>
+              ) : (
+                <div className="relative mb-6">
+                  <div className="h-16 w-16 text-4xl flex items-center justify-center animate-pulse">
+                    {selectedWallet?.icon || "🦊"}
+                  </div>
+                  <span className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-2 border-[hsl(var(--card))] bg-[hsl(var(--warning))] animate-ping" />
+                </div>
+              )}
 
-        {/* Social providers are account linking, not wallet authentication. */}
-        {activeTab === "social" && (
-          <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] p-4 text-sm leading-6 text-[hsl(var(--foreground-muted))]">
-            {t("socialLoginUnavailable")}
-          </div>
-        )}
+              <h3 className="text-[hsl(var(--foreground))] font-semibold mb-2">
+                {status === "signing" && "Yêu cầu chữ ký (SIWE)"}
+                {status === "requesting_nonce" && "Đang lấy mã Nonce..."}
+                {status === "verifying" && "Đang xác minh..."}
+                {status === "authenticated" && "Đăng nhập thành công!"}
+                {error && "Kết nối thất bại"}
+              </h3>
+              
+              <p className="text-sm text-[hsl(var(--foreground-muted))] max-w-[280px]">
+                {status === "signing" && `Vui lòng mở ${selectedWallet?.name || "ví"} của bạn để xác nhận yêu cầu đăng nhập.`}
+                {status === "requesting_nonce" && "Đang kết nối an toàn với máy chủ."}
+                {status === "verifying" && "Kiểm tra chữ ký và khởi tạo phiên."}
+                {error && error}
+              </p>
 
-        {/* Network & Security Note */}
-        <div className="mt-5 pt-4 border-t border-[hsl(var(--border)/0.5)] text-center">
-          <div className="inline-flex items-center gap-1.5 text-[11px] text-[hsl(var(--foreground-subtle))]">
-            <span>🛡️</span>
-            <span>Chữ ký SIWE chỉ xác minh quyền sở hữu ví, không tạo giao dịch hay trừ tiền</span>
-          </div>
+              {error && (
+                <button
+                  onClick={handleBack}
+                  className="mt-6 px-6 py-2 text-sm font-medium rounded-lg bg-[hsl(var(--background-secondary))] hover:bg-[hsl(var(--background-tertiary))] text-[hsl(var(--foreground))] transition-colors"
+                >
+                  Quay lại chọn ví
+                </button>
+              )}
+            </div>
+          ) : (
+            
+            /* MÀN HÌNH CHỌN VÍ (Khi chưa kết nối) */
+            <div className="flex-1 flex flex-col animate-fade-in">
+              {/* Tab Switcher */}
+              <div className="flex gap-2 mb-4 p-1 rounded-lg bg-[hsl(var(--background-secondary))]">
+                <button
+                  onClick={() => setActiveTab("web3")}
+                  className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                    activeTab === "web3"
+                      ? "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-sm"
+                      : "text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))]"
+                  }`}
+                >
+                  {t("web3Wallets")}
+                </button>
+                <button
+                  onClick={() => setActiveTab("social")}
+                  className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                    activeTab === "social"
+                      ? "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-sm"
+                      : "text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))]"
+                  }`}
+                >
+                  {t("linkedAccounts")}
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto pr-1 -mr-1">
+                {activeTab === "web3" && (
+                  <div className="space-y-2.5 pb-2">
+                    {WALLET_OPTIONS.map((wallet) => (
+                      <button
+                        key={wallet.id}
+                        onClick={() => handleWalletSelect(wallet)}
+                        className="w-full flex items-center justify-between p-3.5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] hover:bg-[hsl(var(--background-tertiary))] hover:border-[hsl(var(--primary)/0.4)] transition-all text-left group active:scale-[0.99]"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl group-hover:scale-110 transition-transform">
+                            {wallet.icon}
+                          </span>
+                          <div>
+                            <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                              {wallet.name}
+                            </div>
+                            <div className="text-[11px] text-[hsl(var(--foreground-subtle))]">
+                              {wallet.id === "metamask"
+                                ? "Phổ biến nhất · Base Sepolia"
+                                : wallet.id === "coinbase"
+                                ? "Coinbase browser extension"
+                                : "Tương thích EVM Wallet"}
+                            </div>
+                          </div>
+                        </div>
+                        <span className="text-[hsl(var(--foreground-subtle))] group-hover:text-[hsl(var(--primary))] group-hover:translate-x-1 transition-all">
+                          →
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {activeTab === "social" && (
+                  <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] p-4 text-sm leading-6 text-[hsl(var(--foreground-muted))]">
+                    {t("socialLoginUnavailable")}
+                  </div>
+                )}
+              </div>
+
+              {/* Security Note */}
+              <div className="mt-4 pt-4 border-t border-[hsl(var(--border)/0.5)] text-center">
+                <div className="inline-flex items-center justify-center gap-1.5 text-[11px] text-[hsl(var(--foreground-subtle))]">
+                  <span>🛡️</span>
+                  <span>Chỉ xác minh quyền sở hữu, không trừ tiền</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

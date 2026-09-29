@@ -46,6 +46,8 @@ interface IssueCardProps {
   onSkillClick?: (skill: string) => void;
 }
 
+import { Button as MovingBorderCard } from "../ui/moving-border";
+
 export function IssueCard({ issue, onSkillClick }: IssueCardProps) {
   const description = issue.description
     .replace(/```[\s\S]*?```/g, "")
@@ -92,8 +94,12 @@ export function IssueCard({ issue, onSkillClick }: IssueCardProps) {
   };
 
   return (
-    <article
-      className="group relative flex flex-col gap-4 border-b border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 last:border-b-0 hover:bg-[hsl(var(--background-secondary))] sm:flex-row sm:p-5"
+    <MovingBorderCard
+      as="article"
+      duration={3000 + Math.random() * 2000} // random duration for a more organic feel
+      borderRadius="0.75rem" // Match rounded-xl / lg
+      containerClassName="group w-full mb-4 last:mb-0"
+      className="relative flex flex-col gap-4 bg-[hsl(var(--card))] p-4 sm:flex-row sm:p-5 hover:bg-[hsl(var(--background-secondary))] transition-colors text-left"
       data-testid={`issue-card-${issue.id}`}
     >
       {/* -------------------------------------------------------------
@@ -162,7 +168,7 @@ export function IssueCard({ issue, onSkillClick }: IssueCardProps) {
 
           <Link
             href={`/issues/${issue.id}`}
-            className="block group-hover:text-[hsl(var(--primary))] transition-colors"
+            className="block group-hover:text-[hsl(var(--primary))] transition-colors z-10 relative"
           >
             <h3 className="text-base font-bold text-[hsl(var(--foreground))] leading-snug hover:underline decoration-[hsl(var(--primary))]">
               {issue.title}
@@ -179,18 +185,21 @@ export function IssueCard({ issue, onSkillClick }: IssueCardProps) {
             width={720}
             height={180}
             unoptimized
-            className="mt-3 max-h-36 w-full rounded-lg border border-[hsl(var(--border))] object-cover"
+            className="mt-3 max-h-36 w-full rounded-lg border border-[hsl(var(--border))] object-cover relative z-10"
           />}
         </div>
 
         {/* Tags Row (StackOverflow styled skill pills) */}
-        <div className="flex items-center justify-between gap-4 flex-wrap pt-1">
+        <div className="flex items-center justify-between gap-4 flex-wrap pt-1 relative z-10">
           <div className="flex items-center gap-1.5 flex-wrap">
             {issue.requiredSkills.map((skill) => (
               <button
                 key={skill}
                 type="button"
-                onClick={() => onSkillClick?.(skill)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onSkillClick?.(skill);
+                }}
                 className="focus:outline-none"
               >
                 <Badge variant="tag">{skill}</Badge>
@@ -237,6 +246,6 @@ export function IssueCard({ issue, onSkillClick }: IssueCardProps) {
           </div>
         </div>
       </div>
-    </article>
+    </MovingBorderCard>
   );
 }

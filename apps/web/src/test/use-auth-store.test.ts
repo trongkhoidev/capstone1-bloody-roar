@@ -96,8 +96,10 @@ describe("useAuthStore", () => {
     expect(apiClient.get).toHaveBeenCalledWith("/api/auth/nonce", {
       params: { address: mockUser.walletAddress },
     });
+    const signedMessage = mockSigner.mock.calls[0]?.[0] as string;
+    expect(signedMessage).toContain("0x70997970C51812dc3A010C7d01b50e0d17dc79C8");
     expect(apiClient.post).toHaveBeenCalledWith("/api/auth/login", {
-      payload: mockPayload,
+      payload: expect.objectContaining({ address: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8" }),
       signature: "0xmocksignature12345",
     });
     const state = useAuthStore.getState();

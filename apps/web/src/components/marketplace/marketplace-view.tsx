@@ -82,6 +82,12 @@ export function MarketplaceView({ initialSearch = "" }: { initialSearch?: string
   const user = useAuthStore((state) => state.user);
   const isAdmin = user?.role === "ADMIN";
   const { t } = useUiPreferences();
+  const [isMounted, setIsMounted] = useState(false);
+  
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
   const [filters, setFilters] = useState<FilterState>({ search: initialSearch, category: "", status: "", sortBy: "NEWEST" });
   const [issues, setIssues] = useState<IssueItem[]>(MOCK_ISSUES);
   const [dataSource, setDataSource] = useState<DataSource>("loading");
@@ -178,7 +184,7 @@ export function MarketplaceView({ initialSearch = "" }: { initialSearch?: string
 
   return (
     <div className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
-      {isAdmin && <section className="border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]" data-testid="admin-marketplace-summary">
+      {isMounted && isAdmin && <section className="border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]" data-testid="admin-marketplace-summary">
         <div className="mx-auto max-w-6xl px-4 py-7 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-start justify-between gap-5">
             <div>

@@ -22,6 +22,11 @@ export function UserMenu() {
   const { t } = useUiPreferences();
   const isAuthenticated = Boolean(user);
 
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -35,6 +40,10 @@ export function UserMenu() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  if (!isMounted) {
+    return <div className="h-9 w-[120px] rounded-full bg-[hsl(var(--card))] animate-pulse"></div>;
+  }
 
   if (!isAuthenticated || !user) {
     return (

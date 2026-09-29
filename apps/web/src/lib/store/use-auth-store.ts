@@ -4,6 +4,10 @@
 
 import { create } from "zustand";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client";
+import { tryChecksumAddress } from "@/lib/auth/address";
+import { createLoginMessage, type SiweLoginPayload } from "@/lib/auth/siwe";
+
+export { createLoginMessage } from "@/lib/auth/siwe";
 
 export interface AuthUser {
   id: string;
@@ -30,37 +34,7 @@ export type AuthStatus =
   | "authenticated"
   | "error";
 
-type LoginPayload = {
-  domain: string;
-  address: string;
-  statement?: string;
-  version: string;
-  uri?: string;
-  chain_id?: string;
-  nonce: string;
-  issued_at: string;
-  expiration_time: string;
-  invalid_before?: string;
-  resources?: string[];
-};
-
-/** Mirrors Thirdweb Auth's EIP-4361/CAIP-122 message formatter. */
-export function createLoginMessage(payload: LoginPayload): string {
-  const header = `${payload.domain} wants you to sign in with your Ethereum account:`;
-  let prefix = `${header}\n${payload.address}\n\n${payload.statement ?? ""}`;
-  if (payload.statement) prefix += "\n";
-
-  const suffix: string[] = [];
-  if (payload.uri) suffix.push(`URI: ${payload.uri}`);
-  suffix.push(`Version: ${payload.version}`);
-  if (payload.chain_id) suffix.push(`Chain ID: ${payload.chain_id}`);
-  suffix.push(`Nonce: ${payload.nonce}`);
-  suffix.push(`Issued At: ${payload.issued_at}`);
-  suffix.push(`Expiration Time: ${payload.expiration_time}`);
-  if (payload.invalid_before) suffix.push(`Not Before: ${payload.invalid_before}`);
-  if (payload.resources?.length) suffix.push(["Resources:", ...payload.resources.map((resource) => `- ${resource}`)].join("\n"));
-  return `${prefix}\n${suffix.join("\n")}`;
-}
+type LoginPayload = SiweLoginPayload;
 
 interface AuthState {
   user: AuthUser | null;
@@ -135,11 +109,17 @@ export const useAuthStore = create<AuthState>()(
           const { data: loginPayload } = await apiClient.get<LoginPayload>("/api/auth/nonce", {
             params: { address: walletAddress },
           });
+          const checksumAddress = tryChecksumAddress(
+            loginPayload.address || walletAddress,
+          );
+          if (checksumAddress) {
+            loginPayload.address = checksumAddress;
+          }
 
           // 2. Format SIWE / Thirdweb EIP-4361 message to sign
           set({ status: "signing" });
           
-          const messageToSign = createLoginMessage(loginPayload as LoginPayload);
+          const messageToSign = createLoginMessage(loginPayload);
 
           const signature = await signerFn(messageToSign);
 

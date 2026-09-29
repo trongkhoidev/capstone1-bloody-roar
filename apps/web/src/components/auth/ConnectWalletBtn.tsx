@@ -23,7 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { LogOut, User, ListTodo, AlertTriangle, Loader2, Copy, Check } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const TARGET_CHAIN_ID = 84532; // Base Sepolia
 
@@ -37,9 +37,14 @@ export function ConnectWalletBtn() {
   const chain = useChain();
 
   const [hasCopied, setHasCopied] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
-  // 1. Trạng thái Đang kết nối (Connecting / Loading)
-  if (connectionStatus === "unknown" || connectionStatus === "connecting") {
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // 1. Trạng thái Đang kết nối (Connecting / Loading) hoặc chưa mount client
+  if (!isMounted || connectionStatus === "unknown" || connectionStatus === "connecting") {
     return (
       <Button
         variant="default"
@@ -64,6 +69,7 @@ export function ConnectWalletBtn() {
           title: "Bloody-Roar Marketplace",
           subtitle: "Connect your Web3 wallet to start hunting and posting bounties",
         }}
+        auth={{ loginOptional: false }}
         switchToActiveChain={true}
         className="!bg-[hsl(var(--primary))] !text-[hsl(var(--primary-foreground))] !rounded-lg hover:!bg-[hsl(var(--primary-hover))] !h-10 !px-4 !py-2 !text-sm !font-medium !transition-all !shadow-[var(--shadow-glow)] !border-none"
       />

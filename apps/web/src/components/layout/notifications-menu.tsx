@@ -15,9 +15,14 @@ type NotificationData = { unreadNotificationCount: number; notifications: Notifi
 
 export function NotificationsMenu() {
   const user = useAuthStore((state) => state.user);
+  const [isMounted, setIsMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<NotificationData | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!user) { setData(null); return; }
@@ -44,7 +49,7 @@ export function NotificationsMenu() {
     return () => document.removeEventListener("mousedown", close);
   }, []);
 
-  if (!user) return null;
+  if (!isMounted || !user) return null;
 
   const markRead = async (notification: Notification) => {
     if (notification.isRead) return;

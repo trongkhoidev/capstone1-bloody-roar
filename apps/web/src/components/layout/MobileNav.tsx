@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Menu, Search, Compass, LayoutDashboard, PlusCircle, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,11 @@ export function MobileNav() {
   const [open, setOpen] = useState(false);
   const user = useAuthStore((state) => state.user);
   const { t } = useUiPreferences();
+
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleLinkClick = () => {
     setOpen(false);
@@ -71,7 +76,7 @@ export function MobileNav() {
               {t("marketplace")}
             </Link>
 
-            {user?.role !== "ADMIN" && <Link
+            {isMounted && user?.role !== "ADMIN" && <Link
               href="/issues/create"
               onClick={handleLinkClick}
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--primary)/0.1)] hover:text-[hsl(var(--primary))]"
@@ -79,7 +84,7 @@ export function MobileNav() {
               <PlusCircle className="h-4 w-4" />
               {t("createBounty")}
             </Link>}
-            {user && <Link href={user.role === "ADMIN" ? "/admin" : "/dashboard"} onClick={handleLinkClick} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[hsl(var(--foreground-muted))] transition-colors hover:bg-[hsl(var(--primary)/0.1)] hover:text-[hsl(var(--primary))]">
+            {isMounted && user && <Link href={user.role === "ADMIN" ? "/admin" : "/dashboard"} onClick={handleLinkClick} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[hsl(var(--foreground-muted))] transition-colors hover:bg-[hsl(var(--primary)/0.1)] hover:text-[hsl(var(--primary))]">
               <LayoutDashboard className="h-4 w-4" />
               {user.role === "ADMIN" ? t("admin") : t("dashboard")}
             </Link>}

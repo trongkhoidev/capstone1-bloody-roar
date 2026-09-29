@@ -11,12 +11,37 @@ import { useAuthStore } from "@/lib/store/use-auth-store";
 import { useUiPreferences } from "@/lib/ui-preferences";
 import { UiPreferenceControls } from "@/components/layout/ui-preference-controls";
 
+import { motion } from "framer-motion";
+import React, { useState, useEffect } from "react";
+
 export function Navbar() {
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
   const { t } = useUiPreferences();
+
+  const [isMounted, setIsMounted] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[hsl(var(--border))] bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <motion.header
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      className={`sticky top-0 z-40 w-full transition-all duration-300 ${
+        scrolled
+          ? "bg-[hsl(var(--background))/0.8] backdrop-blur-md border-b border-[hsl(var(--primary)/0.2)] shadow-[0_4px_30px_hsl(var(--primary)/0.1)]"
+          : "bg-transparent border-b border-transparent"
+      }`}
+    >
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6 md:gap-10">
           <Link href="/" className="flex items-center space-x-2">
@@ -32,8 +57,8 @@ export function Navbar() {
             >
               {t("marketplace")}
             </Link>
-            {user && <Link href={user.role === "ADMIN" ? "/admin" : "/dashboard"} aria-current={pathname.startsWith(user.role === "ADMIN" ? "/admin" : "/dashboard") ? "page" : undefined} className={`flex items-center rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors ${pathname.startsWith(user.role === "ADMIN" ? "/admin" : "/dashboard") ? "bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))]" : "text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))]"}`}>{user.role === "ADMIN" ? t("admin") : t("dashboard")}</Link>}
-            {user?.role !== "ADMIN" && <Link
+            {isMounted && user && <Link href={user.role === "ADMIN" ? "/admin" : "/dashboard"} aria-current={pathname.startsWith(user.role === "ADMIN" ? "/admin" : "/dashboard") ? "page" : undefined} className={`flex items-center rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors ${pathname.startsWith(user.role === "ADMIN" ? "/admin" : "/dashboard") ? "bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))]" : "text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))]"}`}>{user.role === "ADMIN" ? t("admin") : t("dashboard")}</Link>}
+            {isMounted && user?.role !== "ADMIN" && <Link
               href="/issues/create"
               aria-current={pathname === "/issues/create" ? "page" : undefined}
               className={`flex items-center rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors ${pathname === "/issues/create" ? "bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))]" : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"}`}
@@ -65,6 +90,6 @@ export function Navbar() {
           <MobileNav />
         </div>
       </div>
-    </header>
+    </motion.header>
   );
 }

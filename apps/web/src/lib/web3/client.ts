@@ -2,6 +2,9 @@
 // Web3 Connector Helpers — injected EVM wallets and SIWE
 // Trâm (UI/UX Designer & Test Engineer) — Sprint 1 (S1-AUTH-08)
 
+import { ethers } from "ethers";
+import { toChecksumAddress, tryChecksumAddress } from "@/lib/auth/address";
+
 export interface ChainConfig {
   chainId: number;
   chainHex: string;
@@ -143,7 +146,7 @@ export async function connectInjectedWallet(walletId?: string): Promise<string> 
     throw new Error("Không có tài khoản ví nào được chọn.");
   }
 
-  return accounts[0];
+  return toChecksumAddress(accounts[0]);
 }
 
 /** Return the selected provider's current EVM chain id. */
@@ -195,6 +198,7 @@ export async function ensureBaseSepolia(walletId?: string): Promise<void> {
   }
 }
 
+
 /**
  * Request user to sign a plain text message using eth_sign / personal_sign
  */
@@ -209,17 +213,17 @@ export async function signMessageWithInjected(
 
   const ethereum = getInjectedEthereum(walletId);
   if (!ethereum) throw new Error("Ví Web3 chưa sẵn sàng.");
-  
-  // Convert message to hex for personal_sign
-  const hexMessage = `0x${Array.from(new TextEncoder().encode(message), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
 
   try {
+    const from = (tryChecksumAddress(walletAddress) ?? walletAddress).toLowerCase();
+    const hexMessage = ethers.utils.hexlify(ethers.utils.toUtf8Bytes(message));
     const signature = await ethereum.request({
       method: "personal_sign",
-      params: [hexMessage, walletAddress],
+      params: [hexMessage, from],
     });
-    if (typeof signature !== "string") throw new Error("Wallet returned an invalid signature.");
-
+    if (typeof signature !== "string" || signature.length < 130) {
+      throw new Error("Ví không trả về chữ ký hợp lệ.");
+    }
     return signature;
   } catch (err: unknown) {
     const walletError = typeof err === "object" && err !== null ? err as { code?: unknown; message?: unknown } : null;

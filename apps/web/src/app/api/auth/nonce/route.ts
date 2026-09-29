@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { thirdwebAuth } from "../../../../lib/auth";
+import { tryChecksumAddress } from "../../../../lib/auth/address";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   try {
-    const address = new URL(req.url).searchParams.get("address");
-    if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
+    const rawAddress = new URL(req.url).searchParams.get("address");
+    const address = rawAddress ? tryChecksumAddress(rawAddress) : undefined;
+    if (!address) {
       return NextResponse.json(
         { error: "A valid wallet address is required" },
         { status: 400, headers: { "Cache-Control": "no-store" } },

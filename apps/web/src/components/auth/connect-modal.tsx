@@ -159,6 +159,8 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
               {/* Tab Switcher */}
               <div className="flex gap-2 mb-4 p-1 rounded-lg bg-[hsl(var(--background-secondary))]">
                 <button
+                  type="button"
+                  data-testid="tab-web3-btn"
                   onClick={() => setActiveTab("web3")}
                   className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
                     activeTab === "web3"
@@ -169,6 +171,8 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
                   {t("web3Wallets")}
                 </button>
                 <button
+                  type="button"
+                  data-testid="tab-social-btn"
                   onClick={() => setActiveTab("social")}
                   className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
                     activeTab === "social"
@@ -185,7 +189,9 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
                   <div className="space-y-2.5 pb-2">
                     {WALLET_OPTIONS.map((wallet) => (
                       <button
+                        type="button"
                         key={wallet.id}
+                        data-testid={`wallet-btn-${wallet.id}`}
                         onClick={() => handleWalletSelect(wallet)}
                         className="w-full flex items-center justify-between p-3.5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] hover:bg-[hsl(var(--background-tertiary))] hover:border-[hsl(var(--primary)/0.4)] transition-all text-left group active:scale-[0.99]"
                       >

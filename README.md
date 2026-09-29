@@ -352,6 +352,7 @@ bunx shadcn@latest add button input select dialog card table badge tabs toast dr
 | `bun run start`             | Start the production server       |
 | `bun run lint`              | Run ESLint                        |
 | `bun run typecheck`         | Run TypeScript type checking      |
+| `bun run test:e2e:backend`  | Run auth, marketplace, chat, and backend workflow E2E tests |
 | `bun run format`            | Format with Prettier              |
 | `bun run db:generate`       | Regenerate Prisma client          |
 | `bun run db:migrate`        | Run Prisma migrations             |

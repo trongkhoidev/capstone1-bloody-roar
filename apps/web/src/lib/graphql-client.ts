@@ -1,5 +1,8 @@
 "use client";
 
+import axios from "axios";
+import { apiClient } from "@/lib/api-client";
+
 export interface GraphQLIssue {
   message: string;
   extensions?: { code?: string; details?: unknown };
@@ -20,25 +23,28 @@ export class GraphQLRequestError extends Error {
 export async function graphqlRequest<T>(
   query: string,
   variables: Record<string, unknown> = {},
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<T> {
-  const response = await fetch("/api/graphql", {
-    method: "POST",
-    cache: "no-store",
-    ...(signal ? { signal } : {}),
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ query, variables }),
-  });
-
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new Error(payload?.errors?.[0]?.message ?? "Không thể kết nối máy chủ.");
+  try {
+    const response = await apiClient.post<{
+      data?: T;
+      errors?: GraphQLIssue[];
+      error?: string;
+    }>("/api/graphql", { query, variables }, signal ? { signal } : {});
+    const payload = response.data;
+    if (payload.errors?.length) {
+      const issue = payload.errors[0];
+      if (issue) throw new GraphQLRequestError(issue);
+    }
+    if (!payload.data) throw new Error("Phản hồi GraphQL không hợp lệ.");
+    return payload.data;
+  } catch (error) {
+    if (error instanceof GraphQLRequestError) throw error;
+    if (axios.isAxiosError<{ errors?: GraphQLIssue[]; error?: string }>(error)) {
+      const issue = error.response?.data?.errors?.[0];
+      if (issue) throw new GraphQLRequestError(issue);
+      throw new Error(error.response?.data?.error ?? "Không thể kết nối máy chủ.");
+    }
+    throw error;
   }
-  if (payload?.errors?.length) {
-    throw new GraphQLRequestError(payload.errors[0] as GraphQLIssue);
-  }
-  if (!payload?.data) throw new Error("Phản hồi GraphQL không hợp lệ.");
-  return payload.data as T;
 }

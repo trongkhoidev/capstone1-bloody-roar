@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e:backend": "bun run scripts/e2e-login.ts && bun run scripts/e2e-issue.ts && bun run scripts/e2e-chat.ts && bun run scripts/e2e-workflow.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -33,6 +34,7 @@
     "@thirdweb-dev/react": "^4.9.4",
     "@thirdweb-dev/sdk": "^4.0.99",
     "@thirdweb-dev/wallets": "^2.5.39",
+    "axios": "^1.20.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "ethers": "5.7.2",

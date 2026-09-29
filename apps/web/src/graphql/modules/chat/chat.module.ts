@@ -55,7 +55,7 @@ export const MessageRef = builder.prismaObject("Message", {
     createdAt: t.string({
       resolve: (msg) => msg.createdAt.toISOString(),
     }),
-    
+
     sender: t.field({
       type: UserRef,
       resolve: (msg) => msg.sender,
@@ -73,8 +73,16 @@ function encodeCursor(id: string): string {
 }
 
 function decodeCursor(cursor: string): string {
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(cursor)) {
+    throw new GraphQLError("Invalid cursor", { extensions: { code: "INVALID_CURSOR" } });
+  }
   const id = Buffer.from(cursor, "base64").toString("utf8");
-  if (!id) throw new GraphQLError("Invalid cursor", { extensions: { code: "INVALID_CURSOR" } });
+  if (
+    !id ||
+    Buffer.from(id, "utf8").toString("base64").replace(/=+$/, "") !== cursor.replace(/=+$/, "")
+  ) {
+    throw new GraphQLError("Invalid cursor", { extensions: { code: "INVALID_CURSOR" } });
+  }
   return id;
 }
 
@@ -106,15 +114,17 @@ const PageInfoRef = builder.objectRef<PageInfoShape>("MessagePageInfo").implemen
   }),
 });
 
-const MessageConnectionRef = builder.objectRef<MessageConnectionShape>("MessageConnection").implement({
-  fields: (t) => ({
-    edges: t.field({
-      type: [MessageEdgeRef],
-      resolve: (conn) => conn.edges,
+const MessageConnectionRef = builder
+  .objectRef<MessageConnectionShape>("MessageConnection")
+  .implement({
+    fields: (t) => ({
+      edges: t.field({
+        type: [MessageEdgeRef],
+        resolve: (conn) => conn.edges,
+      }),
+      pageInfo: t.field({ type: PageInfoRef, resolve: (conn) => conn.pageInfo }),
     }),
-    pageInfo: t.field({ type: PageInfoRef, resolve: (conn) => conn.pageInfo }),
-  }),
-});
+  });
 
 const MessagesQuerySchema = z.object({
   first: z.number().int().min(1).max(100).nullish(),
@@ -144,12 +154,23 @@ builder.queryFields((t) => ({
 
       const q = parseOrThrow(MessagesQuerySchema, { first: args.first, after: args.after });
       const take = q.first ?? 50;
+      const cursorId = q.after ? decodeCursor(q.after) : null;
+      if (cursorId) {
+        const cursorMessage = await ctx.db.message.findFirst({
+          where: { id: cursorId, issueId: args.issueId, isDeleted: false },
+          select: { id: true },
+        });
+        if (!cursorMessage)
+          throw new GraphQLError("Cursor does not belong to this task room", {
+            extensions: { code: "INVALID_CURSOR" },
+          });
+      }
 
       const rows = await ctx.db.message.findMany({
-        where: { issueId: args.issueId },
+        where: { issueId: args.issueId, isDeleted: false },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         take: take + 1,
-        ...(q.after ? { cursor: { id: decodeCursor(q.after) }, skip: 1 } : {}),
+        ...(cursorId ? { cursor: { id: cursorId }, skip: 1 } : {}),
         include: MESSAGE_INCLUDE,
       });
 

@@ -6,9 +6,12 @@
 // =============================================================================
 
 import type { Server } from "socket.io";
+import { HeadObjectCommand } from "@aws-sdk/client-s3";
+import { stat } from "node:fs/promises";
 import type {
   ServerToClientEvents,
   ClientToServerEvents,
+  ChatMessagePayload,
 } from "@bloody-roar/shared";
 import { createLogger } from "../lib/logger";
 import { tokenFromCookieHeader, verifyJWT } from "../lib/auth";
@@ -16,18 +19,43 @@ import { prisma } from "@bloody-roar/database";
 import { canReadIssueChat, canWriteIssueChat } from "../lib/chat-access";
 import { z } from "zod";
 import { createHash } from "node:crypto";
-import { AILogStatus, NotificationType } from "@bloody-roar/database";
+import { AILogStatus, NotificationType, Prisma } from "@bloody-roar/database";
 import { guardMessage } from "../ai/guard/service";
 import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE_BYTES } from "@bloody-roar/shared";
+import { getS3Storage, localUploadPath } from "../lib/storage";
 
 const log = createLogger("socket.io");
+type StoredMessage = Prisma.MessageGetPayload<{
+  include: { attachments: true };
+}>;
+
+function toMessagePayload(
+  message: StoredMessage,
+  sender: { id: string; name: string | null; avatar: string | null },
+): ChatMessagePayload {
+  const attachment = message.attachments[0];
+  return {
+    id: message.id,
+    content: message.content,
+    type: message.type as "TEXT" | "FILE",
+    senderId: sender.id,
+    senderName: sender.name || "Anonymous",
+    ...(sender.avatar ? { senderAvatar: sender.avatar } : {}),
+    issueId: message.issueId,
+    wasModified: message.wasModified,
+    ...(attachment?.fileUrl ? { fileUrl: attachment.fileUrl } : {}),
+    ...(attachment?.fileName ? { fileName: attachment.fileName } : {}),
+    ...(message.replyToId ? { replyToId: message.replyToId } : {}),
+    createdAt: message.createdAt.toISOString(),
+  };
+}
 
 /**
  * Register all Socket.io event handlers
  * Called once when the server starts
  */
 export function registerSocketHandlers(
-  io: Server<ClientToServerEvents, ServerToClientEvents>
+  io: Server<ClientToServerEvents, ServerToClientEvents>,
 ): void {
   log.info("Socket.io handlers registered");
 
@@ -35,8 +63,10 @@ export function registerSocketHandlers(
   // Global middleware — runs before any event handler
   // -----------------------------------------------------------------------
   io.use(async (socket, next) => {
-    const token = (socket.handshake.auth.token as string | undefined) ??
-      tokenFromCookieHeader(socket.handshake.headers.cookie ?? null) ?? undefined;
+    const token =
+      (socket.handshake.auth.token as string | undefined) ??
+      tokenFromCookieHeader(socket.handshake.headers.cookie ?? null) ??
+      undefined;
 
     if (token) {
       const user = await verifyJWT(token);
@@ -69,7 +99,8 @@ export function registerSocketHandlers(
           where: { id: issueId },
           select: { clientId: true, developerId: true, status: true },
         });
-        if (!issue || !canReadIssueChat(issue, user)) return callback?.("You cannot access this task room");
+        if (!issue || !canReadIssueChat(issue, user))
+          return callback?.("You cannot access this task room");
 
         const roomName = `task:${issueId}`;
         await socket.join(roomName);
@@ -104,17 +135,19 @@ export function registerSocketHandlers(
         const user = socket.data.user;
         if (!user) return callback?.("Unauthorized");
 
-        const parsed = z.object({
-          content: z.string().min(1).max(4000),
-          type: z.enum(["TEXT", "FILE"]),
-          issueId: z.string().min(1),
-          clientMessageId: z.string().optional(),
-          replyToId: z.string().optional(),
-          fileUrl: z.string().optional(),
-          fileName: z.string().optional(),
-          fileSize: z.number().optional(),
-          fileMime: z.string().optional(),
-        }).safeParse(data);
+        const parsed = z
+          .object({
+            content: z.string().min(1).max(4000),
+            type: z.enum(["TEXT", "FILE"]),
+            issueId: z.string().min(1),
+            clientMessageId: z.string().optional(),
+            replyToId: z.string().optional(),
+            fileUrl: z.string().optional(),
+            fileName: z.string().optional(),
+            fileSize: z.number().optional(),
+            fileMime: z.string().optional(),
+          })
+          .safeParse(data);
 
         if (!parsed.success) {
           return callback?.("Invalid message format");
@@ -129,18 +162,26 @@ export function registerSocketHandlers(
           fileUrl,
           fileName,
           fileSize,
-          fileMime
+          fileMime,
         } = parsed.data;
 
-        if (user.role === "ADMIN") return callback?.("Administrators have read-only access to task evidence");
+        if (user.role === "ADMIN")
+          return callback?.("Administrators have read-only access to task evidence");
         const issue = await prisma.issue.findUnique({
           where: { id: issueId },
-          select: { clientId: true, developerId: true, title: true, status: true },
+          select: {
+            clientId: true,
+            developerId: true,
+            title: true,
+            status: true,
+          },
         });
         if (!issue) return callback?.("Task not found");
         const roomName = `task:${issueId}`;
-        if (!canWriteIssueChat(issue, user)) return callback?.("You cannot send messages in this task");
-        if (!socket.rooms.has(roomName)) return callback?.("Join this task room before sending a message");
+        if (!canWriteIssueChat(issue, user))
+          return callback?.("You cannot send messages in this task");
+        if (!socket.rooms.has(roomName))
+          return callback?.("Join this task room before sending a message");
 
         if (replyToId) {
           const replyTarget = await prisma.message.findFirst({
@@ -152,124 +193,188 @@ export function registerSocketHandlers(
 
         if (type === "FILE") {
           let uploadedByUser = false;
+          let objectKey: string | null = null;
           try {
             const file = new URL(fileUrl || "");
-            const appOrigin = new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:4000").origin;
+            const appOrigin = new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:4000")
+              .origin;
             const key = file.searchParams.get("key");
-            uploadedByUser = file.origin === appOrigin &&
+            uploadedByUser =
+              file.origin === appOrigin &&
               file.pathname === "/api/uploads" &&
-              Boolean(key && key.startsWith(`${user.id}/`) && !key.includes("..") && key.split("/").length === 2);
+              file.searchParams.getAll("key").length === 1 &&
+              Boolean(
+                key &&
+                key.startsWith(`${user.id}/`) &&
+                !key.includes("..") &&
+                key.split("/").length === 2,
+              );
+            if (uploadedByUser) objectKey = key;
           } catch {
             uploadedByUser = false;
           }
           if (
-            !fileUrl || !fileName || !fileSize || !fileMime ||
-            !uploadedByUser || fileName.length > 160 || !Number.isInteger(fileSize) || fileSize > MAX_FILE_SIZE_BYTES ||
+            !fileUrl ||
+            !fileName ||
+            !fileSize ||
+            !fileMime ||
+            !uploadedByUser ||
+            fileName.length > 160 ||
+            !Number.isInteger(fileSize) ||
+            fileSize > MAX_FILE_SIZE_BYTES ||
             !ALLOWED_FILE_TYPES.includes(fileMime as never)
           ) {
             return callback?.("Upload a supported file before sending it");
           }
+          const s3 = getS3Storage();
+          if (s3 && objectKey) {
+            try {
+              const object = await s3.client.send(
+                new HeadObjectCommand({ Bucket: s3.bucket, Key: objectKey }),
+              );
+              uploadedByUser =
+                object.ContentLength === fileSize &&
+                object.ContentType === fileMime &&
+                object.Metadata?.uploader === user.id;
+            } catch {
+              uploadedByUser = false;
+            }
+          } else if (process.env.NODE_ENV !== "production" && objectKey) {
+            const localPath = localUploadPath(objectKey);
+            try {
+              uploadedByUser = Boolean(
+                localPath && (await stat(localPath.destination)).size === fileSize,
+              );
+            } catch {
+              uploadedByUser = false;
+            }
+          }
+          if (!uploadedByUser) return callback?.("The uploaded file could not be verified");
         }
 
-        // Idempotency check
-        // Note: clientMessageId only has an @@index, not @unique, so there is a minor race condition 
-        // if two concurrent requests share the same id, but it is acceptable here.
+        // Fast path for a retry whose original message has already committed.
         if (clientMessageId) {
           const existing = await prisma.message.findFirst({
             where: { clientMessageId, senderId: user.id, issueId },
-            include: { attachments: true }
+            include: { attachments: true },
           });
           if (existing) {
-            const roomName = `task:${issueId}`;
-            io.to(roomName).emit("message:new", {
-              id: existing.id,
-              content: existing.content,
-              type: existing.type as "TEXT" | "FILE",
-              senderId: user.id,
-              senderName: user.name || "Anonymous",
-              senderAvatar: user.avatar || undefined,
-              issueId: existing.issueId,
-              wasModified: existing.wasModified,
-              ...(existing.attachments?.[0]?.fileUrl ? { fileUrl: existing.attachments[0].fileUrl } : {}),
-              ...(existing.attachments?.[0]?.fileName ? { fileName: existing.attachments[0].fileName } : {}),
-              ...(existing.replyToId ? { replyToId: existing.replyToId } : {}),
-              createdAt: existing.createdAt.toISOString(),
-            });
+            io.to(roomName).emit("message:new", toMessagePayload(existing, user));
             callback?.(); // Already processed
             return;
           }
         }
 
-        const guard = type === "TEXT"
-          ? await guardMessage(content, { issueId })
-          : { content, wasModified: false, matches: [] as string[] };
+        const guard =
+          type === "TEXT"
+            ? await guardMessage(content, { issueId })
+            : { content, wasModified: false, matches: [] as string[] };
         const originalHash = guard.wasModified
           ? createHash("sha256").update(content).digest("hex")
           : undefined;
         const startedAt = Date.now();
-        const message = await prisma.$transaction(async (tx) => {
-          const created = await tx.message.create({
-            data: {
-              content: guard.content,
-              type,
-              issueId,
-              senderId: user.id,
-              clientMessageId: clientMessageId || null,
-              replyToId: replyToId || null,
-              wasModified: guard.wasModified,
-              ...(originalHash ? { originalHash } : {}),
+        let message: StoredMessage;
+        let alreadyPersisted = false;
+        try {
+          message = await prisma.$transaction(
+            async (tx) => {
+              const currentIssue = await tx.issue.findUnique({
+                where: { id: issueId },
+                select: { clientId: true, developerId: true, status: true },
+              });
+              if (!currentIssue || !canWriteIssueChat(currentIssue, user)) {
+                throw new Error("Task state changed before the message was saved");
+              }
+              if (replyToId) {
+                const replyTarget = await tx.message.findFirst({
+                  where: { id: replyToId, issueId, isDeleted: false },
+                  select: { id: true },
+                });
+                if (!replyTarget) throw new Error("The message you are replying to was not found");
+              }
+              if (clientMessageId) {
+                const duplicate = await tx.message.findFirst({
+                  where: { clientMessageId, senderId: user.id, issueId },
+                  include: { attachments: true },
+                });
+                if (duplicate) {
+                  alreadyPersisted = true;
+                  return duplicate;
+                }
+              }
+              const created = await tx.message.create({
+                data: {
+                  content: guard.content,
+                  type,
+                  issueId,
+                  senderId: user.id,
+                  clientMessageId: clientMessageId || null,
+                  replyToId: replyToId || null,
+                  wasModified: guard.wasModified,
+                  ...(originalHash ? { originalHash } : {}),
+                },
+              });
+
+              if (type === "FILE" && fileUrl && fileName && fileSize != null && fileMime) {
+                await tx.attachment.create({
+                  data: {
+                    messageId: created.id,
+                    uploaderId: user.id,
+                    fileName,
+                    fileUrl,
+                    fileSize,
+                    fileMime,
+                  },
+                });
+              }
+
+              return tx.message.findUniqueOrThrow({
+                where: { id: created.id },
+                include: { attachments: true },
+              });
             },
-          });
-
-          if (type === "FILE" && fileUrl && fileName && fileSize != null && fileMime) {
-            await tx.attachment.create({
-              data: {
-                messageId: created.id,
-                uploaderId: user.id,
-                fileName,
-                fileUrl,
-                fileSize,
-                fileMime,
-              },
-            });
-          }
-
-          return tx.message.findUniqueOrThrow({
-            where: { id: created.id },
+            { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+          );
+        } catch (error) {
+          const isSerializationConflict =
+            error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034";
+          if (!isSerializationConflict || !clientMessageId) throw error;
+          const duplicate = await prisma.message.findFirst({
+            where: { clientMessageId, senderId: user.id, issueId },
             include: { attachments: true },
           });
-        });
+          if (!duplicate) throw error;
+          message = duplicate;
+          alreadyPersisted = true;
+        }
+
+        if (alreadyPersisted) {
+          io.to(roomName).emit("message:new", toMessagePayload(message, user));
+          callback?.();
+          return;
+        }
 
         if (guard.wasModified) {
           const outputHash = createHash("sha256").update(guard.content).digest("hex");
-          void prisma.aILog.create({
-            data: {
-              task: "GUARD",
-              model: "regex-ruleset-v1",
-              provider: "local",
-              issueId,
-              latencyMs: Date.now() - startedAt,
-              ...(originalHash ? { inputHash: originalHash } : {}),
-              outputHash,
-              status: AILogStatus.SUCCESS,
-            },
-          }).catch((error) => log.warn({ error, issueId }, "Failed to persist AI Guard audit record"));
+          void prisma.aILog
+            .create({
+              data: {
+                task: "GUARD",
+                model: "regex-ruleset-v1",
+                provider: "local",
+                issueId,
+                latencyMs: Date.now() - startedAt,
+                ...(originalHash ? { inputHash: originalHash } : {}),
+                outputHash,
+                status: AILogStatus.SUCCESS,
+              },
+            })
+            .catch((error) =>
+              log.warn({ error, issueId }, "Failed to persist AI Guard audit record"),
+            );
         }
 
-        io.to(roomName).emit("message:new", {
-          id: message.id,
-          content: message.content,
-          type: message.type as "TEXT" | "FILE",
-          senderId: user.id,
-          senderName: user.name || "Anonymous",
-          senderAvatar: user.avatar || undefined,
-          issueId: message.issueId,
-          wasModified: message.wasModified,
-          ...(message.attachments[0]?.fileUrl ? { fileUrl: message.attachments[0].fileUrl } : {}),
-          ...(message.attachments[0]?.fileName ? { fileName: message.attachments[0].fileName } : {}),
-          ...(message.replyToId ? { replyToId: message.replyToId } : {}),
-          createdAt: message.createdAt.toISOString(),
-        });
+        io.to(roomName).emit("message:new", toMessagePayload(message, user));
 
         const recipientId = issue.clientId === user.id ? issue.developerId : issue.clientId;
         if (recipientId) {
@@ -280,7 +385,10 @@ export function registerSocketHandlers(
                 actorId: user.id,
                 type: NotificationType.MESSAGE_RECEIVED,
                 title: `Tin nhắn mới trong “${issue.title}”`,
-                body: type === "FILE" ? `${user.name || "Thành viên"} đã gửi một tệp.` : guard.content.slice(0, 180),
+                body:
+                  type === "FILE"
+                    ? `${user.name || "Thành viên"} đã gửi một tệp.`
+                    : guard.content.slice(0, 180),
                 link: `/issues/${issueId}`,
                 data: { issueId, messageId: message.id },
               },
@@ -294,7 +402,10 @@ export function registerSocketHandlers(
               createdAt: notification.createdAt.toISOString(),
             });
           } catch (notificationError) {
-            log.warn({ error: notificationError, issueId }, "Failed to create message notification");
+            log.warn(
+              { error: notificationError, issueId },
+              "Failed to create message notification",
+            );
           }
         }
 
@@ -327,4 +438,9 @@ export function getSocketIO(): Server<ClientToServerEvents, ServerToClientEvents
   const io = (global as any).__socketIO;
   if (!io) throw new Error("Socket.io not initialized");
   return io;
+}
+
+/** Close every active connection after a user's session is revoked or banned. */
+export function disconnectUserSockets(userId: string): void {
+  getSocketIO().in(`user:${userId}`).disconnectSockets(true);
 }

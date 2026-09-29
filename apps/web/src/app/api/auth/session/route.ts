@@ -6,14 +6,22 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const token = tokenFromRequest(request);
   const user = token ? await verifyJWT(token) : null;
-  if (!user) return NextResponse.json({ user: null });
-  const response = NextResponse.json({ user: toPublicAuthUser(user) });
-  response.cookies.set(AUTH_COOKIE_NAME, token!, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 7 * 24 * 60 * 60,
-  });
-  return response;
+  if (!user) {
+    const response = NextResponse.json(
+      { user: null },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+    response.cookies.set(AUTH_COOKIE_NAME, "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+    return response;
+  }
+  return NextResponse.json(
+    { user: toPublicAuthUser(user) },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }

@@ -12,6 +12,7 @@
     "start": "bun run --cwd apps/web start",
     "lint": "bun run --cwd apps/web lint",
     "typecheck": "bun run --cwd apps/web typecheck",
+    "test:e2e:backend": "bun run --cwd apps/web test:e2e:backend",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "db:generate": "bun run --cwd packages/database db:generate",
     "db:migrate": "bun run --cwd packages/database db:migrate",

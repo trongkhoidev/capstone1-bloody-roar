@@ -61,8 +61,7 @@ function getThirdwebAuth(): ThirdwebAuth {
   }
   return new ThirdwebAuth(
     new PrivateKeyWallet(AUTH_PRIVATE_KEY),
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/^https?:\/\//, "") ??
-      "localhost:4000",
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/^https?:\/\//, "") ?? "localhost:4000",
   );
 }
 
@@ -92,18 +91,19 @@ export async function verifyJWT(token: string) {
     const refreshHash = crypto.createHash("sha256").update(token).digest("hex");
     const session = await prisma.session.findUnique({
       where: { refreshHash },
+      select: { userId: true, revokedAt: true, expiresAt: true },
     });
 
-    if (!session || session.revokedAt) {
+    if (!session || session.revokedAt || session.expiresAt <= new Date()) {
       return null;
     }
-
 
     const user = await prisma.user.findUnique({
       where: { walletAddress: authUser.address.toLowerCase() },
     });
 
-    return user?.isBanned ? null : user;
+    if (!user || user.id !== session.userId || user.isBanned) return null;
+    return user;
   } catch {
     return null;
   }

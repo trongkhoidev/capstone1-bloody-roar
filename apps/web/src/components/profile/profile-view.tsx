@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { GitBranch, MapPin, Save, ShieldCheck } from "lucide-react";
 import { graphqlRequest } from "@/lib/graphql-client";
+import { apiClient, getApiErrorMessage } from "@/lib/api-client";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,11 +69,9 @@ export function ProfileView() {
   const linkGithub = async () => {
     setError(null);
     try {
-      const response = await fetch("/api/auth/github/start", { method: "POST" });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error ?? "GitHub OAuth is not configured.");
+      const { data: result } = await apiClient.post<{ url: string }>("/api/auth/github/start");
       window.location.assign(result.url);
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not start GitHub authorization."); }
+    } catch (reason) { setError(getApiErrorMessage(reason, "Could not start GitHub authorization.")); }
   };
 
   if (authStatus === "restoring") return <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8"><div className="h-64 animate-pulse rounded-xl bg-[hsl(var(--card))]" /></main>;

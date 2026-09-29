@@ -5,6 +5,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { createLoginMessage, useAuthStore } from "../lib/store/use-auth-store";
 import type { AuthUser } from "../lib/store/use-auth-store";
+import { apiClient } from "../lib/api-client";
 
 describe("useAuthStore", () => {
   const mockUser: AuthUser = {
@@ -23,8 +24,8 @@ describe("useAuthStore", () => {
   };
 
   beforeEach(() => {
-    useAuthStore.getState().logout();
     vi.restoreAllMocks();
+    useAuthStore.setState({ user: null, status: "idle", error: null });
   });
 
   it("formats every Thirdweb SIWE field, including Not Before and Resources", () => {
@@ -64,6 +65,7 @@ describe("useAuthStore", () => {
   });
 
   it("should clear user and status on logout", () => {
+    vi.spyOn(apiClient, "post").mockResolvedValueOnce({ data: {} } as never);
     useAuthStore.getState().setAuth(mockUser);
 
     useAuthStore.getState().logout();
@@ -74,34 +76,14 @@ describe("useAuthStore", () => {
   });
 
   it("should handle successful SIWE loginWithSignature flow", async () => {
-    // 1. Mock fetch for nonce & login
     const mockPayload = {
       domain: "localhost:4000",
       address: "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
       nonce: "mock-nonce-123",
       issued_at: new Date().toISOString(),
     };
-
-    global.fetch = vi.fn().mockImplementation((url: string) => {
-      if (url.includes("/api/auth/nonce")) {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: () => Promise.resolve(mockPayload),
-        });
-      }
-      if (url.includes("/api/auth/login")) {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: () =>
-            Promise.resolve({
-              user: mockUser,
-            }),
-        });
-      }
-      return Promise.reject(new Error("Unknown URL"));
-    });
+    vi.spyOn(apiClient, "get").mockResolvedValueOnce({ data: mockPayload } as never);
+    vi.spyOn(apiClient, "post").mockResolvedValueOnce({ data: { user: mockUser } } as never);
 
     const mockSigner = vi.fn().mockResolvedValue("0xmocksignature12345");
 
@@ -111,18 +93,22 @@ describe("useAuthStore", () => {
 
     expect(result).toBe(true);
     expect(mockSigner).toHaveBeenCalled();
+    expect(apiClient.get).toHaveBeenCalledWith("/api/auth/nonce", {
+      params: { address: mockUser.walletAddress },
+    });
+    expect(apiClient.post).toHaveBeenCalledWith("/api/auth/login", {
+      payload: mockPayload,
+      signature: "0xmocksignature12345",
+    });
     const state = useAuthStore.getState();
     expect(state.status).toBe("authenticated");
     expect(state.user?.walletAddress).toBe(mockUser.walletAddress);
   });
 
   it("should handle user rejection gracefully without crashing", async () => {
-    // Mock nonce fetch success
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve({ nonce: "test-nonce" }),
-    });
+    vi.spyOn(apiClient, "get").mockResolvedValueOnce({
+      data: { nonce: "test-nonce" },
+    } as never);
 
     // Signer throws rejection
     const mockSigner = vi

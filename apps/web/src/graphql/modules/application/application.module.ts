@@ -1,5 +1,4 @@
-import { ApplicationStatus, IssueStatus, UserRole } from "@bloody-roar/database";
-import type { Prisma } from "@bloody-roar/database";
+import { ApplicationStatus, IssueStatus, Prisma, UserRole } from "@bloody-roar/database";
 import { z } from "zod";
 import { builder } from "../../builder";
 import { requireAuth } from "../../context";
@@ -8,8 +7,13 @@ import { createNotificationSafely } from "../../../lib/services/notifications";
 import { UserRef } from "../user/user.module";
 import { ISSUE_INCLUDE, IssueRef } from "../issue/issue.module";
 
-const ApplicationStatusEnum = builder.enumType(ApplicationStatus, { name: "ApplicationStatus" });
-const APPLICATION_INCLUDE = { developer: true, issue: { include: ISSUE_INCLUDE } } satisfies Prisma.ApplicationInclude;
+const ApplicationStatusEnum = builder.enumType(ApplicationStatus, {
+  name: "ApplicationStatus",
+});
+const APPLICATION_INCLUDE = {
+  developer: true,
+  issue: { include: ISSUE_INCLUDE },
+} satisfies Prisma.ApplicationInclude;
 
 export const ApplicationRef = builder.prismaObject("Application", {
   include: APPLICATION_INCLUDE,
@@ -19,9 +23,17 @@ export const ApplicationRef = builder.prismaObject("Application", {
     message: t.exposeString("message", { nullable: true }),
     issueId: t.exposeString("issueId"),
     developerId: t.exposeString("developerId"),
-    createdAt: t.string({ resolve: (application) => application.createdAt.toISOString() }),
-    developer: t.field({ type: UserRef, resolve: (application) => application.developer }),
-    issue: t.field({ type: IssueRef, resolve: (application) => application.issue }),
+    createdAt: t.string({
+      resolve: (application) => application.createdAt.toISOString(),
+    }),
+    developer: t.field({
+      type: UserRef,
+      resolve: (application) => application.developer,
+    }),
+    issue: t.field({
+      type: IssueRef,
+      resolve: (application) => application.issue,
+    }),
   }),
 });
 
@@ -36,9 +48,13 @@ builder.queryFields((t) => ({
     args: { issueId: t.arg.string({ required: true }) },
     resolve: async (query, _root, args, ctx) => {
       const user = requireAuth(ctx);
-      const issue = await ctx.db.issue.findUnique({ where: { id: args.issueId }, select: { clientId: true } });
+      const issue = await ctx.db.issue.findUnique({
+        where: { id: args.issueId },
+        select: { clientId: true },
+      });
       if (!issue) throw gqlError("Bài toán không tồn tại", "NOT_FOUND");
-      if (issue.clientId !== user.id) throw gqlError("Chỉ chủ bài toán mới được xem danh sách ứng viên", "FORBIDDEN");
+      if (issue.clientId !== user.id)
+        throw gqlError("Chỉ chủ bài toán mới được xem danh sách ứng viên", "FORBIDDEN");
       return ctx.db.application.findMany({
         ...query,
         where: { issueId: args.issueId },
@@ -71,56 +87,115 @@ builder.mutationField("applyToIssue", (t) =>
     },
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
-      if (user.role !== UserRole.DEVELOPER) throw gqlError("Switch your profile to the developer role before applying", "DEVELOPER_ROLE_REQUIRED");
+      if (user.role !== UserRole.DEVELOPER)
+        throw gqlError(
+          "Switch your profile to the developer role before applying",
+          "DEVELOPER_ROLE_REQUIRED",
+        );
       const input = parseOrThrow(ApplySchema, {
         issueId: String(args.input.issueId),
         ...(args.input.message != null ? { message: args.input.message } : {}),
       });
-      const issue = await ctx.db.issue.findUnique({ where: { id: input.issueId } });
-      if (!issue || issue.isDraft) throw gqlError("Bài toán không tồn tại", "NOT_FOUND");
-      if (issue.clientId === user.id) throw gqlError("Bạn không thể ứng tuyển vào bài toán của mình", "SELF_APPLICATION");
-      if (issue.status !== IssueStatus.OPEN || (issue.expiresAt && issue.expiresAt < new Date())) {
-        throw gqlError("Bài toán không còn nhận ứng tuyển", "ISSUE_NOT_OPEN");
-      }
-
-      const previous = await ctx.db.application.findUnique({
-        where: { issueId_developerId: { issueId: input.issueId, developerId: user.id } },
-      });
-      if (previous && previous.status !== ApplicationStatus.WITHDRAWN) {
-        throw gqlError("Bạn đã ứng tuyển vào bài toán này", "ALREADY_APPLIED");
-      }
-
-      let application;
+      let result: {
+        application: Prisma.ApplicationGetPayload<{
+          include: typeof APPLICATION_INCLUDE;
+        }>;
+        issue: { id: string; clientId: string; title: string };
+      };
       try {
-        application = previous
-          ? await ctx.db.application.update({
-              where: { id: previous.id },
-              data: { status: ApplicationStatus.PENDING, message: input.message ?? null },
-              include: APPLICATION_INCLUDE,
-            })
-          : await ctx.db.application.create({
-              data: { issueId: input.issueId, developerId: user.id, message: input.message ?? null },
-              include: APPLICATION_INCLUDE,
+        result = await ctx.db.$transaction(
+          async (tx) => {
+            const issue = await tx.issue.findUnique({
+              where: { id: input.issueId },
             });
+            if (!issue || issue.isDraft) throw gqlError("Bài toán không tồn tại", "NOT_FOUND");
+            if (issue.clientId === user.id)
+              throw gqlError("Bạn không thể ứng tuyển vào bài toán của mình", "SELF_APPLICATION");
+            if (
+              issue.status !== IssueStatus.OPEN ||
+              (issue.expiresAt && issue.expiresAt <= new Date())
+            ) {
+              throw gqlError("Bài toán không còn nhận ứng tuyển", "ISSUE_NOT_OPEN");
+            }
+
+            const previous = await tx.application.findUnique({
+              where: {
+                issueId_developerId: {
+                  issueId: input.issueId,
+                  developerId: user.id,
+                },
+              },
+            });
+            if (previous && previous.status !== ApplicationStatus.WITHDRAWN) {
+              throw gqlError("Bạn đã ứng tuyển vào bài toán này", "ALREADY_APPLIED");
+            }
+
+            const application = previous
+              ? await tx.application.update({
+                  where: { id: previous.id },
+                  data: {
+                    status: ApplicationStatus.PENDING,
+                    message: input.message?.trim() || null,
+                  },
+                  include: APPLICATION_INCLUDE,
+                })
+              : await tx.application.create({
+                  data: {
+                    issueId: input.issueId,
+                    developerId: user.id,
+                    message: input.message?.trim() || null,
+                  },
+                  include: APPLICATION_INCLUDE,
+                });
+            return {
+              application,
+              issue: {
+                id: issue.id,
+                clientId: issue.clientId,
+                title: issue.title,
+              },
+            };
+          },
+          { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+        );
       } catch (error) {
-        if (typeof error === "object" && error !== null && "code" in error && error.code === "P2002") {
+        if (
+          typeof error === "object" &&
+          error !== null &&
+          "code" in error &&
+          error.code === "P2002"
+        ) {
           throw gqlError("You already have an application for this task", "ALREADY_APPLIED");
+        }
+        if (
+          typeof error === "object" &&
+          error !== null &&
+          "code" in error &&
+          error.code === "P2034"
+        ) {
+          throw gqlError(
+            "Task state changed while you were applying; refresh and try again",
+            "ISSUE_NOT_OPEN",
+          );
         }
         throw error;
       }
 
       await createNotificationSafely(ctx.db, {
-        userId: issue.clientId,
+        userId: result.issue.clientId,
         type: "NEW_APPLICANT",
         title: "Có ứng viên mới",
-        body: `${user.name || "Một developer"} đã ứng tuyển vào “${issue.title}”.`,
+        body: `${user.name || "Một developer"} đã ứng tuyển vào “${result.issue.title}”.`,
         actorId: user.id,
-        link: `/issues/${issue.id}`,
-        data: { issueId: issue.id, applicationId: application.id },
+        link: `/issues/${result.issue.id}`,
+        data: {
+          issueId: result.issue.id,
+          applicationId: result.application.id,
+        },
       });
-      return application;
+      return result.application;
     },
-  })
+  }),
 );
 
 builder.mutationField("withdrawApplication", (t) =>
@@ -129,17 +204,30 @@ builder.mutationField("withdrawApplication", (t) =>
     args: { id: t.arg.id({ required: true }) },
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
-      const application = await ctx.db.application.findUnique({ where: { id: String(args.id) } });
+      const application = await ctx.db.application.findUnique({
+        where: { id: String(args.id) },
+      });
       if (!application) throw gqlError("Đơn ứng tuyển không tồn tại", "NOT_FOUND");
-      if (application.developerId !== user.id) throw gqlError("Bạn không có quyền rút đơn này", "FORBIDDEN");
-      if (application.status !== ApplicationStatus.PENDING) throw gqlError("Đơn này không thể rút", "APPLICATION_NOT_WITHDRAWABLE");
-      return ctx.db.application.update({
-        where: { id: application.id },
+      if (application.developerId !== user.id)
+        throw gqlError("Bạn không có quyền rút đơn này", "FORBIDDEN");
+      if (application.status !== ApplicationStatus.PENDING)
+        throw gqlError("Đơn này không thể rút", "APPLICATION_NOT_WITHDRAWABLE");
+      const withdrawn = await ctx.db.application.updateMany({
+        where: {
+          id: application.id,
+          developerId: user.id,
+          status: ApplicationStatus.PENDING,
+        },
         data: { status: ApplicationStatus.WITHDRAWN },
+      });
+      if (withdrawn.count !== 1)
+        throw gqlError("Đơn này vừa được xử lý và không thể rút", "APPLICATION_NOT_WITHDRAWABLE");
+      return ctx.db.application.findUniqueOrThrow({
+        where: { id: application.id },
         include: APPLICATION_INCLUDE,
       });
     },
-  })
+  }),
 );
 
 builder.mutationField("assignDeveloper", (t) =>
@@ -158,27 +246,66 @@ builder.mutationField("assignDeveloper", (t) =>
       const assigned = await ctx.db.$transaction(async (tx) => {
         const issue = await tx.issue.findUnique({ where: { id: issueId } });
         if (!issue) throw gqlError("Bài toán không tồn tại", "NOT_FOUND");
-        if (issue.clientId !== user.id) throw gqlError("Chỉ chủ bài toán mới được chọn developer", "FORBIDDEN");
-        if (issue.status !== IssueStatus.OPEN || issue.developerId) throw gqlError("Bài toán đã được nhận hoặc không còn mở", "ISSUE_NOT_OPEN");
-        const application = await tx.application.findFirst({ where: { id: applicationId, issueId, status: ApplicationStatus.PENDING } });
-        if (!application) throw gqlError("Đơn ứng tuyển không còn hiệu lực", "APPLICATION_NOT_PENDING");
+        if (issue.clientId !== user.id)
+          throw gqlError("Chỉ chủ bài toán mới được chọn developer", "FORBIDDEN");
+        if (
+          issue.status !== IssueStatus.OPEN ||
+          issue.developerId ||
+          (issue.expiresAt && issue.expiresAt <= new Date())
+        )
+          throw gqlError("Bài toán đã hết hạn hoặc không còn mở", "ISSUE_NOT_OPEN");
+        const application = await tx.application.findFirst({
+          where: {
+            id: applicationId,
+            issueId,
+            status: ApplicationStatus.PENDING,
+          },
+        });
+        if (!application)
+          throw gqlError("Đơn ứng tuyển không còn hiệu lực", "APPLICATION_NOT_PENDING");
 
         const claim = await tx.issue.updateMany({
           where: { id: issueId, status: IssueStatus.OPEN, developerId: null },
-          data: { developerId: application.developerId, status: IssueStatus.IN_PROGRESS, assignedAt: new Date() },
+          data: {
+            developerId: application.developerId,
+            status: IssueStatus.IN_PROGRESS,
+            assignedAt: new Date(),
+          },
         });
-        if (claim.count !== 1) throw gqlError("Bài toán vừa được một người khác nhận", "ISSUE_NOT_OPEN");
+        if (claim.count !== 1)
+          throw gqlError("Bài toán vừa được một người khác nhận", "ISSUE_NOT_OPEN");
 
         const rejectedApplications = await tx.application.findMany({
-          where: { issueId, status: ApplicationStatus.PENDING, id: { not: applicationId } },
+          where: {
+            issueId,
+            status: ApplicationStatus.PENDING,
+            id: { not: applicationId },
+          },
           select: { developerId: true },
         });
         await tx.application.updateMany({
-          where: { issueId, status: ApplicationStatus.PENDING, id: { not: applicationId } },
+          where: {
+            issueId,
+            status: ApplicationStatus.PENDING,
+            id: { not: applicationId },
+          },
           data: { status: ApplicationStatus.REJECTED },
         });
-        await tx.application.update({ where: { id: applicationId }, data: { status: ApplicationStatus.ACCEPTED } });
-        return { issue, application, rejectedDeveloperIds: rejectedApplications.map((candidate) => candidate.developerId) };
+        const accepted = await tx.application.updateMany({
+          where: {
+            id: applicationId,
+            issueId,
+            status: ApplicationStatus.PENDING,
+          },
+          data: { status: ApplicationStatus.ACCEPTED },
+        });
+        if (accepted.count !== 1)
+          throw gqlError("Đơn ứng tuyển vừa được rút hoặc xử lý", "APPLICATION_NOT_PENDING");
+        return {
+          issue,
+          application,
+          rejectedDeveloperIds: rejectedApplications.map((candidate) => candidate.developerId),
+        };
       });
 
       await Promise.all([
@@ -200,18 +327,23 @@ builder.mutationField("assignDeveloper", (t) =>
           link: `/issues/${issueId}`,
           data: { issueId },
         }),
-        ...assigned.rejectedDeveloperIds.map((developerId) => createNotificationSafely(ctx.db, {
-          userId: developerId,
-          type: "APPLICATION_REJECTED",
-          title: "Đơn ứng tuyển chưa được chọn",
-          body: `Khách hàng đã chọn developer khác cho “${assigned.issue.title}”.`,
-          actorId: user.id,
-          link: `/issues/${issueId}`,
-          data: { issueId },
-        })),
+        ...assigned.rejectedDeveloperIds.map((developerId) =>
+          createNotificationSafely(ctx.db, {
+            userId: developerId,
+            type: "APPLICATION_REJECTED",
+            title: "Đơn ứng tuyển chưa được chọn",
+            body: `Khách hàng đã chọn developer khác cho “${assigned.issue.title}”.`,
+            actorId: user.id,
+            link: `/issues/${issueId}`,
+            data: { issueId },
+          }),
+        ),
       ]);
 
-      return ctx.db.issue.findUnique({ where: { id: issueId }, include: ISSUE_INCLUDE });
+      return ctx.db.issue.findUnique({
+        where: { id: issueId },
+        include: ISSUE_INCLUDE,
+      });
     },
-  })
+  }),
 );

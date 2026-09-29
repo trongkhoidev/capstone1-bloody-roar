@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
+import axios from "axios";
 import { io, type Socket } from "socket.io-client";
 import { Check, CircleHelp, FileText, Paperclip, Send, ShieldCheck, X } from "lucide-react";
 import Image from "next/image";
 import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE_BYTES } from "@bloody-roar/shared";
 import { graphqlRequest } from "@/lib/graphql-client";
+import { apiClient, getApiErrorMessage } from "@/lib/api-client";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { Button } from "@/components/ui/button";
 import type { ChatMessagePayload } from "@bloody-roar/shared";
@@ -85,19 +87,20 @@ async function uploadFile(file: File) {
     throw new Error("This file type is not supported.");
   }
 
-  const metadata = await fetch("/api/uploads", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ fileName: file.name, fileType: file.type, fileSize: file.size }),
+  const { data: upload } = await apiClient.post<{ uploadUrl: string; fileUrl: string }>("/api/uploads", {
+    fileName: file.name,
+    fileType: file.type,
+    fileSize: file.size,
   });
-  const upload = await metadata.json();
-  if (!metadata.ok) throw new Error(upload.error || "Could not prepare file upload.");
-  const result = await fetch(upload.uploadUrl, {
-    method: "PUT",
-    headers: { "Content-Type": file.type },
-    body: file,
-  });
-  if (!result.ok) throw new Error("File upload failed.");
+  const isSameOrigin = new URL(upload.uploadUrl, window.location.href).origin === window.location.origin;
+  try {
+    await (isSameOrigin ? apiClient : axios).put(upload.uploadUrl, file, {
+      headers: { "Content-Type": file.type },
+      withCredentials: isSameOrigin,
+    });
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, "File upload failed."));
+  }
   return { fileUrl: upload.fileUrl as string, fileName: file.name, fileSize: file.size, fileMime: file.type };
 }
 

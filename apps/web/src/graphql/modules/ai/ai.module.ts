@@ -1,5 +1,5 @@
 import { IssueStatus, TestCasePriority, TestCaseSource, UserRole } from "@bloody-roar/database";
-import type { Prisma } from "@bloody-roar/database";
+import type { Prisma, TestCase as TestCaseModel } from "@bloody-roar/database";
 import { z } from "zod";
 import { builder } from "../../builder";
 import { requireAuth } from "../../context";
@@ -10,14 +10,16 @@ import { scanAndMask } from "../../../ai/guard/scanner";
 const TestCasePriorityEnum = builder.enumType(TestCasePriority, { name: "TestCasePriority" });
 const TestCaseSourceEnum = builder.enumType(TestCaseSource, { name: "TestCaseSource" });
 
-export const TestCaseRef = builder.prismaObject("TestCase", {
+type GraphQLTestCase = Omit<TestCaseModel, "then"> & { bddThen: string };
+
+export const TestCaseRef = builder.objectRef<GraphQLTestCase>("TestCase").implement({
   fields: (t) => ({
     id: t.exposeID("id"),
     title: t.exposeString("title"),
     description: t.exposeString("description"),
     given: t.exposeString("given"),
     when: t.exposeString("when"),
-    then: t.exposeString("then"),
+    then: t.string({ resolve: (testCase) => testCase.bddThen }),
     isEdgeCase: t.exposeBoolean("isEdgeCase"),
     priority: t.expose("priority", { type: TestCasePriorityEnum }),
     source: t.expose("source", { type: TestCaseSourceEnum, nullable: true }),
@@ -28,6 +30,11 @@ export const TestCaseRef = builder.prismaObject("TestCase", {
     updatedAt: t.string({ resolve: (testCase) => testCase.updatedAt.toISOString() }),
   }),
 });
+
+function toGraphqlTestCase(testCase: TestCaseModel): GraphQLTestCase {
+  const { then, ...fields } = testCase;
+  return { ...fields, bddThen: then };
+}
 
 const GeneratedCaseSchema = z.object({
   title: z.string().trim().min(4).max(160),
@@ -53,10 +60,10 @@ function parseAIJson(text: string): unknown {
 }
 
 builder.queryField("testCases", (t) =>
-  t.prismaField({
+  t.field({
     type: [TestCaseRef],
     args: { issueId: t.arg.string({ required: true }) },
-    resolve: async (query, _root, args, ctx) => {
+    resolve: async (_root, args, ctx) => {
       const issue = await ctx.db.issue.findUnique({
         where: { id: args.issueId },
         select: { clientId: true, isDraft: true },
@@ -64,14 +71,14 @@ builder.queryField("testCases", (t) =>
       if (!issue) throw gqlError("Task not found", "NOT_FOUND");
       if (issue.isDraft && ctx.user?.id !== issue.clientId) throw gqlError("Draft acceptance criteria are private", "FORBIDDEN");
 
-      return ctx.db.testCase.findMany({
-        ...query,
+      const testCases = await ctx.db.testCase.findMany({
         where: {
           issueId: args.issueId,
           ...(ctx.user?.id === issue.clientId ? {} : { isApproved: true }),
         },
         orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       });
+      return testCases.map(toGraphqlTestCase);
     },
   }),
 );
@@ -129,7 +136,7 @@ builder.mutationField("generateTestCases", (t) =>
             orderBy: [{ createdAt: "asc" }, { id: "asc" }],
           });
         });
-        return cases;
+        return cases.map(toGraphqlTestCase);
       } catch (error) {
         if (error instanceof z.ZodError || error instanceof SyntaxError) {
           throw gqlError("The AI returned acceptance criteria in an unsupported format. Try again.", "AI_INVALID_RESPONSE");
@@ -179,13 +186,14 @@ builder.mutationField("updateTestCase", (t) =>
 
       const changes = Object.fromEntries(Object.entries(input).filter(([key]) => key !== "id"));
       const editsCriteria = ["title", "description", "given", "when", "then", "priority", "isEdgeCase"].some((key) => key in input);
-      return ctx.db.testCase.update({
+      const updatedTestCase = await ctx.db.testCase.update({
         where: { id: testCase.id },
         data: {
           ...changes,
           ...(editsCriteria && input.isApproved === undefined ? { isApproved: false } : {}),
         } as Prisma.TestCaseUpdateInput,
       });
+      return toGraphqlTestCase(updatedTestCase);
     },
   }),
 );

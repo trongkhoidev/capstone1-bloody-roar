@@ -3,6 +3,7 @@
 // Trâm (UI/UX Designer & Test Engineer) — Sprint 1 (S1-AUTH-08)
 
 import { create } from "zustand";
+import { apiClient, getApiErrorMessage } from "@/lib/api-client";
 
 export interface AuthUser {
   id: string;
@@ -104,9 +105,7 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         if (get().user) {
-          void fetch("/api/auth/logout", {
-            method: "POST",
-          }).catch(() => undefined);
+          void apiClient.post("/api/auth/logout").catch(() => undefined);
         }
         set({
           user: null,
@@ -119,12 +118,7 @@ export const useAuthStore = create<AuthState>()(
         if (get().status === "authenticated") return;
         set({ status: "restoring", error: null });
         try {
-          const response = await fetch("/api/auth/session", { cache: "no-store" });
-          if (!response.ok) {
-            set({ user: null, status: "idle", error: null });
-            return;
-          }
-          const data = await response.json() as { user?: AuthUser };
+          const { data } = await apiClient.get<{ user?: AuthUser }>("/api/auth/session");
           set({ user: data.user ?? null, status: data.user ? "authenticated" : "idle", error: null });
         } catch {
           set({ user: null, status: "idle", error: null });
@@ -138,15 +132,9 @@ export const useAuthStore = create<AuthState>()(
         try {
           // 1. Fetch Nonce from Backend
           set({ status: "requesting_nonce", error: null });
-          const nonceRes = await fetch(
-            `/api/auth/nonce?address=${encodeURIComponent(walletAddress)}`
-          );
-
-          if (!nonceRes.ok) {
-            throw new Error("Không thể lấy nonce xác thực từ máy chủ.");
-          }
-
-          const loginPayload = await nonceRes.json();
+          const { data: loginPayload } = await apiClient.get<LoginPayload>("/api/auth/nonce", {
+            params: { address: walletAddress },
+          });
 
           // 2. Format SIWE / Thirdweb EIP-4361 message to sign
           set({ status: "signing" });
@@ -157,23 +145,10 @@ export const useAuthStore = create<AuthState>()(
 
           // 3. Verify on Backend
           set({ status: "verifying" });
-          const loginRes = await fetch("/api/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+          const { data } = await apiClient.post<{ user?: AuthUser }>("/api/auth/login", {
               payload: loginPayload,
               signature,
-            }),
           });
-
-          if (!loginRes.ok) {
-            const errData = await loginRes.json().catch(() => ({}));
-            throw new Error(
-              errData.error || `Xác thực thất bại (HTTP ${loginRes.status})`
-            );
-          }
-
-          const data = await loginRes.json();
           const { user } = data;
 
           if (!user) {
@@ -188,7 +163,7 @@ export const useAuthStore = create<AuthState>()(
 
           return true;
         } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err ?? "");
+          const message = getApiErrorMessage(err, "Đã xảy ra lỗi trong quá trình đăng nhập.");
           const errorMessage =
             message.includes("User rejected") ||
             message.includes("ACTION_REJECTED")

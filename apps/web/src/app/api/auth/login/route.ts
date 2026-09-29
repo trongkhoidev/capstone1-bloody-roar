@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { AUTH_COOKIE_NAME, thirdwebAuth } from "../../../../lib/auth";
 import { prisma } from "@bloody-roar/database";
 import crypto from "crypto";
-import { headers } from "next/headers";
 import { createLogger } from "../../../../lib/logger";
 
 const log = createLogger("auth-login");
@@ -32,7 +31,9 @@ export async function POST(req: Request) {
     const walletAddress = await auth.verify(payload);
     const checksumAddress = walletAddress.toLowerCase();
 
-    const existingUser = await prisma.user.findUnique({ where: { walletAddress: checksumAddress } });
+    const existingUser = await prisma.user.findUnique({
+      where: { walletAddress: checksumAddress },
+    });
     if (existingUser?.isBanned) {
       return NextResponse.json({ error: "This account is suspended" }, { status: 403 });
     }
@@ -42,11 +43,11 @@ export async function POST(req: Request) {
     const existingSession = await prisma.session.findUnique({
       where: { nonce: siweNonce },
     });
-    
+
     if (existingSession) {
       return NextResponse.json(
         { error: "Login payload already used (replay detected)" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -71,16 +72,12 @@ export async function POST(req: Request) {
     const expiresAt = new Date(parsedToken.payload.exp * 1000);
 
     // Hash the JWT for refreshHash (used for logout/revoke/verify)
-    const refreshHash = crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
+    const refreshHash = crypto.createHash("sha256").update(token).digest("hex");
 
     // Extract request metadata
-    const reqHeaders = headers();
-    const userAgent = reqHeaders.get("user-agent") ?? null;
-    const forwardedFor = reqHeaders.get("x-forwarded-for");
-    const realIp = reqHeaders.get("x-real-ip");
+    const userAgent = req.headers.get("user-agent") ?? null;
+    const forwardedFor = req.headers.get("x-forwarded-for");
+    const realIp = req.headers.get("x-real-ip");
     const ip = forwardedFor ?? realIp ?? null;
 
     // Save session with SIWE nonce to prevent replay
@@ -104,12 +101,13 @@ export async function POST(req: Request) {
       maxAge: Math.max(1, Math.floor((expiresAt.getTime() - Date.now()) / 1000)),
       expires: expiresAt,
     });
+    response.headers.set("Cache-Control", "no-store");
     return response;
   } catch (error) {
     log.warn({ error }, "Wallet login verification failed");
     return NextResponse.json(
       { error: "Invalid login payload" },
-      { status: 401 },
+      { status: 401, headers: { "Cache-Control": "no-store" } },
     );
   }
 }

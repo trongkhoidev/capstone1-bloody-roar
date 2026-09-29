@@ -233,7 +233,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
               <form onSubmit={submitDelivery} className="mt-4 space-y-3">
                 <textarea value={deliveryDescription} onChange={(event) => setDeliveryDescription(event.target.value)} maxLength={4000} rows={4} placeholder="What changed, and how can the client verify it?" className="w-full resize-y rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] p-3 text-sm outline-none focus:border-[hsl(var(--primary)/0.5)]" />
                 <input type="url" value={pullRequestUrl} onChange={(event) => setPullRequestUrl(event.target.value)} placeholder="https://github.com/owner/repo/pull/123" className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] px-3 py-2.5 text-sm outline-none focus:border-[hsl(var(--primary)/0.5)]" />
-                <Button type="submit" disabled={isWorking || demoMode || (!deliveryDescription.trim() && !pullRequestUrl.trim()) || submissions.some((item) => item.status === "SUBMITTED" || item.status === "UNDER_REVIEW")}>Submit for review</Button>
+                <Button type="submit" disabled={isWorking || demoMode || (!deliveryDescription.trim() && !pullRequestUrl.trim()) || submissions.some((item) => item.status === "SUBMITTED" || item.status === "UNDER_REVIEW" || item.status === "APPROVED")}>Submit for review</Button>
               </form>
             </section>
           )}
@@ -247,7 +247,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                   {submission.description && <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[hsl(var(--foreground-muted))]">{submission.description}</p>}
                   {submission.pullRequestUrl && <a href={submission.pullRequestUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm text-[hsl(var(--accent))] underline">Open GitHub pull request</a>}
                   {submission.reviewNotes && <p className="mt-3 rounded-lg bg-[hsl(var(--background-secondary))] p-3 text-xs text-[hsl(var(--foreground-muted))]">Review notes: {submission.reviewNotes}</p>}
-                  {isClient && (submission.status === "SUBMITTED" || submission.status === "UNDER_REVIEW") && <div className="mt-4 space-y-2"><textarea value={reviewNotes} onChange={(event) => setReviewNotes(event.target.value)} rows={2} maxLength={2000} placeholder="Optional review notes or requested changes" className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] p-3 text-xs outline-none" /><div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" disabled={isWorking || demoMode} onClick={() => void reviewDelivery(submission.id, false)}>Request changes</Button><Button size="sm" disabled={isWorking || demoMode} onClick={() => void reviewDelivery(submission.id, true)}>Approve delivery</Button></div></div>}
+                  {isClient && issue.status === "IN_PROGRESS" && (submission.status === "SUBMITTED" || submission.status === "UNDER_REVIEW") && <div className="mt-4 space-y-2"><textarea value={reviewNotes} onChange={(event) => setReviewNotes(event.target.value)} rows={2} maxLength={2000} placeholder="Optional review notes or requested changes" className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] p-3 text-xs outline-none" /><div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" disabled={isWorking || demoMode} onClick={() => void reviewDelivery(submission.id, false)}>Request changes</Button><Button size="sm" disabled={isWorking || demoMode} onClick={() => void reviewDelivery(submission.id, true)}>Approve delivery</Button></div></div>}
                 </article>)}
               </div>}
               <p className="mt-4 text-xs leading-5 text-[hsl(var(--warning))]">Approval is recorded off-chain. It does not move funds; contract release will be enabled after Kiên’s escrow integration.</p>
@@ -261,7 +261,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
           <section className="glass rounded-xl p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[hsl(var(--foreground-subtle))]">Bounty</p>
             <p className="mt-2 font-outfit text-3xl font-extrabold text-[hsl(var(--success))]">{issue.bountyAmount.toLocaleString()} <span className="text-sm uppercase">{issue.token.symbol}</span></p>
-            <p className="mt-1 text-xs text-[hsl(var(--foreground-muted))]">Escrow is initiated after a developer is selected.</p>
+            <p className="mt-1 text-xs text-[hsl(var(--foreground-muted))]">Assignment is stored off-chain. No deposit or payout transaction is active.</p>
             {issue.expiresAt && <p className="mt-3 text-xs text-[hsl(var(--foreground-muted))]">Deadline: {new Date(issue.expiresAt).toLocaleString()}</p>}
             <div className="my-4 border-t border-[hsl(var(--border))]" />
             <div className="flex items-center gap-3">
@@ -277,7 +277,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
           </section>
           <section className="glass rounded-xl p-4 text-xs leading-5 text-[hsl(var(--foreground-muted))]">
             <p className="font-semibold text-[hsl(var(--warning))]">Escrow integration</p>
-            <p className="mt-1">Selecting a developer records the assignment. Wallet deposit and release buttons appear after the contract interface is connected.</p>
+            <p className="mt-1">Selecting a developer records the assignment. Deposits and payouts remain unavailable until a working escrow contract is deployed and configured.</p>
           </section>
           {error && <p role="status" className="rounded-lg border border-[hsl(var(--destructive)/0.3)] bg-[hsl(var(--destructive)/0.08)] p-3 text-xs text-[hsl(var(--destructive))]">{error}</p>}
           {notice && <p role="status" className="rounded-lg border border-[hsl(var(--success)/0.3)] bg-[hsl(var(--success)/0.08)] p-3 text-xs text-[hsl(var(--success))]">{notice}</p>}

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-labelledby="title desc">
+  <title id="title">Developer dashboard reference</title>
+  <desc id="desc">A dark dashboard mockup with a reputation chart and bounty metrics.</desc>
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#101725"/><stop offset="1" stop-color="#19334d"/></linearGradient><linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#42c9ff" stop-opacity=".42"/><stop offset="1" stop-color="#42c9ff" stop-opacity="0"/></linearGradient></defs>
+  <rect width="800" height="450" rx="28" fill="url(#bg)"/>
+  <rect x="44" y="42" width="712" height="366" rx="20" fill="#101d2c" stroke="#29445d" stroke-width="2"/>
+  <circle cx="80" cy="77" r="7" fill="#58d68d"/><circle cx="105" cy="77" r="7" fill="#ffc857"/><circle cx="130" cy="77" r="7" fill="#ff7070"/>
+  <rect x="76" y="111" width="184" height="92" rx="14" fill="#182b40"/><rect x="278" y="111" width="184" height="92" rx="14" fill="#182b40"/><rect x="480" y="111" width="240" height="92" rx="14" fill="#182b40"/>
+  <text x="96" y="145" fill="#9bb1c8" font-family="Arial,sans-serif" font-size="15">REPUTATION</text><text x="96" y="184" fill="#f2f8ff" font-family="Arial,sans-serif" font-size="32" font-weight="700">4.9 / 5</text>
+  <text x="298" y="145" fill="#9bb1c8" font-family="Arial,sans-serif" font-size="15">COMPLETED</text><text x="298" y="184" fill="#f2f8ff" font-family="Arial,sans-serif" font-size="32" font-weight="700">12 tasks</text>
+  <text x="500" y="145" fill="#9bb1c8" font-family="Arial,sans-serif" font-size="15">VERIFIED SKILLS</text><text x="500" y="184" fill="#f2f8ff" font-family="Arial,sans-serif" font-size="21" font-weight="700">Solidity · React</text>
+  <path d="M88 330h624M88 287h624M88 244h624" stroke="#263b50" stroke-width="2"/>
+  <path d="M90 317 182 289 275 300 369 258 465 270 557 225 650 236 710 198V350H90Z" fill="url(#area)"/>
+  <path d="M90 317 182 289 275 300 369 258 465 270 557 225 650 236 710 198" fill="none" stroke="#42c9ff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="88" y="385" fill="#a9c1d7" font-family="Arial,sans-serif" font-size="15">DEVELOPER PROFILE · REPUTATION TREND</text>
+</svg>

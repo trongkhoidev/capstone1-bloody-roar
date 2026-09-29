@@ -1,5 +1,5 @@
 # AI Test Case Generator — System Prompt
-# Model: Groq llama-3.3-70b / Gemini Flash
+# Model: model router (Groq GPT-OSS 120B → OpenAI-compatible fallback)
 # Trigger: When client posts a bounty
 # =============================================================================
 

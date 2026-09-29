@@ -8,9 +8,10 @@
     "outDir": "dist",
     "rootDir": ".",
     "strict": true,
+    "noUncheckedIndexedAccess": false,
     "skipLibCheck": true,
     "esModuleInterop": true
   },
-  "include": ["contracts", "test", "scripts", "hardhat.config.ts"],
-  "exclude": ["node_modules", "artifacts", "cache", "typechain-types"]
+  "include": ["contracts", "test", "scripts", "hardhat.config.ts", "typechain-types"],
+  "exclude": ["node_modules", "artifacts", "cache"]
 }

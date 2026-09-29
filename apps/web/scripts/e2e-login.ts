@@ -8,11 +8,12 @@ import assert from "node:assert";
 import "../src/lib/env";
 
 const TEST_CLIENT_KEY = process.env.TEST_CLIENT_KEY || "0x0000000000000000000000000000000000000000000000000000000000000001";
-const base = "http://localhost:3000";
+const base = "http://localhost:4000";
 
-async function gql(query: string, token?: string) {
+async function gql(query: string, cookie?: string) {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (cookie?.startsWith("bloody_token=")) headers.Cookie = cookie;
+  else if (cookie) headers.Authorization = `Bearer ${cookie}`;
   
   const res = await fetch(`${base}/api/graphql`, {
     method: "POST",
@@ -24,11 +25,12 @@ async function gql(query: string, token?: string) {
 
 async function gqlRaw<T = any>(
   query: string,
-  token?: string,
+  cookie?: string,
   variables?: Record<string, unknown>
 ): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (cookie?.startsWith("bloody_token=")) headers.Cookie = cookie;
+  else if (cookie) headers.Authorization = `Bearer ${cookie}`;
   
   const res = await fetch(`${base}/api/graphql`, {
     method: "POST",
@@ -51,7 +53,7 @@ async function run() {
   const payload = await nonceRes.json();
   
   assert(payload.nonce, "Nonce is missing");
-  assert.strictEqual(payload.domain, "localhost:3000", "Domain does not match localhost:3000");
+  assert.strictEqual(payload.domain, "localhost:4000", "Domain does not match localhost:4000");
 
   // 2. sign
   console.log("2. Signing login payload...");
@@ -66,16 +68,18 @@ async function run() {
   });
   
   assert.strictEqual(loginRes.status, 200, `Login failed with status ${loginRes.status}`);
-  const { token, user } = await loginRes.json();
+  const { user } = await loginRes.json();
+  const cookie = loginRes.headers.get("set-cookie")?.split(";")[0] ?? "";
+  const token = decodeURIComponent(cookie.replace(/^bloody_token=/, ""));
   
-  assert(token, "Missing token in login response");
+  assert(token, "Missing HttpOnly session cookie in login response");
   assert(user, "Missing user in login response");
   assert.strictEqual(user.walletAddress.toLowerCase(), walletAddress.toLowerCase(), "Wallet address mismatch in user response");
   assert(!user.email, "User response should not contain sensitive data like email");
   
   // 4. me with JWT
   console.log("4. Fetching me with JWT...");
-  const meRes = await gql("me", token);
+  const meRes = await gql("me", cookie);
   assert(meRes.data?.me?.walletAddress, "Failed to fetch me with JWT");
   assert.strictEqual(meRes.data.me.walletAddress.toLowerCase(), walletAddress.toLowerCase(), "Wallet address mismatch in me response");
 
@@ -85,14 +89,14 @@ async function run() {
     mutation($input: UpdateProfileInput!) {
       updateProfile(input: $input) { name }
     }
-  `, token, { input: { name: "E2E Updated" } });
+  `, cookie, { input: { name: "E2E Updated" } });
   assert.strictEqual(updateRes.data?.updateProfile?.name, "E2E Updated", "updateProfile failed");
 
   const updateNoAuth = await gqlRaw(`
     mutation($input: UpdateProfileInput!) {
       updateProfile(input: $input) { name }
     }
-  `, undefined, { input: { name: "Hacked" } });
+    `, undefined, { input: { name: "Hacked" } });
   assert.strictEqual(updateNoAuth.errors?.[0]?.extensions?.code, "UNAUTHORIZED", "updateProfile should be UNAUTHORIZED without token");
 
   // 5. replay -> 401
@@ -127,6 +131,12 @@ async function run() {
     where: { walletAddress: walletAddress.toLowerCase() }
   });
   assert(dbUser, "User not found in DB");
+
+  await fetch(`${base}/api/auth/logout`, { method: "POST", headers: { Cookie: cookie } });
+  await prisma.user.update({
+    where: { walletAddress: walletAddress.toLowerCase() },
+    data: { name: user.name },
+  });
 
   console.log("✅ All E2E Login assertions passed!");
   process.exit(0);

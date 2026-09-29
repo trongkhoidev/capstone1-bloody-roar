@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
-import { thirdwebAuth } from "../../../../lib/auth";
-import { prisma } from "@bloody-roar/database";
+import { AUTH_COOKIE_NAME, thirdwebAuth } from "../../../../lib/auth";
+import { authDomain, issueAuthToken, verifySiweLogin } from "../../../../lib/auth/siwe";
+import { prisma, UserRole } from "@bloody-roar/database";
+import { isConfiguredAdmin } from "../../../../lib/admin-wallets";
 import crypto from "crypto";
-import { headers } from "next/headers";
+import { createLogger } from "../../../../lib/logger";
+
+const log = createLogger("auth-login");
 
 /** Fields safe to return to the client */
 const USER_PUBLIC_SELECT = {
@@ -25,54 +29,61 @@ export async function POST(req: Request) {
     const auth = thirdwebAuth();
     const payload = await req.json();
 
-    // 1. Verify the signed login payload → returns wallet address as string
-    const walletAddress = await auth.verify(payload);
+    // Thirdweb compares recovered signer with `===` (checksum vs lowercase),
+    // which rejects valid MetaMask signatures. Verify case-insensitively.
+    const walletAddress = verifySiweLogin(payload, authDomain());
     const checksumAddress = walletAddress.toLowerCase();
+
+    const existingUser = await prisma.user.findUnique({
+      where: { walletAddress: checksumAddress },
+    });
+    if (existingUser?.isBanned) {
+      return NextResponse.json({ error: "This account is suspended" }, { status: 403 });
+    }
 
     // 2. Check if this SIWE nonce has already been used (Payload Replay Protection)
     const siweNonce = payload.payload.nonce;
     const existingSession = await prisma.session.findUnique({
       where: { nonce: siweNonce },
     });
-    
+
     if (existingSession) {
       return NextResponse.json(
         { error: "Login payload already used (replay detected)" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     // Upsert user (select only public fields)
+    const promoteToAdmin = isConfiguredAdmin(checksumAddress);
     const user = await prisma.user.upsert({
       where: { walletAddress: checksumAddress },
       create: {
         walletAddress: checksumAddress,
         lastLoginAt: new Date(),
+        ...(promoteToAdmin && { role: UserRole.ADMIN }),
       },
       update: {
         lastLoginAt: new Date(),
+        ...(promoteToAdmin && { role: UserRole.ADMIN }),
       },
       select: USER_PUBLIC_SELECT,
     });
 
     // Generate JWT
-    const token = await auth.generate(payload);
+    const token = await issueAuthToken(walletAddress);
 
     // Parse token to extract exp
     const parsedToken = auth.parseToken(token);
     const expiresAt = new Date(parsedToken.payload.exp * 1000);
 
     // Hash the JWT for refreshHash (used for logout/revoke/verify)
-    const refreshHash = crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
+    const refreshHash = crypto.createHash("sha256").update(token).digest("hex");
 
     // Extract request metadata
-    const reqHeaders = headers();
-    const userAgent = reqHeaders.get("user-agent") ?? null;
-    const forwardedFor = reqHeaders.get("x-forwarded-for");
-    const realIp = reqHeaders.get("x-real-ip");
+    const userAgent = req.headers.get("user-agent") ?? null;
+    const forwardedFor = req.headers.get("x-forwarded-for");
+    const realIp = req.headers.get("x-real-ip");
     const ip = forwardedFor ?? realIp ?? null;
 
     // Save session with SIWE nonce to prevent replay
@@ -87,12 +98,23 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({ token, user });
+    const response = NextResponse.json({ user });
+    response.cookies.set(AUTH_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: Math.max(1, Math.floor((expiresAt.getTime() - Date.now()) / 1000)),
+      expires: expiresAt,
+    });
+    response.headers.set("Cache-Control", "no-store");
+    return response;
   } catch (error) {
-    console.error("Login error:", error);
+    console.error("Wallet login verification failed with exact error:", error);
+    log.warn({ error: error instanceof Error ? error.message : String(error) }, "Wallet login verification failed");
     return NextResponse.json(
       { error: "Invalid login payload" },
-      { status: 401 },
+      { status: 401, headers: { "Cache-Control": "no-store" } },
     );
   }
 }

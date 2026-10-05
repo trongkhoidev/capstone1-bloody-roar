@@ -1,0 +1,6 @@
+BloodyRoarEscrowFuzzTest:testFuzz_resolutionConservesEveryUnit(uint128,uint16) (runs: 10000, μ: 379484, ~: 386004)
+BloodyRoarEscrowFuzzTest:testFuzz_unauthorizedCallerCannotResolve(address) (runs: 10000, μ: 326806, ~: 326806)
+BloodyRoarEscrowFuzzTest:test_timestampBoundariesPreferFallback() (gas: 479436)
+BloodyRoarEscrowInvariantTest:invariant_conservationAndClaims() (runs: 512, calls: 32768, reverts: 0)
+BloodyRoarEscrowInvariantTest:invariant_solvency() (runs: 512, calls: 32768, reverts: 0)
+BloodyRoarEscrowInvariantTest:invariant_terminalityAndAuthorization() (runs: 512, calls: 32768, reverts: 0)

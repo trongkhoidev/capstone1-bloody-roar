@@ -4,7 +4,7 @@
 >
 > **Team:** 5 thành viên (Kiên, Khôi, Hiếu, Hân, Trâm)
 >
-> **Stack:** Next.js Custom Server · PostgreSQL + Prisma · GraphQL Yoga + Pothos · Thirdweb Auth · EVM Solidity · Socket.io · Tailwind CSS v4 + shadcn/ui · AWS S3/Supabase Storage · Vercel AI SDK (Groq/Gemini free + OpenAI) · EAS Attestation
+> **Stack:** Next.js Custom Server · PostgreSQL + Prisma · GraphQL Yoga + Pothos · Thirdweb Auth · Solidity + Hardhat/Foundry · Socket.io · Tailwind CSS v4 + shadcn/ui · Supabase Storage · Railway · Base Sepolia
 >
 
 ## MỤC LỤC
@@ -65,12 +65,12 @@
 | ------ | ---------------------------------------------------------------------------------- | -------- |
 | US-4.1 | Là Client, tôi muốn ký EIP-712 off-chain khi đăng task (không tốn gas)     | P0       |
 | US-4.2 | Là Client, tôi muốn nạp bounty on-chain khi chọn Developer                    | P0       |
-| US-4.3 | Là Developer, tôi muốn nhận tiền tự động khi Client approve                | P0       |
-| US-4.4 | Là Developer, tôi muốn claim tiền nếu Client im lặng sau 30 ngày            | P1       |
-| US-4.5 | Là Client + Developer, tôi muốn hủy task và nhận refund nếu cả 2 đồng ý | P1       |
+| US-4.3 | Là Developer, tôi muốn nhận tiền khi Client approve `Submission` mới nhất       | P0       |
+| US-4.4 | Là Developer, tôi muốn claim tiền sau review timeout 7 ngày               | P1       |
+| US-4.5 | Là Client/Developer, tôi muốn đề xuất và chấp nhận `Settlement` theo tỷ lệ | P1       |
 | US-4.6 | Là Client/Developer, tôi muốn raise dispute khi có tranh chấp                 | P0       |
-| US-4.7 | Là Arbiter, tôi muốn đề xuất tỷ lệ payout khi dispute xảy ra              | P0       |
-| US-4.8 | Là Admin, tôi muốn pause contract trong trường hợp khẩn cấp                | P2       |
+| US-4.7 | Là Arbiter, tôi muốn đăng initial/final `Ruling` theo notice window 24 giờ       | P0       |
+| US-4.8 | Là Admin, tôi muốn pause deposit mới trong trường hợp khẩn cấp         | P2       |
 
 ### Epic 5: Real-time Chat
 
@@ -178,7 +178,7 @@
 > - Blackbox trace: ghi terminal commands + file changes
 > - Oracle/Relayer tự động giải ngân khi test pass
 
-> **Impact:** Escrow contract vẫn có Oracle/Relayer mechanism, nhưng trigger sẽ là manual/admin approve thay vì CI/CD auto. Trong v2 sẽ tích hợp CI/CD vào Oracle.
+> **Impact:** MVP không trao payout authority cho Oracle/Relayer; participant wallet hoặc Arbiter Safe gửi transaction theo rules của Escrow. V2 mới xem xét CI/CD automation.
 
 ---
 
@@ -307,16 +307,16 @@
 | ------------------ | ---------------------------------------------------- | ----- | -------- | -------- | ------------------------------ |
 | **S1-SC-01** | Thiết kế state machine diagram                     | Kiên | 1h       | —       | 5 states documented            |
 | **S1-SC-02** | Viết`BloodyRoarEscrow.sol` — base                | Kiên | 2h       | S0-SC-03 | Contract skeleton compile      |
-| **S1-SC-03** | Implement`deposit(issueId, worker)`                | Kiên | 3h       | S1-SC-02 | Lock funds, emit Deposited     |
-| **S1-SC-04** | Implement`releaseFunds(issueId)`                   | Kiên | 1h       | S1-SC-03 | Client-only transfer           |
-| **S1-SC-05** | Implement`mutualCancel(issueId)`                   | Kiên | 2h       | S1-SC-03 | Both sign → refund            |
-| **S1-SC-06** | Implement`claimTimeout(issueId)`                   | Kiên | 1h       | S1-SC-03 | Worker claim after 30 days     |
-| **S1-SC-07** | Implement`raiseDispute(issueId)`                   | Kiên | 1h       | S1-SC-03 | Either party, state = DISPUTED |
-| **S1-SC-08** | Implement`proposeResolution(issueId, clientRatio)` | Kiên | 2h       | S1-SC-07 | Arbiter-only, 24h timelock     |
-| **S1-SC-09** | Implement`challengeResolution(issueId)`            | Kiên | 1h       | S1-SC-08 | During 24h window              |
-| **S1-SC-10** | Implement`executeResolution(issueId)`              | Kiên | 1h       | S1-SC-09 | After timelock, split funds    |
-| **S1-SC-11** | Implement`pause()` / `unpause()`                 | Kiên | 1h       | S1-SC-02 | Owner-only circuit breaker     |
-| **S1-SC-12** | Viết full unit tests (14+ cases)                    | Kiên | 4h       | S1-SC-10 | All tests pass, gas report     |
+| **S1-SC-03** | Implement`deposit(escrowId, developer, deadline)`   | Kiên | 3h       | S1-SC-02 | Lock canonical USDC, emit deposit event |
+| **S1-SC-04** | Implement`submitDelivery(escrowId, digest)`          | Kiên | 1h       | S1-SC-03 | Lưu latest `Submission` digest       |
+| **S1-SC-05** | Implement`releaseFunds(escrowId)`                    | Kiên | 2h       | S1-SC-04 | Client release, platform fee 2,5%       |
+| **S1-SC-06** | Implement missed-delivery refund                      | Kiên | 1h       | S1-SC-03 | Client claim sau delivery deadline      |
+| **S1-SC-07** | Implement review-timeout claim                        | Kiên | 1h       | S1-SC-04 | Developer claim sau deadline + 7 ngày |
+| **S1-SC-08** | Implement mutual `Settlement`                         | Kiên | 2h       | S1-SC-03 | Propose/accept/revoke, fee-free         |
+| **S1-SC-09** | Implement`raiseDispute(escrowId, evidenceHash)`       | Kiên | 1h       | S1-SC-03 | Participant-only, freeze normal exits   |
+| **S1-SC-10** | Implement `Ruling`, challenge và timeout exits        | Kiên | 2h       | S1-SC-09 | 24h notices, 30-day 50/50 fallback      |
+| **S1-SC-11** | Implement pause deposits + two-step role transfer     | Kiên | 1h       | S1-SC-02 | Existing funds always retain safe exits |
+| **S1-SC-12** | Viết Hardhat + Foundry fuzz/invariant tests          | Kiên | 4h       | S1-SC-10 | Lifecycle, accounting, roles pass       |
 
 #### S1-EPIC-CHAT: Socket.io + Chat Setup
 
@@ -340,9 +340,9 @@
 
 > **Thời gian:** Tuần 4-5
 >
-> **Mục tiêu:** Escrow flow E2E (ký → deposit → release), chat real-time, AI Guard masking.
+> **Mục tiêu:** Escrow flow E2E (EIP-712 intent → deposit → `Submission` → release/exit), chat real-time, AI Guard masking.
 >
-> **MVP Sprint 2:** Client ký EIP-712 → Client deposit on-chain khi assign → Client release funds → Developer nhận tiền. Chat real-time giữa 2 bên, AI tự động che secrets. Dispute raise + admin resolve.
+> **MVP Sprint 2:** Client ký EIP-712 listing intent → tạo `Funding Reservation` 24 giờ → Client deposit on-chain → `Submission` → release hoặc timeout exit. Chat real-time giữa hai bên; `Dispute` do Arbiter Safe xử lý.
 
 ---
 
@@ -354,18 +354,18 @@
 | ------------------- | -------------------------------------------------- | ----- | -------- | -------------------- | ------------------------------------- |
 | **S2-ESC-01** | Cấu hình Thirdweb SDK backend (connect contract) | Khôi | 1h       | S1-SC-12             | Gọi được contract từ server      |
 | **S2-ESC-02** | Thiết kế EIP-712 typed data schema               | Kiên | 2h       | —                   | Domain, types, values spec            |
-| **S2-ESC-03** | Viết helper`signCommitment()` (frontend)        | Kiên | 2h       | S2-ESC-02            | Ký → trả về signature             |
-| **S2-ESC-04** | Viết`verifyCommitment()` on-chain               | Kiên | 2h       | S2-ESC-02            | Contract verify function              |
-| **S2-ESC-05** | Viết Escrow Prisma model + migration              | Khôi | 1h       | S0-FND-03            | DB schema                             |
-| **S2-ESC-06** | Viết Transaction logger                           | Khôi | 1h       | S2-ESC-05            | Lưu txHash sau mỗi on-chain tx      |
+| **S2-ESC-03** | Viết helper`signListingIntent()` (frontend)       | Kiên | 2h       | S2-ESC-02            | Ký token, amount, terms, Developer, deadline |
+| **S2-ESC-04** | Viết backend intent validation                     | Kiên | 2h       | S2-ESC-02            | Verify signer, expiry và material terms       |
+| **S2-ESC-05** | Viết Funding Reservation + Projection models       | Khôi | 1h       | S0-FND-03            | DB schema, reservation timeout 24h          |
+| **S2-ESC-06** | Viết Transaction Intent + Chain Event tracking     | Khôi | 1h       | S2-ESC-05            | Safe-head, idempotent, reorg-aware          |
 | **S2-ESC-07** | Viết Escrow GraphQL types                         | Hiếu | 1h       | S1-MKP-01            | Types: Escrow, EscrowStatus           |
-| **S2-ESC-08** | Viết`depositToEscrow(issueId, developerId)`     | Hiếu | 3h       | S2-ESC-01, S2-ESC-03 | Gọi contract.deposit()               |
-| **S2-ESC-09** | Viết`releaseFunds(issueId)` mutation            | Hiếu | 1h       | S2-ESC-08            | Gọi contract.releaseFunds()          |
-| **S2-ESC-10** | Viết`cancelEscrow(issueId)` mutation            | Hiếu | 1h       | S2-ESC-08            | Gọi contract.mutualCancel()          |
-| **S2-ESC-11** | Viết`raiseDispute(issueId, reason)` mutation    | Hiếu | 1h       | S2-ESC-08            | Gọi contract.raiseDispute()          |
-| **S2-ESC-12** | Tích hợp EIP-712 signing flow FE                 | Khôi | 2h       | S2-ESC-03            | Thirdweb SDK → ký → gửi BE        |
-| **S2-ESC-13** | Viết Oracle/Relayer script                        | Kiên | 3h       | S2-ESC-08            | Nhận event → ký tx → releaseFunds |
-| **S2-ESC-14** | Deploy Escrow lên testnet + verify                | Kiên | 2h       | S1-SC-12             | Contract address + verified           |
+| **S2-ESC-08** | Viết`prepareEscrowDeposit(issueId, developerId)` | Hiếu | 3h       | S2-ESC-01, S2-ESC-03 | Trả calldata để Client wallet ký       |
+| **S2-ESC-09** | Viết`prepareReleaseFunds(issueId)` flow        | Hiếu | 1h       | S2-ESC-08            | Trả calldata để Client wallet ký       |
+| **S2-ESC-10** | Viết `Settlement` transaction-intent flow          | Hiếu | 1h       | S2-ESC-08            | Participant wallet propose/accept          |
+| **S2-ESC-11** | Viết`raiseDispute(issueId, evidenceHash)` flow  | Hiếu | 1h       | S2-ESC-08            | Private evidence, on-chain digest          |
+| **S2-ESC-12** | Tích hợp EIP-712 signing flow FE                 | Khôi | 2h       | S2-ESC-03            | Wallet ký intent và submit transaction      |
+| **S2-ESC-13** | Viết Indexer worker                               | Kiên | 3h       | S2-ESC-08            | Fold safe logs → replayable Projection     |
+| **S2-ESC-14** | Deploy Escrow lên Base Sepolia + verify          | Kiên | 2h       | S1-SC-12             | Address, tx hash, chain ID, verified  |
 | **S2-ESC-15** | Hỗ trợ Hiếu review Escrow resolvers             | Kiên | 1h       | S2-ESC-08            | Code review                           |
 
 #### S2-EPIC-CHAT: Chat Implementation
@@ -596,82 +596,78 @@
 
 ```
 ✅ Monorepo Bun hoạt động
-✅ Prisma schema 10+ models, migration chạy
+✅ Prisma schema 10+ models, migration có sẵn
 ✅ Next.js custom server với GraphQL Yoga + Socket.io attached
-✅ Tailwind CSS v4 + shadcn/ui components
+🟡 Tailwind CSS v4 đã cấu hình; shadcn/ui chưa hoàn chỉnh
 ✅ Hardhat project sẵn sàng
-✅ Figma Design System hoàn chỉnh
-✅ Component library base (Button, Input, Card, Dialog, Form...)
-✅ AI prompt research + patterns tổng hợp
+⬜ Figma Design System chưa có artifact xác minh
+🟡 Component library base chưa đủ theo kế hoạch
+🟡 Thư mục AI prompt đã có; research/patterns chưa hoàn chỉnh
 ```
 
 ### Sprint 1 — Auth + Marketplace MVP
 
 ```
-✅ User connect ví (MetaMask/WalletConnect) → login
-✅ Xem + chỉnh sửa profile (tên, avatar, bio)
-✅ Đăng task (tiêu đề, mô tả, category, bounty)
-✅ Duyệt marketplace (filter category/status/bounty, search, pagination)
-✅ Xem chi tiết task
-✅ Apply vào task
-✅ Client xem danh sách ứng viên + chọn Developer → assign
-✅ BloodyRoarEscrow.sol hoàn chỉnh (14+ tests passing)
+🟡 SIWE/JWT backend đã có; wallet login UI chưa hoàn chỉnh
+🟡 Profile query/mutation đã có; avatar/email và UI còn thiếu
+🟡 Backend đăng task đã có; frontend form còn thiếu
+🟡 Marketplace filter/search/pagination backend đã có; frontend còn thiếu
+🟡 Issue detail backend đã có; frontend còn thiếu
+✅ Application backend đã có
+✅ Client có thể chọn Developer qua Application backend
+🟡 BloodyRoarEscrow.sol đã hoàn thiện trên PR riêng, chưa merge upstream
 ✅ Socket.io server + Room Management + Message handler
-✅ File upload S3 presigned URL
+⬜ File upload presigned URL chưa hoàn thành
 ```
 
 ### Sprint 2 — Escrow + Chat + AI Guard MVP
 
 ```
-✅ Client ký EIP-712 off-chain khi đăng task
-✅ Client deposit 100% bounty on-chain khi assign Developer
-✅ Client release funds → Developer nhận tiền
-✅ Mutual cancel (hoàn 100% cho Client)
-✅ Raise dispute (đóng băng funds)
-✅ Arbiter propose resolution (partial payout + 24h timelock)
-✅ Chat real-time giữa Client-Developer (Socket.io)
+⬜ EIP-712 listing-intent flow chưa tích hợp
+⬜ Funding Reservation và wallet deposit flow chưa tích hợp
+🟡 Release, timeout, Settlement và Dispute đã có trên contract PR; app integration còn thiếu
+✅ Chat backend real-time giữa Client-Developer
 ✅ Lịch sử chat persistence
-✅ AI Guard tự động mask secrets (API keys, private keys, PII) — model free (Groq/Gemini)
-✅ AI Test Case Generator: sinh test cases khi đăng bounty
-✅ Model Router (chọn model free theo task)
-✅ File attachment trong chat (S3 presigned URL)
-✅ Oracle/Relayer script sẵn sàng
-✅ Admin Dispute Dashboard
+⬜ AI Guard chưa hoàn thành
+⬜ AI Test Case Generator chưa hoàn thành
+⬜ Model Router chưa hoàn thành
+🟡 Chat đã lưu metadata attachment; upload flow còn thiếu
+⬜ Indexer/Projection worker chưa hoàn thành
+⬜ Admin Dispute Dashboard chưa hoàn thành
 ```
 
 ### Sprint 3 — Dispute (Debate) + GitHub Auth + Analytics MVP
 
 ```
-✅ AI Multi-Agent Debate: 5 agent tranh luận → verdict payout ratio
-✅ Admin xem quá trình debate + approve/custom resolution
-✅ GitHub OAuth login → verified badge (KYC)
-✅ GitHub repo linking
-✅ GitHub App webhook (PR merged → auto-payment trigger)
-✅ Thông báo real-time (applicant, assigned, dispute, paid)
-✅ Admin Analytics Dashboard (charts: tasks, revenue, users, disputes)
-✅ User Analytics page (personal stats)
-✅ Admin User Management (ban, verified filter)
-✅ E2E tests: Auth, Marketplace, Chat, Escrow, Dispute, GitHub Auth
-✅ Unit/Integration tests: components, hooks, validation, flows
-✅ a11y compliance (axe-core audit)
+⬜ AI Multi-Agent Debate chưa hoàn thành
+⬜ Admin dispute review UI chưa hoàn thành
+⬜ GitHub OAuth và repo linking chưa hoàn thành
+⬜ GitHub App webhook không thuộc core payout flow
+⬜ Thông báo real-time chưa hoàn thành
+⬜ Admin Analytics Dashboard chưa hoàn thành
+⬜ User Analytics page chưa hoàn thành
+⬜ Admin User Management chưa hoàn thành
+🟡 Các script Auth/Marketplace/Chat đã có; E2E suite đầy đủ còn thiếu
+⬜ Unit/Integration test suite frontend chưa hoàn thành
+⬜ a11y audit chưa hoàn thành
 ```
 
 ### Sprint 4 — Production MVP
 
 ```
-✅ CI/CD GitHub Actions: lint → type-check → test → build
-✅ Sentry error tracking
-✅ Deploy production (Railway/Fly.io + Neon/Supabase)
-✅ Smart contracts deployed trên Production + verified
-✅ EAS Reputation Attestation on-chain (v1.5)
-✅ Domain + SSL (Cloudflare)
-✅ Health check endpoint
-✅ Responsive polish (all pages mobile-friendly)
-✅ Loading skeletons + empty states
-✅ Error boundaries + error handling
-✅ Animation polish (page transitions)
-✅ Full documentation (README, API docs, setup guide, AI docs)
-✅ Smoke test all flows
+⬜ CI/CD GitHub Actions chưa hoàn thành
+⬜ Sentry error tracking chưa hoàn thành
+⬜ Railway web/worker + Supabase deployment chưa hoàn thành
+⬜ Smart contract chưa deploy và verify trên Base Sepolia
+⬜ EAS Reputation Attestation chưa hoàn thành (v1.5)
+⬜ Domain + SSL chưa hoàn thành
+✅ Health check endpoint đã có
+⬜ Responsive polish chưa hoàn thành
+⬜ Loading skeletons + empty states chưa hoàn thành
+⬜ Error boundaries + error handling chưa hoàn thành
+⬜ Animation polish chưa hoàn thành
+🟡 README/setup cơ bản đã có; API và operations docs còn thiếu
+⬜ Smoke test all flows chưa hoàn thành
 ```
 
 ### V2 Roadmap (Sau MVP)

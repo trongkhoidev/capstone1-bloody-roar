@@ -1,402 +1,602 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-// =============================================================================
-// BloodyRoarEscrow — Smart Contract Escrow for Decentralized Bounty Marketplace
-// =============================================================================
-// Sprint 1: Implement full escrow logic (deposit, release, cancel, dispute, resolve)
-// Sprint 0: Contract skeleton only — compiles, no logic
-//
-// State machine:
-//   [*] → AWAITING_DELIVERY: deposit()
-//   AWAITING_DELIVERY → COMPLETED: releaseFunds() | claimTimeout()
-//   AWAITING_DELIVERY → CANCELLED: mutualCancel()
-//   AWAITING_DELIVERY → DISPUTED: raiseDispute()
-//   DISPUTED → RESOLUTION_PROPOSED: proposeResolution()
-//   RESOLUTION_PROPOSED → COMPLETED: executeResolution()
-//   RESOLUTION_PROPOSED → DISPUTED: challengeResolution()
-// =============================================================================
-
-import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title BloodyRoarEscrow
- * @notice Trustless escrow for developer bounties on Base Sepolia (Ethereum L2)
- * @dev Implements lazy-deposit pattern with EIP-712 off-chain commitments. EVM-compatible for mainnet later.
+ * @notice Non-upgradeable escrow accounting for the Bloody Roar marketplace.
+ * @dev Resolution creates pull-payment credits. A recipient can never block a
+ *      different recipient's allocation or claim.
  */
-contract BloodyRoarEscrow is Pausable, ReentrancyGuard, Ownable, EIP712 {
+contract BloodyRoarEscrow is Ownable2Step, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    // =========================================================================
-    // ENUMS
-    // =========================================================================
+    uint256 public constant MAX_BPS = 10_000;
+    uint256 public constant PLATFORM_FEE_BPS = 250;
+    uint256 public constant REVIEW_PERIOD = 7 days;
+    uint256 public constant EVIDENCE_RESPONSE_PERIOD = 72 hours;
+    uint256 public constant CHALLENGE_PERIOD = 7 days;
+    uint256 public constant FINAL_RULING_NOTICE_PERIOD = 24 hours;
+    uint256 public constant ARBITER_STALL_PERIOD = 30 days;
 
-    enum EscrowState {
-        AWAITING_DELIVERY,   // Funds locked, developer working
-        COMPLETED,           // Funds released to developer
-        CANCELLED,           // Mutual cancel, refunded to client
-        DISPUTED,            // Dispute raised, funds frozen
-        RESOLUTION_PROPOSED  // Arbiter proposed split, in 24h timelock
+    uint256 public constant BASE_SEPOLIA_CHAIN_ID = 84_532;
+    address public constant BASE_SEPOLIA_USDC = 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
+
+    IERC20 public immutable token;
+
+    enum Phase {
+        NONE,
+        FUNDED,
+        DISPUTED,
+        INITIAL_RULING,
+        CHALLENGED,
+        FINAL_RULING,
+        RESOLVED
     }
 
-    // =========================================================================
-    // STRUCTS
-    // =========================================================================
+    enum ResolutionKind {
+        NONE,
+        RELEASE,
+        MISSED_DELIVERY_REFUND,
+        REVIEW_TIMEOUT,
+        SETTLEMENT,
+        RULING,
+        ARBITER_TIMEOUT_SPLIT
+    }
 
     struct Escrow {
         address client;
         address developer;
-        address token;          // ERC-20 token (USDT)
-        uint256 amount;         // Total bounty locked
-        uint256 depositedAt;    // Timestamp of deposit
-        uint256 proposedAt;     // Timestamp of resolution proposal
-        uint256 clientRatio;    // Proposed client refund ratio (0-100)
-        EscrowState state;
-        bool clientCancelApproved;
-        bool developerCancelApproved;
+        address arbiter;
+        address feeRecipient;
+        uint256 amount;
+        uint256 depositedAt;
+        uint256 deliveryDeadline;
+        bytes32 termsHash;
+        bytes32 deliveryHash;
+        Phase phase;
+        ResolutionKind resolutionKind;
     }
 
-    // =========================================================================
-    // CONSTANTS
-    // =========================================================================
+    struct SettlementProposal {
+        address proposer;
+        uint256 clientBps;
+    }
 
-    uint256 public constant TIMEOUT_PERIOD = 30 days;
-    uint256 public constant CHALLENGE_PERIOD = 24 hours;
-    uint256 public constant PLATFORM_FEE_BPS = 250; // 2.5% in basis points
-    uint256 public constant MAX_BPS = 10_000;
+    struct Dispute {
+        address raisedBy;
+        uint256 raisedAt;
+        bytes32 raiserEvidenceHash;
+        bytes32 counterpartyEvidenceHash;
+        uint256 initialClientBps;
+        uint256 initialRulingAt;
+        bytes32 initialDecisionHash;
+        uint256 challengedAt;
+        uint256 finalClientBps;
+        uint256 finalRulingAt;
+        bytes32 finalDecisionHash;
+    }
 
-    // EIP-712 type hash for off-chain commitment
-    bytes32 public constant COMMITMENT_TYPEHASH = keccak256(
-        "Commitment(string issueId,address client,uint256 bountyAmount,address token,uint256 nonce)"
-    );
+    mapping(string escrowId => Escrow) private _escrows;
+    mapping(string escrowId => SettlementProposal) private _settlements;
+    mapping(string escrowId => Dispute) private _disputes;
+    mapping(address recipient => uint256 amount) public claimable;
 
-    // =========================================================================
-    // STATE
-    // =========================================================================
-
-    mapping(string => Escrow) public escrows;    // issueId → Escrow
-    mapping(string => bool) public usedNonces;    // issueId → nonce used
-    
-    address public arbiter;         // Platform admin / dispute resolver
-    address public feeRecipient;    // Platform fee recipient
-    
-    // =========================================================================
-    // EVENTS
-    // =========================================================================
+    address public arbiter;
+    address public feeRecipient;
+    address public pendingArbiter;
+    address public pendingFeeRecipient;
+    uint256 public totalUnresolvedPrincipal;
+    uint256 public totalClaimable;
 
     event Deposited(
-        string indexed issueId,
+        string indexed escrowId,
         address indexed client,
         address indexed developer,
+        address arbiter,
+        address feeRecipient,
         uint256 amount,
-        address token
+        uint256 deliveryDeadline,
+        bytes32 termsHash
     );
-
-    event FundsReleased(
-        string indexed issueId,
-        address indexed developer,
-        uint256 amount
+    event WorkSubmitted(string indexed escrowId, address indexed developer, bytes32 deliveryHash);
+    event SettlementProposed(string indexed escrowId, address indexed proposer, uint256 clientBps);
+    event SettlementRevoked(string indexed escrowId, address indexed proposer);
+    event DisputeRaised(string indexed escrowId, address indexed raisedBy, bytes32 evidenceManifestHash);
+    event CounterpartyEvidenceSubmitted(
+        string indexed escrowId, address indexed submittedBy, bytes32 evidenceManifestHash
     );
-
-    event MutualCancelApproved(string indexed issueId, address approver);
-    event Cancelled(string indexed issueId, address indexed client, uint256 refundAmount);
-    event DisputeRaised(string indexed issueId, address raisedBy, string reason);
-    event ResolutionProposed(string indexed issueId, uint256 clientRatio);
-    event ResolutionChallenged(string indexed issueId, address challengedBy);
-    event ResolutionExecuted(
-        string indexed issueId,
-        uint256 clientRefund,
-        uint256 developerPayout
+    event InitialRulingPosted(
+        string indexed escrowId,
+        address indexed arbiter,
+        uint256 clientBps,
+        bytes32 decisionHash,
+        uint256 challengeEndsAt
     );
-    event TimeoutClaimed(string indexed issueId, address indexed developer, uint256 amount);
+    event RulingChallenged(string indexed escrowId, address indexed challengedBy, uint256 challengedAt);
+    event FinalRulingPosted(
+        string indexed escrowId, address indexed arbiter, uint256 clientBps, bytes32 decisionHash, uint256 noticeEndsAt
+    );
+    event EscrowResolved(
+        string indexed escrowId,
+        ResolutionKind indexed kind,
+        uint256 clientAmount,
+        uint256 developerAmount,
+        uint256 platformFee,
+        bytes32 decisionHash
+    );
+    event Claimed(address indexed recipient, address indexed caller, uint256 amount);
+    event ArbiterTransferProposed(address indexed currentArbiter, address indexed pendingArbiter);
     event ArbiterUpdated(address indexed oldArbiter, address indexed newArbiter);
+    event FeeRecipientTransferProposed(address indexed currentRecipient, address indexed pendingRecipient);
+    event FeeRecipientUpdated(address indexed oldRecipient, address indexed newRecipient);
 
-    // =========================================================================
-    // ERRORS
-    // =========================================================================
+    error EmptyEscrowId();
+    error EscrowAlreadyExists(string escrowId);
+    error EscrowNotFound(string escrowId);
+    error InvalidAddress();
+    error IdenticalParticipants();
+    error RoleCollision();
+    error InvalidAmount();
+    error InvalidDeadline();
+    error ZeroHash();
+    error UnsupportedChain(uint256 chainId);
+    error InvalidProductionToken(address tokenAddress);
+    error InvalidTokenDecimals(uint8 decimals);
+    error InvalidReceivedAmount(uint256 expected, uint256 received);
+    error InvalidPhase(string escrowId, Phase currentPhase);
+    error NotAuthorized(address caller);
+    error DeadlinePassed(uint256 deadline);
+    error DeadlineNotReached(uint256 deadline);
+    error NoDelivery();
+    error ReviewWindowNotReached(uint256 reviewDeadline);
+    error InvalidBasisPoints(uint256 clientBps);
+    error NoPendingSettlement();
+    error SettlementAlreadyPending();
+    error NotSettlementProposer();
+    error NotTheCounterparty();
+    error EvidenceResponseWindowClosed(uint256 deadline);
+    error EvidenceResponsePeriodActive(uint256 deadline);
+    error EvidenceAlreadySubmitted();
+    error ChallengeWindowClosed(uint256 deadline);
+    error ChallengeNotPermitted();
+    error RulingNotReady(uint256 deadline);
+    error ArbiterStallNotReached(uint256 deadline);
+    error ArbiterStallDeadlineReached(uint256 deadline);
+    error NoPendingArbiter();
+    error NoPendingFeeRecipient();
+    error NothingToClaim(address recipient);
+    error RecipientBalanceMismatch(uint256 expected, uint256 received);
+    error Insolvent(uint256 accounted, uint256 balance);
+    error OwnershipRenunciationDisabled();
 
-    error InvalidState(string issueId, EscrowState current, EscrowState required);
-    error NotAuthorized(address caller, string reason);
-    error InvalidAmount(uint256 amount);
-    error TimeoutNotReached(uint256 depositedAt, uint256 timeoutAt, uint256 current);
-    error ChallengePeriodActive(uint256 proposedAt, uint256 deadlineAt);
-    error ChallengePeriodExpired();
-    error InvalidRatio(uint256 ratio);
-    error InvalidSignature();
-    error NonceAlreadyUsed(string issueId);
-
-    // =========================================================================
-    // CONSTRUCTOR
-    // =========================================================================
-
-    constructor(
-        address _arbiter,
-        address _feeRecipient
-    ) Ownable(msg.sender) EIP712("BloodyRoarEscrow", "1") {
-        arbiter = _arbiter;
-        feeRecipient = _feeRecipient;
-    }
-
-    // =========================================================================
-    // MODIFIERS
-    // =========================================================================
-
-    modifier onlyArbiter() {
-        if (msg.sender != arbiter) revert NotAuthorized(msg.sender, "Not arbiter");
+    modifier escrowExists(string calldata escrowId) {
+        if (bytes(escrowId).length == 0) revert EmptyEscrowId();
+        if (_escrows[escrowId].client == address(0)) revert EscrowNotFound(escrowId);
         _;
     }
 
-    modifier inState(string calldata issueId, EscrowState required) {
-        if (escrows[issueId].state != required) {
-            revert InvalidState(issueId, escrows[issueId].state, required);
+    modifier onlyParty(string calldata escrowId) {
+        Escrow storage escrow = _escrows[escrowId];
+        if (msg.sender != escrow.client && msg.sender != escrow.developer) {
+            revert NotAuthorized(msg.sender);
         }
         _;
     }
 
-    modifier onlyParties(string calldata issueId) {
-        Escrow storage e = escrows[issueId];
-        if (msg.sender != e.client && msg.sender != e.developer) {
-            revert NotAuthorized(msg.sender, "Not a party to this escrow");
-        }
+    modifier onlyEscrowArbiter(string calldata escrowId) {
+        if (msg.sender != _escrows[escrowId].arbiter) revert NotAuthorized(msg.sender);
         _;
     }
 
-    // =========================================================================
-    // CORE FUNCTIONS — Sprint 1 implementation
-    // =========================================================================
+    constructor(address tokenAddress, address ownerSafe, address arbiterSafe, address initialFeeRecipient)
+        Ownable(ownerSafe)
+    {
+        if (
+            tokenAddress == address(0) || ownerSafe == address(0) || arbiterSafe == address(0)
+                || initialFeeRecipient == address(0)
+        ) revert InvalidAddress();
+        if (ownerSafe == arbiterSafe || ownerSafe == initialFeeRecipient || arbiterSafe == initialFeeRecipient) {
+            revert RoleCollision();
+        }
 
-    /**
-     * @notice Lock bounty funds on-chain when client selects a developer
-     * @dev Client must approve token transfer before calling this
-     * @param issueId Platform issue ID (from backend DB)
-     * @param developer Developer's wallet address
-     * @param token ERC-20 token address (USDT)
-     * @param amount Bounty amount to lock
-     * @param signature EIP-712 off-chain commitment signature (Sprint 2)
-     */
+        if (block.chainid == BASE_SEPOLIA_CHAIN_ID) {
+            if (tokenAddress != BASE_SEPOLIA_USDC) revert InvalidProductionToken(tokenAddress);
+        } else if (block.chainid != 31_337 && block.chainid != 1_337) {
+            revert UnsupportedChain(block.chainid);
+        }
+
+        uint8 decimals = IERC20Metadata(tokenAddress).decimals();
+        if (decimals != 6) revert InvalidTokenDecimals(decimals);
+
+        token = IERC20(tokenAddress);
+        arbiter = arbiterSafe;
+        feeRecipient = initialFeeRecipient;
+    }
+
     function deposit(
-        string calldata issueId,
+        string calldata escrowId,
         address developer,
-        address token,
         uint256 amount,
-        bytes calldata signature
-    )
-        external
-        nonReentrant
-        whenNotPaused
-    {
-        // TODO Sprint 1: Implement deposit logic
-        // - Verify EIP-712 signature (Sprint 2)
-        // - Transfer tokens from client to contract
-        // - Store escrow state
-        // - Emit Deposited event
-        revert("Not implemented — Sprint 1");
+        uint256 deliveryDeadline,
+        bytes32 termsHash
+    ) external nonReentrant whenNotPaused {
+        if (bytes(escrowId).length == 0) revert EmptyEscrowId();
+        if (_escrows[escrowId].client != address(0)) revert EscrowAlreadyExists(escrowId);
+        if (developer == address(0)) revert InvalidAddress();
+        if (developer == msg.sender) revert IdenticalParticipants();
+        if (amount == 0) revert InvalidAmount();
+        if (termsHash == bytes32(0)) revert ZeroHash();
+        if (deliveryDeadline <= block.timestamp || deliveryDeadline > type(uint256).max - REVIEW_PERIOD) {
+            revert InvalidDeadline();
+        }
+
+        uint256 balanceBefore = token.balanceOf(address(this));
+        token.safeTransferFrom(msg.sender, address(this), amount);
+        uint256 balanceAfter = token.balanceOf(address(this));
+        uint256 received = balanceAfter >= balanceBefore ? balanceAfter - balanceBefore : 0;
+        if (received != amount) revert InvalidReceivedAmount(amount, received);
+
+        _escrows[escrowId] = Escrow({
+            client: msg.sender,
+            developer: developer,
+            arbiter: arbiter,
+            feeRecipient: feeRecipient,
+            amount: amount,
+            depositedAt: block.timestamp,
+            deliveryDeadline: deliveryDeadline,
+            termsHash: termsHash,
+            deliveryHash: bytes32(0),
+            phase: Phase.FUNDED,
+            resolutionKind: ResolutionKind.NONE
+        });
+        totalUnresolvedPrincipal += amount;
+
+        emit Deposited(escrowId, msg.sender, developer, arbiter, feeRecipient, amount, deliveryDeadline, termsHash);
+        _assertSolvent();
     }
 
-    /**
-     * @notice Release funds to developer (client approves)
-     * @param issueId Platform issue ID
-     */
-    function releaseFunds(string calldata issueId)
-        external
-        nonReentrant
-        whenNotPaused
-        inState(issueId, EscrowState.AWAITING_DELIVERY)
-    {
-        // TODO Sprint 1: Implement release logic
-        // - Require caller is client
-        // - Calculate platform fee
-        // - Transfer (amount - fee) to developer
-        // - Transfer fee to feeRecipient
-        // - Set state to COMPLETED
-        // - Emit FundsReleased event
-        revert("Not implemented — Sprint 1");
+    function submitWork(string calldata escrowId, bytes32 deliveryHash) external escrowExists(escrowId) {
+        Escrow storage escrow = _escrows[escrowId];
+        if (escrow.phase != Phase.FUNDED) revert InvalidPhase(escrowId, escrow.phase);
+        if (msg.sender != escrow.developer) revert NotAuthorized(msg.sender);
+        if (deliveryHash == bytes32(0)) revert ZeroHash();
+        if (block.timestamp > escrow.deliveryDeadline) revert DeadlinePassed(escrow.deliveryDeadline);
+
+        escrow.deliveryHash = deliveryHash;
+        emit WorkSubmitted(escrowId, msg.sender, deliveryHash);
     }
 
-    /**
-     * @notice Request mutual cancel (each party must call once)
-     * @param issueId Platform issue ID
-     */
-    function mutualCancel(string calldata issueId)
-        external
-        nonReentrant
-        whenNotPaused
-        inState(issueId, EscrowState.AWAITING_DELIVERY)
-        onlyParties(issueId)
-    {
-        // TODO Sprint 1: Implement mutual cancel logic
-        // - Mark caller's approval
-        // - If both approved: refund to client, set CANCELLED
-        revert("Not implemented — Sprint 1");
+    function releaseFunds(string calldata escrowId) external escrowExists(escrowId) {
+        Escrow storage escrow = _escrows[escrowId];
+        if (escrow.phase != Phase.FUNDED) revert InvalidPhase(escrowId, escrow.phase);
+        if (msg.sender != escrow.client) revert NotAuthorized(msg.sender);
+        if (escrow.deliveryHash == bytes32(0)) revert NoDelivery();
+        _resolve(escrowId, 0, ResolutionKind.RELEASE, bytes32(0));
     }
 
-    /**
-     * @notice Developer claims funds after 30-day timeout
-     * @param issueId Platform issue ID
-     */
-    function claimTimeout(string calldata issueId)
-        external
-        nonReentrant
-        whenNotPaused
-        inState(issueId, EscrowState.AWAITING_DELIVERY)
-    {
-        // TODO Sprint 1: Implement timeout claim
-        // - Require caller is developer
-        // - Require 30 days elapsed since deposit
-        // - Transfer funds to developer
-        revert("Not implemented — Sprint 1");
+    function claimMissedDeliveryRefund(string calldata escrowId) external escrowExists(escrowId) {
+        Escrow storage escrow = _escrows[escrowId];
+        if (escrow.phase != Phase.FUNDED) revert InvalidPhase(escrowId, escrow.phase);
+        if (escrow.deliveryHash != bytes32(0)) revert NoDelivery();
+        if (block.timestamp <= escrow.deliveryDeadline) revert DeadlineNotReached(escrow.deliveryDeadline);
+        _resolve(escrowId, MAX_BPS, ResolutionKind.MISSED_DELIVERY_REFUND, bytes32(0));
     }
 
-    /**
-     * @notice Raise a dispute — freezes funds
-     * @param issueId Platform issue ID
-     * @param reason Brief reason for dispute
-     */
-    function raiseDispute(string calldata issueId, string calldata reason)
-        external
-        whenNotPaused
-        inState(issueId, EscrowState.AWAITING_DELIVERY)
-        onlyParties(issueId)
-    {
-        // TODO Sprint 1: Implement dispute raising
-        // - Set state to DISPUTED
-        // - Emit DisputeRaised event
-        revert("Not implemented — Sprint 1");
+    function claimReviewTimeout(string calldata escrowId) external escrowExists(escrowId) {
+        Escrow storage escrow = _escrows[escrowId];
+        if (escrow.phase != Phase.FUNDED) revert InvalidPhase(escrowId, escrow.phase);
+        if (escrow.deliveryHash == bytes32(0)) revert NoDelivery();
+        uint256 deadline = escrow.deliveryDeadline + REVIEW_PERIOD;
+        if (block.timestamp < deadline) revert ReviewWindowNotReached(deadline);
+        _resolve(escrowId, 0, ResolutionKind.REVIEW_TIMEOUT, bytes32(0));
     }
 
-    /**
-     * @notice Arbiter proposes a resolution split
-     * @param issueId Platform issue ID
-     * @param clientRatio Client refund percentage (0-100)
-     *        0 = 100% to developer, 100 = 100% refund to client
-     */
-    function proposeResolution(string calldata issueId, uint256 clientRatio)
+    function proposeSettlement(string calldata escrowId, uint256 clientBps)
         external
-        whenNotPaused
-        inState(issueId, EscrowState.DISPUTED)
-        onlyArbiter
+        escrowExists(escrowId)
+        onlyParty(escrowId)
     {
-        // TODO Sprint 1: Implement resolution proposal
-        // - Validate clientRatio 0-100
-        // - Set state to RESOLUTION_PROPOSED
-        // - Record proposedAt timestamp
-        // - Emit ResolutionProposed event
-        revert("Not implemented — Sprint 1");
+        Escrow storage escrow = _escrows[escrowId];
+        if (escrow.phase == Phase.RESOLVED) revert InvalidPhase(escrowId, escrow.phase);
+        if (clientBps > MAX_BPS) revert InvalidBasisPoints(clientBps);
+        if (_settlements[escrowId].proposer != address(0)) revert SettlementAlreadyPending();
+
+        _settlements[escrowId] = SettlementProposal({proposer: msg.sender, clientBps: clientBps});
+        emit SettlementProposed(escrowId, msg.sender, clientBps);
     }
 
-    /**
-     * @notice Challenge the arbiter's resolution within 24h window
-     * @param issueId Platform issue ID
-     */
-    function challengeResolution(string calldata issueId)
-        external
-        whenNotPaused
-        inState(issueId, EscrowState.RESOLUTION_PROPOSED)
-        onlyParties(issueId)
-    {
-        // TODO Sprint 1: Implement challenge logic
-        // - Require within 24h window
-        // - Set state back to DISPUTED
-        // - Emit ResolutionChallenged event
-        revert("Not implemented — Sprint 1");
+    function revokeSettlement(string calldata escrowId) external escrowExists(escrowId) {
+        Escrow storage escrow = _escrows[escrowId];
+        SettlementProposal memory proposal = _settlements[escrowId];
+        if (escrow.phase == Phase.RESOLVED) revert InvalidPhase(escrowId, escrow.phase);
+        if (proposal.proposer == address(0)) revert NoPendingSettlement();
+        if (msg.sender != proposal.proposer) revert NotSettlementProposer();
+        delete _settlements[escrowId];
+        emit SettlementRevoked(escrowId, msg.sender);
     }
 
-    /**
-     * @notice Execute resolution after 24h challenge period expires
-     * @param issueId Platform issue ID
-     */
-    function executeResolution(string calldata issueId)
-        external
-        nonReentrant
-        whenNotPaused
-        inState(issueId, EscrowState.RESOLUTION_PROPOSED)
-    {
-        // TODO Sprint 1: Implement execution logic
-        // - Require 24h challenge period expired
-        // - Split funds per clientRatio
-        // - Set state to COMPLETED
-        // - Emit ResolutionExecuted event
-        revert("Not implemented — Sprint 1");
+    function acceptSettlement(string calldata escrowId) external escrowExists(escrowId) {
+        Escrow storage escrow = _escrows[escrowId];
+        SettlementProposal memory proposal = _settlements[escrowId];
+        if (escrow.phase == Phase.RESOLVED) revert InvalidPhase(escrowId, escrow.phase);
+        if (proposal.proposer == address(0)) revert NoPendingSettlement();
+        if (msg.sender != escrow.client && msg.sender != escrow.developer) revert NotAuthorized(msg.sender);
+        if (msg.sender == proposal.proposer) revert NotTheCounterparty();
+        _resolve(escrowId, proposal.clientBps, ResolutionKind.SETTLEMENT, bytes32(0));
     }
 
-    /**
-     * @notice Verify EIP-712 off-chain commitment signature
-     * @dev Used to validate client's commitment before deposit (Sprint 2)
-     */
-    function verifyCommitment(
-        string calldata issueId,
-        address client,
-        uint256 bountyAmount,
-        address token,
-        uint256 nonce,
-        bytes calldata signature
-    ) public view returns (bool) {
-        // TODO Sprint 2: Implement EIP-712 verification
-        bytes32 structHash = keccak256(
-            abi.encode(
-                COMMITMENT_TYPEHASH,
-                keccak256(bytes(issueId)),
-                client,
-                bountyAmount,
-                token,
-                nonce
-            )
+    function raiseDispute(string calldata escrowId, bytes32 evidenceManifestHash)
+        external
+        escrowExists(escrowId)
+        onlyParty(escrowId)
+    {
+        Escrow storage escrow = _escrows[escrowId];
+        if (escrow.phase != Phase.FUNDED) revert InvalidPhase(escrowId, escrow.phase);
+        if (evidenceManifestHash == bytes32(0)) revert ZeroHash();
+
+        escrow.phase = Phase.DISPUTED;
+        _disputes[escrowId] = Dispute({
+            raisedBy: msg.sender,
+            raisedAt: block.timestamp,
+            raiserEvidenceHash: evidenceManifestHash,
+            counterpartyEvidenceHash: bytes32(0),
+            initialClientBps: 0,
+            initialRulingAt: 0,
+            initialDecisionHash: bytes32(0),
+            challengedAt: 0,
+            finalClientBps: 0,
+            finalRulingAt: 0,
+            finalDecisionHash: bytes32(0)
+        });
+        emit DisputeRaised(escrowId, msg.sender, evidenceManifestHash);
+    }
+
+    function submitCounterpartyEvidence(string calldata escrowId, bytes32 evidenceManifestHash)
+        external
+        escrowExists(escrowId)
+    {
+        Escrow storage escrow = _escrows[escrowId];
+        Dispute storage dispute = _disputes[escrowId];
+        if (escrow.phase != Phase.DISPUTED) revert InvalidPhase(escrowId, escrow.phase);
+        address counterparty = dispute.raisedBy == escrow.client ? escrow.developer : escrow.client;
+        if (msg.sender != counterparty) revert NotTheCounterparty();
+        if (evidenceManifestHash == bytes32(0)) revert ZeroHash();
+        if (dispute.counterpartyEvidenceHash != bytes32(0)) revert EvidenceAlreadySubmitted();
+        uint256 deadline = dispute.raisedAt + EVIDENCE_RESPONSE_PERIOD;
+        if (block.timestamp >= deadline) revert EvidenceResponseWindowClosed(deadline);
+
+        dispute.counterpartyEvidenceHash = evidenceManifestHash;
+        emit CounterpartyEvidenceSubmitted(escrowId, msg.sender, evidenceManifestHash);
+    }
+
+    function postInitialRuling(string calldata escrowId, uint256 clientBps, bytes32 decisionHash)
+        external
+        escrowExists(escrowId)
+        onlyEscrowArbiter(escrowId)
+    {
+        Escrow storage escrow = _escrows[escrowId];
+        Dispute storage dispute = _disputes[escrowId];
+        if (escrow.phase != Phase.DISPUTED) revert InvalidPhase(escrowId, escrow.phase);
+        if (clientBps > MAX_BPS) revert InvalidBasisPoints(clientBps);
+        if (decisionHash == bytes32(0)) revert ZeroHash();
+        uint256 responseDeadline = dispute.raisedAt + EVIDENCE_RESPONSE_PERIOD;
+        if (block.timestamp < responseDeadline) revert EvidenceResponsePeriodActive(responseDeadline);
+        uint256 stallDeadline = dispute.raisedAt + ARBITER_STALL_PERIOD;
+        if (block.timestamp >= stallDeadline) revert ArbiterStallDeadlineReached(stallDeadline);
+
+        dispute.initialClientBps = clientBps;
+        dispute.initialRulingAt = block.timestamp;
+        dispute.initialDecisionHash = decisionHash;
+        escrow.phase = Phase.INITIAL_RULING;
+        emit InitialRulingPosted(escrowId, msg.sender, clientBps, decisionHash, block.timestamp + CHALLENGE_PERIOD);
+    }
+
+    function challengeRuling(string calldata escrowId) external escrowExists(escrowId) onlyParty(escrowId) {
+        Escrow storage escrow = _escrows[escrowId];
+        Dispute storage dispute = _disputes[escrowId];
+        if (escrow.phase != Phase.INITIAL_RULING) revert InvalidPhase(escrowId, escrow.phase);
+        uint256 deadline = dispute.initialRulingAt + CHALLENGE_PERIOD;
+        if (block.timestamp >= deadline) revert ChallengeWindowClosed(deadline);
+
+        bool clientLostPrincipal = msg.sender == escrow.client && dispute.initialClientBps < MAX_BPS;
+        bool developerLostPrincipal = msg.sender == escrow.developer && dispute.initialClientBps > 0;
+        if (!clientLostPrincipal && !developerLostPrincipal) revert ChallengeNotPermitted();
+
+        dispute.challengedAt = block.timestamp;
+        escrow.phase = Phase.CHALLENGED;
+        emit RulingChallenged(escrowId, msg.sender, block.timestamp);
+    }
+
+    function postFinalRuling(string calldata escrowId, uint256 clientBps, bytes32 decisionHash)
+        external
+        escrowExists(escrowId)
+        onlyEscrowArbiter(escrowId)
+    {
+        Escrow storage escrow = _escrows[escrowId];
+        Dispute storage dispute = _disputes[escrowId];
+        if (escrow.phase != Phase.CHALLENGED) revert InvalidPhase(escrowId, escrow.phase);
+        if (clientBps > MAX_BPS) revert InvalidBasisPoints(clientBps);
+        if (decisionHash == bytes32(0)) revert ZeroHash();
+        uint256 deadline = dispute.challengedAt + ARBITER_STALL_PERIOD;
+        if (block.timestamp >= deadline) revert ArbiterStallDeadlineReached(deadline);
+
+        dispute.finalClientBps = clientBps;
+        dispute.finalRulingAt = block.timestamp;
+        dispute.finalDecisionHash = decisionHash;
+        escrow.phase = Phase.FINAL_RULING;
+        emit FinalRulingPosted(
+            escrowId, msg.sender, clientBps, decisionHash, block.timestamp + FINAL_RULING_NOTICE_PERIOD
         );
-        bytes32 hash = _hashTypedDataV4(structHash);
-        address recovered = ECDSA.recover(hash, signature);
-        return recovered == client;
     }
 
-    // =========================================================================
-    // ADMIN FUNCTIONS
-    // =========================================================================
+    function finalizeRuling(string calldata escrowId) external escrowExists(escrowId) {
+        Escrow storage escrow = _escrows[escrowId];
+        Dispute storage dispute = _disputes[escrowId];
+        uint256 clientBps = 0;
+        bytes32 decisionHash = bytes32(0);
+        uint256 deadline = 0;
 
-    /** @notice Emergency pause — owner only */
+        if (escrow.phase == Phase.INITIAL_RULING) {
+            clientBps = dispute.initialClientBps;
+            decisionHash = dispute.initialDecisionHash;
+            deadline = dispute.initialRulingAt + CHALLENGE_PERIOD;
+        } else if (escrow.phase == Phase.FINAL_RULING) {
+            clientBps = dispute.finalClientBps;
+            decisionHash = dispute.finalDecisionHash;
+            deadline = dispute.finalRulingAt + FINAL_RULING_NOTICE_PERIOD;
+        } else {
+            revert InvalidPhase(escrowId, escrow.phase);
+        }
+        if (block.timestamp < deadline) revert RulingNotReady(deadline);
+        _resolve(escrowId, clientBps, ResolutionKind.RULING, decisionHash);
+    }
+
+    function finalizeArbiterTimeoutSplit(string calldata escrowId) external escrowExists(escrowId) {
+        Escrow storage escrow = _escrows[escrowId];
+        Dispute storage dispute = _disputes[escrowId];
+        uint256 deadline = 0;
+        if (escrow.phase == Phase.DISPUTED) {
+            deadline = dispute.raisedAt + ARBITER_STALL_PERIOD;
+        } else if (escrow.phase == Phase.CHALLENGED) {
+            deadline = dispute.challengedAt + ARBITER_STALL_PERIOD;
+        } else {
+            revert InvalidPhase(escrowId, escrow.phase);
+        }
+        if (block.timestamp < deadline) revert ArbiterStallNotReached(deadline);
+        _resolve(escrowId, MAX_BPS / 2, ResolutionKind.ARBITER_TIMEOUT_SPLIT, bytes32(0));
+    }
+
+    function claim(address recipient) external nonReentrant {
+        if (recipient == address(0)) revert InvalidAddress();
+        uint256 amount = claimable[recipient];
+        if (amount == 0) revert NothingToClaim(recipient);
+
+        claimable[recipient] = 0;
+        totalClaimable -= amount;
+        uint256 balanceBefore = token.balanceOf(recipient);
+        token.safeTransfer(recipient, amount);
+        uint256 balanceAfter = token.balanceOf(recipient);
+        uint256 received = balanceAfter >= balanceBefore ? balanceAfter - balanceBefore : 0;
+        if (received != amount) revert RecipientBalanceMismatch(amount, received);
+        emit Claimed(recipient, msg.sender, amount);
+        _assertSolvent();
+    }
+
     function pause() external onlyOwner {
         _pause();
     }
 
-    /** @notice Unpause — owner only */
     function unpause() external onlyOwner {
         _unpause();
     }
 
-    /** @notice Update arbiter address */
-    function setArbiter(address newArbiter) external onlyOwner {
-        emit ArbiterUpdated(arbiter, newArbiter);
-        arbiter = newArbiter;
+    function transferOwnership(address newOwner) public override onlyOwner {
+        _requireProspectiveRole(newOwner);
+        super.transferOwnership(newOwner);
     }
 
-    // =========================================================================
-    // VIEW FUNCTIONS
-    // =========================================================================
-
-    /** @notice Get escrow details for an issue */
-    function getEscrow(string calldata issueId)
-        external
-        view
-        returns (Escrow memory)
-    {
-        return escrows[issueId];
+    function acceptOwnership() public override {
+        _requireProspectiveRole(pendingOwner());
+        super.acceptOwnership();
     }
 
-    /** @notice Check if 30-day timeout has been reached */
-    function isTimeoutReached(string calldata issueId) public view returns (bool) {
-        Escrow storage e = escrows[issueId];
-        if (e.depositedAt == 0) return false;
-        return block.timestamp >= e.depositedAt + TIMEOUT_PERIOD;
+    function renounceOwnership() public pure override {
+        revert OwnershipRenunciationDisabled();
     }
 
-    /** @notice Check if 24h challenge period has expired */
-    function isChallengeExpired(string calldata issueId) public view returns (bool) {
-        Escrow storage e = escrows[issueId];
-        if (e.proposedAt == 0) return false;
-        return block.timestamp >= e.proposedAt + CHALLENGE_PERIOD;
+    function proposeArbiter(address newArbiter) external onlyOwner {
+        if (newArbiter == address(0)) revert InvalidAddress();
+        _requireProspectiveRole(newArbiter);
+        pendingArbiter = newArbiter;
+        emit ArbiterTransferProposed(arbiter, newArbiter);
+    }
+
+    function acceptArbiter() external {
+        if (msg.sender != pendingArbiter) revert NoPendingArbiter();
+        _requireProspectiveRole(msg.sender);
+        address oldArbiter = arbiter;
+        arbiter = msg.sender;
+        pendingArbiter = address(0);
+        emit ArbiterUpdated(oldArbiter, msg.sender);
+    }
+
+    function proposeFeeRecipient(address newRecipient) external onlyOwner {
+        if (newRecipient == address(0)) revert InvalidAddress();
+        _requireProspectiveRole(newRecipient);
+        pendingFeeRecipient = newRecipient;
+        emit FeeRecipientTransferProposed(feeRecipient, newRecipient);
+    }
+
+    function acceptFeeRecipient() external {
+        if (msg.sender != pendingFeeRecipient) revert NoPendingFeeRecipient();
+        _requireProspectiveRole(msg.sender);
+        address oldRecipient = feeRecipient;
+        feeRecipient = msg.sender;
+        pendingFeeRecipient = address(0);
+        emit FeeRecipientUpdated(oldRecipient, msg.sender);
+    }
+
+    function getEscrow(string calldata escrowId) external view returns (Escrow memory) {
+        return _escrows[escrowId];
+    }
+
+    function getSettlement(string calldata escrowId) external view returns (SettlementProposal memory) {
+        return _settlements[escrowId];
+    }
+
+    function getDispute(string calldata escrowId) external view returns (Dispute memory) {
+        return _disputes[escrowId];
+    }
+
+    function accountedBalance() public view returns (uint256) {
+        return totalUnresolvedPrincipal + totalClaimable;
+    }
+
+    function isSolvent() external view returns (bool) {
+        return token.balanceOf(address(this)) >= accountedBalance();
+    }
+
+    function _resolve(string calldata escrowId, uint256 clientBps, ResolutionKind kind, bytes32 decisionHash) internal {
+        Escrow storage escrow = _escrows[escrowId];
+        if (escrow.phase == Phase.RESOLVED) revert InvalidPhase(escrowId, escrow.phase);
+
+        uint256 clientAmount = Math.mulDiv(escrow.amount, clientBps, MAX_BPS);
+        uint256 developerGross = escrow.amount - clientAmount;
+        uint256 platformFee = Math.mulDiv(developerGross, PLATFORM_FEE_BPS, MAX_BPS);
+        uint256 developerAmount = escrow.amount - clientAmount - platformFee;
+
+        escrow.phase = Phase.RESOLVED;
+        escrow.resolutionKind = kind;
+        totalUnresolvedPrincipal -= escrow.amount;
+        totalClaimable += escrow.amount;
+        claimable[escrow.client] += clientAmount;
+        claimable[escrow.developer] += developerAmount;
+        claimable[escrow.feeRecipient] += platformFee;
+        delete _settlements[escrowId];
+
+        emit EscrowResolved(escrowId, kind, clientAmount, developerAmount, platformFee, decisionHash);
+        _assertSolvent();
+    }
+
+    function _requireProspectiveRole(address candidate) internal view {
+        if (candidate == address(0)) revert InvalidAddress();
+        if (candidate == owner() || candidate == arbiter || candidate == feeRecipient) {
+            revert RoleCollision();
+        }
+    }
+
+    function _assertSolvent() internal view {
+        uint256 accounted = accountedBalance();
+        uint256 balance = token.balanceOf(address(this));
+        if (balance < accounted) revert Insolvent(accounted, balance);
     }
 }

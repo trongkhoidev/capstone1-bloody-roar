@@ -8,7 +8,8 @@ import { builder } from "../../builder";
 import { requireAuth } from "../../context";
 import { gqlError, parseOrThrow } from "../../errors";
 import type { Prisma } from "@bloody-roar/database";
-import { IssueCategory, IssueStatus, UserRole } from "@bloody-roar/database";
+import { IssueCategory, IssueStatus, UserRole, ApplicationStatus } from "@bloody-roar/database";
+import { createNotificationSafely } from "../../../lib/services/notifications";
 import { UserRef } from "../user/user.module";
 import { AttachmentRef } from "../chat/chat.module";
 import { z } from "zod";
@@ -591,12 +592,37 @@ builder.mutationField("cancelIssue", (t) =>
       const issue = await ctx.db.issue.findUnique({ where: { id: String(args.id) } });
       if (!issue) return null;
       if (issue.clientId !== user.id) throw gqlError("Chỉ chủ bài toán mới được hủy", "FORBIDDEN");
-      if (issue.status !== IssueStatus.OPEN) throw gqlError("Chỉ có thể hủy bài toán đang mở", "ISSUE_NOT_CANCELLABLE");
-      const cancelled = await ctx.db.issue.updateMany({
-        where: { id: issue.id, clientId: user.id, status: IssueStatus.OPEN, developerId: null },
+      if (issue.status !== IssueStatus.OPEN && issue.status !== IssueStatus.IN_PROGRESS) {
+        throw gqlError("Chỉ có thể hủy bài toán đang mở hoặc chưa nạp tiền ký quỹ", "ISSUE_NOT_CANCELLABLE");
+      }
+      
+      const hasEscrow = await ctx.db.escrow.findUnique({ where: { issueId: issue.id } });
+      if (issue.status === IssueStatus.IN_PROGRESS && hasEscrow) {
+        throw gqlError("Bài toán đã có khoản tiền ký quỹ, không thể hủy", "ISSUE_NOT_CANCELLABLE");
+      }
+
+      await ctx.db.issue.update({
+        where: { id: issue.id },
         data: { status: IssueStatus.CANCELLED },
       });
-      if (cancelled.count !== 1) throw gqlError("Bài toán vừa được nhận và không thể hủy", "ISSUE_NOT_CANCELLABLE");
+      
+      // If we are canceling an unfunded IN_PROGRESS issue, we should also reset the accepted application
+      if (issue.developerId) {
+        await ctx.db.application.updateMany({
+          where: { issueId: issue.id, status: ApplicationStatus.ACCEPTED },
+          data: { status: ApplicationStatus.REJECTED },
+        });
+        await createNotificationSafely(ctx.db, {
+          userId: issue.developerId,
+          type: "APPLICATION_REJECTED",
+          title: "Bài toán bị hủy",
+          body: `Khách hàng đã hủy bài toán “${issue.title}” trước khi nạp tiền ký quỹ.`,
+          actorId: user.id,
+          link: `/issues/${issue.id}`,
+          data: { issueId: issue.id },
+        });
+      }
+
       return ctx.db.issue.findUnique({ where: { id: issue.id }, include: ISSUE_INCLUDE });
     },
   })

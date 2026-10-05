@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:escrow": "bun run scripts/e2e-escrow.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {

@@ -32,7 +32,7 @@ export function AdminView() {
   const [disputes, setDisputes] = useState<AdminDispute[]>([]);
   const [search, setSearch] = useState("");
   const [banReasons, setBanReasons] = useState<Record<string, string>>({});
-  const [resolutions, setResolutions] = useState<Record<string, { clientRatio: string; note: string }>>({});
+  const [resolutions, setResolutions] = useState<Record<string, { clientRatio: string; note: string; txHash: string; decisionHash: string }>>({});
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -76,11 +76,11 @@ export function AdminView() {
   };
 
   const proposeResolution = async (dispute: AdminDispute) => {
-    const form = resolutions[dispute.id] ?? { clientRatio: String(dispute.suggestedRatio ?? 50), note: "" };
+    const form = resolutions[dispute.id] ?? { clientRatio: String(dispute.suggestedRatio ?? 50), note: "", txHash: "", decisionHash: "" };
     setWorking(dispute.id); setError(null); setNotice(null);
     try {
-      await graphqlRequest(PROPOSE_RESOLUTION, { input: { issueId: dispute.issueId, clientRatio: Number(form.clientRatio), note: form.note } });
-      setNotice("Resolution proposal saved. The contract will enforce its own challenge and execution rules after integration."); await load(search.trim());
+      await graphqlRequest(PROPOSE_RESOLUTION, { input: { issueId: dispute.issueId, clientRatio: Number(form.clientRatio), note: form.note, txHash: form.txHash, decisionHash: form.decisionHash } });
+      setNotice("Ruling transaction confirmed. Its deadline is enforced by the escrow contract."); await load(search.trim());
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not record proposal."); }
     finally { setWorking(null); }
   };
@@ -127,17 +127,17 @@ export function AdminView() {
         <section className="overflow-hidden glass rounded-xl animate-fade-in">
           <header className="border-b border-[hsl(var(--border))] p-4 sm:p-5"><h2 className="font-semibold">{t("disputes")}</h2><p className="text-xs text-[hsl(var(--foreground-muted))]">{t("reviewDisputes")}</p></header>
           {loading ? <RowsSkeleton /> : <div className="divide-y divide-[hsl(var(--border))]">{disputes.map((dispute) => {
-            const form = resolutions[dispute.id] ?? { clientRatio: String(dispute.suggestedRatio ?? 50), note: "" };
+            const form = resolutions[dispute.id] ?? { clientRatio: String(dispute.suggestedRatio ?? 50), note: "", txHash: "", decisionHash: "" };
             const mayPropose = ["OPEN", "CHALLENGED"].includes(dispute.status);
             return <article key={dispute.id} className="space-y-3 p-4 sm:p-5"><div className="flex items-start justify-between gap-3"><div><p className="font-medium">Dispute · {dispute.status.replaceAll("_", " ")}</p><p className="mt-1 text-xs text-[hsl(var(--foreground-muted))]">{dispute.reason}</p></div><Link href={`/issues/${dispute.issueId}`} className="inline-flex shrink-0 items-center gap-1 text-xs text-[hsl(var(--accent))]">Task <ExternalLink className="h-3 w-3" /></Link></div>
               {dispute.suggestedRatio != null && <p className="rounded-md bg-[hsl(var(--background-secondary))] p-2.5 text-xs">AI suggestion: <strong>{dispute.suggestedRatio}% client refund</strong>{dispute.aiConfidenceScore != null && <span className="text-[hsl(var(--foreground-muted))]"> · {Math.round(dispute.aiConfidenceScore * 100)}% confidence</span>}</p>}
               {dispute.aiReport && <details className="rounded-md border border-[hsl(var(--border))] p-3"><summary className="cursor-pointer text-xs font-medium">Review AI evidence report</summary><pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words text-[10px] leading-4 text-[hsl(var(--foreground-muted))]">{(() => { try { return JSON.stringify(JSON.parse(dispute.aiReport), null, 2); } catch { return dispute.aiReport; } })()}</pre></details>}
               {["OPEN", "CHALLENGED"].includes(dispute.status) && <Button size="sm" variant="outline" disabled={working === dispute.id} onClick={() => void analyzeDispute(dispute)}>{dispute.aiReport ? "Reanalyze evidence" : "Analyze evidence with AI"}</Button>}
               {dispute.challengeDeadline && <p className="text-[10px] text-[hsl(var(--foreground-subtle))">Challenge deadline: {new Date(dispute.challengeDeadline).toLocaleString()}</p>}
-              {mayPropose && <><label htmlFor={`client-ratio-${dispute.id}`} className="block text-xs">Client share (%)</label><Input id={`client-ratio-${dispute.id}`} type="number" min={0} max={100} step="1" value={form.clientRatio} onChange={(event) => setResolutions((current) => ({ ...current, [dispute.id]: { ...form, clientRatio: event.target.value } }))} className="-mt-2" /><textarea value={form.note} onChange={(event) => setResolutions((current) => ({ ...current, [dispute.id]: { ...form, note: event.target.value } }))} minLength={10} maxLength={2000} rows={3} placeholder="Reason for the proposed split" className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] p-3 text-xs outline-none" /><Button size="sm" disabled={working === dispute.id} onClick={() => void proposeResolution(dispute)}>Save proposal (24h challenge period)</Button></>}
+              {mayPropose && <><label htmlFor={`client-ratio-${dispute.id}`} className="block text-xs">Client share (%)</label><Input id={`client-ratio-${dispute.id}`} type="number" min={0} max={100} step="1" value={form.clientRatio} onChange={(event) => setResolutions((current) => ({ ...current, [dispute.id]: { ...form, clientRatio: event.target.value } }))} className="-mt-2" /><textarea value={form.note} onChange={(event) => setResolutions((current) => ({ ...current, [dispute.id]: { ...form, note: event.target.value } }))} minLength={10} maxLength={2000} rows={3} placeholder="Reason for the proposed split" className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] p-3 text-xs outline-none" /><Input aria-label="Ruling transaction hash" placeholder="Ruling transaction hash (0x…)" value={form.txHash} onChange={(event) => setResolutions((current) => ({ ...current, [dispute.id]: { ...form, txHash: event.target.value } }))} /><Input aria-label="Decision hash" placeholder="Decision hash (0x…)" value={form.decisionHash} onChange={(event) => setResolutions((current) => ({ ...current, [dispute.id]: { ...form, decisionHash: event.target.value } }))} /><Button size="sm" disabled={working === dispute.id} onClick={() => void proposeResolution(dispute)}>Confirm ruling transaction</Button></>}
             </article>;
           })}{disputes.length === 0 && <p className="p-8 text-center text-sm text-[hsl(var(--foreground-muted))]">{t("noDisputes")}</p>}</div>}
-          <p className="border-t border-[hsl(var(--border))] p-4 text-[10px] leading-4 text-[hsl(var(--warning))]">This console records proposals off-chain only. Final ratios, timelocks, and payouts must be executed by the escrow contract.</p>
+          <p className="border-t border-[hsl(var(--border))] p-4 text-[10px] leading-4 text-[hsl(var(--warning))]">Submit rulings through the escrow’s arbiter Safe, then confirm the transaction here. Initial rulings have a 7-day challenge period; final rulings have a 24-hour notice period. Allocated funds must be claimed separately.</p>
         </section>
       </div>
     </main>

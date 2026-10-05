@@ -12,8 +12,11 @@ export const PLATFORM_FEE_PERCENT = 2.5; // 2.5% platform fee
 // ESCROW
 // =============================================================================
 
-export const ESCROW_TIMEOUT_DAYS = 30; // Days before dev can auto-claim
-export const DISPUTE_CHALLENGE_HOURS = 24; // Hours to challenge a resolution
+export const ESCROW_REVIEW_DAYS = 7;
+export const DISPUTE_EVIDENCE_RESPONSE_HOURS = 72;
+export const DISPUTE_CHALLENGE_DAYS = 7;
+export const DISPUTE_FINAL_NOTICE_HOURS = 24;
+export const ARBITER_STALL_DAYS = 30;
 export const SUPPORTED_CHAIN_IDS = {
   BASE_SEPOLIA: 84532,
   LOCALHOST: 31337,

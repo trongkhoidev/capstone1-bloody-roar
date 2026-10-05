@@ -1,5 +1,5 @@
-import { DisputeStatus, IssueStatus } from "@bloody-roar/database";
-import type { Prisma } from "@bloody-roar/database";
+import { DisputeStatus } from "@bloody-roar/database";
+import { Prisma } from "@bloody-roar/database";
 import { z } from "zod";
 import { builder } from "../../builder";
 import { requireAdmin, requireAuth } from "../../context";
@@ -8,6 +8,7 @@ import { createNotificationSafely } from "../../../lib/services/notifications";
 import { UserRef } from "../user/user.module";
 import { completeAI } from "../../../ai/model-router";
 import { scanAndMask } from "../../../ai/guard/scanner";
+import { confirmEscrowAction } from "../../../lib/escrow/confirmation";
 
 const DisputeStatusEnum = builder.enumType(DisputeStatus, { name: "DisputeStatus" });
 const DISPUTE_INCLUDE = { raisedBy: true, resolvedBy: true } satisfies Prisma.DisputeInclude;
@@ -19,13 +20,47 @@ export const DisputeRef = builder.prismaObject("Dispute", {
     issueId: t.exposeString("issueId"),
     status: t.expose("status", { type: DisputeStatusEnum }),
     reason: t.exposeString("reason"),
-    aiReport: t.string({ nullable: true, resolve: (dispute) => dispute.aiReport == null ? null : JSON.stringify(dispute.aiReport) }),
+    evidenceManifestHash: t.exposeString("evidenceManifestHash", { nullable: true }),
+    counterpartyEvidenceHash: t.exposeString("counterpartyEvidenceHash", { nullable: true }),
+    initialDecisionHash: t.exposeString("initialDecisionHash", { nullable: true }),
+    finalDecisionHash: t.exposeString("finalDecisionHash", { nullable: true }),
+    evidenceResponseDeadline: t.string({
+      nullable: true,
+      resolve: (d) => d.evidenceResponseDeadline?.toISOString() ?? null,
+    }),
+    arbiterTimeoutAt: t.string({
+      nullable: true,
+      resolve: (d) => d.arbiterTimeoutAt?.toISOString() ?? null,
+    }),
+    noticeDeadline: t.string({
+      nullable: true,
+      resolve: (d) => d.noticeDeadline?.toISOString() ?? null,
+    }),
+    aiReport: t.string({
+      nullable: true,
+      resolve: (dispute) => (dispute.aiReport == null ? null : JSON.stringify(dispute.aiReport)),
+    }),
     aiConfidenceScore: t.exposeFloat("aiConfidenceScore", { nullable: true }),
-    suggestedRatio: t.float({ nullable: true, resolve: (dispute) => dispute.suggestedRatio?.toNumber() ?? null }),
-    proposedClientRatio: t.float({ nullable: true, resolve: (dispute) => dispute.proposedClientRatio?.toNumber() ?? null }),
-    proposedAt: t.string({ nullable: true, resolve: (dispute) => dispute.proposedAt?.toISOString() ?? null }),
-    challengeDeadline: t.string({ nullable: true, resolve: (dispute) => dispute.challengeDeadline?.toISOString() ?? null }),
-    challengedAt: t.string({ nullable: true, resolve: (dispute) => dispute.challengedAt?.toISOString() ?? null }),
+    suggestedRatio: t.float({
+      nullable: true,
+      resolve: (dispute) => dispute.suggestedRatio?.toNumber() ?? null,
+    }),
+    proposedClientRatio: t.float({
+      nullable: true,
+      resolve: (dispute) => dispute.proposedClientRatio?.toNumber() ?? null,
+    }),
+    proposedAt: t.string({
+      nullable: true,
+      resolve: (dispute) => dispute.proposedAt?.toISOString() ?? null,
+    }),
+    challengeDeadline: t.string({
+      nullable: true,
+      resolve: (dispute) => dispute.challengeDeadline?.toISOString() ?? null,
+    }),
+    challengedAt: t.string({
+      nullable: true,
+      resolve: (dispute) => dispute.challengedAt?.toISOString() ?? null,
+    }),
     resolutionNote: t.exposeString("resolutionNote", { nullable: true }),
     raisedBy: t.field({ type: UserRef, resolve: (dispute) => dispute.raisedBy }),
     createdAt: t.string({ resolve: (dispute) => dispute.createdAt.toISOString() }),
@@ -39,11 +74,19 @@ builder.queryFields((t) => ({
     args: { issueId: t.arg.string({ required: true }) },
     resolve: async (query, _root, args, ctx) => {
       const user = requireAuth(ctx);
-      const issue = await ctx.db.issue.findUnique({ where: { id: args.issueId }, select: { clientId: true, developerId: true } });
+      const issue = await ctx.db.issue.findUnique({
+        where: { id: args.issueId },
+        select: { clientId: true, developerId: true },
+      });
       if (!issue) return null;
       const isAdmin = user.role === "ADMIN";
-      if (!isAdmin && issue.clientId !== user.id && issue.developerId !== user.id) throw gqlError("Bạn không được phép xem tranh chấp này", "FORBIDDEN");
-      return ctx.db.dispute.findUnique({ ...query, where: { issueId: args.issueId }, include: DISPUTE_INCLUDE });
+      if (!isAdmin && issue.clientId !== user.id && issue.developerId !== user.id)
+        throw gqlError("Bạn không được phép xem tranh chấp này", "FORBIDDEN");
+      return ctx.db.dispute.findUnique({
+        ...query,
+        where: { issueId: args.issueId },
+        include: DISPUTE_INCLUDE,
+      });
     },
   }),
   adminDisputes: t.prismaField({
@@ -59,6 +102,12 @@ builder.queryFields((t) => ({
   }),
 }));
 
+const TxHashSchema = z.string().regex(/^0x[0-9a-fA-F]{64}$/);
+const CommitmentHashSchema = TxHashSchema.refine(
+  (hash) => !/^0x0{64}$/.test(hash),
+  "Hash must be nonzero",
+);
+
 builder.mutationField("raiseDispute", (t) =>
   t.fieldWithInput({
     type: DisputeRef,
@@ -66,64 +115,69 @@ builder.mutationField("raiseDispute", (t) =>
     input: {
       issueId: t.input.id({ required: true }),
       reason: t.input.string({ required: true }),
+      txHash: t.input.string({ required: true }),
+      evidenceManifestHash: t.input.string({ required: true }),
     },
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
-      const input = parseOrThrow(z.object({ issueId: z.string().min(1), reason: z.string().trim().min(20).max(3000) }), {
-        issueId: String(args.input.issueId),
-        reason: args.input.reason,
+      const input = parseOrThrow(
+        z.object({
+          issueId: z.string().min(1).max(191),
+          reason: z.string().trim().min(20).max(3000),
+          txHash: TxHashSchema,
+          evidenceManifestHash: CommitmentHashSchema,
+        }),
+        { ...args.input, issueId: String(args.input.issueId) },
+      );
+      const existing = await ctx.db.dispute.findUnique({ where: { issueId: input.issueId } });
+      const escrow = await confirmEscrowAction(ctx, {
+        ...input,
+        action: "DISPUTE",
+        hash: input.evidenceManifestHash,
       });
-      const issue = await ctx.db.issue.findUnique({ where: { id: input.issueId } });
-      if (!issue) throw gqlError("Bài toán không tồn tại", "NOT_FOUND");
-      if (issue.clientId !== user.id && issue.developerId !== user.id) throw gqlError("Chỉ hai bên tham gia mới được mở tranh chấp", "FORBIDDEN");
-      if (issue.status !== IssueStatus.IN_PROGRESS) throw gqlError("Chỉ bài toán đang thực hiện mới mở được tranh chấp", "ISSUE_NOT_DISPUTABLE");
-
-      const dispute = await ctx.db.$transaction(async (tx) => {
-        const claimed = await tx.issue.updateMany({
-          where: { id: issue.id, status: IssueStatus.IN_PROGRESS },
-          data: { status: IssueStatus.DISPUTED },
-        });
-        if (claimed.count !== 1) throw gqlError("Task state changed before the dispute was opened", "ISSUE_NOT_DISPUTABLE");
-        const record = await tx.dispute.create({
-          data: { issueId: issue.id, reason: input.reason, raisedById: user.id },
-          include: DISPUTE_INCLUDE,
-        });
-        return record;
+      const dispute = await ctx.db.dispute.findUniqueOrThrow({
+        where: { issueId: input.issueId },
+        include: DISPUTE_INCLUDE,
       });
-
-      const otherUserId = issue.clientId === user.id ? issue.developerId : issue.clientId;
-      if (otherUserId) {
+      const otherUserId = escrow.clientId === user.id ? escrow.developerId : escrow.clientId;
+      if (!existing && otherUserId)
         await createNotificationSafely(ctx.db, {
           userId: otherUserId,
           type: "DISPUTE_RAISED",
           title: "Đã mở tranh chấp",
-          body: `Một bên đã mở tranh chấp cho “${issue.title}”.`,
+          body: input.reason,
           actorId: user.id,
-          link: `/issues/${issue.id}`,
-          data: { issueId: issue.id, disputeId: dispute.id },
+          link: `/issues/${input.issueId}`,
+          data: { issueId: input.issueId, disputeId: dispute.id },
         });
-      }
       return dispute;
     },
-  })
+  }),
 );
 
 const DisputeAnalysisSchema = z.object({
   summary: z.string().trim().min(30).max(2500),
   suggestedClientRatio: z.number().min(0).max(100),
   confidenceScore: z.number().min(0).max(1),
-  findings: z.array(z.object({
-    evidenceType: z.enum(["TASK", "DISPUTE", "MESSAGE", "SUBMISSION", "TEST_CASE"]),
-    evidenceId: z.string().min(1).max(100),
-    side: z.enum(["CLIENT", "DEVELOPER", "NEUTRAL"]),
-    finding: z.string().trim().min(10).max(800),
-  })).max(20),
+  findings: z
+    .array(
+      z.object({
+        evidenceType: z.enum(["TASK", "DISPUTE", "MESSAGE", "SUBMISSION", "TEST_CASE"]),
+        evidenceId: z.string().min(1).max(100),
+        side: z.enum(["CLIENT", "DEVELOPER", "NEUTRAL"]),
+        finding: z.string().trim().min(10).max(800),
+      }),
+    )
+    .max(20),
   missingEvidence: z.array(z.string().trim().min(4).max(400)).max(10),
   reasoning: z.string().trim().min(40).max(4000),
 });
 
 function parseModelJson(text: string) {
-  const unfenced = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  const unfenced = text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/, "");
   const start = unfenced.indexOf("{");
   const end = unfenced.lastIndexOf("}");
   if (start < 0 || end < start) throw new Error("The model returned invalid JSON.");
@@ -154,12 +208,28 @@ builder.mutationField("analyzeDispute", (t) =>
                 take: 100,
               },
               submissions: {
-                select: { id: true, description: true, pullRequestUrl: true, status: true, submittedAt: true, reviewNotes: true },
+                select: {
+                  id: true,
+                  description: true,
+                  pullRequestUrl: true,
+                  status: true,
+                  submittedAt: true,
+                  reviewNotes: true,
+                },
                 orderBy: [{ submittedAt: "desc" }, { id: "desc" }],
                 take: 30,
               },
               testCases: {
-                select: { id: true, title: true, description: true, given: true, when: true, then: true, priority: true, isApproved: true },
+                select: {
+                  id: true,
+                  title: true,
+                  description: true,
+                  given: true,
+                  when: true,
+                  then: true,
+                  priority: true,
+                  isApproved: true,
+                },
                 orderBy: [{ createdAt: "asc" }, { id: "asc" }],
                 take: 40,
               },
@@ -169,7 +239,10 @@ builder.mutationField("analyzeDispute", (t) =>
       });
       if (!dispute) throw gqlError("Dispute not found", "NOT_FOUND");
       if (dispute.status !== DisputeStatus.OPEN && dispute.status !== DisputeStatus.CHALLENGED) {
-        throw gqlError("Only open or challenged disputes can be analyzed", "DISPUTE_NOT_ANALYZABLE");
+        throw gqlError(
+          "Only open or challenged disputes can be analyzed",
+          "DISPUTE_NOT_ANALYZABLE",
+        );
       }
 
       const previousStatus = dispute.status;
@@ -177,7 +250,11 @@ builder.mutationField("analyzeDispute", (t) =>
         where: { id: dispute.id, status: previousStatus },
         data: { status: DisputeStatus.ANALYZING },
       });
-      if (claimed.count !== 1) throw gqlError("Another administrator is already handling this dispute", "DISPUTE_ALREADY_CHANGING");
+      if (claimed.count !== 1)
+        throw gqlError(
+          "Another administrator is already handling this dispute",
+          "DISPUTE_ALREADY_CHANGING",
+        );
 
       const evidence = {
         task: {
@@ -187,7 +264,11 @@ builder.mutationField("analyzeDispute", (t) =>
           category: dispute.issue.category,
           requiredSkills: dispute.issue.requiredSkills,
         },
-        dispute: { id: dispute.id, reason: dispute.reason, raisedAt: dispute.createdAt.toISOString() },
+        dispute: {
+          id: dispute.id,
+          reason: dispute.reason,
+          raisedAt: dispute.createdAt.toISOString(),
+        },
         messages: [...dispute.issue.messages].reverse().map((message) => ({
           id: message.id,
           participant: message.senderId === dispute.issue.clientId ? "CLIENT" : "DEVELOPER",
@@ -202,7 +283,10 @@ builder.mutationField("analyzeDispute", (t) =>
           submittedAt: submission.submittedAt.toISOString(),
           reviewNotes: submission.reviewNotes,
         })),
-        acceptanceCriteria: dispute.issue.testCases.map((testCase) => ({ ...testCase, priority: testCase.priority })),
+        acceptanceCriteria: dispute.issue.testCases.map((testCase) => ({
+          ...testCase,
+          priority: testCase.priority,
+        })),
       };
       const safeEvidence = scanAndMask(JSON.stringify(evidence)).content;
       const knownEvidenceIds = new Set([
@@ -223,7 +307,8 @@ builder.mutationField("analyzeDispute", (t) =>
           messages: [
             {
               role: "system",
-              content: "You are an impartial dispute evidence assistant. Assess only the supplied evidence and distinguish facts from claims. The suggestedClientRatio is the percentage of the bounty that should be refunded to the client; the developer share is the remainder. Never treat the task description as proof of completed work. Do not infer facts that are not in evidence. Your recommendation is advisory only; a human administrator makes the decision. Return strict JSON with: summary (string), suggestedClientRatio (number 0-100), confidenceScore (number 0-1), findings (array of {evidenceType: TASK|DISPUTE|MESSAGE|SUBMISSION|TEST_CASE, evidenceId, side: CLIENT|DEVELOPER|NEUTRAL, finding}), missingEvidence (array of strings), reasoning (string). Cite only IDs included in the evidence.",
+              content:
+                "You are an impartial dispute evidence assistant. Assess only the supplied evidence and distinguish facts from claims. The suggestedClientRatio is the percentage of the bounty that should be refunded to the client; the developer share is the remainder. Never treat the task description as proof of completed work. Do not infer facts that are not in evidence. Your recommendation is advisory only; a human administrator makes the decision. Return strict JSON with: summary (string), suggestedClientRatio (number 0-100), confidenceScore (number 0-1), findings (array of {evidenceType: TASK|DISPUTE|MESSAGE|SUBMISSION|TEST_CASE, evidenceId, side: CLIENT|DEVELOPER|NEUTRAL, finding}), missingEvidence (array of strings), reasoning (string). Cite only IDs included in the evidence.",
             },
             { role: "user", content: safeEvidence },
           ],
@@ -245,18 +330,31 @@ builder.mutationField("analyzeDispute", (t) =>
             aiConfidenceScore: report.confidenceScore,
           },
         });
-        if (updated.count !== 1) throw gqlError("Dispute state changed while the model was analyzing it", "DISPUTE_STATE_CHANGED");
-        return ctx.db.dispute.findUniqueOrThrow({ where: { id: dispute.id }, include: DISPUTE_INCLUDE });
+        if (updated.count !== 1)
+          throw gqlError(
+            "Dispute state changed while the model was analyzing it",
+            "DISPUTE_STATE_CHANGED",
+          );
+        return ctx.db.dispute.findUniqueOrThrow({
+          where: { id: dispute.id },
+          include: DISPUTE_INCLUDE,
+        });
       } catch (error) {
         await ctx.db.dispute.updateMany({
           where: { id: dispute.id, status: DisputeStatus.ANALYZING },
           data: { status: previousStatus },
         });
         if (error instanceof z.ZodError || error instanceof SyntaxError) {
-          throw gqlError("The model returned a report in an unsupported format. Try the analysis again.", "AI_INVALID_RESPONSE");
+          throw gqlError(
+            "The model returned a report in an unsupported format. Try the analysis again.",
+            "AI_INVALID_RESPONSE",
+          );
         }
         if (error instanceof Error && "extensions" in error) throw error;
-        throw gqlError(error instanceof Error ? error.message : "AI dispute analysis failed", "AI_UNAVAILABLE");
+        throw gqlError(
+          error instanceof Error ? error.message : "AI dispute analysis failed",
+          "AI_UNAVAILABLE",
+        );
       }
     },
   }),
@@ -270,57 +368,65 @@ builder.mutationField("proposeDisputeResolution", (t) =>
       issueId: t.input.id({ required: true }),
       clientRatio: t.input.float({ required: true }),
       note: t.input.string({ required: true }),
+      txHash: t.input.string({ required: true }),
+      decisionHash: t.input.string({ required: true }),
     },
     resolve: async (_root, args, ctx) => {
-      const admin = requireAdmin(ctx);
-      const input = parseOrThrow(z.object({
-        issueId: z.string().min(1),
-        clientRatio: z.number().min(0).max(100),
-        note: z.string().trim().min(10).max(2000),
-      }), {
-        issueId: String(args.input.issueId),
-        clientRatio: args.input.clientRatio,
-        note: args.input.note,
+      requireAdmin(ctx);
+      const input = parseOrThrow(
+        z.object({
+          issueId: z.string().min(1).max(191),
+          clientRatio: z
+            .number()
+            .min(0)
+            .max(100)
+            .refine(
+              (v) => Math.abs(v * 100 - Math.round(v * 100)) < 1e-8,
+              "Use at most two decimal places",
+            ),
+          note: z.string().trim().min(10).max(2000),
+          txHash: TxHashSchema,
+          decisionHash: CommitmentHashSchema,
+        }),
+        { ...args.input, issueId: String(args.input.issueId) },
+      );
+      const escrow = await ctx.db.escrow.findUnique({ where: { issueId: input.issueId } });
+      if (!escrow) throw gqlError("Escrow not found", "NOT_FOUND");
+      // A challenged ruling is followed by the final ruling, which has a 24h notice period.
+      const action =
+        escrow.phase === "CHALLENGED" || escrow.phase === "FINAL_RULING"
+          ? "FINAL_RULING"
+          : "INITIAL_RULING";
+      await confirmEscrowAction(ctx, {
+        issueId: input.issueId,
+        txHash: input.txHash,
+        action,
+        clientBps: Math.round(input.clientRatio * 100),
+        hash: input.decisionHash,
+        note: input.note,
       });
-      const dispute = await ctx.db.dispute.findUnique({ where: { issueId: input.issueId }, include: { issue: true } });
-      if (!dispute) throw gqlError("Tranh chấp không tồn tại", "NOT_FOUND");
-      if (dispute.status !== DisputeStatus.OPEN && dispute.status !== DisputeStatus.CHALLENGED) {
-        throw gqlError("Tranh chấp không ở trạng thái có thể đề xuất", "DISPUTE_NOT_PROPOSABLE");
-      }
-      const proposedAt = new Date();
-      return ctx.db.dispute.update({
-        where: { id: dispute.id },
-        data: {
-          status: DisputeStatus.PROPOSED,
-          proposedClientRatio: input.clientRatio,
-          proposedAt,
-          challengeDeadline: new Date(proposedAt.getTime() + 24 * 60 * 60 * 1000),
-          resolvedById: admin.id,
-          resolutionNote: input.note,
-        },
+      return ctx.db.dispute.findUniqueOrThrow({
+        where: { issueId: input.issueId },
         include: DISPUTE_INCLUDE,
       });
     },
-  })
+  }),
 );
 
 builder.mutationField("challengeDisputeResolution", (t) =>
   t.field({
     type: DisputeRef,
-    args: { issueId: t.arg.string({ required: true }) },
+    args: { issueId: t.arg.string({ required: true }), txHash: t.arg.string({ required: true }) },
     resolve: async (_root, args, ctx) => {
-      const user = requireAuth(ctx);
-      const dispute = await ctx.db.dispute.findUnique({ where: { issueId: args.issueId }, include: { issue: true } });
-      if (!dispute) throw gqlError("Tranh chấp không tồn tại", "NOT_FOUND");
-      if (dispute.issue.clientId !== user.id && dispute.issue.developerId !== user.id) throw gqlError("Chỉ hai bên tham gia mới được phản đối", "FORBIDDEN");
-      if (dispute.status !== DisputeStatus.PROPOSED || !dispute.challengeDeadline || dispute.challengeDeadline < new Date()) {
-        throw gqlError("Thời hạn phản đối đã hết hoặc chưa có đề xuất", "CHALLENGE_WINDOW_CLOSED");
-      }
-      return ctx.db.dispute.update({
-        where: { id: dispute.id },
-        data: { status: DisputeStatus.CHALLENGED, challengedById: user.id, challengedAt: new Date() },
+      const input = parseOrThrow(
+        z.object({ issueId: z.string().min(1).max(191), txHash: TxHashSchema }),
+        args,
+      );
+      await confirmEscrowAction(ctx, { ...input, action: "CHALLENGE" });
+      return ctx.db.dispute.findUniqueOrThrow({
+        where: { issueId: input.issueId },
         include: DISPUTE_INCLUDE,
       });
     },
-  })
+  }),
 );

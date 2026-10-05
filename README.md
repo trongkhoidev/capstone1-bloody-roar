@@ -10,7 +10,7 @@
 [![Base](<https://img.shields.io/badge/Network-Base%20Sepolia-0052FF?logo=base>)](https://sepolia.basescan.org)
 [![License](<https://img.shields.io/badge/License-Internal%20Use-red>)](./LICENSE)
 
-**Bloody-Roar** is a decentralized bounty marketplace. The current app supports wallet sign-in, task discovery and posting, applications, client selection of a developer, private persistent chat, work submissions, profile/GitHub verification, notifications, and off-chain dispute records. On-chain escrow and payout actions are waiting for Kiên's contract interface. AI features call hosted models through a replaceable model router; model training and self-hosting are deferred.
+**Bloody-Roar** is a decentralized bounty marketplace. The current app supports wallet sign-in, task discovery and posting, applications, client selection of a developer, private persistent chat, work submissions, profile/GitHub verification, notifications, and verified dispute receipts. Backend escrow confirmations follow the pulled contract's ABI, deadlines and pull payments. AI features call hosted models through a replaceable model router; model training and self-hosting are deferred.
 
 > 🔗 **Network:** Base Sepolia is the target network (`chainId: 84532`). The web app currently records bounties off-chain and does not submit escrow transactions.
 
@@ -44,7 +44,7 @@ Freelance markets face a fundamental **"asymmetric trust"** problem: *who pays f
 
 Traditional platforms (Upwork, Fiverr, Freelancer) solve this by acting as a **centralized escrow middleman** — which introduces high fees (10–20%), centralized power over disputes, and zero transparency.
 
-**Bloody-Roar's intended answer:** use wallet identity, clear acceptance criteria, and an escrow contract. This implementation covers the marketplace and off-chain workflow; contract calls remain pending Kiên's interface, and AI outputs are advisory only.
+**Bloody-Roar's intended answer:** use wallet identity, clear acceptance criteria, and an escrow contract. This implementation covers the marketplace and off-chain workflow; backend confirmations follow the escrow contract, and AI outputs are advisory only.
 
 ---
 
@@ -54,9 +54,9 @@ Three actors drive the platform:
 
 | Role                                    | Does                                                   | Guaranteed by                                                     |
 | --------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------- |
-| **Client** (Người thuê)        | Posts a bounty, selects a developer, reviews submissions | Database records until escrow is integrated |
-| **Developer** (Lập trình viên) | Applies, chats, submits work or a GitHub PR              | SIWE wallet identity; payout is not active yet |
-| **Admin / Arbiter** (Trọng tài) | Reviews disputes and records a proposed resolution      | Off-chain record; contract execution is pending |
+| **Client** (Người thuê)        | Posts a bounty, selects a developer, reviews submissions | Verified USDC deposit and resolution receipts |
+| **Developer** (Lập trình viên) | Applies, chats, submits work or a GitHub PR              | SIWE identity; on-chain work commitment and separate payout claim |
+| **Admin / Arbiter** (Trọng tài) | Reviews evidence and confirms Safe rulings              | Snapshotted arbiter; contract challenge and notice periods |
 
 The core lifecycle:
 
@@ -68,17 +68,18 @@ flowchart LR
     D --> E["Developer submits work / PR"]
     E --> F{"Client reviews"}
     F -- Changes --> D
-    F -- Approves --> G["Approval recorded off-chain"]
-    C -. "escrow integration pending" .-> H["Kiên's contract"]
+    F -- Approves --> G["Client releases on-chain<br/>Backend confirms allocation"]
+    C -. "Client deposits USDC" .-> H["Escrow contract"]
+    G --> I["Recipient claims allocated USDC"]
 ```
 
 ---
 
 ## Key Features
 
-### 🔒 Smart-Contract Escrow — integration pending
+### 🔒 Smart-Contract Escrow
 
-The Prisma model and planned user flow are documented, but the app does not send escrow or payout transactions yet. Those controls will be connected after the contract interface and deployment details are supplied by Kiên.
+The backend verifies contract receipts and mirrors work, settlement and ruling phases. Wallet transactions are sent through the contract or arbiter Safe before confirmation. Recipients claim their allocated USDC separately; see [Escrow integration](docs/ESCROW_INTEGRATION.md).
 
 ### 💤 Lazy-Deposit — planned
 
@@ -144,34 +145,26 @@ flowchart TD
 
 ## Smart Contract Escrow
 
-The existing contract code and database mirror are separate from the web flows implemented here. The marketplace currently does not submit transactions; connect those flows after Kiên provides the ABI, deployed address, and event interface.
+The backend confirms receipts from the deployed USDC escrow and mirrors the
+contract's phases, terms and deadlines. Wallet transactions must be sent before
+confirmation. Setup and GraphQL examples are in [Escrow integration](docs/ESCROW_INTEGRATION.md).
 
-The planned contract state machine is:
+| Phase | Meaning |
+| --- | --- |
+| `FUNDED` | Client deposited USDC; developer may submit work before the delivery deadline |
+| `DISPUTED` | Evidence response window is 72 hours |
+| `INITIAL_RULING` | Initial decision has a seven-day challenge window |
+| `CHALLENGED` | A party losing principal challenged the initial ruling once |
+| `FINAL_RULING` | Final decision has a 24-hour notice period |
+| `RESOLVED` | Principal allocated to claimable balances; recipients call `claim(address)` |
 
-`BloodyRoarEscrow.sol` manages every bounty through a five-state machine:
+A missed delivery permits a full refund after the delivery deadline. Delivered
+work permits release after that deadline plus seven days. Either party can
+propose a settlement in basis points. A stalled arbiter permits a 50/50 split
+after 30 days. The platform fee is 2.5% of the developer's gross allocation,
+rounded down; a full client refund has no fee.
 
-| State                   | Definition                | Transition                                                      |
-| ----------------------- | ------------------------- | --------------------------------------------------------------- |
-| `AWAITING_DELIVERY`   | Task active, funds locked | Client calls`deposit()` (requires verified worker)            |
-| `COMPLETED`           | Funds distributed         | Client`releaseFunds()` **or** 30-day `claimTimeout()` |
-| `CANCELLED`           | Mutual cancel, refunded   | Both parties approve`mutualCancel()`                          |
-| `DISPUTED`            | Funds frozen              | Either party calls`raiseDispute()`                            |
-| `RESOLUTION_PROPOSED` | Arbiter proposed a split  | `proposeResolution()` → 24h timelock                         |
-
-```mermaid
-stateDiagram-v2
-    [*] --> AWAITING_DELIVERY: deposit()
-    AWAITING_DELIVERY --> COMPLETED: releaseFunds() / claimTimeout()
-    AWAITING_DELIVERY --> CANCELLED: mutualCancel()
-    AWAITING_DELIVERY --> DISPUTED: raiseDispute()
-    DISPUTED --> RESOLUTION_PROPOSED: proposeResolution()
-    RESOLUTION_PROPOSED --> COMPLETED: executeResolution()
-    RESOLUTION_PROPOSED --> DISPUTED: challengeResolution()
-    COMPLETED --> [*]
-    CANCELLED --> [*]
-```
-
-Safety requirements for the contract are tracked in the contract project. They are not active in the web app until the integration is complete.
+Contract requirements are documented in [apps/contracts/SECURITY.md](apps/contracts/SECURITY.md).
 
 ---
 
@@ -285,11 +278,9 @@ bun run deploy:local      # deploy to localhost
 # Deploy to Base Sepolia Testnet (current target)
 bun run deploy:base-sepolia    # npx hardhat run scripts/deploy.ts --network baseSepolia
 
-# Deploy to Ethereum Mainnet (production — Sprint 4)
-bun run deploy:mainnet    # npx hardhat run scripts/deploy.ts --network mainnet
 ```
 
-> Set `BASE_SEPOLIA_RPC_URL` + `DEPLOYER_PRIVATE_KEY` in `.env` before deploying to Base Sepolia.
+> Base Sepolia deployment requires `BASE_SEPOLIA_RPC_URL`, `DEPLOYER_PRIVATE_KEY`, `OWNER_SAFE`, `ARBITER_SAFE`, `FEE_RECIPIENT` and an explicit `ALLOW_BASE_SEPOLIA_DEPLOYMENT=true`. See [Escrow integration](docs/ESCROW_INTEGRATION.md).
 
 ---
 

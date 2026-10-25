@@ -12,7 +12,6 @@ import { IssueCategory, IssueStatus, UserRole, ApplicationStatus } from "@bloody
 import { createNotificationSafely } from "../../../lib/services/notifications";
 import { UserRef } from "../user/user.module";
 import { AttachmentRef } from "../chat/chat.module";
-import { createNotificationSafely } from "../../../lib/services/notifications";
 import { z } from "zod";
 import {
   ISSUE_CATEGORIES,
@@ -626,7 +625,6 @@ builder.mutationField("updateIssue", (t) =>
       const updated = await ctx.db.issue.updateMany({
         where: { id: current.id, clientId: user.id, status: IssueStatus.OPEN },
         data: updateData,
-<<<<<<< HEAD
       });
       if (updated.count !== 1)
         throw gqlError("Bài toán vừa được nhận và không thể chỉnh sửa", "ISSUE_NOT_EDITABLE");

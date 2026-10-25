@@ -41,11 +41,24 @@ export function createLoginMessage(payload: SiweLoginPayload): string {
   return [prefix, suffix.join("\n")].join("\n");
 }
 
-export function authDomain(): string {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/^https?:\/\//, "") ??
-    "localhost:4000"
-  );
+export function authUri(rawUrl?: string): string {
+  const target = rawUrl ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:4000";
+  try {
+    const parsed = new URL(target);
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch {
+    return "http://localhost:4000";
+  }
+}
+
+export function authDomain(rawUrl?: string): string {
+  const target = rawUrl ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:4000";
+  try {
+    const parsed = new URL(target.startsWith("http") ? target : `http://${target}`);
+    return parsed.host;
+  } catch {
+    return target.replace(/^https?:\/\//, "").split("/")[0] ?? "localhost:4000";
+  }
 }
 
 export async function issueAuthToken(walletAddress: string): Promise<string> {

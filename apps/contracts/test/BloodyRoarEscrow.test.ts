@@ -708,10 +708,13 @@ describe("production Safe deployment checks", () => {
     const [singleton] = SAFE_V141_SINGLETONS;
     if (!singleton) throw new Error("An approved Safe singleton must be configured");
     const mockFactory = await ethers.getContractFactory("MockSafe");
+    const owners = (start: number): [string, string, string] => [
+      signers[start]!.address, signers[start + 1]!.address, signers[start + 2]!.address,
+    ];
     const safes = await Promise.all([
-      mockFactory.deploy(singleton, signers.slice(0, 3).map((signer) => signer.address)),
-      mockFactory.deploy(singleton, signers.slice(3, 6).map((signer) => signer.address)),
-      mockFactory.deploy(singleton, signers.slice(6, 9).map((signer) => signer.address)),
+      mockFactory.deploy(singleton, owners(0)),
+      mockFactory.deploy(singleton, owners(3)),
+      mockFactory.deploy(singleton, owners(6)),
     ]);
     await Promise.all(safes.map((safe) => safe.waitForDeployment()));
 
@@ -724,7 +727,7 @@ describe("production Safe deployment checks", () => {
 
     const spoof = await mockFactory.deploy(
       signers[9]!.address,
-      signers.slice(10, 13).map((signer) => signer.address),
+      owners(10),
     );
     await spoof.waitForDeployment();
     let rejection: unknown;

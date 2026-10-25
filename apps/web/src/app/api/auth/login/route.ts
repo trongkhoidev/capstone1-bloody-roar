@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { AUTH_COOKIE_NAME, thirdwebAuth } from "../../../../lib/auth";
-import { authDomain, issueAuthToken, verifySiweLogin } from "../../../../lib/auth/siwe";
+import { authDomain, issueAuthToken } from "../../../../lib/auth/siwe";
+import { validateSiwePayload } from "../../../../lib/auth/siwe-validation";
+import { buildChallengeIdentity, consumeSiweChallenge } from "../../../../lib/auth/challenge";
 import { prisma, UserRole } from "@bloody-roar/database";
 import { isConfiguredAdmin } from "../../../../lib/admin-wallets";
 import crypto from "crypto";
@@ -27,11 +29,19 @@ const USER_PUBLIC_SELECT = {
 export async function POST(req: Request) {
   try {
     const auth = thirdwebAuth();
-    const payload = await req.json();
-
-    // Thirdweb compares recovered signer with `===` (checksum vs lowercase),
-    // which rejects valid MetaMask signatures. Verify case-insensitively.
-    const walletAddress = verifySiweLogin(payload, authDomain());
+    const rawPayload: unknown = await req.json();
+    const uri = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:4000";
+    const chainId = "84532";
+    const payload = validateSiwePayload(rawPayload, {
+      domain: authDomain(),
+      uri,
+      chainId,
+    });
+    const walletAddress = await auth.verify(payload, {
+      uri,
+      version: "1",
+      chainId,
+    });
     const checksumAddress = walletAddress.toLowerCase();
 
     const existingUser = await prisma.user.findUnique({
@@ -41,34 +51,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "This account is suspended" }, { status: 403 });
     }
 
-    // 2. Check if this SIWE nonce has already been used (Payload Replay Protection)
     const siweNonce = payload.payload.nonce;
-    const existingSession = await prisma.session.findUnique({
-      where: { nonce: siweNonce },
-    });
-
-    if (existingSession) {
-      return NextResponse.json(
-        { error: "Login payload already used (replay detected)" },
-        { status: 401 },
-      );
-    }
-
-    // Upsert user (select only public fields)
-    const promoteToAdmin = isConfiguredAdmin(checksumAddress);
-    const user = await prisma.user.upsert({
-      where: { walletAddress: checksumAddress },
-      create: {
-        walletAddress: checksumAddress,
-        lastLoginAt: new Date(),
-        ...(promoteToAdmin && { role: UserRole.ADMIN }),
-      },
-      update: {
-        lastLoginAt: new Date(),
-        ...(promoteToAdmin && { role: UserRole.ADMIN }),
-      },
-      select: USER_PUBLIC_SELECT,
-    });
 
     // Generate JWT
     const token = await issueAuthToken(walletAddress);
@@ -84,18 +67,42 @@ export async function POST(req: Request) {
     const userAgent = req.headers.get("user-agent") ?? null;
     const forwardedFor = req.headers.get("x-forwarded-for");
     const realIp = req.headers.get("x-real-ip");
-    const ip = forwardedFor ?? realIp ?? null;
+    const challenge = buildChallengeIdentity({
+      nonce: siweNonce,
+      address: payload.payload.address,
+      domain: payload.payload.domain,
+      uri: payload.payload.uri!,
+      chainId: payload.payload.chain_id!,
+    });
 
-    // Save session with SIWE nonce to prevent replay
-    await prisma.session.create({
-      data: {
-        userId: user.id,
-        refreshHash,
-        nonce: siweNonce,
-        userAgent,
-        ip,
-        expiresAt,
-      },
+    const promoteToAdmin = isConfiguredAdmin(checksumAddress);
+
+    const user = await prisma.$transaction(async (tx) => {
+      await consumeSiweChallenge(tx.authChallenge, challenge);
+      const persistedUser = await tx.user.upsert({
+        where: { walletAddress: checksumAddress },
+        create: {
+          walletAddress: checksumAddress,
+          lastLoginAt: new Date(),
+          ...(promoteToAdmin && { role: UserRole.ADMIN }),
+        },
+        update: {
+          lastLoginAt: new Date(),
+          ...(promoteToAdmin && { role: UserRole.ADMIN }),
+        },
+        select: USER_PUBLIC_SELECT,
+      });
+      await tx.session.create({
+        data: {
+          userId: persistedUser.id,
+          refreshHash,
+          nonce: siweNonce,
+          userAgent,
+          ip: forwardedFor?.split(",", 1)[0]?.trim() ?? realIp ?? null,
+          expiresAt,
+        },
+      });
+      return persistedUser;
     });
 
     const response = NextResponse.json({ user });
@@ -110,7 +117,6 @@ export async function POST(req: Request) {
     response.headers.set("Cache-Control", "no-store");
     return response;
   } catch (error) {
-    console.error("Wallet login verification failed with exact error:", error);
     log.warn({ error: error instanceof Error ? error.message : String(error) }, "Wallet login verification failed");
     return NextResponse.json(
       { error: "Invalid login payload" },

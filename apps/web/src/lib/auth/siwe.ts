@@ -1,6 +1,5 @@
 import { buildJWT } from "@thirdweb-dev/auth";
 import { PrivateKeyWallet } from "@thirdweb-dev/wallets";
-import { utils } from "ethers";
 
 export type SiweLoginPayload = {
   domain: string;
@@ -47,50 +46,6 @@ export function authDomain(): string {
     process.env.NEXT_PUBLIC_APP_URL?.replace(/^https?:\/\//, "") ??
     "localhost:4000"
   );
-}
-
-function recoverSigner(message: string, signature: string): string | undefined {
-  try {
-    const normalized =
-      signature.startsWith("0x") || signature.startsWith("0X")
-        ? signature
-        : `0x${signature}`;
-    return utils.recoverAddress(utils.hashMessage(message), normalized);
-  } catch {
-    return undefined;
-  }
-}
-
-export function verifySiweLogin(
-  signed: SignedSiwePayload,
-  expectedDomain: string,
-): string {
-  const { payload, signature } = signed;
-  if (!payload?.address || !payload?.nonce || !signature) {
-    throw new Error("Invalid login payload");
-  }
-  if (payload.domain !== expectedDomain) {
-    throw new Error(
-      `Expected domain '${expectedDomain}' does not match domain on payload '${payload.domain}'`,
-    );
-  }
-
-  const now = new Date();
-  if (payload.invalid_before && now < new Date(payload.invalid_before)) {
-    throw new Error("Login request is not yet valid");
-  }
-  if (now > new Date(payload.expiration_time)) {
-    throw new Error("Login request has expired");
-  }
-
-  const message = createLoginMessage(payload);
-  const recovered = recoverSigner(message, signature);
-  if (!recovered || recovered.toLowerCase() !== payload.address.toLowerCase()) {
-    throw new Error(
-      `Signer address does not match payload address '${payload.address.toLowerCase()}'`,
-    );
-  }
-  return recovered;
 }
 
 export async function issueAuthToken(walletAddress: string): Promise<string> {

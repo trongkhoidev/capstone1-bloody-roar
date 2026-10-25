@@ -8,7 +8,8 @@ import { builder } from "../../builder";
 import { requireAuth } from "../../context";
 import { gqlError, parseOrThrow } from "../../errors";
 import type { Prisma } from "@bloody-roar/database";
-import { IssueCategory, IssueStatus, UserRole } from "@bloody-roar/database";
+import { IssueCategory, IssueStatus, UserRole, ApplicationStatus } from "@bloody-roar/database";
+import { createNotificationSafely } from "../../../lib/services/notifications";
 import { UserRef } from "../user/user.module";
 import { AttachmentRef } from "../chat/chat.module";
 import { createNotificationSafely } from "../../../lib/services/notifications";
@@ -625,6 +626,7 @@ builder.mutationField("updateIssue", (t) =>
       const updated = await ctx.db.issue.updateMany({
         where: { id: current.id, clientId: user.id, status: IssueStatus.OPEN },
         data: updateData,
+<<<<<<< HEAD
       });
       if (updated.count !== 1)
         throw gqlError("Bài toán vừa được nhận và không thể chỉnh sửa", "ISSUE_NOT_EDITABLE");
@@ -644,43 +646,52 @@ builder.mutationField("cancelIssue", (t) =>
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
       const result = await ctx.db.$transaction(async (tx) => {
-        const issue = await tx.issue.findUnique({
-          where: { id: String(args.id) },
-        });
+        const issue = await tx.issue.findUnique({ where: { id: String(args.id) } });
         if (!issue) return null;
-        if (issue.clientId !== user.id)
-          throw gqlError("Chỉ chủ bài toán mới được hủy", "FORBIDDEN");
-        if (issue.status !== IssueStatus.OPEN)
-          throw gqlError("Chỉ có thể hủy bài toán đang mở", "ISSUE_NOT_CANCELLABLE");
-        const cancelled = await tx.issue.updateMany({
-          where: {
-            id: issue.id,
-            clientId: user.id,
-            status: IssueStatus.OPEN,
-            developerId: null,
-          },
+        if (issue.clientId !== user.id) throw gqlError("Chỉ chủ bài toán mới được hủy", "FORBIDDEN");
+        if (issue.status !== IssueStatus.OPEN && issue.status !== IssueStatus.IN_PROGRESS) {
+          throw gqlError("Chỉ có thể hủy bài toán đang mở hoặc chưa nạp tiền ký quỹ", "ISSUE_NOT_CANCELLABLE");
+        }
+
+        const hasEscrow = await tx.escrow.findUnique({ where: { issueId: issue.id } });
+        if (issue.status === IssueStatus.IN_PROGRESS && hasEscrow) {
+          throw gqlError("Bài toán đã có khoản tiền ký quỹ, không thể hủy", "ISSUE_NOT_CANCELLABLE");
+        }
+
+        await tx.issue.update({
+          where: { id: issue.id },
           data: { status: IssueStatus.CANCELLED },
         });
-        if (cancelled.count !== 1)
-          throw gqlError("Bài toán vừa được nhận và không thể hủy", "ISSUE_NOT_CANCELLABLE");
-        const applicants = await tx.application.findMany({
-          where: { issueId: issue.id, status: "PENDING" },
+
+        const pendingApps = await tx.application.findMany({
+          where: { issueId: issue.id, status: ApplicationStatus.PENDING },
           select: { developerId: true },
         });
         await tx.application.updateMany({
-          where: { issueId: issue.id, status: "PENDING" },
-          data: { status: "REJECTED" },
+          where: { issueId: issue.id, status: ApplicationStatus.PENDING },
+          data: { status: ApplicationStatus.REJECTED },
         });
+
+        if (issue.developerId) {
+          await tx.application.updateMany({
+            where: { issueId: issue.id, status: ApplicationStatus.ACCEPTED },
+            data: { status: ApplicationStatus.REJECTED },
+          });
+        }
+
         return {
           issue,
-          applicantIds: applicants.map((application) => application.developerId),
+          pendingApplicantIds: pendingApps.map((a) => a.developerId),
+          developerId: issue.developerId,
         };
       });
+
       if (!result) return null;
-      await Promise.all(
-        result.applicantIds.map((developerId) =>
+
+      await Promise.all([
+        ...result.pendingApplicantIds.map((devId) =>
           createNotificationSafely(ctx.db, {
-            userId: developerId,
+            userId: devId,
             type: "APPLICATION_REJECTED",
             title: "Bounty đã bị hủy",
             body: `Khách hàng đã hủy “${result.issue.title}”.`,
@@ -689,11 +700,19 @@ builder.mutationField("cancelIssue", (t) =>
             data: { issueId: result.issue.id },
           }),
         ),
-      );
-      return ctx.db.issue.findUnique({
-        where: { id: result.issue.id },
-        include: ISSUE_INCLUDE,
-      });
+        result.developerId &&
+          createNotificationSafely(ctx.db, {
+            userId: result.developerId,
+            type: "APPLICATION_REJECTED",
+            title: "Bài toán bị hủy",
+            body: `Khách hàng đã hủy bài toán “${result.issue.title}” trước khi nạp tiền ký quỹ.`,
+            actorId: user.id,
+            link: `/issues/${result.issue.id}`,
+            data: { issueId: result.issue.id },
+          }),
+      ]);
+
+      return ctx.db.issue.findUnique({ where: { id: result.issue.id }, include: ISSUE_INCLUDE });
     },
   }),
 );

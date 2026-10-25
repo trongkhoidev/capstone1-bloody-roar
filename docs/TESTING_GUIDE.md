@@ -273,3 +273,60 @@ query GetChatMessages {
   }
 }
 ```
+
+---
+
+## Phần 5: Module Escrow (Ký quỹ) & Dispute (Tranh chấp)
+
+*(Lưu ý: Phần này đang trong quá trình phát triển (Phase 2). Nếu Smart Contract chưa được triển khai hoàn chỉnh, các API dưới đây sẽ thay đổi state trực tiếp trên Database để Frontend test UI (gọi là Mocking SC).*
+
+### 5.1 Nạp tiền ký quỹ (`fundEscrow`)
+*(Yêu cầu role: CLIENT. Client nạp tiền sau khi đã assign Developer)*
+```graphql
+mutation FundTaskEscrow {
+  fundEscrow(
+    issueId: "ĐIỀN_ID_ISSUE_VÀO_ĐÂY"
+    txHash: "0x1234567890abcdef..." # Hash giao dịch trên blockchain (nếu có)
+  ) {
+    id
+    amount
+    status # Sẽ chuyển thành FUNDED
+    issue {
+      status # Sẽ chuyển thành IN_PROGRESS
+    }
+  }
+}
+```
+
+### 5.2 Giải ngân / Nghiệm thu (`releaseEscrow`)
+*(Yêu cầu role: CLIENT. Client đồng ý trả tiền cho Developer sau khi nghiệm thu)*
+```graphql
+mutation ReleaseTaskEscrow {
+  releaseEscrow(issueId: "ĐIỀN_ID_ISSUE_VÀO_ĐÂY") {
+    id
+    status # Sẽ chuyển thành RELEASED
+    issue {
+      status # Sẽ chuyển thành COMPLETED
+    }
+  }
+}
+```
+
+### 5.3 Báo cáo tranh chấp (`raiseDispute`)
+*(Yêu cầu role: CLIENT hoặc DEVELOPER. Khi hai bên không thống nhất được kết quả)*
+```graphql
+mutation RaiseTaskDispute {
+  raiseDispute(
+    issueId: "ĐIỀN_ID_ISSUE_VÀO_ĐÂY"
+    reason: "Developer nộp code không đúng yêu cầu ban đầu."
+  ) {
+    id
+    status # Sẽ chuyển thành DISPUTED
+    dispute {
+      id
+      reason
+      status
+    }
+  }
+}
+```

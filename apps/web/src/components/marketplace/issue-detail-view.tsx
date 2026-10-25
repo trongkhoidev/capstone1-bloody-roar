@@ -64,6 +64,8 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const [applications, setApplications] = useState<Application[]>([]);
   const [applicationText, setApplicationText] = useState("");
   const [disputeReason, setDisputeReason] = useState("");
+  const [disputeTxHash, setDisputeTxHash] = useState("");
+  const [disputeEvidenceHash, setDisputeEvidenceHash] = useState("");
   const [showDisputeForm, setShowDisputeForm] = useState(false);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [deliveryDescription, setDeliveryDescription] = useState("");
@@ -175,9 +177,9 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const raiseDispute = async (event: React.FormEvent) => {
     event.preventDefault(); setIsWorking(true); setError(null); setNotice(null);
     try {
-      await graphqlRequest(DISPUTE_MUTATION, { input: { issueId, reason: disputeReason } });
-      setNotice("Dispute recorded. On-chain escrow actions remain pending the contract integration.");
-      setShowDisputeForm(false); setDisputeReason(""); await load();
+      await graphqlRequest(DISPUTE_MUTATION, { input: { issueId, reason: disputeReason, txHash: disputeTxHash, evidenceManifestHash: disputeEvidenceHash } });
+      setNotice("Dispute transaction confirmed. The arbiter will review the evidence.");
+      setShowDisputeForm(false); setDisputeReason(""); setDisputeTxHash(""); setDisputeEvidenceHash(""); await load();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not open dispute."); }
     finally { setIsWorking(false); }
   };
@@ -273,7 +275,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
             {user && !isClient && issue.status === "OPEN" && (user.role === "DEVELOPER" ? <form onSubmit={apply} className="mt-4 space-y-2"><textarea value={applicationText} onChange={(event) => setApplicationText(event.target.value)} maxLength={1000} rows={3} placeholder="Introduce yourself (optional)" className="w-full resize-y rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] p-3 text-xs outline-none focus:border-[hsl(var(--primary)/0.5)]" /><Button type="submit" className="w-full" disabled={isWorking || demoMode}><MessageSquare className="mr-2 h-4 w-4" />Apply to this task</Button></form> : <p className="mt-4 rounded-lg bg-[hsl(var(--background-secondary))] p-3 text-xs leading-5 text-[hsl(var(--foreground-muted))]">Only developer accounts can apply. Switch to the developer role in <Link className="font-medium text-[hsl(var(--primary))] underline" href="/profile">profile settings</Link>.</p>)}
             {isClient && issue.status === "OPEN" && <Button variant="outline" className="mt-3 w-full" disabled={isWorking || demoMode} onClick={() => void cancel()}>Cancel task</Button>}
             {canChat && issue.status === "IN_PROGRESS" && <Button variant="outline" className="mt-3 w-full" disabled={isWorking || demoMode} onClick={() => setShowDisputeForm((value) => !value)}>Raise a dispute</Button>}
-            {showDisputeForm && <form onSubmit={raiseDispute} className="mt-3 space-y-2"><textarea value={disputeReason} onChange={(event) => setDisputeReason(event.target.value)} required minLength={20} maxLength={3000} rows={4} placeholder="Describe the issue and why this should be reviewed…" className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] p-3 text-xs outline-none" /><Button type="submit" variant="destructive" className="w-full" disabled={isWorking}>Open dispute record</Button></form>}
+            {showDisputeForm && <form onSubmit={raiseDispute} className="mt-3 space-y-2"><textarea value={disputeReason} onChange={(event) => setDisputeReason(event.target.value)} required minLength={20} maxLength={3000} rows={4} placeholder="Describe the issue and why this should be reviewed…" className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] p-3 text-xs outline-none" /><p className="text-xs text-[hsl(var(--foreground-muted))]">Submit the dispute through your wallet first, then confirm its transaction here.</p><input aria-label="Dispute transaction hash" placeholder="Dispute transaction hash (0x…)" required pattern="0x[0-9a-fA-F]{64}" value={disputeTxHash} onChange={(event) => setDisputeTxHash(event.target.value)} className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] p-3 text-xs" /><input aria-label="Evidence manifest hash" placeholder="Evidence manifest hash (0x…)" required pattern="0x[0-9a-fA-F]{64}" value={disputeEvidenceHash} onChange={(event) => setDisputeEvidenceHash(event.target.value)} className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] p-3 text-xs" /><Button type="submit" variant="destructive" className="w-full" disabled={isWorking}>Confirm dispute transaction</Button></form>}
           </section>
           <section className="glass rounded-xl p-4 text-xs leading-5 text-[hsl(var(--foreground-muted))]">
             <p className="font-semibold text-[hsl(var(--warning))]">Escrow integration</p>

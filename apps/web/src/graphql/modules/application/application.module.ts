@@ -361,8 +361,8 @@ builder.mutationField("assignDeveloper", (t) =>
         createNotificationSafely(ctx.db, {
           userId: assigned.application.developerId,
           type: "TASK_ASSIGNED",
-          title: "Bài toán đã được giao cho bạn",
-          body: `Bạn có thể bắt đầu trao đổi trong phòng chat của “${assigned.issue.title}”.`,
+          title: "Khách hàng đã chọn bạn",
+          body: `Bạn đã được chọn cho “${assigned.issue.title}”. Vui lòng đợi khách hàng nạp tiền ký quỹ (Escrow) trước khi làm việc.`,
           actorId: user.id,
           link: `/issues/${issueId}`,
           data: { issueId },

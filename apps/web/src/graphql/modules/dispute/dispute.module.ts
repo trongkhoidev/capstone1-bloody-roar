@@ -1,4 +1,5 @@
-import { DisputeStatus, IssueStatus, Prisma } from "@bloody-roar/database";
+import { DisputeStatus } from "@bloody-roar/database";
+import { Prisma } from "@bloody-roar/database";
 import { z } from "zod";
 import { builder } from "../../builder";
 import { requireAdmin, requireAuth } from "../../context";
@@ -7,15 +8,10 @@ import { createNotificationSafely } from "../../../lib/services/notifications";
 import { UserRef } from "../user/user.module";
 import { completeAI } from "../../../ai/model-router";
 import { scanAndMask } from "../../../ai/guard/scanner";
-import { DISPUTE_CHALLENGE_HOURS } from "@bloody-roar/shared";
+import { confirmEscrowAction } from "../../../lib/escrow/confirmation";
 
-const DisputeStatusEnum = builder.enumType(DisputeStatus, {
-  name: "DisputeStatus",
-});
-const DISPUTE_INCLUDE = {
-  raisedBy: true,
-  resolvedBy: true,
-} satisfies Prisma.DisputeInclude;
+const DisputeStatusEnum = builder.enumType(DisputeStatus, { name: "DisputeStatus" });
+const DISPUTE_INCLUDE = { raisedBy: true, resolvedBy: true } satisfies Prisma.DisputeInclude;
 
 export const DisputeRef = builder.prismaObject("Dispute", {
   include: DISPUTE_INCLUDE,
@@ -24,6 +20,22 @@ export const DisputeRef = builder.prismaObject("Dispute", {
     issueId: t.exposeString("issueId"),
     status: t.expose("status", { type: DisputeStatusEnum }),
     reason: t.exposeString("reason"),
+    evidenceManifestHash: t.exposeString("evidenceManifestHash", { nullable: true }),
+    counterpartyEvidenceHash: t.exposeString("counterpartyEvidenceHash", { nullable: true }),
+    initialDecisionHash: t.exposeString("initialDecisionHash", { nullable: true }),
+    finalDecisionHash: t.exposeString("finalDecisionHash", { nullable: true }),
+    evidenceResponseDeadline: t.string({
+      nullable: true,
+      resolve: (d) => d.evidenceResponseDeadline?.toISOString() ?? null,
+    }),
+    arbiterTimeoutAt: t.string({
+      nullable: true,
+      resolve: (d) => d.arbiterTimeoutAt?.toISOString() ?? null,
+    }),
+    noticeDeadline: t.string({
+      nullable: true,
+      resolve: (d) => d.noticeDeadline?.toISOString() ?? null,
+    }),
     aiReport: t.string({
       nullable: true,
       resolve: (dispute) => (dispute.aiReport == null ? null : JSON.stringify(dispute.aiReport)),
@@ -50,13 +62,8 @@ export const DisputeRef = builder.prismaObject("Dispute", {
       resolve: (dispute) => dispute.challengedAt?.toISOString() ?? null,
     }),
     resolutionNote: t.exposeString("resolutionNote", { nullable: true }),
-    raisedBy: t.field({
-      type: UserRef,
-      resolve: (dispute) => dispute.raisedBy,
-    }),
-    createdAt: t.string({
-      resolve: (dispute) => dispute.createdAt.toISOString(),
-    }),
+    raisedBy: t.field({ type: UserRef, resolve: (dispute) => dispute.raisedBy }),
+    createdAt: t.string({ resolve: (dispute) => dispute.createdAt.toISOString() }),
   }),
 });
 
@@ -95,6 +102,12 @@ builder.queryFields((t) => ({
   }),
 }));
 
+const TxHashSchema = z.string().regex(/^0x[0-9a-fA-F]{64}$/);
+const CommitmentHashSchema = TxHashSchema.refine(
+  (hash) => !/^0x0{64}$/.test(hash),
+  "Hash must be nonzero",
+);
+
 builder.mutationField("raiseDispute", (t) =>
   t.fieldWithInput({
     type: DisputeRef,
@@ -102,66 +115,41 @@ builder.mutationField("raiseDispute", (t) =>
     input: {
       issueId: t.input.id({ required: true }),
       reason: t.input.string({ required: true }),
+      txHash: t.input.string({ required: true }),
+      evidenceManifestHash: t.input.string({ required: true }),
     },
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
       const input = parseOrThrow(
         z.object({
-          issueId: z.string().min(1),
+          issueId: z.string().min(1).max(191),
           reason: z.string().trim().min(20).max(3000),
+          txHash: TxHashSchema,
+          evidenceManifestHash: CommitmentHashSchema,
         }),
-        {
-          issueId: String(args.input.issueId),
-          reason: args.input.reason,
-        },
+        { ...args.input, issueId: String(args.input.issueId) },
       );
-      const { dispute, issue } = await ctx.db.$transaction(
-        async (tx) => {
-          const issue = await tx.issue.findUnique({
-            where: { id: input.issueId },
-          });
-          if (!issue) throw gqlError("Bài toán không tồn tại", "NOT_FOUND");
-          if (issue.clientId !== user.id && issue.developerId !== user.id)
-            throw gqlError("Chỉ hai bên tham gia mới được mở tranh chấp", "FORBIDDEN");
-          if (issue.status !== IssueStatus.IN_PROGRESS)
-            throw gqlError(
-              "Chỉ bài toán đang thực hiện mới mở được tranh chấp",
-              "ISSUE_NOT_DISPUTABLE",
-            );
-          const claimed = await tx.issue.updateMany({
-            where: { id: issue.id, status: IssueStatus.IN_PROGRESS },
-            data: { status: IssueStatus.DISPUTED },
-          });
-          if (claimed.count !== 1)
-            throw gqlError(
-              "Task state changed before the dispute was opened",
-              "ISSUE_NOT_DISPUTABLE",
-            );
-          const record = await tx.dispute.create({
-            data: {
-              issueId: issue.id,
-              reason: input.reason,
-              raisedById: user.id,
-            },
-            include: DISPUTE_INCLUDE,
-          });
-          return { dispute: record, issue };
-        },
-        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-      );
-
-      const otherUserId = issue.clientId === user.id ? issue.developerId : issue.clientId;
-      if (otherUserId) {
+      const existing = await ctx.db.dispute.findUnique({ where: { issueId: input.issueId } });
+      const escrow = await confirmEscrowAction(ctx, {
+        ...input,
+        action: "DISPUTE",
+        hash: input.evidenceManifestHash,
+      });
+      const dispute = await ctx.db.dispute.findUniqueOrThrow({
+        where: { issueId: input.issueId },
+        include: DISPUTE_INCLUDE,
+      });
+      const otherUserId = escrow.clientId === user.id ? escrow.developerId : escrow.clientId;
+      if (!existing && otherUserId)
         await createNotificationSafely(ctx.db, {
           userId: otherUserId,
           type: "DISPUTE_RAISED",
           title: "Đã mở tranh chấp",
-          body: `Một bên đã mở tranh chấp cho “${issue.title}”.`,
+          body: input.reason,
           actorId: user.id,
-          link: `/issues/${issue.id}`,
-          data: { issueId: issue.id, disputeId: dispute.id },
+          link: `/issues/${input.issueId}`,
+          data: { issueId: input.issueId, disputeId: dispute.id },
         });
-      }
       return dispute;
     },
   }),
@@ -215,13 +203,7 @@ builder.mutationField("analyzeDispute", (t) =>
               clientId: true,
               developerId: true,
               messages: {
-                select: {
-                  id: true,
-                  senderId: true,
-                  content: true,
-                  type: true,
-                  createdAt: true,
-                },
+                select: { id: true, senderId: true, content: true, type: true, createdAt: true },
                 orderBy: [{ createdAt: "desc" }, { id: "desc" }],
                 take: 100,
               },
@@ -386,75 +368,47 @@ builder.mutationField("proposeDisputeResolution", (t) =>
       issueId: t.input.id({ required: true }),
       clientRatio: t.input.float({ required: true }),
       note: t.input.string({ required: true }),
+      txHash: t.input.string({ required: true }),
+      decisionHash: t.input.string({ required: true }),
     },
     resolve: async (_root, args, ctx) => {
-      const admin = requireAdmin(ctx);
+      requireAdmin(ctx);
       const input = parseOrThrow(
         z.object({
-          issueId: z.string().min(1),
-          clientRatio: z.number().min(0).max(100),
+          issueId: z.string().min(1).max(191),
+          clientRatio: z
+            .number()
+            .min(0)
+            .max(100)
+            .refine(
+              (v) => Math.abs(v * 100 - Math.round(v * 100)) < 1e-8,
+              "Use at most two decimal places",
+            ),
           note: z.string().trim().min(10).max(2000),
+          txHash: TxHashSchema,
+          decisionHash: CommitmentHashSchema,
         }),
-        {
-          issueId: String(args.input.issueId),
-          clientRatio: args.input.clientRatio,
-          note: args.input.note,
-        },
+        { ...args.input, issueId: String(args.input.issueId) },
       );
-      return ctx.db.$transaction(
-        async (tx) => {
-          const dispute = await tx.dispute.findUnique({
-            where: { issueId: input.issueId },
-          });
-          if (!dispute) throw gqlError("Tranh chấp không tồn tại", "NOT_FOUND");
-          if (
-            dispute.status !== DisputeStatus.OPEN &&
-            dispute.status !== DisputeStatus.CHALLENGED
-          ) {
-            throw gqlError(
-              "Tranh chấp không ở trạng thái có thể đề xuất",
-              "DISPUTE_NOT_PROPOSABLE",
-            );
-          }
-          const proposedAt = new Date();
-          const changed = await tx.dispute.updateMany({
-            where: { id: dispute.id, status: dispute.status },
-            data: {
-              status: DisputeStatus.PROPOSED,
-              proposedClientRatio: input.clientRatio,
-              proposedAt,
-              challengeDeadline: new Date(
-                proposedAt.getTime() + DISPUTE_CHALLENGE_HOURS * 60 * 60 * 1000,
-              ),
-              resolvedById: admin.id,
-              resolutionNote: input.note,
-            },
-          });
-          if (changed.count !== 1)
-            throw gqlError(
-              "Tranh chấp vừa được xử lý bởi quản trị viên khác",
-              "DISPUTE_NOT_PROPOSABLE",
-            );
-          await tx.adminLog.create({
-            data: {
-              adminId: admin.id,
-              action: "propose_dispute_resolution",
-              target: "dispute",
-              targetId: dispute.id,
-              details: {
-                issueId: input.issueId,
-                clientRatio: input.clientRatio,
-                note: input.note,
-              },
-            },
-          });
-          return tx.dispute.findUniqueOrThrow({
-            where: { id: dispute.id },
-            include: DISPUTE_INCLUDE,
-          });
-        },
-        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-      );
+      const escrow = await ctx.db.escrow.findUnique({ where: { issueId: input.issueId } });
+      if (!escrow) throw gqlError("Escrow not found", "NOT_FOUND");
+      // A challenged ruling is followed by the final ruling, which has a 24h notice period.
+      const action =
+        escrow.phase === "CHALLENGED" || escrow.phase === "FINAL_RULING"
+          ? "FINAL_RULING"
+          : "INITIAL_RULING";
+      await confirmEscrowAction(ctx, {
+        issueId: input.issueId,
+        txHash: input.txHash,
+        action,
+        clientBps: Math.round(input.clientRatio * 100),
+        hash: input.decisionHash,
+        note: input.note,
+      });
+      return ctx.db.dispute.findUniqueOrThrow({
+        where: { issueId: input.issueId },
+        include: DISPUTE_INCLUDE,
+      });
     },
   }),
 );
@@ -462,55 +416,17 @@ builder.mutationField("proposeDisputeResolution", (t) =>
 builder.mutationField("challengeDisputeResolution", (t) =>
   t.field({
     type: DisputeRef,
-    args: { issueId: t.arg.string({ required: true }) },
+    args: { issueId: t.arg.string({ required: true }), txHash: t.arg.string({ required: true }) },
     resolve: async (_root, args, ctx) => {
-      const user = requireAuth(ctx);
-      return ctx.db.$transaction(
-        async (tx) => {
-          const dispute = await tx.dispute.findUnique({
-            where: { issueId: args.issueId },
-            include: {
-              issue: { select: { clientId: true, developerId: true } },
-            },
-          });
-          if (!dispute) throw gqlError("Tranh chấp không tồn tại", "NOT_FOUND");
-          if (dispute.issue.clientId !== user.id && dispute.issue.developerId !== user.id)
-            throw gqlError("Chỉ hai bên tham gia mới được phản đối", "FORBIDDEN");
-          const now = new Date();
-          if (
-            dispute.status !== DisputeStatus.PROPOSED ||
-            !dispute.challengeDeadline ||
-            dispute.challengeDeadline < now
-          ) {
-            throw gqlError(
-              "Thời hạn phản đối đã hết hoặc chưa có đề xuất",
-              "CHALLENGE_WINDOW_CLOSED",
-            );
-          }
-          const changed = await tx.dispute.updateMany({
-            where: {
-              id: dispute.id,
-              status: DisputeStatus.PROPOSED,
-              challengeDeadline: { gte: now },
-            },
-            data: {
-              status: DisputeStatus.CHALLENGED,
-              challengedById: user.id,
-              challengedAt: now,
-            },
-          });
-          if (changed.count !== 1)
-            throw gqlError(
-              "Thời hạn phản đối đã hết hoặc vừa được xử lý",
-              "CHALLENGE_WINDOW_CLOSED",
-            );
-          return tx.dispute.findUniqueOrThrow({
-            where: { id: dispute.id },
-            include: DISPUTE_INCLUDE,
-          });
-        },
-        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      const input = parseOrThrow(
+        z.object({ issueId: z.string().min(1).max(191), txHash: TxHashSchema }),
+        args,
       );
+      await confirmEscrowAction(ctx, { ...input, action: "CHALLENGE" });
+      return ctx.db.dispute.findUniqueOrThrow({
+        where: { issueId: input.issueId },
+        include: DISPUTE_INCLUDE,
+      });
     },
   }),
 );

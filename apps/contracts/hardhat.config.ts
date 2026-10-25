@@ -1,7 +1,10 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-verify";
+import { config as loadEnv } from "dotenv";
+import { resolve } from "node:path";
 
+loadEnv({ path: resolve(__dirname, "../../.env"), quiet: true });
 const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY || "";
 const BASE_SEPOLIA_RPC = process.env.BASE_SEPOLIA_RPC_URL || "";
 

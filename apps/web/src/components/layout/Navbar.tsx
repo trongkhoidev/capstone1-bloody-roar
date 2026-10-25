@@ -2,16 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Search, Plus } from "lucide-react";
 import { UserMenu } from "@/components/layout/user-menu";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { NotificationsMenu } from "@/components/layout/notifications-menu";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { useUiPreferences } from "@/lib/ui-preferences";
 import { UiPreferenceControls } from "@/components/layout/ui-preference-controls";
-
-import { motion } from "framer-motion";
 import React, { useState, useEffect } from "react";
 
 export function Navbar() {
@@ -20,76 +17,112 @@ export function Navbar() {
   const { t } = useUiPreferences();
 
   const [isMounted, setIsMounted] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const isMarketplace = pathname === "/" || pathname === "/marketplace";
+  const isCreate = pathname === "/issues/create";
+  const isDashboard = pathname.startsWith("/dashboard");
+  const isAdmin = pathname.startsWith("/admin");
+
   return (
-    <motion.header
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className={`sticky top-0 z-40 w-full transition-all duration-300 ${
-        scrolled
-          ? "bg-[hsl(var(--background))/0.8] backdrop-blur-md border-b border-[hsl(var(--primary)/0.2)] shadow-[0_4px_30px_hsl(var(--primary)/0.1)]"
-          : "bg-transparent border-b border-transparent"
-      }`}
-    >
-      <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-6 md:gap-10">
-          <Link href="/" className="flex items-center space-x-2">
-            <span className="font-outfit text-xl font-bold text-[hsl(var(--primary))] shadow-[var(--shadow-glow)]">
-              Bloody-Roar
+    <header className="top sticky top-0 z-40 w-full backdrop-blur-md">
+      <div className="top-in">
+        {/* Logo with Claude Design Mark */}
+        <div className="flex items-center gap-6">
+          <Link href="/" className="logo text-[var(--ink)]">
+            <span className="mark shadow-xs">
+              <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current text-[var(--brand)]">
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+              </svg>
             </span>
+            <span className="font-bold tracking-tight">Bloody-Roar</span>
           </Link>
-          <nav className="hidden gap-6 md:flex">
+
+          {/* Claude Design Top Nav Links */}
+          <nav className="topnav hidden md:flex items-center" aria-label="Main navigation">
             <Link
-              href="/"
-              aria-current={pathname === "/" || pathname === "/marketplace" ? "page" : undefined}
-              className={`flex items-center rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors ${pathname === "/" || pathname === "/marketplace" ? "bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))]" : "text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--primary))]"}`}
+              href="/marketplace"
+              className={isMarketplace ? "on" : ""}
             >
               {t("marketplace")}
             </Link>
-            {isMounted && user && <Link href={user.role === "ADMIN" ? "/admin" : "/dashboard"} aria-current={pathname.startsWith(user.role === "ADMIN" ? "/admin" : "/dashboard") ? "page" : undefined} className={`flex items-center rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors ${pathname.startsWith(user.role === "ADMIN" ? "/admin" : "/dashboard") ? "bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))]" : "text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))]"}`}>{user.role === "ADMIN" ? t("admin") : t("dashboard")}</Link>}
-            {isMounted && user?.role !== "ADMIN" && <Link
-              href="/issues/create"
-              aria-current={pathname === "/issues/create" ? "page" : undefined}
-              className={`flex items-center rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors ${pathname === "/issues/create" ? "bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))]" : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"}`}
+            <Link
+              href="/marketplace?view=skills"
+              className={pathname === "/skills" ? "on" : ""}
             >
-              {t("createBounty")}
-            </Link>}
+              Skills
+            </Link>
+            <Link
+              href="/marketplace?view=developers"
+              className={pathname === "/developers" ? "on" : ""}
+            >
+              Developers
+            </Link>
+            <Link
+              href="/#escrow-rules"
+              className=""
+            >
+              How it works
+            </Link>
+            {isMounted && user && (
+              <Link
+                href={user.role === "ADMIN" ? "/admin" : "/dashboard"}
+                className={isAdmin || isDashboard ? "on" : ""}
+              >
+                {user.role === "ADMIN" ? t("admin") : t("dashboard")}
+              </Link>
+            )}
           </nav>
         </div>
-        
-        <div className="flex flex-1 items-center justify-end space-x-3">
-          <form action="/" method="get" className="w-full max-w-sm hidden md:flex items-center relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-[hsl(var(--muted-foreground))]" />
-            <Input
-              type="search"
-              name="search"
-              placeholder={t("searchTasks")}
-              className="w-full bg-[hsl(var(--card))] pl-8 border-[hsl(var(--border))]"
-            />
-          </form>
 
-          <div className="hidden md:block"><UiPreferenceControls /></div>
+        {/* Search input bar */}
+        <form action="/marketplace" method="get" className="search hidden lg:flex">
+          <Search className="ico text-[var(--ink-3)]" />
+          <input
+            type="search"
+            name="search"
+            placeholder={t("searchTasks") || "Search bounties by skill, keyword, or client..."}
+            defaultValue=""
+          />
+        </form>
 
-          <div className="hidden sm:block"><NotificationsMenu /></div>
-          
+        {/* Right side controls */}
+        <div className="tb-r ml-auto flex items-center gap-2.5">
+          {/* Base Sepolia network badge */}
+          <div className="wallet hidden sm:flex items-center gap-2">
+            <span className="dot" title="Connected to Base Sepolia" />
+            <span className="mono text-[11px] font-medium text-[var(--ink-2)]">Base Sepolia</span>
+          </div>
+
+          <div className="hidden md:block">
+            <UiPreferenceControls />
+          </div>
+
+          <div className="hidden sm:block">
+            <NotificationsMenu />
+          </div>
+
+          {/* Post a bounty CTA button */}
+          {isMounted && (
+            <Link
+              href="/issues/create"
+              className="btn btn-p btn-sm hidden sm:inline-flex items-center gap-1.5"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{t("createBounty") || "Post a bounty"}</span>
+            </Link>
+          )}
+
           <div className="hidden sm:block">
             <UserMenu />
           </div>
-          
+
           <MobileNav />
         </div>
       </div>
-    </motion.header>
+    </header>
   );
 }

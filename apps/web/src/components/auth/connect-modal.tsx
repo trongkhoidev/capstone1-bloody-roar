@@ -3,6 +3,7 @@
 
 import React, { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { X, AlertCircle } from "lucide-react";
 import { useAuthStore } from "../../lib/store/use-auth-store";
 import {
   WALLET_OPTIONS,
@@ -12,7 +13,6 @@ import {
   signMessageWithInjected,
 } from "../../lib/web3/client";
 import type { WalletOption } from "../../lib/web3/client";
-import { useUiPreferences } from "@/lib/ui-preferences";
 
 interface ConnectModalProps {
   isOpen: boolean;
@@ -22,10 +22,9 @@ interface ConnectModalProps {
 export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
   const [activeTab, setActiveTab] = useState<"web3" | "social">("web3");
   const [selectedWallet, setSelectedWallet] = useState<WalletOption | null>(null);
-  
+
   const router = useRouter();
   const pathname = usePathname();
-  const { t } = useUiPreferences();
 
   const { status, error, loginWithSignature, clearError, setStatus } = useAuthStore();
 
@@ -40,10 +39,10 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
         if (!hasInjectedProvider(option.id)) {
           alert(
             option.id === "coinbase"
-              ? "Không tìm thấy Coinbase Wallet Extension."
+              ? "Coinbase Wallet Extension not detected."
               : option.id === "metamask"
-              ? "Không tìm thấy MetaMask Extension."
-              : "Không tìm thấy ví Web3 trên trình duyệt! Vui lòng cài đặt extension."
+              ? "MetaMask Extension not detected."
+              : "No Web3 browser wallet detected. Please install an extension."
           );
           setSelectedWallet(null);
           return;
@@ -61,7 +60,7 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
           router.refresh();
         }
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Không thể kết nối ví. Vui lòng thử lại.";
+        const message = err instanceof Error ? err.message : "Unable to connect wallet. Please try again.";
         setStatus("error", message);
       }
     }
@@ -73,168 +72,218 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
     setStatus("idle");
   };
 
-  // Cờ kiểm tra xem có đang trong quá trình xử lý không
-  const isProcessing = status === "signing" || status === "requesting_nonce" || status === "verifying" || status === "authenticated";
+  const isProcessing =
+    status === "signing" || status === "requesting_nonce" || status === "verifying" || status === "authenticated";
+
+  const isMetaMaskDetected = typeof window !== "undefined" && Boolean((window as unknown as { ethereum?: { isMetaMask?: boolean } }).ethereum?.isMetaMask);
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       data-testid="connect-modal-backdrop"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isProcessing) onClose();
+      }}
     >
       <div
-        className="relative w-full max-w-md h-auto min-h-[420px] flex flex-col rounded-2xl border border-[hsl(var(--card-border))] bg-[hsl(var(--card))] shadow-[var(--shadow-lg)] overflow-hidden transition-all duration-300"
+        className="modal animate-fade-in"
+        role="dialog"
+        aria-labelledby="login-t"
         data-testid="connect-modal"
       >
-        {/* Header */}
-        <div className="flex-none flex items-center justify-between p-6 pb-4 border-b border-[hsl(var(--border)/0.5)]">
-          <div>
-            <h2 className="text-lg font-bold text-[hsl(var(--foreground))]">
-              {isProcessing && selectedWallet ? "Đang kết nối..." : t("signInTitle")}
+        {/* Modal Header */}
+        <div className="mh">
+          <span className="mark">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M4 6l4-2 4 3 4-3 4 2-2 7-6 7-6-7z" fill="var(--surface)" />
+              <path d="M9 11l1.5 1.5M15 11l-1.5 1.5" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </span>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <h2 id="login-t" style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "var(--ink)" }}>
+              {isProcessing && selectedWallet ? "Connecting to wallet..." : "Sign in to Bloody-Roar"}
             </h2>
-            <p className="text-xs text-[hsl(var(--foreground-muted))] mt-0.5">
-              {isProcessing ? "Vui lòng hoàn thành thao tác trên ví" : t("signInWalletDesc")}
+            <p style={{ fontSize: 12, color: "var(--ink-3)", margin: "2px 0 0 0" }}>
+              {isProcessing
+                ? "Please confirm the action in your wallet"
+                : "Your wallet is your account. New wallets get an account on first sign-in."}
             </p>
           </div>
           <button
             type="button"
+            className="ibtn"
+            aria-label="Close"
             onClick={onClose}
             disabled={status === "authenticated"}
-            className="p-1.5 rounded-md text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--background-secondary))] transition-colors disabled:opacity-50"
+            style={{ width: 32, height: 32, marginLeft: 8 }}
           >
-            ✕
+            <X className="ico" style={{ width: 14, height: 14 }} />
           </button>
         </div>
 
-        {/* Bố cục nội dung chính - Giữ chiều cao ổn định */}
-        <div className="flex-1 p-6 relative flex flex-col">
-          
-          {/* MÀN HÌNH CHỜ / LỖI (Khi đang kết nối) */}
-          {(isProcessing || error) ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center animate-fade-in h-full py-4">
-              {status === "authenticated" ? (
-                <div className="h-16 w-16 mb-4 rounded-full bg-[hsl(var(--success)/0.1)] text-[hsl(var(--success))] flex items-center justify-center text-3xl">
-                  ✓
-                </div>
-              ) : error ? (
-                <div className="h-16 w-16 mb-4 rounded-full bg-[hsl(var(--destructive)/0.1)] text-[hsl(var(--destructive))] flex items-center justify-center text-3xl">
-                  ✕
-                </div>
-              ) : (
-                <div className="relative mb-6">
-                  <div className="h-16 w-16 text-4xl flex items-center justify-center animate-pulse">
-                    {selectedWallet?.icon || "🦊"}
+        {/* Modal Body */}
+        <div className="mb">
+          {/* Active Connection or Error State */}
+          {isProcessing || error ? (
+            <div className="states" style={{ width: "100%" }}>
+              {status === "signing" && (
+                <div className="st">
+                  <div className="st-h">
+                    <span className="dot" style={{ background: "var(--warn)" }} />
+                    Waiting for signature
                   </div>
-                  <span className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-2 border-[hsl(var(--card))] bg-[hsl(var(--warning))] animate-ping" />
+                  <div className="siwe">
+                    bloody-roar.app wants you to sign in with your Ethereum account:
+                    {"\n\n"}Sign in to Bloody-Roar.
+                    {"\n\n"}URI: https://bloody-roar.app
+                    {"\n"}Version: 1
+                    {"\n"}Chain ID: 84532
+                  </div>
+                  <p style={{ color: "var(--ink-2)", fontSize: "12.5px" }}>
+                    Sign the one-time SIWE message in {selectedWallet?.name || "your wallet"}. No gas fee is charged.
+                  </p>
+                  <button type="button" onClick={handleBack} className="btn btn-g btn-sm" style={{ alignSelf: "flex-start" }}>
+                    Cancel
+                  </button>
                 </div>
               )}
 
-              <h3 className="text-[hsl(var(--foreground))] font-semibold mb-2">
-                {status === "signing" && "Yêu cầu chữ ký (SIWE)"}
-                {status === "requesting_nonce" && "Đang lấy mã Nonce..."}
-                {status === "verifying" && "Đang xác minh..."}
-                {status === "authenticated" && "Đăng nhập thành công!"}
-                {error && "Kết nối thất bại"}
-              </h3>
-              
-              <p className="text-sm text-[hsl(var(--foreground-muted))] max-w-[280px]">
-                {status === "signing" && `Vui lòng mở ${selectedWallet?.name || "ví"} của bạn để xác nhận yêu cầu đăng nhập.`}
-                {status === "requesting_nonce" && "Đang kết nối an toàn với máy chủ."}
-                {status === "verifying" && "Kiểm tra chữ ký và khởi tạo phiên."}
-                {error && error}
-              </p>
+              {(status === "requesting_nonce" || status === "verifying") && (
+                <div className="st">
+                  <div className="st-h">
+                    <span className="spin" aria-hidden="true" />
+                    {status === "requesting_nonce" ? "Requesting authentication challenge..." : "Verifying signature..."}
+                  </div>
+                  <p style={{ color: "var(--ink-2)" }}>Securing your session with the Bloody-Roar backend.</p>
+                </div>
+              )}
+
+              {status === "authenticated" && (
+                <div className="st">
+                  <div className="st-h" style={{ color: "var(--ok)" }}>
+                    <span className="dot" style={{ background: "var(--ok)" }} />
+                    Connected successfully!
+                  </div>
+                  <p style={{ color: "var(--ink-2)" }}>Entering Bloody-Roar workspace...</p>
+                </div>
+              )}
 
               {error && (
-                <button
-                  onClick={handleBack}
-                  className="mt-6 px-6 py-2 text-sm font-medium rounded-lg bg-[hsl(var(--background-secondary))] hover:bg-[hsl(var(--background-tertiary))] text-[hsl(var(--foreground))] transition-colors"
-                >
-                  Quay lại chọn ví
-                </button>
+                <div className="st">
+                  <div className="st-h" style={{ color: "var(--bad)" }}>
+                    <AlertCircle className="ico" />
+                    Connection failed
+                  </div>
+                  <p className="err">{error}</p>
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="btn btn-o btn-sm"
+                    style={{ alignSelf: "flex-start" }}
+                  >
+                    Try again
+                  </button>
+                </div>
               )}
             </div>
           ) : (
-            
-            /* MÀN HÌNH CHỌN VÍ (Khi chưa kết nối) */
-            <div className="flex-1 flex flex-col animate-fade-in">
+            <>
               {/* Tab Switcher */}
-              <div className="flex gap-2 mb-4 p-1 rounded-lg bg-[hsl(var(--background-secondary))]">
+              <div className="mtabs" role="tablist">
                 <button
                   type="button"
+                  role="tab"
                   data-testid="tab-web3-btn"
+                  aria-selected={activeTab === "web3"}
+                  className={activeTab === "web3" ? "on" : ""}
                   onClick={() => setActiveTab("web3")}
-                  className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                    activeTab === "web3"
-                      ? "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-sm"
-                      : "text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))]"
-                  }`}
                 >
-                  {t("web3Wallets")}
+                  Wallet
                 </button>
                 <button
                   type="button"
+                  role="tab"
                   data-testid="tab-social-btn"
+                  aria-selected={activeTab === "social"}
+                  className={activeTab === "social" ? "on" : ""}
                   onClick={() => setActiveTab("social")}
-                  className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                    activeTab === "social"
-                      ? "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-sm"
-                      : "text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))]"
-                  }`}
                 >
-                  {t("linkedAccounts")}
+                  Google · coming soon
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto pr-1 -mr-1">
-                {activeTab === "web3" && (
-                  <div className="space-y-2.5 pb-2">
-                    {WALLET_OPTIONS.map((wallet) => (
-                      <button
-                        type="button"
-                        key={wallet.id}
-                        data-testid={`wallet-btn-${wallet.id}`}
-                        onClick={() => handleWalletSelect(wallet)}
-                        className="w-full flex items-center justify-between p-3.5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] hover:bg-[hsl(var(--background-tertiary))] hover:border-[hsl(var(--primary)/0.4)] transition-all text-left group active:scale-[0.99]"
+              {activeTab === "web3" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {WALLET_OPTIONS.map((wallet) => (
+                    <button
+                      type="button"
+                      key={wallet.id}
+                      data-testid={`wallet-btn-${wallet.id}`}
+                      onClick={() => handleWalletSelect(wallet)}
+                      className="wopt"
+                    >
+                      <span
+                        className="wlogo"
+                        style={{
+                          background:
+                            wallet.id === "metamask"
+                              ? "#E2761B"
+                              : wallet.id === "coinbase"
+                              ? "#0052FF"
+                              : "#3A3F4B",
+                        }}
                       >
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl group-hover:scale-110 transition-transform">
-                            {wallet.icon}
-                          </span>
-                          <div>
-                            <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
-                              {wallet.name}
-                            </div>
-                            <div className="text-[11px] text-[hsl(var(--foreground-subtle))]">
-                              {wallet.id === "metamask"
-                                ? "Phổ biến nhất · Base Sepolia"
-                                : wallet.id === "coinbase"
-                                ? "Coinbase browser extension"
-                                : "Tương thích EVM Wallet"}
-                            </div>
-                          </div>
-                        </div>
-                        <span className="text-[hsl(var(--foreground-subtle))] group-hover:text-[hsl(var(--primary))] group-hover:translate-x-1 transition-all">
-                          →
+                        {wallet.id === "metamask" ? "M" : wallet.id === "coinbase" ? "C" : "B"}
+                      </span>
+                      <span>{wallet.name}</span>
+                      {wallet.id === "metamask" && isMetaMaskDetected && (
+                        <span className="badge b-open" style={{ marginLeft: "auto" }}>
+                          Detected
                         </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                      )}
+                    </button>
+                  ))}
 
-                {activeTab === "social" && (
-                  <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] p-4 text-sm leading-6 text-[hsl(var(--foreground-muted))]">
-                    {t("socialLoginUnavailable")}
+                  {/* What happens next */}
+                  <div className="how">
+                    <b style={{ color: "var(--ink)" }}>What happens next</b>
+                    <ol>
+                      <li>Your wallet connects to this site.</li>
+                      <li>We ask it to switch to Base Sepolia (chain 84532).</li>
+                      <li>You sign a one-time message. No transaction, no gas.</li>
+                    </ol>
                   </div>
-                )}
-              </div>
 
-              {/* Security Note */}
-              <div className="mt-4 pt-4 border-t border-[hsl(var(--border)/0.5)] text-center">
-                <div className="inline-flex items-center justify-center gap-1.5 text-[11px] text-[hsl(var(--foreground-subtle))]">
-                  <span>🛡️</span>
-                  <span>Chỉ xác minh quyền sở hữu, không trừ tiền</span>
+                  <p style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 4 }}>
+                    We never ask for your seed phrase. By signing in you accept the{" "}
+                    <a href="/#rules" style={{ color: "var(--link)" }}>
+                      escrow rules
+                    </a>
+                    .
+                  </p>
                 </div>
-              </div>
-            </div>
+              )}
+
+              {activeTab === "social" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div className="how" style={{ fontSize: 13, lineHeight: 1.6 }}>
+                    <b style={{ color: "var(--ink)" }}>Wallet-first identity</b>
+                    <p style={{ margin: 0 }}>
+                      Social logins (Google, GitHub) cannot directly control smart contract escrow on Base Sepolia.
+                      Please connect your wallet first, then you can link GitHub from your profile settings.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-o btn-sm"
+                    onClick={() => setActiveTab("web3")}
+                    style={{ alignSelf: "flex-start" }}
+                  >
+                    Switch to wallet sign-in
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

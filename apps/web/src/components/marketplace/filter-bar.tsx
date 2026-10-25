@@ -1,10 +1,10 @@
 // apps/web/src/components/marketplace/filter-bar.tsx
-// Trâm (UI/UX Designer) — Marketplace Search, Filter Chips & Sorting Tabs
+// Claude Design System — Filter Drawer, Search & Segmented Sort (.seg)
 
 "use client";
 
-import React from "react";
-import { Input } from "../ui/input";
+import React, { useState } from "react";
+import { Search, Filter as FilterIcon, ChevronDown, ChevronUp } from "lucide-react";
 import { useUiPreferences } from "@/lib/ui-preferences";
 
 export type SortOption = "NEWEST" | "HIGHEST_BOUNTY" | "MOST_VIEWED" | "DEADLINE";
@@ -44,146 +44,182 @@ const STATUSES = [
   { id: "COMPLETED", label: "Completed" },
 ];
 
-const SORT_OPTIONS: { id: SortOption; label: string }[] = [
-  { id: "NEWEST", label: "Newest" },
-  { id: "HIGHEST_BOUNTY", label: "Highest bounty" },
-  { id: "DEADLINE", label: "Ending soon" },
-];
-
 export function MarketplaceFilterBar({
   filters,
   totalCount,
   onFilterChange,
 }: FilterBarProps) {
   const { language, t } = useUiPreferences();
-  const categoryLabels = language === "vi"
-    ? ["Tất cả", "Sửa lỗi", "Tính năng", "Smart contract", "Bảo mật & kiểm toán", "Giao diện", "AI & dữ liệu", "DevOps", "Tài liệu"]
-    : ["All tasks", "Bug fixes", "Features", "Smart contracts", "Security & audit", "Frontend & design", "AI & data", "DevOps", "Documentation"];
-  const statusLabels = language === "vi" ? ["Mọi trạng thái", "Đang mở", "Đang thực hiện", "Hoàn thành"] : ["Any status", "Open", "In progress", "Completed"];
-  const sortLabels = language === "vi" ? ["Mới nhất", "Thưởng cao nhất", "Sắp hết hạn"] : ["Newest", "Highest bounty", "Ending soon"];
-  const categories = CATEGORIES.map((category, index) => ({ ...category, label: categoryLabels[index] ?? category.label }));
-  const statuses = STATUSES.map((status, index) => ({ ...status, label: statusLabels[index] ?? status.label }));
-  const sorts = SORT_OPTIONS.map((option, index) => ({ ...option, label: sortLabels[index] ?? option.label }));
+  const [showDrawer, setShowDrawer] = useState(false);
+
+  const categories = CATEGORIES.map((cat) => {
+    switch (cat.id) {
+      case "ALL": return { ...cat, label: language === "vi" ? "Tất cả" : "All tasks" };
+      case "BUG_FIX": return { ...cat, label: language === "vi" ? "Sửa lỗi" : "Bug fixes" };
+      case "FEATURE": return { ...cat, label: language === "vi" ? "Tính năng" : "Features" };
+      case "SMART_CONTRACT": return { ...cat, label: "Smart contracts" };
+      case "AUDIT": return { ...cat, label: language === "vi" ? "Bảo mật & kiểm toán" : "Security & audit" };
+      case "UI_UX": return { ...cat, label: language === "vi" ? "Giao diện" : "Frontend & design" };
+      case "DATA_SCIENCE": return { ...cat, label: language === "vi" ? "AI & dữ liệu" : "AI & data" };
+      case "DEVOPS": return { ...cat, label: "DevOps" };
+      case "DOCUMENTATION": return { ...cat, label: language === "vi" ? "Tài liệu" : "Documentation" };
+      default: return cat;
+    }
+  });
+
   return (
-    <div className="space-y-4 mb-6">
-      {/* Top row: Counter & Sorting Tabs (StackOverflow style header) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[hsl(var(--border))]">
-        <div>
-          <h2 className="text-xl font-black tracking-tight text-[hsl(var(--foreground))]">
-            {t("openBounties")}
-          </h2>
-          <p className="mt-0.5 text-xs text-[hsl(var(--foreground-muted))]">
-            <span className="font-bold text-[hsl(var(--primary))]">{totalCount}</span> {t("opportunities")}
-          </p>
+    <div className="space-y-3.5">
+      {/* Top Controls: Segments & Filter Toggle */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        {/* Claude Design Segmented Sort Buttons (.seg) */}
+        <div aria-label="Sort bounties" className="seg" role="group">
+          <button
+            type="button"
+            className={filters.sortBy === "NEWEST" ? "on" : ""}
+            onClick={() => onFilterChange({ sortBy: "NEWEST" })}
+            data-testid="sort-tab-newest"
+          >
+            Newest
+          </button>
+          <button
+            type="button"
+            className={filters.sortBy === "HIGHEST_BOUNTY" ? "on" : ""}
+            onClick={() => onFilterChange({ sortBy: "HIGHEST_BOUNTY" })}
+            data-testid="sort-tab-highest_bounty"
+          >
+            Highest reward
+          </button>
+          <button
+            type="button"
+            className={filters.sortBy === "DEADLINE" ? "on" : ""}
+            onClick={() => onFilterChange({ sortBy: "DEADLINE" })}
+            data-testid="sort-tab-deadline"
+          >
+            Ending soon
+          </button>
+          <button
+            type="button"
+            className={filters.sortBy === "MOST_VIEWED" ? "on" : ""}
+            onClick={() => onFilterChange({ sortBy: "MOST_VIEWED" })}
+            data-testid="sort-tab-most_viewed"
+          >
+            Most viewed
+          </button>
         </div>
 
-        {/* Sort Tabs */}
-        <div className="flex items-center p-1 rounded-lg bg-[hsl(var(--background-secondary))] border border-[hsl(var(--border))] text-xs font-medium">
-          {sorts.map((opt) => (
-            <button
-              key={opt.id}
-              type="button"
-              onClick={() => onFilterChange({ sortBy: opt.id })}
-              className={`px-3 py-1.5 rounded-md transition-all ${
-                filters.sortBy === opt.id
-                  ? "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] font-semibold shadow-sm text-[hsl(var(--primary))]"
-                  : "text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))]"
-              }`}
-              data-testid={`sort-tab-${opt.id.toLowerCase()}`}
-            >
-              {opt.label}
-            </button>
-          ))}
+        {/* Filter Drawer Toggle & Total Count */}
+        <div className="flex items-center gap-3 ml-auto">
+          <span className="text-xs text-[var(--ink-3)]">
+            <b className="mono font-semibold text-[var(--ink)]">{totalCount}</b> results
+          </span>
+
+          <button
+            type="button"
+            onClick={() => setShowDrawer(!showDrawer)}
+            className="btn btn-o btn-sm flex items-center gap-1.5"
+            data-testid="toggle-filters-button"
+          >
+            <FilterIcon className="w-3.5 h-3.5 text-[var(--ink-2)]" />
+            <span>Filter</span>
+            {showDrawer ? <ChevronUp className="w-3 h-3 text-[var(--ink-3)]" /> : <ChevronDown className="w-3 h-3 text-[var(--ink-3)]" />}
+          </button>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="sr-only" htmlFor="issue-status-filter">Status</label>
-        <select
-          id="issue-status-filter"
-          value={filters.status ?? ""}
-          onChange={(event) => onFilterChange({ status: event.target.value })}
-          className="h-9 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 text-xs text-[hsl(var(--foreground))]"
-          data-testid="marketplace-status-filter"
+      {/* Collapsible Filter Drawer (.filters) */}
+      {showDrawer && (
+        <form
+          aria-label="Filter bounties"
+          className="filters"
+          onSubmit={(e) => e.preventDefault()}
         >
-          {statuses.map((status) => <option key={status.id || "all"} value={status.id}>{status.label}</option>)}
-        </select>
-        <label className="flex h-9 items-center gap-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 text-xs text-[hsl(var(--foreground-muted))]">
-          <span>{language === "vi" ? "Thưởng tối thiểu" : "Min bounty"}</span>
-          <input
-            aria-label="Minimum bounty"
-            inputMode="decimal"
-            type="number"
-            min="0"
-            value={filters.bountyMin ?? ""}
-            onChange={(event) => onFilterChange({ bountyMin: event.target.value ? Number(event.target.value) : undefined })}
-            className="w-16 bg-transparent text-[hsl(var(--foreground))] outline-none"
-            data-testid="bounty-min-filter"
-          />
-        </label>
-        <label className="flex h-9 items-center gap-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 text-xs text-[hsl(var(--foreground-muted))]">
-          <span>{language === "vi" ? "Thưởng tối đa" : "Max bounty"}</span>
-          <input
-            aria-label="Maximum bounty"
-            inputMode="decimal"
-            type="number"
-            min="0"
-            value={filters.bountyMax ?? ""}
-            onChange={(event) => onFilterChange({ bountyMax: event.target.value ? Number(event.target.value) : undefined })}
-            className="w-16 bg-transparent text-[hsl(var(--foreground))] outline-none"
-            data-testid="bounty-max-filter"
-          />
-        </label>
-      </div>
-
-      {/* Second row: Search & Active Skill Filter Tag */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-        <div className="flex-1">
-          <Input
-            type="search"
-            placeholder={language === "vi" ? "Tìm theo tiêu đề, mô tả kỹ thuật hoặc kỹ năng…" : "Search titles, technical details, or skills…"}
-            value={filters.search}
-            onChange={(e) => onFilterChange({ search: e.target.value })}
-            data-testid="marketplace-search-input"
-          />
-        </div>
-
-        {/* Active Skill Filter Pill (if selected) */}
-        {filters.selectedSkill && (
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[hsl(var(--primary)/0.4)] bg-[hsl(var(--primary)/0.1)] text-xs text-[hsl(var(--primary))] shrink-0 font-medium">
-            <span>{language === "vi" ? "Kỹ năng:" : "Tag:"} #{filters.selectedSkill}</span>
-            <button
-              type="button"
-              onClick={() => onFilterChange({ selectedSkill: undefined })}
-              className="hover:opacity-80 font-bold"
-              title="Clear tag filter"
-            >
-              ✕
-            </button>
+          {/* Status Group */}
+          <div className="fgroup">
+            <span className="lab">Status</span>
+            {STATUSES.map((status) => (
+              <label key={status.id} className="text-xs">
+                <input
+                  type="radio"
+                  name="status"
+                  checked={(filters.status ?? "") === status.id}
+                  onChange={() => onFilterChange({ status: status.id })}
+                />
+                <span>{status.label}</span>
+              </label>
+            ))}
           </div>
-        )}
+
+          {/* Reward Range Group */}
+          <div className="fgroup">
+            <span className="lab">Reward (USDC)</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                placeholder="Min"
+                className="tin mono text-xs"
+                value={filters.bountyMin ?? ""}
+                onChange={(e) => onFilterChange({ bountyMin: e.target.value ? Number(e.target.value) : undefined })}
+                data-testid="bounty-min-filter"
+              />
+              <span className="text-[var(--ink-3)]">-</span>
+              <input
+                type="number"
+                placeholder="Max"
+                className="tin mono text-xs"
+                value={filters.bountyMax ?? ""}
+                onChange={(e) => onFilterChange({ bountyMax: e.target.value ? Number(e.target.value) : undefined })}
+                data-testid="bounty-max-filter"
+              />
+            </div>
+          </div>
+
+          {/* Skills quick filter */}
+          <div className="fgroup">
+            <span className="lab">Active Skill</span>
+            {filters.selectedSkill ? (
+              <div className="flex items-center justify-between p-1.5 rounded-md bg-[var(--surface)] border border-[var(--line-2)] text-xs">
+                <span className="font-medium text-[var(--brand)]">#{filters.selectedSkill}</span>
+                <button
+                  type="button"
+                  onClick={() => onFilterChange({ selectedSkill: undefined })}
+                  className="text-[var(--ink-3)] hover:text-[var(--ink)] font-bold px-1"
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <span className="text-xs text-[var(--ink-3)]">Click any tag on a bounty card</span>
+            )}
+          </div>
+        </form>
+      )}
+
+      {/* Search Input Bar with Icon */}
+      <div className="relative flex items-center">
+        <Search className="absolute left-3 top-2.5 h-4 w-4 text-[var(--ink-3)]" />
+        <input
+          type="search"
+          placeholder={language === "vi" ? "Tìm theo tiêu đề, mô tả kỹ thuật hoặc kỹ năng…" : "Search titles, technical details, or skills…"}
+          value={filters.search}
+          onChange={(e) => onFilterChange({ search: e.target.value })}
+          className="tin pl-9 h-9 w-full bg-[var(--surface)] border-[var(--line-2)] rounded-md text-xs sm:text-sm text-[var(--ink)]"
+          data-testid="marketplace-search-input"
+        />
       </div>
 
-      {/* Third row: Category Chips */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
+      {/* Category Pills */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
         {categories.map((cat) => {
-          const isSelected =
-            (cat.id === "ALL" && !filters.category) ||
-            filters.category === cat.id;
-
+          const isSelected = (cat.id === "ALL" && !filters.category) || filters.category === cat.id;
           return (
             <button
               key={cat.id}
               type="button"
-              onClick={() =>
-                onFilterChange({
-                  category: cat.id === "ALL" ? "" : cat.id,
-                })
-              }
-              className={`px-3 py-1.5 rounded-full border text-xs whitespace-nowrap transition-all ${
+              onClick={() => onFilterChange({ category: cat.id === "ALL" ? "" : cat.id })}
+              className={`btn btn-sm text-xs rounded-full border transition-all ${
                 isSelected
-                  ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))] text-white font-semibold shadow-[var(--shadow-sm)]"
-                  : "border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))] hover:border-[hsl(var(--foreground-subtle))]"
+                  ? "bg-[var(--ink)] text-[var(--surface)] font-semibold border-[var(--ink)]"
+                  : "bg-[var(--surface)] text-[var(--ink-2)] border-[var(--line)] hover:bg-[var(--sunk)]"
               }`}
               data-testid={`category-chip-${cat.id.toLowerCase()}`}
             >

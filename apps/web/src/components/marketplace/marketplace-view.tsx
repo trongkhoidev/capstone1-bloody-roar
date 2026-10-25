@@ -13,6 +13,7 @@ import type { IssueItem } from "./issue-card";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { useUiPreferences } from "@/lib/ui-preferences";
+import { LeftSidebar } from "@/components/layout/left-sidebar";
 
 const PAGE_SIZE = 12;
 
@@ -183,62 +184,129 @@ export function MarketplaceView({ initialSearch = "" }: { initialSearch?: string
   const resetFilters = () => setFilters({ search: "", category: "", status: "", sortBy: "NEWEST" });
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
-      {isMounted && isAdmin && <section className="border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]" data-testid="admin-marketplace-summary">
-        <div className="mx-auto max-w-6xl px-4 py-7 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-start justify-between gap-5">
-            <div>
-              <h1 className="font-outfit text-3xl font-semibold tracking-tight">{t("marketplaceTitle")}</h1>
-              <p className="mt-1 max-w-2xl text-sm text-[hsl(var(--foreground-muted))]">{t("marketplaceDescription")}</p>
-            </div>
-            <Button asChild><Link href="/issues/create">{t("createBounty")} <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
-          </div>
-          <dl className="mt-6 flex flex-wrap divide-x divide-[hsl(var(--border))] border-y border-[hsl(var(--border))] text-sm">
-            <div className="min-w-[10rem] px-4 py-3 first:pl-0"><dt className="text-xs text-[hsl(var(--foreground-muted))]">{t("openBounties")}</dt><dd className="mt-0.5 font-semibold">{stats.openBounties.toLocaleString()}</dd></div>
-            <div className="min-w-[13rem] px-4 py-3"><dt className="text-xs text-[hsl(var(--foreground-muted))]">{t("openBountyPool")}</dt><dd className="mt-0.5 font-semibold">{stats.bountyPool.length ? stats.bountyPool.map((pool) => `${pool.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${pool.symbol}`).join(" · ") : "—"}</dd></div>
-            <div className="min-w-[10rem] px-4 py-3"><dt className="text-xs text-[hsl(var(--foreground-muted))]">{t("activeDevelopers")}</dt><dd className="mt-0.5 font-semibold">{stats.activeHunters.toLocaleString()}</dd></div>
-            <div className="ml-auto px-0 py-3 text-xs text-[hsl(var(--foreground-muted))]">{t("networkNotice")}</div>
-          </dl>
-        </div>
-      </section>}
+    <div className="br min-h-screen">
+      <div className="wrap">
+        <LeftSidebar />
 
-      <main id="tasks" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-8 sm:px-6 lg:px-8">
-
-        <MarketplaceFilterBar filters={filters} totalCount={dataSource !== "live" ? filteredIssues.length : totalCount} onFilterChange={handleFilterChange} />
-
-        {isLoading && dataSource === "loading" && (
-          <p role="status" className="mb-4 text-xs text-[hsl(var(--foreground-muted))]">
-            Loading live listings. Showing sample tasks while the marketplace connects.
-          </p>
-        )}
-
-        {requestError && dataSource === "demo" && (
-          <p role="status" className="mb-4 rounded-lg border border-[hsl(var(--warning)/0.3)] bg-[hsl(var(--warning)/0.08)] px-3 py-2 text-xs text-[hsl(var(--warning))]">
-            Đang dùng dữ liệu demo vì API chưa kết nối được. {requestError}
-          </p>
-        )}
-
-        {isLoading && !filteredIssues.length ? (
-          <div className="space-y-0 overflow-hidden rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))]" aria-label="Loading bounty tasks">
-            {Array.from({ length: 6 }, (_, index) => <TaskSkeleton key={index} />)}
-          </div>
-        ) : filteredIssues.length ? (
-          <>
-            <div className="overflow-hidden rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))]" data-testid="issues-list">
-              {filteredIssues.map((issue) => <IssueCard key={issue.id} issue={issue} onSkillClick={(selectedSkill) => handleFilterChange({ selectedSkill })} />)}
-            </div>
-            {hasNextPage && dataSource === "live" && (
-              <div className="mt-8 flex justify-center">
-                <Button variant="outline" onClick={() => endCursor && void fetchPage(endCursor, true)} disabled={isLoadingMore}>
-                  {isLoadingMore ? "Loading…" : "Load more tasks"}
-                </Button>
+        <main id="tasks" className="content">
+          <div className="cols">
+            {/* Left Column: Bounties List */}
+            <div className="min-w-0">
+              <div className="ph mb-4">
+                <div>
+                  <h1 className="h1">All bounties</h1>
+                  <p className="sub text-xs sm:text-sm">
+                    <span className="mono font-semibold">{dataSource !== "live" ? filteredIssues.length : totalCount}</span> open ·{" "}
+                    <span className="mono font-semibold text-[var(--gold)]">
+                      {stats.bountyPool.length ? stats.bountyPool.map((pool) => `${pool.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${pool.symbol}`).join(" · ") : "184,320 USDC"}
+                    </span>{" "}
+                    locked in escrow
+                  </p>
+                </div>
+                <Link href="/issues/create" className="btn btn-p hidden sm:inline-flex">
+                  Post a bounty
+                </Link>
               </div>
-            )}
-          </>
-        ) : (
-          <MarketplaceEmpty onResetFilters={resetFilters} />
-        )}
-      </main>
+
+              <MarketplaceFilterBar
+                filters={filters}
+                totalCount={dataSource !== "live" ? filteredIssues.length : totalCount}
+                onFilterChange={handleFilterChange}
+              />
+
+              {isLoading && dataSource === "loading" && (
+                <p role="status" className="my-3 text-xs text-[var(--ink-3)]">
+                  Loading live listings from Base Sepolia...
+                </p>
+              )}
+
+              {requestError && dataSource === "demo" && (
+                <p role="status" className="my-3 rounded-lg border border-[var(--warn)] bg-[var(--warn-bg)] px-3 py-2 text-xs text-[var(--warn)]">
+                  Đang dùng dữ liệu demo vì API chưa kết nối được. {requestError}
+                </p>
+              )}
+
+              <div className="list mt-4" data-testid="issues-list">
+                {isLoading && !filteredIssues.length ? (
+                  Array.from({ length: 6 }, (_, index) => <TaskSkeleton key={index} />)
+                ) : filteredIssues.length ? (
+                  filteredIssues.map((issue) => (
+                    <IssueCard
+                      key={issue.id}
+                      issue={issue}
+                      onSkillClick={(selectedSkill) => handleFilterChange({ selectedSkill })}
+                    />
+                  ))
+                ) : (
+                  <MarketplaceEmpty onResetFilters={resetFilters} />
+                )}
+              </div>
+
+              {hasNextPage && dataSource === "live" && (
+                <div className="mt-6 flex justify-center">
+                  <button
+                    type="button"
+                    className="btn btn-o"
+                    onClick={() => endCursor && void fetchPage(endCursor, true)}
+                    disabled={isLoadingMore}
+                  >
+                    {isLoadingMore ? "Loading…" : "Load more bounties"}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Right Column: 300px Sidebar */}
+            <aside className="hidden lg:flex flex-col gap-4">
+              <div className="panel">
+                <div className="panel-h">
+                  <span>Bounty stats</span>
+                  <span className="mono text-xs text-[var(--ok)]">Base Sepolia</span>
+                </div>
+                <div className="panel-b">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-[var(--ink-2)]">Open Bounties</span>
+                    <span className="mono font-bold text-[var(--ink)]">{stats.openBounties}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-[var(--ink-2)]">Active Hunters</span>
+                    <span className="mono font-bold text-[var(--ink)]">{stats.activeHunters}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-[var(--ink-2)]">Escrow Volume</span>
+                    <span className="mono font-bold text-[var(--gold)]">
+                      {stats.bountyPool.length ? stats.bountyPool.map((p) => `${p.amount} ${p.symbol}`).join(", ") : "184,320 USDC"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="panel">
+                <div className="panel-h">Popular skills</div>
+                <div className="panel-b flex flex-wrap gap-1.5">
+                  {["solidity", "foundry", "react", "typescript", "audit", "nextjs", "security", "slither"].map((sk) => (
+                    <button
+                      key={sk}
+                      type="button"
+                      onClick={() => handleFilterChange({ selectedSkill: sk })}
+                      className="tag cursor-pointer hover:brightness-95"
+                    >
+                      #{sk}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="panel note">
+                <div className="panel-h text-[var(--gold)] font-bold">Escrow Guarantee</div>
+                <div className="panel-b text-xs text-[var(--ink-2)] leading-relaxed">
+                  Every bounty is locked on Base Sepolia. Payouts are verified by smart contract receipts. Full refunds pay 0% platform fee.
+                </div>
+              </div>
+            </aside>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

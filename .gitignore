@@ -60,6 +60,7 @@ coverage/
 
 # Turbo (if added later)
 .turbo/
+.codegraph/
 
 # Documents & Project Notes
 *.pdf

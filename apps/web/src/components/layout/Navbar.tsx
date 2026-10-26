@@ -8,7 +8,6 @@ import { MobileNav } from "@/components/layout/MobileNav";
 import { NotificationsMenu } from "@/components/layout/notifications-menu";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { useUiPreferences } from "@/lib/ui-preferences";
-import { UiPreferenceControls } from "@/components/layout/ui-preference-controls";
 import { WolfLogo } from "@/components/ui/wolf-logo";
 import React, { useState, useEffect } from "react";
 
@@ -75,7 +74,7 @@ export function Navbar() {
         </div>
 
         {/* Search input bar */}
-        <form action="/marketplace" method="get" className="search hidden lg:flex">
+        <form action="/marketplace" method="get" className="search hidden md:flex min-w-[200px] max-w-sm lg:max-w-md">
           <Search className="ico text-[var(--ink-3)]" />
           <input
             type="search"
@@ -86,17 +85,7 @@ export function Navbar() {
         </form>
 
         {/* Right side controls */}
-        <div className="tb-r ml-auto flex items-center gap-2.5">
-          {/* Base Sepolia network badge */}
-          <div className="wallet hidden sm:flex items-center gap-2">
-            <span className="dot" title="Connected to Base Sepolia" />
-            <span className="mono text-[11px] font-medium text-[var(--ink-2)]">Base Sepolia</span>
-          </div>
-
-          <div className="hidden md:block">
-            <UiPreferenceControls />
-          </div>
-
+        <div className="tb-r ml-auto flex items-center gap-3">
           <div className="hidden sm:block">
             <NotificationsMenu />
           </div>

@@ -15,7 +15,6 @@ import {
 import { UserMenu } from "@/components/layout/user-menu";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { useUiPreferences } from "@/lib/ui-preferences";
-import { UiPreferenceControls } from "@/components/layout/ui-preference-controls";
 import { WolfLogo } from "@/components/ui/wolf-logo";
 
 export function MobileNav() {
@@ -94,7 +93,6 @@ export function MobileNav() {
 
         {/* Footer with Wallet button */}
         <div className="border-t border-[hsl(var(--border))] pt-4">
-          <UiPreferenceControls />
           <div className="flex flex-col gap-2">
             <span className="text-xs text-[hsl(var(--muted-foreground))] font-medium uppercase tracking-wider">
               Account / Wallet

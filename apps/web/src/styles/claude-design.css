@@ -136,24 +136,21 @@ body.dark,
 }
 
 .mark {
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
-  background: var(--surface);
-  border: 1px solid var(--line-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
   color: var(--brand);
-  display: grid;
-  place-items: center;
   transition: all 0.15s ease;
-  overflow: hidden;
 }
 
 html.dark .mark,
 body.dark .mark,
 .dark .mark,
 [data-theme="dark"] .mark {
-  background: var(--surface);
-  border-color: var(--line-2);
+  background: transparent;
+  border: none;
 }
 
 .topnav {

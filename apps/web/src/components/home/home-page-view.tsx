@@ -8,7 +8,7 @@ import { graphqlRequest } from "@/lib/graphql-client";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { MOCK_ISSUES } from "@/components/marketplace/mock-issues";
 import { IssueCard, type IssueItem } from "@/components/marketplace/issue-card";
-import { WolfMark } from "@/components/ui/wolf-logo";
+import { WolfLogo } from "@/components/ui/wolf-logo";
 import { useUiPreferences } from "@/lib/ui-preferences";
 
 const ISSUES_QUERY = `
@@ -122,7 +122,7 @@ export function HomePageView({ search = "" }: { search?: string }) {
         <div className="hero-in">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full border border-[var(--line-2)] bg-[var(--surface)] shadow-xs">
-              <WolfMark size={22} iconSize={16} />
+              <WolfLogo size={20} />
               <span className="text-xs font-semibold tracking-wide uppercase text-[var(--brand)]">Bloody-Roar Network</span>
               <span className="text-xs text-[var(--ink-3)]">· Base Sepolia Escrow</span>
             </div>
@@ -333,7 +333,7 @@ export function HomePageView({ search = "" }: { search?: string }) {
         <div className="foot-in">
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <span className="logo" style={{ color: "var(--ink)" }}>
-              <WolfMark size={32} iconSize={24} />
+              <WolfLogo size={36} />
               <span className="font-bold tracking-tight text-lg">Bloody-Roar</span>
             </span>
             <span style={{ color: "var(--ink-3)" }}>Bounty marketplace with on-chain USDC escrow on Base Sepolia.</span>

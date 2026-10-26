@@ -9,7 +9,7 @@ import { NotificationsMenu } from "@/components/layout/notifications-menu";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { useUiPreferences } from "@/lib/ui-preferences";
 import { UiPreferenceControls } from "@/components/layout/ui-preference-controls";
-import { WolfMark } from "@/components/ui/wolf-logo";
+import { WolfLogo } from "@/components/ui/wolf-logo";
 import React, { useState, useEffect } from "react";
 
 export function Navbar() {
@@ -33,7 +33,7 @@ export function Navbar() {
         {/* Logo with Claude Design Silver Wolf Mark */}
         <div className="flex items-center gap-6">
           <Link href="/" className="logo text-[var(--ink)] hover:opacity-95 transition-opacity" data-testid="navbar-logo">
-            <WolfMark size={30} iconSize={22} />
+            <WolfLogo size={34} />
             <span className="font-bold tracking-tight text-base sm:text-lg">Bloody-Roar</span>
           </Link>
 

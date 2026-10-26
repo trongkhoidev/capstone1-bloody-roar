@@ -4,7 +4,7 @@
 import React, { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { X, AlertCircle } from "lucide-react";
-import { WolfMark } from "@/components/ui/wolf-logo";
+import { WolfLogo } from "@/components/ui/wolf-logo";
 import { useAuthStore } from "../../lib/store/use-auth-store";
 import {
   WALLET_OPTIONS,
@@ -98,7 +98,7 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
       >
         {/* Modal Header */}
         <div className="mh">
-          <WolfMark size={36} iconSize={26} />
+          <WolfLogo size={38} />
           <div style={{ minWidth: 0, flex: 1 }}>
             <h2 id="login-t" style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "var(--ink)" }}>
               {isProcessing && selectedWallet ? "Connecting to wallet..." : "Sign in to Bloody-Roar"}

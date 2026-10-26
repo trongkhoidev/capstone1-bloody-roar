@@ -16,7 +16,7 @@ import { UserMenu } from "@/components/layout/user-menu";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { useUiPreferences } from "@/lib/ui-preferences";
 import { UiPreferenceControls } from "@/components/layout/ui-preference-controls";
-import { WolfMark } from "@/components/ui/wolf-logo";
+import { WolfLogo } from "@/components/ui/wolf-logo";
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
@@ -50,7 +50,7 @@ export function MobileNav() {
         <div className="space-y-6">
           <SheetHeader className="text-left border-b border-[hsl(var(--border))] pb-4">
             <SheetTitle className="font-outfit text-xl font-bold text-[var(--ink)] flex items-center gap-2.5">
-              <WolfMark size={32} iconSize={24} />
+              <WolfLogo size={36} />
               Bloody-Roar
             </SheetTitle>
           </SheetHeader>

@@ -9,6 +9,7 @@ import { NotificationsMenu } from "@/components/layout/notifications-menu";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { useUiPreferences } from "@/lib/ui-preferences";
 import { UiPreferenceControls } from "@/components/layout/ui-preference-controls";
+import { WolfMark } from "@/components/ui/wolf-logo";
 import React, { useState, useEffect } from "react";
 
 export function Navbar() {
@@ -23,22 +24,17 @@ export function Navbar() {
   }, []);
 
   const isMarketplace = pathname === "/" || pathname === "/marketplace";
-  const isCreate = pathname === "/issues/create";
   const isDashboard = pathname.startsWith("/dashboard");
   const isAdmin = pathname.startsWith("/admin");
 
   return (
     <header className="top sticky top-0 z-40 w-full backdrop-blur-md">
       <div className="top-in">
-        {/* Logo with Claude Design Mark */}
+        {/* Logo with Claude Design Silver Wolf Mark */}
         <div className="flex items-center gap-6">
-          <Link href="/" className="logo text-[var(--ink)]">
-            <span className="mark shadow-xs">
-              <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current text-[var(--brand)]">
-                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-              </svg>
-            </span>
-            <span className="font-bold tracking-tight">Bloody-Roar</span>
+          <Link href="/" className="logo text-[var(--ink)] hover:opacity-95 transition-opacity" data-testid="navbar-logo">
+            <WolfMark size={30} iconSize={22} />
+            <span className="font-bold tracking-tight text-base sm:text-lg">Bloody-Roar</span>
           </Link>
 
           {/* Claude Design Top Nav Links */}

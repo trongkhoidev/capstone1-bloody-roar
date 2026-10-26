@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { ISSUE_CATEGORIES, ISSUE_DIFFICULTY, BOUNTY_MIN_AMOUNT, BOUNTY_MAX_AMOUNT } from "@bloody-roar/shared";
 import { graphqlRequest } from "@/lib/graphql-client";
 import { useAuthStore } from "@/lib/store/use-auth-store";
@@ -35,7 +35,7 @@ const CATEGORY_NAMES: Record<(typeof ISSUE_CATEGORIES)[number], string> = {
 export function CreateIssueForm() {
   const user = useAuthStore((state) => state.user);
   const authStatus = useAuthStore((state) => state.status);
-  const { language, t } = useUiPreferences();
+  const { language, t, theme } = useUiPreferences();
 
   const categoryNames =
     language === "vi"
@@ -188,7 +188,8 @@ export function CreateIssueForm() {
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+    <div className={`br min-h-screen py-6 ${theme === "dark" ? "dark" : ""}`}>
+      <main className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <div style={{ fontSize: "12.5px", color: "var(--ink-3)" }}>
         <Link href="/dashboard" style={{ color: "var(--ink-2)" }}>
           My bounties
@@ -534,5 +535,6 @@ export function CreateIssueForm() {
         </div>
       </form>
     </main>
+  </div>
   );
 }

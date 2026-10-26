@@ -55,11 +55,16 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("bloody-roar-theme")||(window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");var d=document.documentElement;d.classList.toggle("dark",t==="dark");d.classList.toggle("light",t==="light");d.dataset.theme=t;d.style.colorScheme=t;}catch(e){}})();`,
+          }}
+        />
       </head>
-      <body className="min-h-screen flex flex-col bg-background font-sans antialiased">
+      <body className="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--ink)] font-sans antialiased">
         <Providers>
           <Navbar />
-          <div className="flex-1">{children}</div>
+          <div className="flex-1 br">{children}</div>
         </Providers>
       </body>
     </html>

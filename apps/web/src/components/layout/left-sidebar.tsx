@@ -6,11 +6,8 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuthStore } from "@/lib/store/use-auth-store";
-
 export function LeftSidebar() {
   const pathname = usePathname();
-  const user = useAuthStore((state) => state.user);
 
   const isBounties = pathname === "/" || pathname === "/marketplace";
 

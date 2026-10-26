@@ -8,6 +8,8 @@ import { graphqlRequest } from "@/lib/graphql-client";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { MOCK_ISSUES } from "@/components/marketplace/mock-issues";
 import { IssueCard, type IssueItem } from "@/components/marketplace/issue-card";
+import { WolfMark } from "@/components/ui/wolf-logo";
+import { useUiPreferences } from "@/lib/ui-preferences";
 
 const ISSUES_QUERY = `
   query HomeIssues($first: Int!) {
@@ -48,6 +50,7 @@ export function HomePageView({ search = "" }: { search?: string }) {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const status = useAuthStore((state) => state.status);
+  const { theme } = useUiPreferences();
 
   const [searchTerm, setSearchTerm] = useState(search);
   const [activeSort, setActiveSort] = useState<"HOT" | "CLOSING" | "HIGHEST" | "NEWEST">("HOT");
@@ -113,11 +116,16 @@ export function HomePageView({ search = "" }: { search?: string }) {
   });
 
   return (
-    <div className="br">
+    <div className={`br ${theme === "dark" ? "dark" : ""}`}>
       {/* Hero Section */}
       <section className="hero">
         <div className="hero-in">
           <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full border border-[var(--line-2)] bg-[var(--surface)] shadow-xs">
+              <WolfMark size={22} iconSize={16} />
+              <span className="text-xs font-semibold tracking-wide uppercase text-[var(--brand)]">Bloody-Roar Network</span>
+              <span className="text-xs text-[var(--ink-3)]">· Base Sepolia Escrow</span>
+            </div>
             <h1 className="display">Get paid in USDC for fixing real issues.</h1>
             <p className="lead">
               Clients post GitHub issues with a reward. Developers apply, deliver a pull request, and get paid by an escrow contract that neither side, nor the platform, can touch.
@@ -324,7 +332,10 @@ export function HomePageView({ search = "" }: { search?: string }) {
       <footer className="foot">
         <div className="foot-in">
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <span className="logo">Bloody-Roar</span>
+            <span className="logo" style={{ color: "var(--ink)" }}>
+              <WolfMark size={32} iconSize={24} />
+              <span className="font-bold tracking-tight text-lg">Bloody-Roar</span>
+            </span>
             <span style={{ color: "var(--ink-3)" }}>Bounty marketplace with on-chain USDC escrow on Base Sepolia.</span>
           </div>
           <nav aria-label="Marketplace">

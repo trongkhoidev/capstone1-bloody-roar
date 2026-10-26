@@ -49,7 +49,7 @@ export function MarketplaceFilterBar({
   totalCount,
   onFilterChange,
 }: FilterBarProps) {
-  const { language, t } = useUiPreferences();
+  const { language } = useUiPreferences();
   const [showDrawer, setShowDrawer] = useState(false);
 
   const categories = CATEGORIES.map((cat) => {

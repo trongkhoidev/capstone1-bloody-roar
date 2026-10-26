@@ -11,6 +11,7 @@ import { TestCasePanel } from "@/components/issues/test-case-panel";
 import { IssueComments } from "@/components/marketplace/issue-comments";
 import { Button } from "@/components/ui/button";
 import { AuthRequiredPanel } from "@/components/auth/auth-required-panel";
+import { useUiPreferences } from "@/lib/ui-preferences";
 import { MarketplaceEmpty } from "./marketplace-empty";
 import { MOCK_ISSUES } from "./mock-issues";
 import type { IssueItem } from "./issue-card";
@@ -60,6 +61,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export function IssueDetailView({ issueId }: { issueId: string }) {
   const user = useAuthStore((state) => state.user);
+  const { theme } = useUiPreferences();
   const [issue, setIssue] = useState<IssueDetail | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [applicationText, setApplicationText] = useState("");
@@ -231,7 +233,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
       : "b-mut";
 
   return (
-    <div className="br">
+    <div className={`br ${theme === "dark" ? "dark" : ""}`}>
       <main className="wrap">
         <div className="content" style={{ flexBasis: "100%", display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Breadcrumbs */}

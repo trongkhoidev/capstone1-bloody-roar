@@ -8,6 +8,7 @@ import { useAuthStore } from "@/lib/store/use-auth-store";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AuthRequiredPanel } from "@/components/auth/auth-required-panel";
+import { useUiPreferences } from "@/lib/ui-preferences";
 
 const DASHBOARD_QUERY = `query Dashboard {
   userStats { postedTasks workingTasks completedTasks applications completedPayouts }
@@ -26,6 +27,7 @@ const statusVariant = (status: string) => status === "OPEN" ? "success" : status
 export function DashboardView() {
   const user = useAuthStore((state) => state.user);
   const authStatus = useAuthStore((state) => state.status);
+  const { theme } = useUiPreferences();
   const [data, setData] = useState<DashboardData | null>(null);
   const [tab, setTab] = useState<Tab>("all");
   const [loading, setLoading] = useState(true);
@@ -51,11 +53,12 @@ export function DashboardView() {
   if (!user) return <main className="mx-auto max-w-4xl px-4 py-16"><AuthRequiredPanel title="Your workspace is ready after wallet sign-in" description="Connect your wallet to see the bounties you posted, tasks assigned to you, and every application in one place." actionLabel="Connect wallet to open dashboard" /></main>;
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="flex flex-wrap items-end justify-between gap-4 animate-fade-in">
-        <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[hsl(var(--primary))]">Workspace</p><h1 className="mt-1 font-outfit text-3xl font-bold gradient-text">Dashboard</h1><p className="mt-1 text-sm text-[hsl(var(--foreground-muted))]">Track the work you posted and the tasks you applied for.</p></div>
-        <Button asChild><Link href="/issues/create"><Plus className="mr-2 h-4 w-4" />Post a bounty</Link></Button>
-      </div>
+    <div className={`br min-h-screen ${theme === "dark" ? "dark" : ""}`}>
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="flex flex-wrap items-end justify-between gap-4 animate-fade-in">
+          <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">Workspace</p><h1 className="mt-1 font-outfit text-3xl font-bold text-[var(--ink)]">Dashboard</h1><p className="mt-1 text-sm text-[var(--ink-3)]">Track the work you posted and the tasks you applied for.</p></div>
+          <Button asChild className="btn btn-p"><Link href="/issues/create"><Plus className="mr-2 h-4 w-4" />Post a bounty</Link></Button>
+        </div>
 
       {data && <section className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-5 animate-fade-in">
         <StatCard label="Posted tasks" value={data.userStats.postedTasks} icon={<ClipboardList className="h-4 w-4" />} />
@@ -81,6 +84,7 @@ export function DashboardView() {
         )}
       </section>
     </main>
+  </div>
   );
 }
 

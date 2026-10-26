@@ -17,7 +17,7 @@ type Profile = { id: string; name?: string | null; avatar?: string | null; bio?:
 export function ProfileView() {
   const authUser = useAuthStore((state) => state.user);
   const authStatus = useAuthStore((state) => state.status);
-  const { language, t } = useUiPreferences();
+  const { language, t, theme } = useUiPreferences();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState("");
@@ -78,8 +78,9 @@ export function ProfileView() {
   if (!authUser) return <main className="mx-auto max-w-4xl px-4 py-16"><AuthRequiredPanel title="Build your Bloody-Roar profile" description="Connect your wallet to add your skills, GitHub verification, and the information clients see before selecting a developer." actionLabel="Connect wallet to edit profile" /></main>;
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="animate-fade-in"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[hsl(var(--primary))]">{language === "vi" ? "Tài khoản" : "Account"}</p><h1 className="mt-1 font-outfit text-3xl font-bold gradient-text">{t("profileHeading")}</h1><p className="mt-1 text-sm text-[hsl(var(--foreground-muted))]">{t("profileIntro")}</p></div>
+    <div className={`br min-h-screen py-8 ${theme === "dark" ? "dark" : ""}`}>
+      <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+        <div className="animate-fade-in"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">{language === "vi" ? "Tài khoản" : "Account"}</p><h1 className="mt-1 font-outfit text-3xl font-bold text-[var(--ink)]">{t("profileHeading")}</h1><p className="mt-1 text-sm text-[var(--ink-3)]">{t("profileIntro")}</p></div>
       {error && <div role="alert" className="mt-5 rounded-lg border border-[hsl(var(--destructive)/0.35)] bg-[hsl(var(--destructive)/0.08)] p-3 text-sm text-[hsl(var(--destructive))]">{error}</div>}
       {notice && <div role="status" className="mt-5 rounded-lg border border-[hsl(var(--success)/0.35)] bg-[hsl(var(--success)/0.08)] p-3 text-sm text-[hsl(var(--success))]">{notice}</div>}
       <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -118,6 +119,7 @@ export function ProfileView() {
         </aside>
       </div>
     </main>
+  </div>
   );
 }
 

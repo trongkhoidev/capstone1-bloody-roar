@@ -26,7 +26,7 @@ type AdminDispute = { id: string; issueId: string; status: string; reason: strin
 export function AdminView() {
   const user = useAuthStore((state) => state.user);
   const authStatus = useAuthStore((state) => state.status);
-  const { language, t } = useUiPreferences();
+  const { language, t, theme } = useUiPreferences();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [disputes, setDisputes] = useState<AdminDispute[]>([]);
@@ -100,8 +100,9 @@ export function AdminView() {
   if (user.role !== "ADMIN") return <main className="mx-auto max-w-3xl px-4 py-16 text-center"><ShieldAlert className="mx-auto h-8 w-8 text-[hsl(var(--warning))]" /><h1 className="mt-3 font-outfit text-3xl font-bold">Admin access required</h1><p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">This page is available to platform administrators only.</p></main>;
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 animate-fade-in">
-      <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[hsl(var(--primary))]">{t("operations")}</p><h1 className="mt-1 font-outfit text-3xl font-bold gradient-text">{t("admin")}</h1><p className="mt-1 text-sm text-[hsl(var(--foreground-muted))]">{t("manageAccounts")}</p></div>
+    <div className={`br min-h-screen ${theme === "dark" ? "dark" : ""}`}>
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 animate-fade-in">
+        <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">{t("operations")}</p><h1 className="mt-1 font-outfit text-3xl font-bold text-[var(--ink)]">{t("admin")}</h1><p className="mt-1 text-sm text-[var(--ink-3)]">{t("manageAccounts")}</p></div>
       {error && <p role="alert" className="mt-5 rounded-lg border border-[hsl(var(--destructive)/0.35)] bg-[hsl(var(--destructive)/0.08)] p-3 text-sm text-[hsl(var(--destructive))]">{error}</p>}
       {notice && <p role="status" className="mt-5 rounded-lg border border-[hsl(var(--success)/0.35)] bg-[hsl(var(--success)/0.08)] p-3 text-sm text-[hsl(var(--success))]">{notice}</p>}
 
@@ -141,6 +142,7 @@ export function AdminView() {
         </section>
       </div>
     </main>
+  </div>
   );
 }
 

@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { graphqlRequest } from "@/lib/graphql-client";
 import { MarketplaceFilterBar, type FilterState } from "./filter-bar";
 import { MOCK_ISSUES } from "./mock-issues";
@@ -10,7 +9,6 @@ import { IssueCard } from "./issue-card";
 import { TaskSkeleton } from "./task-skeleton";
 import { MarketplaceEmpty } from "./marketplace-empty";
 import type { IssueItem } from "./issue-card";
-import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { useUiPreferences } from "@/lib/ui-preferences";
 import { LeftSidebar } from "@/components/layout/left-sidebar";
@@ -82,12 +80,7 @@ function localFilter(issues: IssueItem[], filters: FilterState) {
 export function MarketplaceView({ initialSearch = "" }: { initialSearch?: string }) {
   const user = useAuthStore((state) => state.user);
   const isAdmin = user?.role === "ADMIN";
-  const { t } = useUiPreferences();
-  const [isMounted, setIsMounted] = useState(false);
-  
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const { theme } = useUiPreferences();
   
   const [filters, setFilters] = useState<FilterState>({ search: initialSearch, category: "", status: "", sortBy: "NEWEST" });
   const [issues, setIssues] = useState<IssueItem[]>(MOCK_ISSUES);
@@ -184,7 +177,7 @@ export function MarketplaceView({ initialSearch = "" }: { initialSearch?: string
   const resetFilters = () => setFilters({ search: "", category: "", status: "", sortBy: "NEWEST" });
 
   return (
-    <div className="br min-h-screen">
+    <div className={`br min-h-screen ${theme === "dark" ? "dark" : ""}`}>
       <div className="wrap">
         <LeftSidebar />
 

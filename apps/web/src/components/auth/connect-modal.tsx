@@ -4,6 +4,7 @@
 import React, { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { X, AlertCircle } from "lucide-react";
+import { WolfMark } from "@/components/ui/wolf-logo";
 import { useAuthStore } from "../../lib/store/use-auth-store";
 import {
   WALLET_OPTIONS,
@@ -79,10 +80,14 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
 
   return (
     <div
+      role="presentation"
       className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       data-testid="connect-modal-backdrop"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isProcessing) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && !isProcessing) onClose();
       }}
     >
       <div
@@ -93,12 +98,7 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
       >
         {/* Modal Header */}
         <div className="mh">
-          <span className="mark">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M4 6l4-2 4 3 4-3 4 2-2 7-6 7-6-7z" fill="var(--surface)" />
-              <path d="M9 11l1.5 1.5M15 11l-1.5 1.5" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </span>
+          <WolfMark size={36} iconSize={26} />
           <div style={{ minWidth: 0, flex: 1 }}>
             <h2 id="login-t" style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "var(--ink)" }}>
               {isProcessing && selectedWallet ? "Connecting to wallet..." : "Sign in to Bloody-Roar"}

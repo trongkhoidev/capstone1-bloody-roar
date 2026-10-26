@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, Search, Compass, LayoutDashboard, PlusCircle, ShieldCheck } from "lucide-react";
+import { Menu, Search, Compass, LayoutDashboard, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,6 +16,7 @@ import { UserMenu } from "@/components/layout/user-menu";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { useUiPreferences } from "@/lib/ui-preferences";
 import { UiPreferenceControls } from "@/components/layout/ui-preference-controls";
+import { WolfMark } from "@/components/ui/wolf-logo";
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
@@ -48,8 +49,8 @@ export function MobileNav() {
       <SheetContent side="right" className="w-[300px] sm:w-[350px] flex flex-col justify-between">
         <div className="space-y-6">
           <SheetHeader className="text-left border-b border-[hsl(var(--border))] pb-4">
-            <SheetTitle className="font-outfit text-xl font-bold text-[hsl(var(--primary))] flex items-center gap-2">
-              <ShieldCheck className="h-6 w-6 text-[hsl(var(--primary))]" />
+            <SheetTitle className="font-outfit text-xl font-bold text-[var(--ink)] flex items-center gap-2.5">
+              <WolfMark size={32} iconSize={24} />
               Bloody-Roar
             </SheetTitle>
           </SheetHeader>

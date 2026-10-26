@@ -251,6 +251,11 @@ function applyPreferences(language: UiLanguage, theme: UiTheme) {
   root.classList.toggle("dark", theme === "dark");
   root.classList.toggle("light", theme === "light");
   root.style.colorScheme = theme;
+  if (typeof document !== "undefined" && document.body) {
+    document.body.dataset.theme = theme;
+    document.body.classList.toggle("dark", theme === "dark");
+    document.body.classList.toggle("light", theme === "light");
+  }
 }
 
 export function UiPreferencesProvider({ children }: { children: ReactNode }) {

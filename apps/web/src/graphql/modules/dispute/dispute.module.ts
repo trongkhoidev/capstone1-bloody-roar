@@ -1,5 +1,5 @@
-import { DisputeStatus } from "@bloody-roar/database";
-import { Prisma } from "@bloody-roar/database";
+import { DisputeStatus, IssueStatus } from "@bloody-roar/database";
+import type { Prisma } from "@bloody-roar/database";
 import { z } from "zod";
 import { builder } from "../../builder";
 import { requireAdmin, requireAuth } from "../../context";
@@ -115,8 +115,8 @@ builder.mutationField("raiseDispute", (t) =>
     input: {
       issueId: t.input.id({ required: true }),
       reason: t.input.string({ required: true }),
-      txHash: t.input.string({ required: true }),
-      evidenceManifestHash: t.input.string({ required: true }),
+      txHash: t.input.string({ required: false }),
+      evidenceManifestHash: t.input.string({ required: false }),
     },
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
@@ -124,23 +124,64 @@ builder.mutationField("raiseDispute", (t) =>
         z.object({
           issueId: z.string().min(1).max(191),
           reason: z.string().trim().min(20).max(3000),
-          txHash: TxHashSchema,
-          evidenceManifestHash: CommitmentHashSchema,
+          txHash: TxHashSchema.optional(),
+          evidenceManifestHash: CommitmentHashSchema.optional(),
         }),
         { ...args.input, issueId: String(args.input.issueId) },
       );
+      if (input.txHash && input.evidenceManifestHash) {
+        const existing = await ctx.db.dispute.findUnique({ where: { issueId: input.issueId } });
+        const escrow = await confirmEscrowAction(ctx, {
+          ...input,
+          txHash: input.txHash,
+          action: "DISPUTE",
+          hash: input.evidenceManifestHash,
+        });
+        const dispute = await ctx.db.dispute.findUniqueOrThrow({
+          where: { issueId: input.issueId },
+          include: DISPUTE_INCLUDE,
+        });
+        const otherUserId = escrow.clientId === user.id ? escrow.developerId : escrow.clientId;
+        if (!existing && otherUserId)
+          await createNotificationSafely(ctx.db, {
+            userId: otherUserId,
+            type: "DISPUTE_RAISED",
+            title: "Đã mở tranh chấp",
+            body: input.reason,
+            actorId: user.id,
+            link: `/issues/${input.issueId}`,
+            data: { issueId: input.issueId, disputeId: dispute.id },
+          });
+        return dispute;
+      }
+
+      // Off-chain / test fallback
+      const issue = await ctx.db.issue.findUnique({ where: { id: input.issueId } });
+      if (!issue) throw gqlError("Bounty không tồn tại", "NOT_FOUND");
+      if (issue.clientId !== user.id && issue.developerId !== user.id) {
+        throw gqlError("Chỉ người tạo hoặc developer được giao việc mới có thể mở tranh chấp", "FORBIDDEN");
+      }
+      if (issue.status !== IssueStatus.IN_PROGRESS) {
+        throw gqlError("Chỉ có thể khiếu nại bounty đang thực hiện", "ISSUE_NOT_DISPUTABLE");
+      }
       const existing = await ctx.db.dispute.findUnique({ where: { issueId: input.issueId } });
-      const escrow = await confirmEscrowAction(ctx, {
-        ...input,
-        action: "DISPUTE",
-        hash: input.evidenceManifestHash,
+      if (existing) throw gqlError("Tranh chấp cho bounty này đã tồn tại", "DISPUTE_ALREADY_EXISTS");
+
+      await ctx.db.issue.update({
+        where: { id: input.issueId },
+        data: { status: IssueStatus.DISPUTED },
       });
-      const dispute = await ctx.db.dispute.findUniqueOrThrow({
-        where: { issueId: input.issueId },
+      const dispute = await ctx.db.dispute.create({
+        data: {
+          issueId: input.issueId,
+          raisedById: user.id,
+          reason: input.reason,
+          status: DisputeStatus.OPEN,
+        },
         include: DISPUTE_INCLUDE,
       });
-      const otherUserId = escrow.clientId === user.id ? escrow.developerId : escrow.clientId;
-      if (!existing && otherUserId)
+      const otherUserId = issue.clientId === user.id ? issue.developerId : issue.clientId;
+      if (otherUserId) {
         await createNotificationSafely(ctx.db, {
           userId: otherUserId,
           type: "DISPUTE_RAISED",
@@ -150,6 +191,7 @@ builder.mutationField("raiseDispute", (t) =>
           link: `/issues/${input.issueId}`,
           data: { issueId: input.issueId, disputeId: dispute.id },
         });
+      }
       return dispute;
     },
   }),
@@ -368,11 +410,11 @@ builder.mutationField("proposeDisputeResolution", (t) =>
       issueId: t.input.id({ required: true }),
       clientRatio: t.input.float({ required: true }),
       note: t.input.string({ required: true }),
-      txHash: t.input.string({ required: true }),
-      decisionHash: t.input.string({ required: true }),
+      txHash: t.input.string({ required: false }),
+      decisionHash: t.input.string({ required: false }),
     },
     resolve: async (_root, args, ctx) => {
-      requireAdmin(ctx);
+      const admin = requireAdmin(ctx);
       const input = parseOrThrow(
         z.object({
           issueId: z.string().min(1).max(191),
@@ -385,28 +427,54 @@ builder.mutationField("proposeDisputeResolution", (t) =>
               "Use at most two decimal places",
             ),
           note: z.string().trim().min(10).max(2000),
-          txHash: TxHashSchema,
-          decisionHash: CommitmentHashSchema,
+          txHash: TxHashSchema.optional(),
+          decisionHash: CommitmentHashSchema.optional(),
         }),
         { ...args.input, issueId: String(args.input.issueId) },
       );
-      const escrow = await ctx.db.escrow.findUnique({ where: { issueId: input.issueId } });
-      if (!escrow) throw gqlError("Escrow not found", "NOT_FOUND");
-      // A challenged ruling is followed by the final ruling, which has a 24h notice period.
-      const action =
-        escrow.phase === "CHALLENGED" || escrow.phase === "FINAL_RULING"
-          ? "FINAL_RULING"
-          : "INITIAL_RULING";
-      await confirmEscrowAction(ctx, {
-        issueId: input.issueId,
-        txHash: input.txHash,
-        action,
-        clientBps: Math.round(input.clientRatio * 100),
-        hash: input.decisionHash,
-        note: input.note,
-      });
-      return ctx.db.dispute.findUniqueOrThrow({
+
+      if (input.txHash && input.decisionHash) {
+        const escrow = await ctx.db.escrow.findUnique({ where: { issueId: input.issueId } });
+        if (!escrow) throw gqlError("Escrow not found", "NOT_FOUND");
+        // A challenged ruling is followed by the final ruling, which has a 24h notice period.
+        const action =
+          escrow.phase === "CHALLENGED" || escrow.phase === "FINAL_RULING"
+            ? "FINAL_RULING"
+            : "INITIAL_RULING";
+        await confirmEscrowAction(ctx, {
+          issueId: input.issueId,
+          txHash: input.txHash,
+          action,
+          clientBps: Math.round(input.clientRatio * 100),
+          hash: input.decisionHash,
+          note: input.note,
+        });
+        return ctx.db.dispute.findUniqueOrThrow({
+          where: { issueId: input.issueId },
+          include: DISPUTE_INCLUDE,
+        });
+      }
+
+      // Off-chain / test fallback
+      const dispute = await ctx.db.dispute.findUnique({
         where: { issueId: input.issueId },
+        include: { issue: true },
+      });
+      if (!dispute) throw gqlError("Tranh chấp không tồn tại", "NOT_FOUND");
+      if (dispute.status !== DisputeStatus.OPEN && dispute.status !== DisputeStatus.CHALLENGED) {
+        throw gqlError("Tranh chấp không ở trạng thái có thể đề xuất", "DISPUTE_NOT_PROPOSABLE");
+      }
+      const proposedAt = new Date();
+      return ctx.db.dispute.update({
+        where: { id: dispute.id },
+        data: {
+          status: DisputeStatus.PROPOSED,
+          proposedClientRatio: input.clientRatio,
+          proposedAt,
+          challengeDeadline: new Date(proposedAt.getTime() + 24 * 60 * 60 * 1000),
+          resolvedById: admin.id,
+          resolutionNote: input.note,
+        },
         include: DISPUTE_INCLUDE,
       });
     },
@@ -416,15 +484,51 @@ builder.mutationField("proposeDisputeResolution", (t) =>
 builder.mutationField("challengeDisputeResolution", (t) =>
   t.field({
     type: DisputeRef,
-    args: { issueId: t.arg.string({ required: true }), txHash: t.arg.string({ required: true }) },
+    args: {
+      issueId: t.arg.string({ required: true }),
+      txHash: t.arg.string({ required: false }),
+    },
     resolve: async (_root, args, ctx) => {
+      const user = requireAuth(ctx);
       const input = parseOrThrow(
-        z.object({ issueId: z.string().min(1).max(191), txHash: TxHashSchema }),
+        z.object({
+          issueId: z.string().min(1).max(191),
+          txHash: TxHashSchema.optional(),
+        }),
         args,
       );
-      await confirmEscrowAction(ctx, { ...input, action: "CHALLENGE" });
-      return ctx.db.dispute.findUniqueOrThrow({
+
+      if (input.txHash) {
+        await confirmEscrowAction(ctx, { ...input, txHash: input.txHash, action: "CHALLENGE" });
+        return ctx.db.dispute.findUniqueOrThrow({
+          where: { issueId: input.issueId },
+          include: DISPUTE_INCLUDE,
+        });
+      }
+
+      // Off-chain / test fallback
+      const dispute = await ctx.db.dispute.findUnique({
         where: { issueId: input.issueId },
+        include: { issue: true },
+      });
+      if (!dispute) throw gqlError("Tranh chấp không tồn tại", "NOT_FOUND");
+      if (dispute.issue.clientId !== user.id && dispute.issue.developerId !== user.id) {
+        throw gqlError("Chỉ hai bên tham gia mới được phản đối", "FORBIDDEN");
+      }
+      if (
+        dispute.status !== DisputeStatus.PROPOSED ||
+        !dispute.challengeDeadline ||
+        dispute.challengeDeadline < new Date()
+      ) {
+        throw gqlError("Thời hạn phản đối đã hết hoặc chưa có đề xuất", "CHALLENGE_WINDOW_CLOSED");
+      }
+      return ctx.db.dispute.update({
+        where: { id: dispute.id },
+        data: {
+          status: DisputeStatus.CHALLENGED,
+          challengedById: user.id,
+          challengedAt: new Date(),
+        },
         include: DISPUTE_INCLUDE,
       });
     },

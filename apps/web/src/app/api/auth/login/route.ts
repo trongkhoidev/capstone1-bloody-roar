@@ -105,7 +105,7 @@ export async function POST(req: Request) {
       return persistedUser;
     });
 
-    const response = NextResponse.json({ user });
+    const response = NextResponse.json({ token, user });
     response.cookies.set(AUTH_COOKIE_NAME, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

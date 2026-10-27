@@ -14,13 +14,6 @@ function redirect(request: Request, result: "connected" | "error", code?: string
   return response;
 }
 
-function encryptToken(token: string, key: Buffer) {
-  const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
-  const encrypted = Buffer.concat([cipher.update(token, "utf8"), cipher.final()]);
-  return `v1.${iv.toString("base64url")}.${cipher.getAuthTag().toString("base64url")}.${encrypted.toString("base64url")}`;
-}
-
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const cookieState = request.headers.get("cookie")?.split(";").map((part) => part.trim()).find((part) => part.startsWith("github_oauth_state="))?.slice("github_oauth_state=".length);
@@ -66,7 +59,6 @@ export async function GET(request: Request) {
       data: {
         githubId: String(githubUser.id),
         githubUsername: githubUser.login,
-        githubAccessTokenEncrypted: encryptToken(tokenResult.access_token, key),
         isGithubVerified: true,
       },
     });

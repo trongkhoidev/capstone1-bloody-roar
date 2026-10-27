@@ -41,6 +41,8 @@ describe("GET /api/auth/github/callback", () => {
 
     expect(response.headers.get("location")).toContain("github=connected");
     expect(prisma.user.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: USER_ID } }));
+    const { data } = prisma.user.update.mock.calls[0]?.[0] as { data: object };
+    expect(data).not.toHaveProperty("githubAccessTokenEncrypted");
   });
 
   it("refuses a GitHub account already linked to another wallet", async () => {

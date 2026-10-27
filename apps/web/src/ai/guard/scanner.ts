@@ -3,7 +3,7 @@ import { wordlist } from "@scure/bip39/wordlists/english.js";
 
 const SENSITIVE_PATTERNS: Array<{ name: string; pattern: RegExp }> = [
   // A 32-byte hex after a hash/tx label is a public identifier, not a key.
-  { name: "evm-private-key", pattern: /(?<!\b(?:\w*hash|tx)\w*[\s:="'(]{0,6})\b0x[a-fA-F0-9]{64}\b/gi },
+  { name: "evm-private-key", pattern: /(?<!\b(?:\w*hash|tx|transaction)\w*[\s:="'(]{0,6})\b0x[a-fA-F0-9]{64}\b/gi },
   { name: "openai-key", pattern: /\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}\b/g },
   { name: "groq-key", pattern: /\bgsk_[A-Za-z0-9]{20,}\b/g },
   { name: "github-classic-token", pattern: /\bgh[pousr]_[A-Za-z0-9]{20,}\b/g },
@@ -48,10 +48,10 @@ function maskSeedPhrases(content: string): { content: string; matched: boolean }
       const window = tokens.slice(i, i + length);
       const [first] = window;
       const last = window.at(-1);
-      if (!first || !last || window.length < length || !window.every((token) => BIP39_WORDS.has(token.word))) break;
+      if (!first || !last || window.length < length || !window.every((token) => BIP39_WORDS.has(token.word.toLowerCase()))) break;
       // Only letters and whitespace between the first and last word means the run is contiguous.
       if (!/^[A-Za-z\s]+$/.test(content.slice(first.start, last.end))) continue;
-      if (!validateMnemonic(window.map((token) => token.word).join(" "), wordlist)) continue;
+      if (!validateMnemonic(window.map((token) => token.word.toLowerCase()).join(" "), wordlist)) continue;
       spans.push([first.start, last.end]);
       i += length - 1;
       break;

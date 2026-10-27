@@ -18,7 +18,7 @@ describe.skipIf(!process.env.DATABASE_URL)("selectDeveloper under concurrency (r
   const ids: { users: string[]; tokenId?: string } = { users: [] };
   let issueId = "";
   let client: Awaited<ReturnType<typeof prisma.user.create>>;
-  let applicationIds: string[] = [];
+  const applicationIds: string[] = [];
 
   beforeAll(async () => {
     vi.stubEnv("ESCROW_CONTRACT_ADDRESS", randomHex(20));

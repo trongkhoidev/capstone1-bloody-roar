@@ -20,5 +20,6 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 // Re-export all Prisma types
 export * from "@prisma/client";
+export * from "./notifications";
 export type { PrismaClient };
   

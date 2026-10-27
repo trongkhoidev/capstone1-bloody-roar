@@ -21,6 +21,7 @@ import { z } from "zod";
 import { createHash } from "node:crypto";
 import { AILogStatus, NotificationType, Prisma } from "@bloody-roar/database";
 import { guardMessage } from "../ai/guard/service";
+import { scanAndMask } from "../ai/guard/scanner";
 import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE_BYTES } from "@bloody-roar/shared";
 import { getS3Storage, localUploadPath } from "../lib/storage";
 
@@ -270,11 +271,11 @@ export function registerSocketHandlers(
           }
         }
 
-        const guard =
-          type === "TEXT"
-            ? await guardMessage(content, { issueId })
-            : { content, wasModified: false, matches: [] as string[] };
-        const originalHash = guard.wasModified
+        const guard = await guardMessage(content, { issueId });
+        // File names are user input too, so they get the same masking as message text.
+        const fileNameScan = scanAndMask(fileName ?? "");
+        const wasModified = guard.wasModified || fileNameScan.wasModified;
+        const originalHash = wasModified
           ? createHash("sha256").update(content).digest("hex")
           : undefined;
         const startedAt = Date.now();
@@ -315,7 +316,7 @@ export function registerSocketHandlers(
                   senderId: user.id,
                   clientMessageId: clientMessageId || null,
                   replyToId: replyToId || null,
-                  wasModified: guard.wasModified,
+                  wasModified,
                   ...(originalHash ? { originalHash } : {}),
                 },
               });
@@ -325,7 +326,7 @@ export function registerSocketHandlers(
                   data: {
                     messageId: created.id,
                     uploaderId: user.id,
-                    fileName,
+                    fileName: fileNameScan.content,
                     fileUrl,
                     fileSize,
                     fileMime,
@@ -359,7 +360,7 @@ export function registerSocketHandlers(
           return;
         }
 
-        if (guard.wasModified) {
+        if (wasModified) {
           const outputHash = createHash("sha256").update(guard.content).digest("hex");
           void prisma.aILog
             .create({

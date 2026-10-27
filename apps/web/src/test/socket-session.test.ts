@@ -142,5 +142,9 @@ describe("socket message:send AI guard on files", () => {
     expect(callback.mock.calls[0]).toEqual([]);
     expect(tx.message.create.mock.calls[0]?.[0].data).toMatchObject({ content: "key [REDACTED]", wasModified: true });
     expect(tx.attachment.create.mock.calls[0]?.[0].data.fileName).toBe("[REDACTED]");
+    expect(prisma.notification.create.mock.calls[0]?.[0].data).toMatchObject({
+      userId: "dev-1",
+      type: "MESSAGE_RECEIVED",
+    });
   });
 });

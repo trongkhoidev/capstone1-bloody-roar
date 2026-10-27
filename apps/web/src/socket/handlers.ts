@@ -22,6 +22,7 @@ import { createHash } from "node:crypto";
 import { AILogStatus, NotificationType, Prisma } from "@bloody-roar/database";
 import { guardMessage } from "../ai/guard/service";
 import { scanAndMask } from "../ai/guard/scanner";
+import { createNotification } from "../lib/services/notifications";
 import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE_BYTES } from "@bloody-roar/shared";
 import { getS3Storage, localUploadPath } from "../lib/storage";
 
@@ -385,27 +386,17 @@ export function registerSocketHandlers(
         const recipientId = issue.clientId === user.id ? issue.developerId : issue.clientId;
         if (recipientId) {
           try {
-            const notification = await prisma.notification.create({
-              data: {
-                userId: recipientId,
-                actorId: user.id,
-                type: NotificationType.MESSAGE_RECEIVED,
-                title: `Tin nhắn mới trong “${issue.title}”`,
-                body:
-                  type === "FILE"
-                    ? `${user.name || "Thành viên"} đã gửi một tệp.`
-                    : guard.content.slice(0, 180),
-                link: `/issues/${issueId}`,
-                data: { issueId, messageId: message.id },
-              },
-            });
-            io.to(`user:${recipientId}`).emit("notification:new", {
-              id: notification.id,
-              type: notification.type,
-              title: notification.title,
-              body: notification.body,
-              data: { link: notification.link, issueId },
-              createdAt: notification.createdAt.toISOString(),
+            await createNotification(prisma, {
+              userId: recipientId,
+              actorId: user.id,
+              type: NotificationType.MESSAGE_RECEIVED,
+              title: `Tin nhắn mới trong “${issue.title}”`,
+              body:
+                type === "FILE"
+                  ? `${user.name || "Thành viên"} đã gửi một tệp.`
+                  : guard.content.slice(0, 180),
+              link: `/issues/${issueId}`,
+              data: { issueId, messageId: message.id },
             });
           } catch (notificationError) {
             log.warn(

@@ -1,7 +1,8 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
-import { createYoga } from "graphql-yoga";
 import { ACTIVE_CHAIN_ID } from "@bloody-roar/shared";
-import type { schema as AppSchema } from "../graphql/schema";
+import { execute, loadSchema } from "./graphql-execute";
+
+beforeAll(loadSchema, 60_000);
 
 type Role = "CLIENT" | "DEVELOPER" | "ADMIN";
 
@@ -17,44 +18,16 @@ function fakeDb() {
       create: vi.fn().mockResolvedValue({ id: "issue-new", clientId: "developer-1" }),
     },
     token: {
-      findUnique: vi
-        .fn()
-        .mockResolvedValue({ id: "token-1", isActive: true, chainId: ACTIVE_CHAIN_ID }),
+      findUnique: vi.fn().mockResolvedValue({
+        id: "token-1",
+        symbol: "USDC",
+        decimals: 6,
+        isActive: true,
+        chainId: ACTIVE_CHAIN_ID,
+      }),
     },
     notification: { create: vi.fn().mockResolvedValue({}) },
   };
-}
-
-type GraphQLResult = {
-  data?: Record<string, unknown> | null;
-  errors?: Array<{ extensions?: { code?: string } }>;
-};
-
-let schema: typeof AppSchema;
-
-beforeAll(async () => {
-  ({ schema } = await import("../graphql/schema"));
-}, 60_000);
-
-// Chạy qua Yoga như route thật. Tắt mask để giữ extensions.code: vitest nạp hai bản graphql,
-// nên Yoga không nhận ra GraphQLError từ gqlError và che lỗi thành INTERNAL_SERVER_ERROR.
-async function execute(
-  query: string,
-  contextValue: { user: unknown; db: unknown },
-  variables?: Record<string, unknown>,
-): Promise<GraphQLResult> {
-  const yoga = createYoga({
-    schema,
-    context: () => contextValue,
-    logging: false,
-    maskedErrors: false,
-  });
-  const response = await yoga.fetch("http://localhost/api/graphql", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ query, variables }),
-  });
-  return response.json() as Promise<GraphQLResult>;
 }
 
 describe("issues DEADLINE sort", () => {
@@ -84,7 +57,7 @@ const createInput = {
   title: "Fix the escrow release button",
   description: "Reproduce the bug on the marketplace page and fix the release flow.",
   category: "BUG_FIX",
-  bountyAmount: 100,
+  bountyAmount: "100",
   tokenId: "token-1",
 };
 

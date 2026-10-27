@@ -522,6 +522,10 @@ builder.mutationField("challengeDisputeResolution", (t) =>
       ) {
         throw gqlError("Thời hạn phản đối đã hết hoặc chưa có đề xuất", "CHALLENGE_WINDOW_CLOSED");
       }
+      // shortcut: one challenge per dispute, remove when the on-chain flow (BE-57) replaces this path
+      if (dispute.challengedAt) {
+        throw gqlError("Tranh chấp này đã được phản đối một lần", "CHALLENGE_ALREADY_USED");
+      }
       return ctx.db.dispute.update({
         where: { id: dispute.id },
         data: {

@@ -12,14 +12,17 @@ export type EscrowPhase =
   | "FINAL_RULING"
   | "RESOLVED";
 
-export type EscrowResolutionKind =
-  | "NONE"
-  | "RELEASE"
-  | "MISSED_DELIVERY_REFUND"
-  | "REVIEW_TIMEOUT"
-  | "SETTLEMENT"
-  | "RULING"
-  | "ARBITER_TIMEOUT_SPLIT";
+// Thứ tự khớp enum ResolutionKind trong contract: chỉ số on-chain là vị trí trong mảng này.
+export const ESCROW_RESOLUTION_KINDS = [
+  "NONE",
+  "RELEASE",
+  "MISSED_DELIVERY_REFUND",
+  "REVIEW_TIMEOUT",
+  "SETTLEMENT",
+  "RULING",
+  "ARBITER_TIMEOUT_SPLIT",
+] as const;
+export type EscrowResolutionKind = (typeof ESCROW_RESOLUTION_KINDS)[number];
 
 export type PreparedCall = {
   intentId: string;

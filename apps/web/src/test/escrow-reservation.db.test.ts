@@ -15,11 +15,8 @@ const SELECT = `mutation($issueId: ID!, $applicationId: ID!, $deliveryDeadline: 
 const randomHex = (bytes: number) => `0x${randomBytes(bytes).toString("hex")}`;
 
 describe.skipIf(!process.env.DATABASE_URL)("selectDeveloper under concurrency (real database)", () => {
-  const ids: {
-    users: string[];
-    tokenId?: string;
-    issueId?: string;
-  } = { users: [] };
+  const ids: { users: string[]; tokenId?: string } = { users: [] };
+  let issueId = "";
   let client: Awaited<ReturnType<typeof prisma.user.create>>;
   let applicationIds: string[] = [];
 
@@ -53,7 +50,7 @@ describe.skipIf(!process.env.DATABASE_URL)("selectDeveloper under concurrency (r
         requiredSkills: [],
       },
     });
-    ids.issueId = issue.id;
+    issueId = issue.id;
     await prisma.testCase.create({
       data: {
         title: "Release pays the developer",
@@ -78,12 +75,12 @@ describe.skipIf(!process.env.DATABASE_URL)("selectDeveloper under concurrency (r
   }, 60_000);
 
   afterAll(async () => {
-    if (ids.issueId) {
+    if (issueId) {
       await prisma.notification.deleteMany({ where: { userId: { in: ids.users } } });
-      await prisma.fundingReservation.deleteMany({ where: { issueId: ids.issueId } });
-      await prisma.testCase.deleteMany({ where: { issueId: ids.issueId } });
-      await prisma.application.deleteMany({ where: { issueId: ids.issueId } });
-      await prisma.issue.deleteMany({ where: { id: ids.issueId } });
+      await prisma.fundingReservation.deleteMany({ where: { issueId } });
+      await prisma.testCase.deleteMany({ where: { issueId } });
+      await prisma.application.deleteMany({ where: { issueId } });
+      await prisma.issue.deleteMany({ where: { id: issueId } });
     }
     if (ids.tokenId) await prisma.token.deleteMany({ where: { id: ids.tokenId } });
     await prisma.user.deleteMany({ where: { id: { in: ids.users } } });
@@ -98,7 +95,7 @@ describe.skipIf(!process.env.DATABASE_URL)("selectDeveloper under concurrency (r
         execute(
           SELECT,
           { user: client, db: prisma },
-          { issueId: ids.issueId, applicationId, deliveryDeadline },
+          { issueId, applicationId, deliveryDeadline },
         ),
       ),
     );
@@ -110,8 +107,8 @@ describe.skipIf(!process.env.DATABASE_URL)("selectDeveloper under concurrency (r
     expect(losers[0]?.errors?.[0]?.extensions?.code).toMatch(
       /^(ISSUE_NOT_OPEN|ISSUE_ALREADY_RESERVED)$/,
     );
-    expect(await prisma.fundingReservation.count({ where: { issueId: ids.issueId } })).toBe(1);
-    const issue = await prisma.issue.findUniqueOrThrow({ where: { id: ids.issueId } });
+    expect(await prisma.fundingReservation.count({ where: { issueId } })).toBe(1);
+    const issue = await prisma.issue.findUniqueOrThrow({ where: { id: issueId } });
     expect(issue.status).toBe("AWAITING_FUNDING");
   }, 60_000);
 });

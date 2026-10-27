@@ -27,6 +27,7 @@ import "./modules/submission/submission.module";
 import "./modules/ai/ai.module";
 import "./modules/escrow/escrow.module";
 import "./modules/escrow/reservation.module";
+import "./modules/escrow/intent.module";
 import "./modules/chat/chat.module";
 import "./modules/dispute/dispute.module";
 import "./modules/notification/notification.module";

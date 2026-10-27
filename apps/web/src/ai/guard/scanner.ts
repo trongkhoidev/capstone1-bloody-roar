@@ -1,5 +1,6 @@
 const SENSITIVE_PATTERNS: Array<{ name: string; pattern: RegExp }> = [
-  { name: "evm-private-key", pattern: /\b0x[a-fA-F0-9]{64}\b/g },
+  // A 32-byte hex after a hash/tx label is a public identifier, not a key.
+  { name: "evm-private-key", pattern: /(?<!\b(?:\w*hash|tx)\w*[\s:="'(]{0,6})\b0x[a-fA-F0-9]{64}\b/gi },
   { name: "openai-key", pattern: /\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}\b/g },
   { name: "groq-key", pattern: /\bgsk_[A-Za-z0-9]{20,}\b/g },
   { name: "github-classic-token", pattern: /\bgh[pousr]_[A-Za-z0-9]{20,}\b/g },

@@ -31,7 +31,7 @@ type StoredMessage = Prisma.MessageGetPayload<{
   include: { attachments: true };
 }>;
 
-function toMessagePayload(
+export function toMessagePayload(
   message: StoredMessage,
   sender: { id: string; name: string | null; avatar: string | null },
 ): ChatMessagePayload {

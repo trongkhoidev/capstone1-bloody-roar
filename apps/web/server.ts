@@ -5,6 +5,7 @@
 // =============================================================================
 
 import "./src/lib/env";
+import "./src/lib/config/env";
 
 import { createServer } from "node:http";
 import { parse } from "node:url";

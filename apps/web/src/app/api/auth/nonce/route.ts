@@ -5,6 +5,7 @@ import { prisma } from "@bloody-roar/database";
 import { authDomain } from "../../../../lib/auth/siwe";
 import { buildChallengeIdentity } from "../../../../lib/auth/challenge";
 import { createLogger } from "../../../../lib/logger";
+import { clientIp, rateLimit, tooManyRequests } from "../../../../lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,11 @@ export async function GET(req: Request) {
         { error: "A valid wallet address is required" },
         { status: 400, headers: { "Cache-Control": "no-store" } },
       );
+    }
+    const ipLimit = rateLimit(`nonce:ip:${clientIp(req)}`, { limit: 30, windowMs: 60_000 });
+    const addressLimit = rateLimit(`nonce:address:${address.toLowerCase()}`, { limit: 10, windowMs: 60_000 });
+    if (!ipLimit.ok || !addressLimit.ok) {
+      return tooManyRequests(Math.max(ipLimit.retryAfterMs, addressLimit.retryAfterMs));
     }
     const auth = thirdwebAuth();
     const uri = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:4000";

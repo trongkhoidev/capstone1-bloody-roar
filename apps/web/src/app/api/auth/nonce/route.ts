@@ -4,8 +4,11 @@ import { tryChecksumAddress } from "../../../../lib/auth/address";
 import { prisma } from "@bloody-roar/database";
 import { authDomain } from "../../../../lib/auth/siwe";
 import { buildChallengeIdentity } from "../../../../lib/auth/challenge";
+import { createLogger } from "../../../../lib/logger";
 
 export const dynamic = "force-dynamic";
+
+const log = createLogger("auth-nonce");
 
 export async function GET(req: Request) {
   try {
@@ -44,7 +47,7 @@ export async function GET(req: Request) {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
-    console.error("Nonce error:", error);
+    log.error({ err: error }, "Nonce error");
     return NextResponse.json(
       { error: "Failed to generate nonce" },
       { status: 500, headers: { "Cache-Control": "no-store" } },

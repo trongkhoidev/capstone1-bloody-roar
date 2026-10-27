@@ -33,8 +33,8 @@ export async function createPreparedCall(
     userId: string;
     method: EscrowMethod;
     args: Record<string, string>;
-    issueId?: string;
-    escrowKey?: string;
+    issueId?: string | null;
+    escrowKey?: string | null;
     expiresInMinutes?: number;
   },
 ): Promise<PreparedCall> {

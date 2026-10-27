@@ -9,6 +9,18 @@ afterEach(() => {
 });
 
 describe("AI Guard local rules", () => {
+  it("masks a valid BIP-39 recovery phrase but not one with a broken checksum", () => {
+    const valid = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+    const broken = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon";
+
+    expect(scanAndMask(`my recovery words: ${valid}`)).toEqual({
+      content: "my recovery words: [REDACTED]",
+      wasModified: true,
+      matches: ["seed-phrase"],
+    });
+    expect(scanAndMask(`typo: ${broken}`).content).toBe(`typo: ${broken}`);
+  });
+
   it("keeps tx and bytes32 hashes but still masks a bare private key", () => {
     const hash = `0x${"a1".repeat(32)}`;
     const key = `0x${"b2".repeat(32)}`;

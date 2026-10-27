@@ -1,19 +1,13 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@bloody-roar/database";
+import { keyBytes } from "../../../../../lib/github/crypto";
 
 export const dynamic = "force-dynamic";
 
 function redirect(request: Request, result: "connected" | "error") {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
   return NextResponse.redirect(new URL(`/profile?github=${result}`, base));
-}
-
-function keyBytes() {
-  const encoded = process.env.GITHUB_TOKEN_ENCRYPTION_KEY ?? "";
-  if (/^[\da-fA-F]{64}$/.test(encoded)) return Buffer.from(encoded, "hex");
-  if (/^[A-Za-z0-9_-]{43}$/.test(encoded)) return Buffer.from(encoded, "base64url");
-  return null;
 }
 
 function encryptToken(token: string, key: Buffer) {

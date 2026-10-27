@@ -87,11 +87,8 @@ builder.mutationField("applyToIssue", (t) =>
     },
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
-      if (user.role !== UserRole.DEVELOPER)
-        throw gqlError(
-          "Switch your profile to the developer role before applying",
-          "DEVELOPER_ROLE_REQUIRED",
-        );
+      if (user.role === UserRole.ADMIN)
+        throw gqlError("Quản trị viên không thể ứng tuyển", "ADMIN_NOT_ALLOWED");
       const input = parseOrThrow(ApplySchema, {
         issueId: String(args.input.issueId),
         ...(args.input.message != null ? { message: args.input.message } : {}),

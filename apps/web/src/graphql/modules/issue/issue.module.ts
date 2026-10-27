@@ -379,7 +379,11 @@ builder.queryField("issues", (t) =>
           : sortBy === "VIEW_COUNT"
             ? [{ viewCount: direction }, { id: "asc" }]
             : sortBy === "DEADLINE"
-              ? [{ expiresAt: "asc" }, { createdAt: "desc" }, { id: "asc" }]
+              ? [
+                  { expiresAt: { sort: direction, nulls: "last" } },
+                  { createdAt: "desc" },
+                  { id: "asc" },
+                ]
               : [{ createdAt: direction }, { id: "asc" }];
 
       // Fetch take + 1 để tính hasNextPage
@@ -513,11 +517,8 @@ builder.mutationField("createIssue", (t) =>
     },
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
-      if (user.role !== UserRole.CLIENT)
-        throw gqlError(
-          "Switch your profile to the client role before posting a bounty",
-          "CLIENT_ROLE_REQUIRED",
-        );
+      if (user.role === UserRole.ADMIN)
+        throw gqlError("Quản trị viên không thể đăng bài toán", "ADMIN_NOT_ALLOWED");
 
       const input = parseOrThrow(CreateIssueSchema, args.input);
 

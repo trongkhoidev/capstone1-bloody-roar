@@ -10,20 +10,21 @@ const buckets = new Map<string, Bucket>();
 
 export function rateLimit(
   key: string,
-  opts: { limit: number; windowMs: number },
+  opts: { limit: number; windowMs: number; cost?: number },
 ): { ok: boolean; retryAfterMs: number } {
   const now = Date.now();
   if (buckets.size > SWEEP_AT) {
     for (const [k, bucket] of buckets) if (bucket.resetAt <= now) buckets.delete(k);
   }
 
-  const bucket = buckets.get(key);
+  let bucket = buckets.get(key);
   if (!bucket || bucket.resetAt <= now) {
-    buckets.set(key, { count: 1, resetAt: now + opts.windowMs });
-    return { ok: true, retryAfterMs: 0 };
+    bucket = { count: 0, resetAt: now + opts.windowMs };
+    buckets.set(key, bucket);
   }
-  if (bucket.count < opts.limit) {
-    bucket.count += 1;
+  const cost = opts.cost ?? 1;
+  if (bucket.count + cost <= opts.limit) {
+    bucket.count += cost;
     return { ok: true, retryAfterMs: 0 };
   }
   return { ok: false, retryAfterMs: bucket.resetAt - now };

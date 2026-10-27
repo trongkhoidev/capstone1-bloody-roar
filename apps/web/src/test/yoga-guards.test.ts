@@ -1,6 +1,6 @@
 import { createSchema, createYoga } from "graphql-yoga";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { guardsPlugin, MAX_ALIASES, MAX_QUERY_DEPTH } from "../graphql/yoga-guards";
+import { guardsPlugin, MAX_ALIASES, MAX_QUERY_DEPTH, operationCost } from "../graphql/yoga-guards";
 
 const schema = createSchema({
   typeDefs: /* GraphQL */ `
@@ -30,6 +30,18 @@ function chainQuery(fields: number) {
 
 afterEach(() => {
   vi.unstubAllEnvs();
+});
+
+describe("operationCost", () => {
+  it("charges a mutation 5 points and a query 1", () => {
+    expect(operationCost("mutation { unlinkGithub { id } }")).toBe(5);
+    expect(operationCost("{ hello }")).toBe(1);
+  });
+
+  it("charges a document that does not parse, or no document, 1 point", () => {
+    expect(operationCost("{ hello")).toBe(1);
+    expect(operationCost(null)).toBe(1);
+  });
 });
 
 describe("GraphQL guards", () => {

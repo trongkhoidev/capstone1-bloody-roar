@@ -30,6 +30,13 @@ describe("rateLimit", () => {
     expect(rateLimit("ip:b", opts).ok).toBe(true);
   });
 
+  it("charges each call its cost against the limit", () => {
+    const opts = { limit: 10, windowMs: 60_000 };
+    expect(rateLimit("gql:cost", { ...opts, cost: 5 }).ok).toBe(true);
+    expect(rateLimit("gql:cost", { ...opts, cost: 5 }).ok).toBe(true);
+    expect(rateLimit("gql:cost", { ...opts, cost: 1 }).ok).toBe(false);
+  });
+
   it("counts each key separately", () => {
     const opts = { limit: 1, windowMs: 1_000 };
     rateLimit("ip:c", opts);

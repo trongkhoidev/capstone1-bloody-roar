@@ -4,6 +4,7 @@
 import {
   GraphQLError,
   NoSchemaIntrospectionCustomRule,
+  parse,
   type ASTVisitor,
   type SelectionNode,
   type ValidationContext,
@@ -38,6 +39,19 @@ function fragmentDepth(name: string, context: ValidationContext, memo: Map<strin
   const depth = fragment ? depthOf(fragment.selectionSet.selections, context, memo) : 0;
   memo.set(name, depth);
   return depth;
+}
+
+// Mutations cost 5 points and queries 1. A document that does not parse costs 1 and fails validation later.
+export function operationCost(query: string | null): number {
+  if (!query) return 1;
+  try {
+    const mutation = parse(query).definitions.some(
+      (definition) => "operation" in definition && definition.operation === "mutation",
+    );
+    return mutation ? 5 : 1;
+  } catch {
+    return 1;
+  }
 }
 
 export const queryShapeRule: ValidationRule = (context: ValidationContext): ASTVisitor => {

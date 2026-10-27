@@ -2,11 +2,15 @@ import { getOperationAST } from "graphql";
 import { createYoga, type Plugin } from "graphql-yoga";
 import { schema } from "../../../graphql/schema";
 import { createContext } from "../../../graphql/context";
-import { guardsPlugin, MAX_BODY_BYTES } from "../../../graphql/yoga-guards";
+import { guardsPlugin, MAX_BODY_BYTES, operationCost } from "../../../graphql/yoga-guards";
 import { logger } from "../../../lib/logger";
+import { clientIp, rateLimit, tooManyRequests } from "../../../lib/rate-limit";
 import { requestIdFrom, withRequestId } from "../../../lib/request-context";
 
 const dev = process.env.NODE_ENV !== "production";
+
+// Points per client per minute: a mutation spends 5, a query 1.
+const GRAPHQL_POINTS_PER_MINUTE = 600;
 
 const logOperations: Plugin = {
   onExecute({ args }) {
@@ -53,9 +57,23 @@ query {
   },
 });
 
+async function queryOf(request: Request): Promise<string | null> {
+  if (request.method === "GET") return new URL(request.url).searchParams.get("query");
+  const body = (await request.clone().json().catch(() => null)) as { query?: unknown } | null;
+  return typeof body?.query === "string" ? body.query : null;
+}
+
 // Each request runs under its own id, so resolver logs and the response header agree.
 async function handle(...args: Parameters<typeof handleRequest>) {
-  const requestId = requestIdFrom(args[0]);
+  const [request] = args;
+  const limit = rateLimit(`graphql:${clientIp(request)}`, {
+    limit: GRAPHQL_POINTS_PER_MINUTE,
+    windowMs: 60_000,
+    cost: operationCost(await queryOf(request)),
+  });
+  if (!limit.ok) return tooManyRequests(limit.retryAfterMs);
+
+  const requestId = requestIdFrom(request);
   const response = await withRequestId(requestId, () => handleRequest(...args));
   response.headers.set("x-request-id", requestId);
   return response;

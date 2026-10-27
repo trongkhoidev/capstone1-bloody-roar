@@ -4,10 +4,11 @@ import { encodeEscrowCall } from "@bloody-roar/shared/escrow";
 import { createPreparedCall } from "../lib/escrow/prepare";
 
 const CONTRACT = "0x1111111111111111111111111111111111111111";
+// Tên tham số khớp ABI của deposit(string escrowId, address developer, uint256 amount, ...)
 const ARGS = {
-  escrowKey: "br_issue-1_1",
+  escrowId: "br_issue-1_1",
   developer: "0x2222222222222222222222222222222222222222",
-  amountRaw: "1250000000",
+  amount: "1250000000",
   deliveryDeadline: "1793000000",
   termsHash: `0x${"ab".repeat(32)}`,
 };

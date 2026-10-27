@@ -47,8 +47,8 @@ export async function createPreparedCall(
   const intent = await db.transactionIntent.create({
     data: {
       userId: input.userId,
-      issueId: input.issueId,
-      escrowKey: input.escrowKey,
+      issueId: input.issueId ?? null,
+      escrowKey: input.escrowKey ?? null,
       chainId,
       contractAddress,
       method: input.method,

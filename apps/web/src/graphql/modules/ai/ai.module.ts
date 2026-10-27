@@ -1,8 +1,8 @@
 import { IssueStatus, TestCasePriority, TestCaseSource, UserRole } from "@bloody-roar/database";
-import type { Prisma, TestCase as TestCaseModel } from "@bloody-roar/database";
+import type { AILog, Prisma, TestCase as TestCaseModel } from "@bloody-roar/database";
 import { z } from "zod";
 import { builder } from "../../builder";
-import { requireAuth } from "../../context";
+import { requireAdmin, requireAuth } from "../../context";
 import { gqlError, parseOrThrow } from "../../errors";
 import { completeAI } from "../../../ai/model-router";
 import { scanAndMask } from "../../../ai/guard/scanner";
@@ -93,7 +93,7 @@ builder.mutationField("generateTestCases", (t) =>
 
       const issue = await ctx.db.issue.findUnique({
         where: { id: args.issueId },
-        select: { id: true, clientId: true, status: true, title: true, description: true, category: true, requiredSkills: true },
+        select: { id: true, clientId: true, status: true, title: true, description: true, category: true, requiredSkills: true, githubRepo: true },
       });
       if (!issue) throw gqlError("Task not found", "NOT_FOUND");
       if (issue.clientId !== user.id) throw gqlError("Only the task owner can generate acceptance criteria", "FORBIDDEN");
@@ -104,6 +104,7 @@ builder.mutationField("generateTestCases", (t) =>
         description: issue.description,
         category: issue.category,
         requiredSkills: issue.requiredSkills,
+        githubRepo: issue.githubRepo,
       })).content;
 
       try {
@@ -252,6 +253,45 @@ builder.mutationField("deleteTestCase", (t) =>
 
       await ctx.db.testCase.delete({ where: { id: testCase.id } });
       return true;
+    },
+  }),
+);
+
+// Hashes and token counts only: prompt and response text are never stored, so they never reach this query.
+const AILogRef = builder.objectRef<AILog>("AILog").implement({
+  fields: (t) => ({
+    id: t.id({ resolve: (log) => log.id }),
+    task: t.string({ resolve: (log) => log.task }),
+    model: t.string({ resolve: (log) => log.model }),
+    provider: t.string({ resolve: (log) => log.provider }),
+    status: t.string({ resolve: (log) => log.status }),
+    issueId: t.string({ nullable: true, resolve: (log) => log.issueId }),
+    disputeId: t.string({ nullable: true, resolve: (log) => log.disputeId }),
+    latencyMs: t.int({ nullable: true, resolve: (log) => log.latencyMs }),
+    promptTokens: t.int({ nullable: true, resolve: (log) => log.promptTokens }),
+    completionTokens: t.int({ nullable: true, resolve: (log) => log.completionTokens }),
+    costUsd: t.string({ nullable: true, resolve: (log) => log.costUsd?.toString() ?? null }),
+    errorMessage: t.string({ nullable: true, resolve: (log) => log.errorMessage }),
+    createdAt: t.string({ resolve: (log) => log.createdAt.toISOString() }),
+  }),
+});
+
+builder.queryField("aiLogs", (t) =>
+  t.field({
+    type: [AILogRef],
+    args: {
+      task: t.arg.string({ required: false }),
+      after: t.arg.id({ required: false }),
+      first: t.arg.int({ required: false }),
+    },
+    resolve: (_root, args, ctx) => {
+      requireAdmin(ctx);
+      return ctx.db.aILog.findMany({
+        where: args.task ? { task: args.task } : {},
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        take: Math.min(Math.max(args.first ?? 50, 1), 100),
+        ...(args.after ? { cursor: { id: String(args.after) }, skip: 1 } : {}),
+      });
     },
   }),
 );

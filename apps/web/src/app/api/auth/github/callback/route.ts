@@ -5,9 +5,13 @@ import { keyBytes } from "../../../../../lib/github/crypto";
 
 export const dynamic = "force-dynamic";
 
-function redirect(request: Request, result: "connected" | "error") {
+function redirect(request: Request, result: "connected" | "error", code?: string) {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
-  return NextResponse.redirect(new URL(`/profile?github=${result}`, base));
+  const target = new URL(`/profile?github=${result}`, base);
+  if (code) target.searchParams.set("code", code);
+  const response = NextResponse.redirect(target);
+  response.cookies.set("github_oauth_state", "", { path: "/api/auth/github/callback", maxAge: 0 });
+  return response;
 }
 
 function encryptToken(token: string, key: Buffer) {
@@ -23,7 +27,6 @@ export async function GET(request: Request) {
   const code = url.searchParams.get("code");
   const returnedState = url.searchParams.get("state");
   const response = redirect(request, "error");
-  response.cookies.set("github_oauth_state", "", { path: "/api/auth/github/callback", maxAge: 0 });
 
   try {
     if (!cookieState || !code || !returnedState || !process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) return response;
@@ -55,6 +58,9 @@ export async function GET(request: Request) {
     const githubUser = await githubResponse.json() as { id?: number; login?: string };
     if (!githubUser.id || !githubUser.login) return response;
 
+    const owner = await prisma.user.findUnique({ where: { githubId: String(githubUser.id) }, select: { id: true } });
+    if (owner && owner.id !== state.userId) return redirect(request, "error", "GITHUB_ALREADY_LINKED");
+
     await prisma.user.update({
       where: { id: state.userId },
       data: {
@@ -64,9 +70,7 @@ export async function GET(request: Request) {
         isGithubVerified: true,
       },
     });
-    const connected = redirect(request, "connected");
-    connected.cookies.set("github_oauth_state", "", { path: "/api/auth/github/callback", maxAge: 0 });
-    return connected;
+    return redirect(request, "connected");
   } catch {
     return response;
   }

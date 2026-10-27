@@ -1,0 +1,126 @@
+# .github/workflows/ci.yml
+# Web checks and build, the e2e scripts that need no chain, the schema-vs-migrations check, and secret scanning.
+
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: bloody_roar_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/bloody_roar_ci?schema=public
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/bloody_roar_ci?schema=public
+      NEXT_PUBLIC_APP_URL: http://localhost:4000
+      E2E_BASE_URL: http://localhost:4000
+      AI_HASH_KEY: ci-only-not-a-secret
+      # Public Hardhat account #1, used only as the CI admin wallet.
+      ADMIN_WALLETS: "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.0"
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Generate Prisma client
+        run: bun run db:generate
+      - name: Lint, typecheck, unit tests
+        run: |
+          bun run lint
+          bun run typecheck
+          bun run --cwd apps/web test
+      - name: Build
+        run: bun run build
+      - name: Migrate and seed
+        run: |
+          bun run --cwd packages/database db:migrate:prod
+          bun run db:seed
+      - name: Start server
+        env:
+          AUTH_PRIVATE_KEY: ${{ secrets.AUTH_PRIVATE_KEY }}
+          THIRDWEB_SECRET_KEY: ${{ secrets.THIRDWEB_SECRET_KEY }}
+          THIRDWEB_CLIENT_ID: ${{ secrets.THIRDWEB_CLIENT_ID }}
+        run: |
+          bun run --cwd apps/web start > server.log 2>&1 &
+          curl --fail --silent --retry 60 --retry-delay 2 --retry-all-errors http://localhost:4000/api/health
+      - name: E2E scripts that need no chain
+        env:
+          TEST_CLIENT_KEY: ${{ secrets.TEST_CLIENT_KEY }}
+          TEST_DEV1_KEY: ${{ secrets.TEST_DEV1_KEY }}
+          TEST_DEV2_KEY: ${{ secrets.TEST_DEV2_KEY }}
+        run: |
+          for script in e2e-login e2e-issue e2e-chat e2e-application e2e-workflow; do
+            bun run --cwd apps/web "scripts/$script.ts"
+          done
+      - name: Server log
+        if: failure()
+        run: cat server.log
+
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.0"
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Schema matches migrations
+        env:
+          SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/bloody_roar_shadow?schema=public
+        run: |
+          psql "postgresql://postgres:postgres@localhost:5432/postgres" -c "CREATE DATABASE bloody_roar_shadow;"
+          cd packages/database
+          bunx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamodel prisma/schema.prisma --shadow-database-url "$SHADOW_DATABASE_URL" --exit-code
+
+  secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan for committed secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,54 @@
+# .github/workflows/contracts.yml
+# Smart-contract checks: compile, Hardhat tests, Foundry fuzz and invariant tests, coverage, Slither, deploy dry-run.
+
+name: contracts
+
+on:
+  push:
+    paths:
+      - "apps/contracts/**"
+      - "bun.lock"
+      - "package.json"
+      - ".github/workflows/contracts.yml"
+  pull_request:
+    paths:
+      - "apps/contracts/**"
+      - "bun.lock"
+      - "package.json"
+      - ".github/workflows/contracts.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contracts-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.0"
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Compile
+        run: bun run contracts:compile
+      - name: Hardhat tests
+        run: bun run --cwd apps/contracts test
+      - name: Foundry fuzz and invariant tests
+        working-directory: apps/contracts
+        run: forge test --offline
+      - name: Coverage
+        run: bun run --cwd apps/contracts coverage
+      - name: Slither
+        uses: crytic/slither-action@v0.4.0
+        with:
+          target: apps/contracts
+          slither-args: --config-file apps/contracts/slither.config.json
+      - name: Deploy dry-run
+        run: bun run --cwd apps/contracts deploy:dry-run

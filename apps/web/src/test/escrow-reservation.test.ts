@@ -331,3 +331,14 @@ describe("reservation query (BE-31)", () => {
     );
   });
 });
+
+describe("assignDeveloper is removed (BE-23)", () => {
+  it("no longer exists as a mutation, so developers cannot be assigned without a deposit", async () => {
+    const result = await execute(
+      `mutation { assignDeveloper(input: { issueId: "issue-1", applicationId: "app-1" }) { id } }`,
+      { user: client, db: fakeDb() },
+    );
+
+    expect(result.errors?.[0]?.message).toMatch(/Cannot query field "assignDeveloper"/);
+  });
+});

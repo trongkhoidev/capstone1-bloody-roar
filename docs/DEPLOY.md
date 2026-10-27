@@ -10,14 +10,15 @@ Mỗi lần deploy, Railway tự làm:
 ## 1. Supabase
 
 **Database** (Project → Connect → ORMs → Prisma):
-- Railway không gọi được IPv6, nên **không dùng** "Direct connection" (`db.<ref>.supabase.co`). Dùng **Session pooler** (host `aws-0-<region>.pooler.supabase.com`, port **5432**) cho cả hai biến:
-  - `DATABASE_URL = postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres?connection_limit=10`
-  - `DIRECT_URL` = cùng chuỗi đó (Prisma dùng để migrate).
-- Session pooler hợp với một server chạy liên tục như app này, và không cần cờ `pgbouncer=true`.
+- Railway không gọi được IPv6, nên **không dùng** "Direct connection" (`db.<ref>.supabase.co`). Dùng pooler (host `aws-0-<region>.pooler.supabase.com`), hai biến khác nhau:
+  - `DATABASE_URL` (app lúc chạy): **Transaction pooler**, port **6543**: `postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=10`
+  - `DIRECT_URL` (Prisma migrate, chạy ở pre-deploy): **Session pooler**, port **5432**: `postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres`
+- `pgbouncer=true` bắt buộc với transaction pooler vì Prisma không dùng prepared statement qua đó. Migrate không chạy qua transaction pooler, nên cần `DIRECT_URL` riêng.
 
 **Storage** (tùy chọn, cần nếu muốn gửi file trong chat):
-1. Storage → New bucket → tên `attachments`, **không** bật Public.
+1. Storage → New bucket → tên `attachments`, **không** bật Public. Bucket private: file chỉ tải được qua signed URL do server tạo.
 2. Storage → Settings → S3 Connection: bật, tạo Access key, ghi lại endpoint và region.
+3. Access key và service key chỉ đặt trên Railway (biến `AWS_*`, `S3_*`). Không đặt tiền tố `NEXT_PUBLIC_` và không đưa vào client.
 
 ## 2. Railway
 
@@ -25,6 +26,17 @@ Mỗi lần deploy, Railway tự làm:
 2. Settings → Networking → Generate Domain (ví dụ `bloody-roar.up.railway.app`).
 3. Variables: điền bảng ở mục 3, rồi Deploy.
 4. Mở `https://<domain>/api/health`, phải thấy `{"status":"ok","database":"connected"}`.
+
+**Builder cần đủ RAM cho `next build`.** `Dockerfile` giả định builder khoảng 8 GB (heap Node 3 GB, 2 worker của Next). Trên máy dev đã kiểm, Docker Desktop chỉ được cấp khoảng 2.8 GB và `next build` bị kill (`SIGKILL`) ở bước kiểm tra type. Muốn build local thì tăng RAM của Docker Desktop trước.
+
+### Hai service
+
+Repo dùng một image cho hai service:
+
+- **web** (repo này): `CMD` mặc định của `Dockerfile` chạy `bun run --cwd apps/web start`. `railway.json` khai báo healthcheck `/api/health` và pre-deploy `db:migrate:prod` + `db:seed:prod`.
+- **worker**: dùng cùng image nhưng ghi đè Start Command bằng lệnh của worker. **Chưa có trong nhánh này**: `apps/worker` do A3 thêm. Khi có, phải bổ sung healthcheck và lệnh start tại đây. `railway.json` chỉ áp cho một service, nên worker cần file cấu hình riêng hoặc cấu hình trong dashboard. Phần này chưa kiểm trên Railway.
+
+Rollback và xử lý sự cố: xem [`RUNBOOK.md`](RUNBOOK.md).
 
 ## 3. Biến môi trường
 

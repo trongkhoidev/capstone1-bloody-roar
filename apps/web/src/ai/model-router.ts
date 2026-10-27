@@ -145,11 +145,15 @@ export async function completeAI(input: AICompletionInput, dependencies: AIRoute
   const audit = dependencies.audit ?? persistAudit;
   const inputHash = sha256(input.messages.map((message) => `${message.role}:${message.content}`).join("\n"));
   const errors: string[] = [];
+  // One deadline for the whole provider chain: a slow first provider leaves no time to fall back.
+  const deadline = Date.now() + (input.timeoutMs ?? timeoutFor(input.task));
 
   for (const [index, provider] of providers.entries()) {
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) break;
     const startedAt = Date.now();
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), input.timeoutMs ?? timeoutFor(input.task));
+    const timer = setTimeout(() => controller.abort(), remainingMs);
     try {
       const response = await fetcher(provider.endpoint, {
         method: "POST",

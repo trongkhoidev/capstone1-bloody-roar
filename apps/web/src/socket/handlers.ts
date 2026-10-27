@@ -72,6 +72,7 @@ export function registerSocketHandlers(
       const user = await verifyJWT(token);
       if (!user) return next(new Error("Unauthorized"));
       socket.data.user = user;
+      socket.data.token = token;
     } else {
       return next(new Error("Unauthorized"));
     }
@@ -132,8 +133,12 @@ export function registerSocketHandlers(
       try {
         log.debug({ issueId: data.issueId, type: data.type }, "Incoming message");
 
-        const user = socket.data.user;
-        if (!user) return callback?.("Unauthorized");
+        // Re-check the session on every send: the handshake check misses later logout or ban.
+        const user = await verifyJWT(socket.data.token);
+        if (!user) {
+          socket.disconnect(true);
+          return callback?.("Unauthorized");
+        }
 
         const parsed = z
           .object({

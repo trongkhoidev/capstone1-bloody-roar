@@ -91,11 +91,17 @@ builder.queryFields((t) => ({
   }),
   adminDisputes: t.prismaField({
     type: [DisputeRef],
-    resolve: (query, _root, _args, ctx) => {
+    args: {
+      first: t.arg.int({ required: false }),
+      after: t.arg.id({ required: false }),
+    },
+    resolve: (query, _root, args, ctx) => {
       requireAdmin(ctx);
       return ctx.db.dispute.findMany({
         ...query,
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        take: Math.min(Math.max(args.first ?? 50, 1), 100),
+        ...(args.after ? { cursor: { id: String(args.after) }, skip: 1 } : {}),
         include: DISPUTE_INCLUDE,
       });
     },

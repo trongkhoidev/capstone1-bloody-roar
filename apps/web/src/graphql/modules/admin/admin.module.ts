@@ -33,6 +33,7 @@ builder.queryField("adminUsers", (t) =>
     args: {
       search: t.arg.string({ required: false }),
       first: t.arg.int({ required: false }),
+      after: t.arg.id({ required: false }),
     },
     resolve: (_root, args, ctx) => {
       requireAdmin(ctx);
@@ -49,6 +50,7 @@ builder.queryField("adminUsers", (t) =>
           : {},
         orderBy: [{ createdAt: "desc" }, { id: "asc" }],
         take: Math.min(Math.max(args.first ?? 50, 1), 100),
+        ...(args.after ? { cursor: { id: String(args.after) }, skip: 1 } : {}),
       });
     },
   }),

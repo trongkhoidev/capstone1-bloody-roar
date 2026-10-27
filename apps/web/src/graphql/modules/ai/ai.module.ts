@@ -197,3 +197,61 @@ builder.mutationField("updateTestCase", (t) =>
     },
   }),
 );
+
+const CreateTestCaseSchema = z.object({
+  issueId: z.string().min(1),
+  title: z.string().trim().min(4).max(160),
+  description: z.string().trim().min(8).max(1000),
+  given: z.string().trim().min(4).max(1000),
+  when: z.string().trim().min(4).max(1000),
+  then: z.string().trim().min(4).max(1000),
+  priority: z.nativeEnum(TestCasePriority).default(TestCasePriority.NORMAL),
+  isEdgeCase: z.boolean().default(false),
+});
+
+// Manual criteria start unapproved: the client must approve them before the terms hash is taken.
+builder.mutationField("createTestCase", (t) =>
+  t.fieldWithInput({
+    type: TestCaseRef,
+    typeOptions: { name: "CreateTestCaseInput" },
+    input: {
+      issueId: t.input.string({ required: true }),
+      title: t.input.string({ required: true }),
+      description: t.input.string({ required: true }),
+      given: t.input.string({ required: true }),
+      when: t.input.string({ required: true }),
+      then: t.input.string({ required: true }),
+      priority: t.input.field({ type: TestCasePriorityEnum, required: false }),
+      isEdgeCase: t.input.boolean({ required: false }),
+    },
+    resolve: async (_root, args, ctx) => {
+      const user = requireAuth(ctx);
+      const { issueId, ...fields } = parseOrThrow(CreateTestCaseSchema, Object.fromEntries(Object.entries(args.input).filter(([, value]) => value !== null && value !== undefined)));
+      const issue = await ctx.db.issue.findUnique({ where: { id: issueId }, select: { clientId: true, status: true } });
+      if (!issue) throw gqlError("Task not found", "NOT_FOUND");
+      if (issue.clientId !== user.id) throw gqlError("Only the task owner can review acceptance criteria", "FORBIDDEN");
+      if (issue.status !== IssueStatus.OPEN) throw gqlError("Acceptance criteria are locked after assignment", "ISSUE_NOT_EDITABLE");
+
+      const testCase = await ctx.db.testCase.create({
+        data: { ...fields, issueId, source: TestCaseSource.MANUAL, isApproved: false },
+      });
+      return toGraphqlTestCase(testCase);
+    },
+  }),
+);
+
+builder.mutationField("deleteTestCase", (t) =>
+  t.boolean({
+    args: { id: t.arg.id({ required: true }) },
+    resolve: async (_root, args, ctx) => {
+      const user = requireAuth(ctx);
+      const testCase = await ctx.db.testCase.findUnique({ where: { id: String(args.id) }, include: { issue: { select: { clientId: true, status: true } } } });
+      if (!testCase) throw gqlError("Acceptance criterion not found", "NOT_FOUND");
+      if (testCase.issue.clientId !== user.id) throw gqlError("Only the task owner can review acceptance criteria", "FORBIDDEN");
+      if (testCase.issue.status !== IssueStatus.OPEN) throw gqlError("Acceptance criteria are locked after assignment", "ISSUE_NOT_EDITABLE");
+
+      await ctx.db.testCase.delete({ where: { id: testCase.id } });
+      return true;
+    },
+  }),
+);

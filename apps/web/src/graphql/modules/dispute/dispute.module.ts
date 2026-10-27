@@ -36,9 +36,11 @@ export const DisputeRef = builder.prismaObject("Dispute", {
       nullable: true,
       resolve: (d) => d.noticeDeadline?.toISOString() ?? null,
     }),
+    // Only the arbiter reads the advisory analysis; the parties see the ruling, not the reasoning behind it.
     aiReport: t.string({
       nullable: true,
-      resolve: (dispute) => (dispute.aiReport == null ? null : JSON.stringify(dispute.aiReport)),
+      resolve: (dispute, _args, ctx) =>
+        ctx.user?.role !== "ADMIN" || dispute.aiReport == null ? null : JSON.stringify(dispute.aiReport),
     }),
     aiConfidenceScore: t.exposeFloat("aiConfidenceScore", { nullable: true }),
     suggestedRatio: t.float({

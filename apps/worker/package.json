@@ -1,0 +1,19 @@
+{
+  "name": "@bloody-roar/worker",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "bun --env-file=../../.env src/index.ts",
+    "replay": "bun --env-file=../../.env src/indexer/replay-cli.ts",
+    "test": "bun --env-file=../../.env test",
+    "test:e2e": "bun --env-file=../../.env e2e/reorg.e2e.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bloody-roar/database": "workspace:*",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1"
+  }
+}

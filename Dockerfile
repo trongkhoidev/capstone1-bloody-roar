@@ -1,9 +1,10 @@
 # Bloody-Roar web (Next.js + GraphQL + Socket.IO custom server) for Railway.
 FROM oven/bun:1
 
-# Prisma query engine needs OpenSSL
+# Prisma query engine needs OpenSSL. node-gyp needs python3 and a compiler for the
+# optional native addons (bufferutil, utf-8-validate) that bun install builds.
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && apt-get install -y --no-install-recommends openssl ca-certificates python3 make g++ \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

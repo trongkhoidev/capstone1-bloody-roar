@@ -1,4 +1,4 @@
-import { IssueStatus, UserRole, type AdminLog, type Issue, type User } from "@bloody-roar/database";
+import { ApplicationStatus, IssueStatus, UserRole, type AdminLog, type Issue, type User } from "@bloody-roar/database";
 import { z } from "zod";
 import { builder } from "../../builder";
 import { requireAdmin } from "../../context";
@@ -158,6 +158,23 @@ builder.mutationField("banUser", (t) =>
           where: { userId: target.id, revokedAt: null },
           data: { revokedAt: new Date() },
         });
+        // Cancel the banned client's open tasks, then reject pending applications on them and the user's own.
+        const openIssues = await tx.issue.findMany({
+          where: { clientId: target.id, status: IssueStatus.OPEN },
+          select: { id: true },
+        });
+        const openIssueIds = openIssues.map((issue) => issue.id);
+        await tx.issue.updateMany({
+          where: { id: { in: openIssueIds } },
+          data: { status: IssueStatus.CANCELLED },
+        });
+        await tx.application.updateMany({
+          where: {
+            status: ApplicationStatus.PENDING,
+            OR: [{ developerId: target.id }, { issueId: { in: openIssueIds } }],
+          },
+          data: { status: ApplicationStatus.REJECTED },
+        });
         await tx.adminLog.create({
           data: {
             adminId: admin.id,
@@ -200,6 +217,39 @@ builder.mutationField("unbanUser", (t) =>
             action: "unban_user",
             target: "user",
             targetId: target.id,
+          },
+        });
+        return user;
+      });
+    },
+  }),
+);
+
+builder.mutationField("setUserRole", (t) =>
+  t.field({
+    type: AdminUserRef,
+    args: {
+      userId: t.arg.id({ required: true }),
+      role: t.arg.string({ required: true }),
+    },
+    resolve: async (_root, args, ctx) => {
+      const admin = requireAdmin(ctx);
+      const role = parseOrThrow(z.nativeEnum(UserRole), args.role);
+      const userId = String(args.userId);
+      if (userId === admin.id && role !== UserRole.ADMIN) {
+        throw gqlError("Không thể tự hạ quyền quản trị viên", "SELF_DEMOTION");
+      }
+      return ctx.db.$transaction(async (tx) => {
+        const target = await tx.user.findUnique({ where: { id: userId } });
+        if (!target) throw gqlError("Người dùng không tồn tại", "NOT_FOUND");
+        const user = await tx.user.update({ where: { id: target.id }, data: { role } });
+        await tx.adminLog.create({
+          data: {
+            adminId: admin.id,
+            action: "set_user_role",
+            target: "user",
+            targetId: target.id,
+            details: { from: target.role, to: role },
           },
         });
         return user;

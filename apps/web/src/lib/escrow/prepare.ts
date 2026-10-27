@@ -13,7 +13,7 @@ import { ACTIVE_CHAIN_ID } from "@bloody-roar/shared";
 import { gqlError } from "../../graphql/errors";
 
 // shortcut: đọc env như getEscrowChainSettings, chuyển sang lib/config/env.ts khi A1 merge
-function escrowTarget() {
+export function escrowTarget() {
   const contractAddress =
     process.env.ESCROW_CONTRACT_ADDRESS ?? process.env.ESCROW_CONTRACT_ADDRESS_BASE_SEPOLIA;
   const chainId = Number(process.env.ESCROW_CHAIN_ID ?? ACTIVE_CHAIN_ID);

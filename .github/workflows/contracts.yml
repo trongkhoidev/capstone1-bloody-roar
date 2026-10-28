@@ -42,7 +42,7 @@ jobs:
         run: bun run --cwd apps/contracts test
       - name: Foundry fuzz and invariant tests
         working-directory: apps/contracts
-        run: forge test --offline
+        run: forge test
       - name: Coverage
         run: bun run --cwd apps/contracts coverage
       - name: Slither

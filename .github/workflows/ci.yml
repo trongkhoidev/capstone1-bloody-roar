@@ -61,7 +61,10 @@ jobs:
           bun run --cwd packages/database db:migrate:prod
           bun run db:seed
       - name: Create a throwaway auth key for this run
-        run: echo "AUTH_PRIVATE_KEY=0x$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+        run: |
+          KEY=$(openssl rand -hex 32)
+          echo "::add-mask::$KEY"
+          echo "AUTH_PRIVATE_KEY=0x$KEY" >> "$GITHUB_ENV"
       - name: Start server
         env:
           THIRDWEB_SECRET_KEY: ${{ secrets.THIRDWEB_SECRET_KEY }}
@@ -75,7 +78,8 @@ jobs:
           TEST_DEV1_KEY: ${{ secrets.TEST_DEV1_KEY }}
           TEST_DEV2_KEY: ${{ secrets.TEST_DEV2_KEY }}
         run: |
-          for script in e2e-login e2e-issue e2e-chat e2e-application e2e-workflow; do
+          # e2e-workflow is not run here: its upload step needs S3 storage, which CI does not have.
+          for script in e2e-login e2e-issue e2e-chat e2e-application; do
             bun run --cwd apps/web "scripts/$script.ts"
           done
       - name: Server log

@@ -21,7 +21,9 @@
     "db:push": "bun run --cwd packages/database db:push",
     "contracts:compile": "bun run --cwd apps/contracts compile",
     "contracts:test": "bun run --cwd apps/contracts test",
-    "contracts:deploy": "bun run --cwd apps/contracts deploy:local"
+    "contracts:deploy": "bun run --cwd apps/contracts deploy:local",
+    "worker:start": "bun run --cwd apps/worker start",
+    "worker:replay": "bun run --cwd apps/worker replay"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

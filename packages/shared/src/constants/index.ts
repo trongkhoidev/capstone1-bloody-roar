@@ -6,7 +6,9 @@
 // =============================================================================
 
 export const PLATFORM_NAME = "Bloody-Roar";
-export const PLATFORM_FEE_PERCENT = 2.5; // 2.5% platform fee
+export const PLATFORM_FEE_BPS = 250; // 2.5% trên phần Developer, khớp contract
+/** @deprecated Dùng PLATFORM_FEE_BPS. Số float không dùng để tính tiền. */
+export const PLATFORM_FEE_PERCENT = PLATFORM_FEE_BPS / 100;
 
 // =============================================================================
 // ESCROW
@@ -100,33 +102,6 @@ export const ALLOWED_FILE_TYPES = [
 // =============================================================================
 // AI GUARD
 // =============================================================================
-
-export const AI_GUARD_PATTERNS = {
-  // Private keys / seeds
-  ETH_PRIVATE_KEY: /0x[0-9a-fA-F]{64}/g,
-  MNEMONIC_PHRASE: /(\b\w+\b\s+){11,23}\b\w+\b/g, // 12-24 word seed phrases
-
-  // API keys (generic)
-  GENERIC_API_KEY: /[A-Za-z0-9_\-]{32,}(?=\s|$|["'])/g,
-
-  // OpenAI
-  OPENAI_API_KEY: /sk-[A-Za-z0-9]{32,}/g,
-
-  // Groq
-  GROQ_API_KEY: /gsk_[A-Za-z0-9]{32,}/g,
-
-  // AWS
-  AWS_ACCESS_KEY: /AKIA[0-9A-Z]{16}/g,
-  AWS_SECRET_KEY: /[0-9a-zA-Z/+]{40}/g,
-
-  // GitHub
-  GITHUB_TOKEN: /gh[pousr]_[A-Za-z0-9]{36}/g,
-
-  // PII
-  EMAIL: /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g,
-  PHONE_VN: /(\+84|0)[0-9]{9,10}/g,
-  CCCD_VN: /[0-9]{9}([0-9]{3})?/g, // 9 or 12 digit
-} as const;
 
 export const AI_GUARD_MASK = "[REDACTED]";
 

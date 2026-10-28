@@ -74,6 +74,20 @@ builder.queryField("user", (t) =>
   })
 );
 
+builder.mutationField("unlinkGithub", (t) =>
+  t.prismaField({
+    type: "User",
+    resolve: (query, _root, _args, ctx) => {
+      const user = requireAuth(ctx);
+      return ctx.db.user.update({
+        ...query,
+        where: { id: user.id },
+        data: { githubId: null, githubUsername: null, githubAccessTokenEncrypted: null, isGithubVerified: false },
+      });
+    },
+  })
+);
+
 builder.mutationField("updateProfile", (t) =>
   t.prismaFieldWithInput({
     type: "User",

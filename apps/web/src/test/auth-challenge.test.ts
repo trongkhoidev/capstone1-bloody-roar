@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { buildChallengeIdentity, consumeSiweChallenge } from "../lib/auth/challenge";
+import { buildChallengeIdentity, ChallengeReplayError, consumeSiweChallenge } from "../lib/auth/challenge";
+
+const identity = {
+  nonceHash: "hash",
+  walletAddress: "0xabc",
+  domain: "localhost:4000",
+  uri: "http://localhost:4000",
+  chainId: 84532,
+};
 
 describe("SIWE challenge", () => {
   it("binds a challenge to nonce, wallet, domain, URI and chain", () => {
@@ -19,13 +27,15 @@ describe("SIWE challenge", () => {
   });
 
   it("rejects a challenge that was already consumed or expired", async () => {
-    const repository = { updateMany: async () => ({ count: 0 }) };
-    await expect(consumeSiweChallenge(repository, {
-      nonceHash: "hash",
-      walletAddress: "0xabc",
-      domain: "localhost:4000",
-      uri: "http://localhost:4000",
-      chainId: 84532,
-    }, new Date("2026-09-15T01:05:00.000Z"))).rejects.toThrow("challenge");
+    const repository = { updateMany: async () => ({ count: 0 }), findUnique: async () => null };
+    await expect(consumeSiweChallenge(repository, identity, new Date("2026-09-15T01:05:00.000Z"))).rejects.toThrow("challenge");
+  });
+
+  it("reports a replay when the same nonce is presented again", async () => {
+    const repository = {
+      updateMany: async () => ({ count: 0 }),
+      findUnique: async () => ({ consumedAt: new Date("2026-09-15T01:00:00.000Z") }),
+    };
+    await expect(consumeSiweChallenge(repository, identity, new Date("2026-09-15T01:05:00.000Z"))).rejects.toBeInstanceOf(ChallengeReplayError);
   });
 });

@@ -5,6 +5,7 @@
 // =============================================================================
 
 import "./src/lib/env";
+import "./src/lib/config/env";
 
 import { createServer } from "node:http";
 import { parse } from "node:url";
@@ -61,6 +62,7 @@ app.prepare().then(() => {
       credentials: true,
     },
     transports: ["websocket", "polling"],
+    maxHttpBufferSize: 256 * 1024,
   });
 
   // Register all Socket.io event handlers
@@ -71,11 +73,14 @@ app.prepare().then(() => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (global as any).__socketIO = io;
 
-  const shutdown = (signal: string) => {
+  // io.close() also closes the HTTP server; its callback runs once the last connection ends.
+  const shutdown = async (signal: string) => {
     logger.info({ signal }, "Shutting down");
-    io.close();
-    httpServer.close(() => process.exit(0));
     setTimeout(() => process.exit(1), 10_000).unref();
+    await new Promise<void>((resolve) => io.close(() => resolve()));
+    const { prisma } = await import("@bloody-roar/database");
+    await prisma.$disconnect();
+    process.exit(0);
   };
   process.on("SIGTERM", () => shutdown("SIGTERM"));
   process.on("SIGINT", () => shutdown("SIGINT"));

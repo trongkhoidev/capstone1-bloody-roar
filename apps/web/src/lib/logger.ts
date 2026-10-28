@@ -2,11 +2,18 @@
 // Pino logger — structured JSON logging
 
 import pino from "pino";
+import { currentRequestId } from "./request-context";
 
 const isDev = process.env.NODE_ENV !== "production";
 
+export function logMixin() {
+  const requestId = currentRequestId();
+  return requestId ? { requestId } : {};
+}
+
 export const logger = pino({
   level: process.env.LOG_LEVEL || (isDev ? "debug" : "info"),
+  mixin: logMixin,
   ...(isDev && {
     transport: {
       target: "pino-pretty",

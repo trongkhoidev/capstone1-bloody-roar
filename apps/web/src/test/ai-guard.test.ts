@@ -1,9 +1,46 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { scanAndMask } from "../ai/guard/scanner";
 import { guardMessage } from "../ai/guard/service";
 import type { AICompletion } from "../ai/model-router";
 
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.restoreAllMocks();
+});
+
 describe("AI Guard local rules", () => {
+  it("masks a valid BIP-39 recovery phrase but not one with a broken checksum", () => {
+    const valid = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+    const broken = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon";
+
+    expect(scanAndMask(`my recovery words: ${valid}`)).toEqual({
+      content: "my recovery words: [REDACTED]",
+      wasModified: true,
+      matches: ["seed-phrase"],
+    });
+    expect(scanAndMask(`typo: ${broken}`).content).toBe(`typo: ${broken}`);
+  });
+
+  it("keeps tx and bytes32 hashes but still masks a bare private key", () => {
+    const hash = `0x${"a1".repeat(32)}`;
+    const key = `0x${"b2".repeat(32)}`;
+    const text = `Settled in tx ${hash}, termsHash: ${hash}, decisionHash="${hash}"`;
+
+    expect(scanAndMask(text).content).toBe(text);
+    expect(scanAndMask(`my wallet key ${key}`).content).toBe("my wallet key [REDACTED]");
+  });
+
+  it("does not call the hosted guard model unless AI_EXTERNAL_GUARD is true", async () => {
+    vi.stubEnv("GROQ_API_KEY", "groq-test-key");
+    vi.stubEnv("AI_EXTERNAL_GUARD", "");
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    const result = await guardMessage("Email dev@example.com for access.");
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(result.content).toBe("Email [REDACTED] for access.");
+  });
+
   it("masks credential strings and records only the rule names", () => {
     const result = scanAndMask("Email dev@example.com and key=sk-proj-123456789012345678901234");
 

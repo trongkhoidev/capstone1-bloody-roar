@@ -87,11 +87,8 @@ builder.mutationField("applyToIssue", (t) =>
     },
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
-      if (user.role !== UserRole.DEVELOPER)
-        throw gqlError(
-          "Switch your profile to the developer role before applying",
-          "DEVELOPER_ROLE_REQUIRED",
-        );
+      if (user.role === UserRole.ADMIN)
+        throw gqlError("Quản trị viên không thể ứng tuyển", "ADMIN_NOT_ALLOWED");
       const input = parseOrThrow(ApplySchema, {
         issueId: String(args.input.issueId),
         ...(args.input.message != null ? { message: args.input.message } : {}),
@@ -265,124 +262,6 @@ builder.mutationField("rejectApplication", (t) =>
       return ctx.db.application.findUniqueOrThrow({
         where: { id: application.id },
         include: APPLICATION_INCLUDE,
-      });
-    },
-  }),
-);
-
-builder.mutationField("assignDeveloper", (t) =>
-  t.fieldWithInput({
-    type: IssueRef,
-    typeOptions: { name: "AssignDeveloperInput" },
-    input: {
-      issueId: t.input.id({ required: true }),
-      applicationId: t.input.id({ required: true }),
-    },
-    resolve: async (_root, args, ctx) => {
-      const user = requireAuth(ctx);
-      const issueId = String(args.input.issueId);
-      const applicationId = String(args.input.applicationId);
-
-      const assigned = await ctx.db.$transaction(async (tx) => {
-        const issue = await tx.issue.findUnique({ where: { id: issueId } });
-        if (!issue) throw gqlError("Bài toán không tồn tại", "NOT_FOUND");
-        if (issue.clientId !== user.id)
-          throw gqlError("Chỉ chủ bài toán mới được chọn developer", "FORBIDDEN");
-        if (
-          issue.status !== IssueStatus.OPEN ||
-          issue.developerId ||
-          (issue.expiresAt && issue.expiresAt <= new Date())
-        )
-          throw gqlError("Bài toán đã hết hạn hoặc không còn mở", "ISSUE_NOT_OPEN");
-        const application = await tx.application.findFirst({
-          where: {
-            id: applicationId,
-            issueId,
-            status: ApplicationStatus.PENDING,
-          },
-        });
-        if (!application)
-          throw gqlError("Đơn ứng tuyển không còn hiệu lực", "APPLICATION_NOT_PENDING");
-
-        const claim = await tx.issue.updateMany({
-          where: { id: issueId, status: IssueStatus.OPEN, developerId: null },
-          data: {
-            developerId: application.developerId,
-            status: IssueStatus.IN_PROGRESS,
-            assignedAt: new Date(),
-          },
-        });
-        if (claim.count !== 1)
-          throw gqlError("Bài toán vừa được một người khác nhận", "ISSUE_NOT_OPEN");
-
-        const rejectedApplications = await tx.application.findMany({
-          where: {
-            issueId,
-            status: ApplicationStatus.PENDING,
-            id: { not: applicationId },
-          },
-          select: { developerId: true },
-        });
-        await tx.application.updateMany({
-          where: {
-            issueId,
-            status: ApplicationStatus.PENDING,
-            id: { not: applicationId },
-          },
-          data: { status: ApplicationStatus.REJECTED },
-        });
-        const accepted = await tx.application.updateMany({
-          where: {
-            id: applicationId,
-            issueId,
-            status: ApplicationStatus.PENDING,
-          },
-          data: { status: ApplicationStatus.ACCEPTED },
-        });
-        if (accepted.count !== 1)
-          throw gqlError("Đơn ứng tuyển vừa được rút hoặc xử lý", "APPLICATION_NOT_PENDING");
-        return {
-          issue,
-          application,
-          rejectedDeveloperIds: rejectedApplications.map((candidate) => candidate.developerId),
-        };
-      });
-
-      await Promise.all([
-        createNotificationSafely(ctx.db, {
-          userId: assigned.application.developerId,
-          type: "APPLICATION_ACCEPTED",
-          title: "Đơn ứng tuyển được chấp nhận",
-          body: `Bạn đã được chọn cho “${assigned.issue.title}”.`,
-          actorId: user.id,
-          link: `/issues/${issueId}`,
-          data: { issueId },
-        }),
-        createNotificationSafely(ctx.db, {
-          userId: assigned.application.developerId,
-          type: "TASK_ASSIGNED",
-          title: "Khách hàng đã chọn bạn",
-          body: `Bạn đã được chọn cho “${assigned.issue.title}”. Vui lòng đợi khách hàng nạp tiền ký quỹ (Escrow) trước khi làm việc.`,
-          actorId: user.id,
-          link: `/issues/${issueId}`,
-          data: { issueId },
-        }),
-        ...assigned.rejectedDeveloperIds.map((developerId) =>
-          createNotificationSafely(ctx.db, {
-            userId: developerId,
-            type: "APPLICATION_REJECTED",
-            title: "Đơn ứng tuyển chưa được chọn",
-            body: `Khách hàng đã chọn developer khác cho “${assigned.issue.title}”.`,
-            actorId: user.id,
-            link: `/issues/${issueId}`,
-            data: { issueId },
-          }),
-        ),
-      ]);
-
-      return ctx.db.issue.findUnique({
-        where: { id: issueId },
-        include: ISSUE_INCLUDE,
       });
     },
   }),

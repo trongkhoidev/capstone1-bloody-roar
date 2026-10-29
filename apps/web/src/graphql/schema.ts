@@ -31,6 +31,7 @@ import "./modules/escrow/reservation.module";
 import "./modules/escrow/intent.module";
 import "./modules/escrow/release.module";
 import "./modules/escrow/settlement.module";
+import "./modules/issue/issue-availability.module";
 import "./modules/chat/chat.module";
 import "./modules/dispute/dispute.module";
 import "./modules/notification/notification.module";

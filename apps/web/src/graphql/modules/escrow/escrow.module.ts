@@ -27,8 +27,8 @@ const TransactionStatusEnum = builder.enumType(TransactionStatus, {
   name: "EscrowTransactionStatus",
 });
 
-const EscrowPhaseEnum = builder.enumType(EscrowPhase, { name: "EscrowPhase" });
-const ResolutionKindEnum = builder.enumType(EscrowResolutionKind, { name: "EscrowResolutionKind" });
+export const EscrowPhaseEnum = builder.enumType(EscrowPhase, { name: "EscrowPhase" });
+export const ResolutionKindEnum = builder.enumType(EscrowResolutionKind, { name: "EscrowResolutionKind" });
 
 const TransactionRef = builder.prismaObject("Transaction", {
   fields: (t) => ({

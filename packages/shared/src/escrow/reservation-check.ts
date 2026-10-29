@@ -8,7 +8,7 @@ export type DepositFact = {
   amount: bigint;
   deliveryDeadline: bigint;
   termsHash: Hex;
-  token: Hex;
+  token?: Hex;
 };
 
 export type ReservationFacts = DepositFact;
@@ -24,6 +24,7 @@ export function checkDepositAgainstReservation(deposit: DepositFact, reservation
   if (deposit.amount !== reservation.amount) reasons.push("amount");
   if (deposit.deliveryDeadline !== reservation.deliveryDeadline) reasons.push("deadline");
   if (!same(deposit.termsHash, reservation.termsHash)) reasons.push("termsHash");
-  if (!same(deposit.token, reservation.token)) reasons.push("token");
+  if ((deposit.token === undefined) !== (reservation.token === undefined)) throw new Error("Both token addresses are required for comparison");
+  if (deposit.token && reservation.token && !same(deposit.token, reservation.token)) reasons.push("token");
   return reasons;
 }

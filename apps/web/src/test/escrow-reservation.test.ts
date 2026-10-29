@@ -4,6 +4,9 @@ import { Prisma } from "@bloody-roar/database";
 import { computeTermsHash, keccakUtf8 } from "@bloody-roar/shared/escrow";
 import { execute, loadSchema } from "./graphql-execute";
 
+const tokenReader = vi.hoisted(() => ({ read: vi.fn() }));
+vi.mock("../lib/escrow/token", () => ({ readEscrowToken: tokenReader.read }));
+
 beforeAll(loadSchema, 60_000);
 
 const HOUR_MS = 3_600_000;
@@ -105,11 +108,20 @@ function selectVariables(deliveryDeadline = inDays(30)) {
 }
 
 beforeEach(() => {
+  tokenReader.read.mockResolvedValue(TOKEN_ADDRESS);
   vi.stubEnv("ESCROW_ADDRESS", CONTRACT);
   vi.stubEnv("CHAIN_ID", "84532");
 });
 
 describe("selectDeveloper (BE-23, BE-41f)", () => {
+  it("rejects a token that does not match the contract", async () => {
+    tokenReader.read.mockResolvedValue("0x3333333333333333333333333333333333333333");
+    const db = fakeDb();
+    const result = await execute(SELECT, { user: client, db }, selectVariables());
+    expect(result.errors?.[0]?.extensions?.code).toBe("INVALID_TOKEN");
+    expect(db.tx.fundingReservation.create).not.toHaveBeenCalled();
+  });
+
   it("rejects a token from a different chain", async () => {
     const db = fakeDb({ issue: { token: { address: TOKEN_ADDRESS, decimals: 6, symbol: "USDC", chainId: 31337 } } });
     const result = await execute(SELECT, { user: client, db }, selectVariables());

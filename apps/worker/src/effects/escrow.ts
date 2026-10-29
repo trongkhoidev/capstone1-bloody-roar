@@ -65,8 +65,6 @@ export async function applyFunded(
     tx.user.findUniqueOrThrow({ where: { id: reservation.clientId }, select: { walletAddress: true } }),
     tx.user.findUniqueOrThrow({ where: { id: reservation.developerId }, select: { walletAddress: true } }),
   ]);
-  // Contract chỉ dùng một token, nên deposit không mang địa chỉ token. Phần token được so khớp với chính reservation.
-  const token = reservation.tokenAddress as Hex;
   const reasons = checkDepositAgainstReservation(
     {
       client: effect.client,
@@ -74,7 +72,6 @@ export async function applyFunded(
       amount: effect.amount,
       deliveryDeadline: effect.deliveryDeadline,
       termsHash: effect.termsHash,
-      token,
     },
     {
       client: client.walletAddress as Hex,
@@ -82,7 +79,6 @@ export async function applyFunded(
       amount: BigInt(reservation.amountRaw.toFixed()),
       deliveryDeadline: BigInt(Math.floor(reservation.deliveryDeadline.getTime() / 1000)),
       termsHash: reservation.termsHash as Hex,
-      token,
     },
   );
 

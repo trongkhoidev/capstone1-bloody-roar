@@ -9,3 +9,4 @@ export * from "./fold";
 export * from "./hashing";
 export * from "./reservation-check";
 export * from "./types";
+export { toFunctionSelector } from "viem";

@@ -7,6 +7,9 @@ import { assertTestDatabase } from "@bloody-roar/database/test-guard";
 import { prisma } from "@bloody-roar/database";
 import { execute, loadSchema } from "./graphql-execute";
 
+const contractToken = vi.hoisted(() => ({ address: "" }));
+vi.mock("../lib/escrow/token", () => ({ readEscrowToken: async () => contractToken.address }));
+
 const SELECT = `mutation($issueId: ID!, $applicationId: ID!, $deliveryDeadline: String!) {
   selectDeveloper(issueId: $issueId, applicationId: $applicationId, deliveryDeadline: $deliveryDeadline) {
     id status escrowKey
@@ -41,6 +44,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("selectDeveloper under concurren
       },
     });
     ids.tokenId = token.id;
+    contractToken.address = token.address;
     const issue = await prisma.issue.create({
       data: {
         title: "Race test bounty for the escrow flow",

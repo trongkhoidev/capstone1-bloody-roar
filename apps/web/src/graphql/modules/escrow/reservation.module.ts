@@ -25,6 +25,7 @@ import { builder } from "../../builder";
 import { requireAuth } from "../../context";
 import { gqlError, parseOrThrow } from "../../errors";
 import { escrowTarget } from "../../../lib/escrow/prepare";
+import { readEscrowToken } from "../../../lib/escrow/token";
 import { createLogger } from "../../../lib/logger";
 
 const log = createLogger("reservations");
@@ -199,6 +200,9 @@ builder.mutationField("selectDeveloper", (t) =>
             const target = escrowTarget();
             if (issue.token.chainId !== target.chainId)
               throw gqlError("Token không thuộc chain đang hoạt động", "INVALID_TOKEN");
+            const contractToken = await readEscrowToken(target.contractAddress, target.chainId);
+            if (contractToken.toLowerCase() !== issue.token.address.toLowerCase())
+              throw gqlError("Token không khớp escrow contract", "INVALID_TOKEN");
             const amountRaw = parseTokenAmount(issue.bountyAmount.toFixed(), issue.token.decimals);
 
             const reservation = await tx.fundingReservation.create({

@@ -1,4 +1,11 @@
-ĐANG DỞ: P1-9. Bước tiếp theo: triển khai submission draft, prepareSubmitWork, effect WORK_SUBMITTED và requestChanges; bổ sung đảo effect khi reorg và test E9.
+ĐANG DỞ: P1-9. Bước tiếp theo: triển khai effect WORK_SUBMITTED (hash lạ externalDelivery, supersede, xác nhận intent, thông báo client), snapshot/đảo effect khi reorg; bỏ submitWork/reviewSubmission cũ, kiểm tra race sửa draft sau prepare, rồi chạy E9 trên Hardhat.
+
+## P1-9 — điểm dừng
+
+- `e538635`: thêm createSubmissionDraft với manifest và hash, kiểm quyền, trạng thái FUNDED, hạn giao và attachment; prepareSubmitWork tạo intent/call; requestChanges ghi chú và thông báo developer qua pg_notify. Đây mới là một phần P1-9.
+- `bun run --cwd apps/web test -- src/test/submission-draft.test.ts`: pass 8/8 với DB giả, gồm manifest, sửa nháp, quyền, deadline, calldata và thông báo. `bun run typecheck && bun run lint`: pass; lint còn bốn cảnh báo any cũ. Chưa chạy gate phase C hoặc E9 thực.
+- Cần kiểm lại an toàn đồng thời giữa sửa draft, prepare và event trước khi đánh dấu hoàn tất; effect/reorg chưa viết, mutation submitWork/reviewSubmission cũ vẫn còn. Chưa có bằng chứng E9 toàn luồng.
+
 
 ## P1-8 — chuẩn bị deposit
 

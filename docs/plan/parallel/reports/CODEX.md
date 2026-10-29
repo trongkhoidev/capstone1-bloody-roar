@@ -1,4 +1,10 @@
-ĐANG DỞ: N-4. Bước tiếp theo: kiểm tra Hardhat safe/latest và thêm FINALITY cho worker; sau đó tiếp tục phase B. P1-16 sẽ tạo các mutation dispute on-chain ở phase D.
+ĐANG DỞ: P1-1. Bước tiếp theo: tích hợp decode, fold, effect và projection trong transaction scanner; bổ sung test deposit thực và xử lý reorg/replay theo phase B.
+
+## Phase B: finality, logger, RPC
+
+- N-4 `42f4335`: FINALITY mặc định safe, latest cho local; 13 test scanner/config/RPC pass và kiểm tra không yêu cầu tag safe ở latest. Hardhat local tại block 0 trả kết quả cho cả safe và latest; eth_accounts #1 khớp ADMIN_WALLETS. Các PID đã ghi trong tests/e2e/.run và được dừng.
+- P1-6 `f287f80`: thay logger tự viết bằng pino 9.14.0, cùng bản web; worker 48/48, typecheck/lint pass. Pino 9.14.0 phát hành 18/10/2025 theo [pino release](https://github.com/pinojs/pino/releases/tag/v9.14.0), hơn hai tuần.
+- P1-7 `5468126`: client RPC dùng viem createPublicClient từ shared; wrapper giữ phân loại lỗi range và số liệu; worker 48/48, typecheck/lint pass. Thử `getSafeBlock(..., "latest")` với Hardhat local: block 0; process đã dừng theo PID ghi lại. E22 chưa chạy.
 
 ## P0-4 / P1-17 — 2c0e108
 
@@ -61,8 +67,8 @@ Gate sau P0-5 và `60ca0cc`: `bun run typecheck && bun run lint && bun run --cwd
 | P1-3 | chưa làm | Chưa triển khai |
 | P1-4 | chưa làm | Chưa triển khai |
 | P1-5 | chưa làm | Chưa triển khai |
-| P1-6 | chưa làm | Chưa triển khai |
-| P1-7 | chưa làm | Chưa triển khai |
+| P1-6 | xong | `f287f80`: worker 48/48 |
+| P1-7 | xong | `5468126`: worker 48/48, thử viem với Hardhat |
 | P1-8 | chưa làm | Chưa triển khai |
 | P1-9 | chưa làm | Chưa triển khai |
 | P1-10 | chưa làm | Chưa triển khai |

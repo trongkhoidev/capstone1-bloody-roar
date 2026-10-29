@@ -25,6 +25,8 @@ const developer = {
   walletAddress: DEVELOPER_WALLET,
 };
 
+const outsider = { ...developer, id: "outsider", walletAddress: "0x3333333333333333333333333333333333333333" };
+
 // Projection sau khi deposit đã được fold. deliveryDeadline và reviewDeadline theo unix của contract.
 function projectionRow(overrides: Record<string, unknown> = {}) {
   const deliveryDeadline = new Date(Date.now() + 10 * DAY_MS);
@@ -145,12 +147,13 @@ describe("prepareClaimMissedDeliveryRefund (BE-45)", () => {
     expect(result.errors?.[0]?.extensions?.code).toBe("DELIVERY_EXISTS");
   });
 
-  it("lets only the client take the refund", async () => {
+  it("lets an outsider prepare the refund", async () => {
     const db = fakeDb(projectionRow({ deliveryDeadline: new Date(Date.now() - HOUR_MS) }));
 
-    const result = await execute(PREPARE("prepareClaimMissedDeliveryRefund"), { user: developer, db }, { issueId: "issue-1" });
+    const result = await execute(PREPARE("prepareClaimMissedDeliveryRefund"), { user: outsider, db }, { issueId: "issue-1" });
 
-    expect(result.errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
+    expect(result.errors).toBeUndefined();
+    expect(result.data?.prepareClaimMissedDeliveryRefund).toMatchObject({ data: encodeEscrowCall("claimMissedDeliveryRefund", { escrowId: "br_issue-1_1" }) });
   });
 });
 
@@ -181,14 +184,15 @@ describe("prepareClaimReviewTimeout (BE-46)", () => {
     expect(result.errors?.[0]?.extensions?.code).toBe("REVIEW_WINDOW_NOT_REACHED");
   });
 
-  it("lets only the developer take the timeout claim", async () => {
+  it("lets an outsider prepare the timeout claim", async () => {
     const db = fakeDb(
       projectionRow({ deliveryHash: DELIVERY_HASH, reviewDeadline: new Date(Date.now() - HOUR_MS) }),
     );
 
-    const result = await execute(PREPARE("prepareClaimReviewTimeout"), { user: client, db }, { issueId: "issue-1" });
+    const result = await execute(PREPARE("prepareClaimReviewTimeout"), { user: outsider, db }, { issueId: "issue-1" });
 
-    expect(result.errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
+    expect(result.errors).toBeUndefined();
+    expect(result.data?.prepareClaimReviewTimeout).toMatchObject({ data: encodeEscrowCall("claimReviewTimeout", { escrowId: "br_issue-1_1" }) });
   });
 });
 

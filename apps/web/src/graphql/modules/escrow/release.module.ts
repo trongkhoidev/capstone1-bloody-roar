@@ -83,14 +83,12 @@ builder.mutationField("prepareReleaseFunds", (t) =>
 // BE-45: không có bản giao và đã quá hạn giao. Hoàn tiền cho client.
 builder.mutationField("prepareClaimMissedDeliveryRefund", (t) =>
   t.field({
-    description: "Client chuẩn bị hoàn tiền khi quá hạn giao mà chưa có bản giao (BE-45)",
+    description: "Chuẩn bị hoàn tiền khi quá hạn giao mà chưa có bản giao (BE-45)",
     type: PreparedCallRef,
     args: { issueId: t.arg.id({ required: true }) },
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
       const projection = await projectionFor(String(args.issueId), ctx);
-      if (!sameWallet(projection.client, user.walletAddress))
-        throw gqlError("Chỉ khách hàng mới được hoàn tiền", "FORBIDDEN");
       if (projection.phase !== EscrowPhase.FUNDED)
         throw gqlError("Ký quỹ không ở trạng thái FUNDED", "INVALID_PHASE");
       if (projection.deliveryHash)
@@ -110,14 +108,12 @@ builder.mutationField("prepareClaimMissedDeliveryRefund", (t) =>
 // BE-46: đã có bản giao, client không duyệt trong cửa sổ review (7 ngày). Developer nhận tiền.
 builder.mutationField("prepareClaimReviewTimeout", (t) =>
   t.field({
-    description: "Developer chuẩn bị nhận tiền khi hết cửa sổ review (BE-46)",
+    description: "Chuẩn bị nhận tiền khi hết cửa sổ review (BE-46)",
     type: PreparedCallRef,
     args: { issueId: t.arg.id({ required: true }) },
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
       const projection = await projectionFor(String(args.issueId), ctx);
-      if (!sameWallet(projection.developer, user.walletAddress))
-        throw gqlError("Chỉ developer mới được nhận tiền", "FORBIDDEN");
       if (projection.phase !== EscrowPhase.FUNDED)
         throw gqlError("Ký quỹ không ở trạng thái FUNDED", "INVALID_PHASE");
       if (!projection.deliveryHash)

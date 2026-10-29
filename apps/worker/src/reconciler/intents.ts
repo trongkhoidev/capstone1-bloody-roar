@@ -1,4 +1,6 @@
 import type { IntentStatus, PrismaClient } from "@bloody-roar/database";
+import { decodeErrorResult } from "@bloody-roar/shared";
+import { ESCROW_ABI, type Hex } from "@bloody-roar/shared/escrow";
 import { getReceipt, type RpcClient, type RpcReceipt } from "../chain/client";
 
 // A submitted tx with no receipt after this long is DROPPED. The plan says "N blocks";
@@ -27,6 +29,19 @@ export function nextIntentState(intent: IntentView, receipt: RpcReceipt | null, 
   return { status: "PENDING_SAFE_HEAD" };
 }
 
+// Receipts do not carry revert data. Trace when supported; retain the generic reason otherwise.
+export async function failedTransactionReason(rpc: RpcClient, txHash: string): Promise<string> {
+  try {
+    const trace = await rpc.call<{ failed?: boolean; returnValue?: string }>("debug_traceTransaction", [txHash, {}]);
+    if (trace.failed === false || !trace.returnValue) return "reverted on chain";
+    const data = trace.returnValue.startsWith("0x") ? trace.returnValue : `0x${trace.returnValue}`;
+    if (!/^0x[0-9a-fA-F]{8,}$/.test(data)) return "reverted on chain";
+    return decodeErrorResult({ abi: ESCROW_ABI, data: data as Hex }).errorName;
+  } catch {
+    return "reverted on chain";
+  }
+}
+
 export async function reconcileIntents(deps: { db: PrismaClient; rpc: RpcClient; now: () => Date }): Promise<number> {
   const intents = await deps.db.transactionIntent.findMany({
     where: { status: { in: ["AWAITING_SIGNATURE", "SUBMITTED"] } },
@@ -37,11 +52,12 @@ export async function reconcileIntents(deps: { db: PrismaClient; rpc: RpcClient;
     const receipt = intent.txHash ? await getReceipt(deps.rpc, intent.txHash) : null;
     const next = nextIntentState(intent, receipt, deps.now());
     if (!next) continue;
-    await deps.db.transactionIntent.update({
-      where: { id: intent.id },
+    if (receipt?.status === 0 && intent.txHash) next.failureReason = await failedTransactionReason(deps.rpc, intent.txHash);
+    const updated = await deps.db.transactionIntent.updateMany({
+      where: { id: intent.id, status: intent.status },
       data: { status: next.status, failureReason: next.failureReason ?? null },
     });
-    changed++;
+    changed += updated.count;
   }
   return changed;
 }

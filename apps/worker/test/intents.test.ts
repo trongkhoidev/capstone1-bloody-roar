@@ -2,7 +2,9 @@ import { assertTestDatabase } from "@bloody-roar/database/test-guard";
 import { beforeAll } from "bun:test";
 import { afterAll, expect, test } from "bun:test";
 import { prisma } from "@bloody-roar/database";
-import { INTENT_DROP_AFTER_MS, nextIntentState, reconcileIntents, type IntentView } from "../src/reconciler/intents";
+import { encodeErrorResult } from "@bloody-roar/shared";
+import { ESCROW_ABI } from "@bloody-roar/shared/escrow";
+import { INTENT_DROP_AFTER_MS, failedTransactionReason, nextIntentState, reconcileIntents, type IntentView } from "../src/reconciler/intents";
 import { fakeRpc, newChain } from "./helpers";
 
 beforeAll(() => assertTestDatabase(process.env.TEST_DATABASE_URL));
@@ -27,6 +29,13 @@ test("a submitted tx with no receipt is DROPPED only after the wait limit", () =
   expect(nextIntentState(view({ submittedAt: minutesAgo(5) }), null, now)).toBeNull();
   const old = minutesAgo(INTENT_DROP_AFTER_MS / 60_000 + 1);
   expect(nextIntentState(view({ submittedAt: old }), null, now)).toEqual({ status: "DROPPED", failureReason: "no receipt" });
+});
+
+test("falls back when the RPC cannot provide a decodable revert trace", async () => {
+  const chain = newChain();
+  expect(await failedTransactionReason(fakeRpc(chain), "0xmissing")).toBe("reverted on chain");
+  chain.traces.set("0xunknown", "0x12345678");
+  expect(await failedTransactionReason(fakeRpc(chain), "0xunknown")).toBe("reverted on chain");
 });
 
 test("no receipt outcome ever sets CONFIRMED", () => {
@@ -55,6 +64,7 @@ test("reconcileIntents applies the rules to stored intents", async () => {
 
   const chain = newChain();
   chain.receipts.set("0xreverted", { status: "0x0", blockNumber: 10n });
+  chain.traces.set("0xreverted", encodeErrorResult({ abi: ESCROW_ABI, errorName: "DeadlineNotReached", args: [123n] }));
   chain.receipts.set("0xmined", { status: "0x1", blockNumber: 10n });
   const changed = await reconcileIntents({ db: prisma, rpc: fakeRpc(chain), now: () => now });
 
@@ -62,6 +72,21 @@ test("reconcileIntents applies the rules to stored intents", async () => {
   const statusOf = async (id: string) => (await prisma.transactionIntent.findUniqueOrThrow({ where: { id } })).status;
   expect(await statusOf(expired.id)).toBe("EXPIRED");
   expect(await statusOf(reverted.id)).toBe("FAILED");
+  expect((await prisma.transactionIntent.findUniqueOrThrow({ where: { id: reverted.id } })).failureReason).toBe("DeadlineNotReached");
   expect(await statusOf(mined.id)).toBe("PENDING_SAFE_HEAD");
   expect(await statusOf(lost.id)).toBe("DROPPED");
+});
+
+
+test("a concurrent chain confirmation is not overwritten by receipt reconciliation", async () => {
+  const intent = await prisma.transactionIntent.create({ data: { userId, chainId: 84532, contractAddress: "0x0000000000000000000000000000000000000abc", method: "deposit", args: {}, expiresAt: new Date("2027-01-01T13:00:00Z"), txHash: "0xrace", status: "SUBMITTED", submittedAt: minutesAgo(1) } });
+  const chain = newChain();
+  chain.receipts.set("0xrace", { status: "0x1", blockNumber: 10n });
+  const fake = fakeRpc(chain);
+  const rpc = { ...fake, async call<T>(method: string, params: unknown[]): Promise<T> {
+    if (method === "eth_getTransactionReceipt" && params[0] === "0xrace") await prisma.transactionIntent.update({ where: { id: intent.id }, data: { status: "CONFIRMED" } });
+    return fake.call<T>(method, params);
+  } };
+  await reconcileIntents({ db: prisma, rpc, now: () => now });
+  expect((await prisma.transactionIntent.findUniqueOrThrow({ where: { id: intent.id } })).status).toBe("CONFIRMED");
 });

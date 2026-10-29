@@ -14,10 +14,11 @@ export type FakeChain = {
   safe: bigint;
   maxSpan: number;
   receipts: Map<string, { status: "0x0" | "0x1"; blockNumber: bigint }>;
+  traces: Map<string, string>;
 };
 
 export function newChain(): FakeChain {
-  return { blockHash: new Map(), logs: [], safe: 0n, maxSpan: Number.MAX_SAFE_INTEGER, receipts: new Map() };
+  return { blockHash: new Map(), logs: [], safe: 0n, maxSpan: Number.MAX_SAFE_INTEGER, receipts: new Map(), traces: new Map() };
 }
 
 export function fakeRpc(chain: FakeChain): RpcClient {
@@ -37,6 +38,12 @@ export function fakeRpc(chain: FakeChain): RpcClient {
         const to = BigInt(toBlock);
         if (Number(to - from) + 1 > chain.maxSpan) throw new RpcRangeError("block range too large");
         return chain.logs.filter((log) => BigInt(log.blockNumber) >= from && BigInt(log.blockNumber) <= to) as T;
+      }
+      if (method === "debug_traceTransaction") {
+        const [txHash] = params as [string];
+        const returnValue = chain.traces.get(txHash);
+        if (!returnValue) throw new Error("trace unavailable");
+        return { failed: true, returnValue } as T;
       }
       if (method === "eth_getTransactionReceipt") {
         const [txHash] = params as [string];

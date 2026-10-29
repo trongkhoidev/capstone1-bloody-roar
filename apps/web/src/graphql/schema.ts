@@ -24,6 +24,7 @@ import "./modules/issue/issue.module";
 import "./modules/issue/issue-comment.module";
 import "./modules/application/application.module";
 import "./modules/submission/submission.module";
+import "./modules/submission/draft.module";
 import "./modules/ai/ai.module";
 import "./modules/escrow/escrow.module";
 import "./modules/escrow/reservation.module";
@@ -37,5 +38,3 @@ import "./modules/admin/admin.module";
 
 // Build and export the schema
 export const schema = builder.toSchema();
-
-import "./modules/submission/draft.module";

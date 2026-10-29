@@ -34,7 +34,8 @@ export async function rebuildEscrowProjection(tx: Prisma.TransactionClient, conf
   }
   if (!state) throw new Error("Canonical escrow history produced no state");
   const last = history[history.length - 1]!;
-  const fields = projectionFields(state, last.blockNumber, effects);
+  const matched = state.deliveryHash && previous?.issueId ? await tx.submission.findFirst({ where: { issueId: previous.issueId, deliveryHash: { equals: state.deliveryHash, mode: "insensitive" } }, select: { id: true } }) : null;
+  const fields = { ...projectionFields(state, last.blockNumber, effects), externalDelivery: !!state.deliveryHash && !matched };
   const reservation = await tx.fundingReservation.findUnique({ where: { escrowIdHash } });
   const linked = reservation && reservation.chainId === config.chainId && reservation.contractAddress.toLowerCase() === config.escrowAddress.toLowerCase() && reservation.status === ReservationStatus.FUNDED ? reservation : null;
   const projection = await tx.escrowProjection.upsert({

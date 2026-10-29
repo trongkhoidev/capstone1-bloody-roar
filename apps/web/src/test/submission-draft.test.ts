@@ -14,6 +14,7 @@ function db() {
   const tx = { $queryRaw: vi.fn().mockResolvedValue([]), issue: { findUnique: vi.fn(async () => issue) },
     escrowProjection: { findUnique: vi.fn(async () => projection) },
     submission: { findUnique: vi.fn(async () => existing), create: vi.fn(async ({ data }) => data), update: vi.fn(async ({ data, where }) => ({ ...data, id: where.id })) },
+    transactionIntent: { findFirst: vi.fn().mockResolvedValue(null) },
     attachment: { findMany: vi.fn(async () => files) } };
   return { tx, $transaction: vi.fn(async (fn: (value: typeof tx) => unknown) => fn(tx)) };
 }
@@ -40,6 +41,14 @@ describe("createSubmissionDraft", () => {
     const database = db(); const result = await run(database, { id: "draft", text: "revised" });
     expect(result.errors).toBeUndefined();
     expect(database.tx.submission.update.mock.calls[0]![0].data.manifest.submissionId).toBe("draft");
+  });
+  it("does not alter a draft after a transaction was prepared", async () => {
+    existing = { id: "draft", issueId: "issue", developerId: actor.id, status: "DRAFT", deliveryHash: "0xhash" } as typeof existing;
+    const database = db(); database.tx.transactionIntent.findFirst.mockResolvedValue({ id: "intent" });
+    const result = await run(database, { id: "draft" });
+    expect(result.errors).toBeUndefined();
+    expect(database.tx.submission.update).not.toHaveBeenCalled();
+    expect(database.tx.submission.create.mock.calls[0]![0].data.id).not.toBe("draft");
   });
   it("rejects a different developer, invalid phase, and expired deadline", async () => {
     issue.developerId = "other"; expect((await run()).errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
@@ -88,9 +97,9 @@ describe("requestChanges", () => {
     const submission = { id: "draft", issueId: "issue", developerId: actor.id, status: "SUBMITTED", deliveryHash: "0xaaa", issue: { clientId: client.id } };
     const chain = { phase: "FUNDED", client: client.walletAddress, deliveryHash: "0xaaa" };
     const tx = { $queryRaw: vi.fn().mockResolvedValue([]), $executeRaw: vi.fn().mockResolvedValue(1),
-      submission: { findUnique: vi.fn(async () => submission), update: vi.fn(async () => submission) },
+      submission: { findUnique: vi.fn(async () => submission), update: vi.fn(async (_args: { data: Record<string, unknown> }) => submission) },
       escrowProjection: { findUnique: vi.fn(async () => chain) },
-      notification: { createMany: vi.fn(async () => ({ count: 1 })), findUniqueOrThrow: vi.fn(async () => ({ id: "notification" })) } };
+      notification: { createMany: vi.fn(async (_args: { data: Array<Record<string, unknown>> }) => ({ count: 1 })), findUniqueOrThrow: vi.fn(async () => ({ id: "notification" })) } };
     return { submission, chain, tx, $transaction: vi.fn(async (fn: (value: typeof tx) => unknown) => fn(tx)) };
   }
   it("records notes and notifies the developer", async () => {

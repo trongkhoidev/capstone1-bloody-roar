@@ -922,6 +922,7 @@ model EscrowProjection {
   reviewDeadline           DateTime // deliveryDeadline + 7 days
   termsHash                String
   deliveryHash             String?
+  externalDelivery         Boolean              @default(false)
   phase                    EscrowPhase
   resolutionKind           EscrowResolutionKind @default(NONE)
   clientAmountRaw          Decimal?             @db.Decimal(78, 0)

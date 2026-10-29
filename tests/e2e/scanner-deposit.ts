@@ -186,6 +186,72 @@ try {
   assert.equal(await reconcile(), 0);
   assert.ok((await prisma.reconciliationFinding.findUniqueOrThrow({ where: { id: solventFinding.id } })).resolvedAt);
   console.log("Reconciler detected and closed claimable and solvency mismatches");
+
+  const devGraphql = async (source: string, variables: Record<string, unknown>) => {
+    const result = await execute(source, { db: prisma, user: developerUser }, variables);
+    if (result.errors?.length || !result.data) throw new Error(result.errors?.[0]?.message ?? "Developer GraphQL failed");
+    return result.data;
+  };
+  const createDraft = async (text: string) => {
+    const data = await devGraphql(`mutation($issue: ID!, $text: String!) { createSubmissionDraft(issueId: $issue, description: $text) { id status } }`, { issue: issueId, text });
+    return data.createSubmissionDraft as { id: string; status: string };
+  };
+  const prepareWork = async (id: string) => {
+    const data = await devGraphql(`mutation($id: ID!) { prepareSubmitWork(submissionId: $id) { intentId contractAddress data } }`, { id });
+    return data.prepareSubmitWork as { intentId: string; contractAddress: Hex; data: Hex };
+  };
+  const sendWork = async (step: { intentId: string; contractAddress: Hex; data: Hex }, gas = "0x500000") => {
+    const txHash = await send(developer, step.contractAddress, step.data, gas);
+    await devGraphql(`mutation($id: ID!, $hash: String!) { recordTransactionSubmitted(intentId: $id, txHash: $hash) { status } }`, { id: step.intentId, hash: txHash });
+    while (await scanOnce({ db: prisma, rpc, config })) { /* scan until caught up */ }
+    return txHash;
+  };
+  const draft1 = await createDraft("first delivery");
+  assert.equal(draft1.status, "DRAFT");
+  const step1 = await prepareWork(draft1.id);
+  const editingPrepared = await execute(`mutation($issue: ID!, $id: ID!) { createSubmissionDraft(issueId: $issue, submissionId: $id, description: "changed") { id } }`, { db: prisma, user: developerUser }, { issue: issueId, id: draft1.id });
+  assert.equal(editingPrepared.errors, undefined);
+  assert.notEqual((editingPrepared.data?.createSubmissionDraft as { id: string }).id, draft1.id);
+  const workSnapshot = await rpc.call<string>("evm_snapshot", []);
+  const tx1 = await sendWork(step1);
+  const submission1 = await prisma.submission.findUniqueOrThrow({ where: { id: draft1.id } });
+  assert.equal(submission1.status, "SUBMITTED");
+  assert.equal((await prisma.transactionIntent.findUniqueOrThrow({ where: { id: step1.intentId } })).status, "CONFIRMED");
+  assert.equal((await prisma.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash } })).deliveryHash, submission1.deliveryHash);
+  assert.equal((await prisma.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash } })).externalDelivery, false);
+  assert.ok(await prisma.notification.findFirst({ where: { userId: clientUser.id, type: "WORK_SUBMITTED", data: { path: ["issueId"], equals: issueId } } }));
+  assert.equal(await rpc.call<boolean>("evm_revert", [workSnapshot]), true);
+  const replacementWork = await send(developer, step1.contractAddress, step1.data, "0x510000");
+  assert.notEqual(replacementWork, tx1);
+  assert.ok(await handleReorg({ db: prisma, rpc, config }));
+  assert.equal((await prisma.submission.findUniqueOrThrow({ where: { id: draft1.id } })).status, "DRAFT");
+  assert.equal((await prisma.transactionIntent.findUniqueOrThrow({ where: { id: step1.intentId } })).status, "SUBMITTED");
+  while (await scanOnce({ db: prisma, rpc, config })) { /* scan replacement delivery */ }
+  assert.equal((await prisma.submission.findUniqueOrThrow({ where: { id: draft1.id } })).status, "SUBMITTED");
+  await graphql(`mutation($id: ID!) { requestChanges(submissionId: $id, notes: "please revise") { changesRequested } }`, { id: draft1.id });
+  assert.ok(await prisma.notification.findFirst({ where: { userId: developerUser.id, type: "CHANGES_REQUESTED", data: { path: ["issueId"], equals: issueId } } }));
+  const draft2 = await createDraft("revised delivery");
+  const step2 = await prepareWork(draft2.id);
+  await sendWork(step2);
+  assert.equal((await prisma.submission.findUniqueOrThrow({ where: { id: draft1.id } })).status, "SUPERSEDED");
+  assert.equal((await prisma.submission.findUniqueOrThrow({ where: { id: draft2.id } })).status, "SUBMITTED");
+  const externalSnapshot = await rpc.call<string>("evm_snapshot", []);
+  const unknownHash = `0x${randomBytes(32).toString("hex")}` as Hex;
+  const { encodeEscrowCall } = await import("@bloody-roar/shared/escrow");
+  await send(developer, manifest.address, encodeEscrowCall("submitWork", { escrowId: escrowKey, deliveryHash: unknownHash }));
+  while (await scanOnce({ db: prisma, rpc, config })) { /* scan external delivery */ }
+  assert.equal((await prisma.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash } })).externalDelivery, true);
+  assert.equal((await prisma.submission.findUniqueOrThrow({ where: { id: draft2.id } })).status, "SUPERSEDED");
+  assert.equal(await rpc.call<boolean>("evm_revert", [externalSnapshot]), true);
+  await rpc.call("evm_mine", []);
+  assert.ok(await handleReorg({ db: prisma, rpc, config }));
+  assert.equal((await prisma.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash } })).externalDelivery, false);
+  assert.equal((await prisma.submission.findUniqueOrThrow({ where: { id: draft2.id } })).status, "SUBMITTED");
+  await prisma.escrowProjection.update({ where: { escrowIdHash }, data: { deliveryDeadline: new Date(Date.now() - 1000) } });
+  const expired = await execute(`mutation($issue: ID!) { createSubmissionDraft(issueId: $issue, description: "late") { id } }`, { db: prisma, user: developerUser }, { issue: issueId });
+  assert.equal(expired.errors?.[0]?.extensions?.code, "DEADLINE_PASSED");
+  console.log("E9: draft, on-chain submit, work reorg, changes, resubmit, external hash and deadline verified");
+
 } finally {
   if (issueId) {
     await prisma.notification.deleteMany({ where: { data: { path: ["issueId"], equals: issueId } } });

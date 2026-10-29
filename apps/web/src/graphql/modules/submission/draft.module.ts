@@ -59,10 +59,11 @@ builder.mutationField("createSubmissionDraft", (t) => t.field({
       if (input.submissionId && (!existing || existing.issueId !== issue.id || existing.developerId !== user.id))
         throw gqlError("Bản nháp không tồn tại", "NOT_FOUND");
       if (existing && existing.status !== SubmissionStatus.DRAFT) throw gqlError("Chỉ sửa được bản nháp", "SUBMISSION_NOT_DRAFT");
+      const prepared = existing?.deliveryHash && await tx.transactionIntent.findFirst({ where: { issueId: issue.id, method: "submitWork", args: { path: ["deliveryHash"], equals: existing.deliveryHash } }, select: { id: true } });
       const attachments = await tx.attachment.findMany({ where: { id: { in: input.attachmentIds }, issueId: issue.id, uploaderId: user.id, purpose: "DELIVERY", status: "ATTACHED" } });
       if (attachments.length !== input.attachmentIds.length || attachments.some((file) => !file.sha256 || !/^[a-fA-F0-9]{64}$/.test(file.sha256)))
         throw gqlError("Tệp giao hàng không hợp lệ", "INVALID_ATTACHMENT");
-      const id = existing?.id ?? randomUUID();
+      const id = existing && !prepared ? existing.id : randomUUID();
       const byId = new Map(attachments.map((file) => [file.id, file]));
       const manifest = { issueId: issue.id, submissionId: id,
         descriptionSha256: createHash("sha256").update(input.description, "utf8").digest("hex"),
@@ -72,7 +73,7 @@ builder.mutationField("createSubmissionDraft", (t) => t.field({
       const data = { description: input.description || null, pullRequestUrl: input.pullRequestUrl || null, commitSha: input.commitSha || null,
         manifest, deliveryHash: computeDeliveryHash(manifest), status: SubmissionStatus.DRAFT };
       const include = SUBMISSION_INCLUDE;
-      if (existing) return tx.submission.update({ where: { id }, data, include });
+      if (existing && !prepared) return tx.submission.update({ where: { id }, data, include });
       return tx.submission.create({ data: { ...data, id, issueId: issue.id, developerId: user.id }, include });
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   },

@@ -2,7 +2,7 @@ import { checkpointKey, loadCheckpoint, lockCheckpoint, type IndexerConfig } fro
 import { getBlockByNumber } from "../chain/client";
 import type { ScanDeps } from "./scanner";
 import { rebuildEscrowProjection } from "./rebuild";
-import { undoDeposit, type DepositUndo } from "./undo";
+import { undoDeposit, undoWork, type DepositUndo, type WorkUndo } from "./undo";
 
 // Compares the hash stored at lastScannedBlock with the node's hash. On a mismatch, rewinds the
 // cursor by reorgWindow blocks and marks events whose block hash changed as non-canonical.
@@ -45,13 +45,19 @@ export async function handleReorg({ db, rpc, config }: ScanDeps): Promise<{ rewo
     const staleSet = new Set(staleIds);
     const stale = candidates.filter((event) => staleSet.has(event.id));
     if (stale.length > 0) await tx.chainEvent.updateMany({ where: { id: { in: staleIds } }, data: { canonical: false } });
-    const deposits = stale.filter((event) => event.eventName === "Deposited" && event.escrowIdHash)
+    const reversible = stale.filter((event) => (event.eventName === "Deposited" || event.eventName === "WorkSubmitted") && event.escrowIdHash)
       .sort((a, b) => a.blockNumber === b.blockNumber ? b.txIndex - a.txIndex || b.logIndex - a.logIndex : a.blockNumber > b.blockNumber ? -1 : 1);
-    for (const event of deposits) {
-      const args = event.args as unknown as { undo?: DepositUndo };
-      if (args.undo) await undoDeposit(tx, event.id, args.undo);
-      else if (await tx.fundingReservation.findUnique({ where: { escrowIdHash: event.escrowIdHash! } })) {
-        throw new Error("Cannot safely undo deposit without its recorded snapshot");
+    for (const event of reversible) {
+      if (event.eventName === "WorkSubmitted") {
+        const args = event.args as unknown as { undo?: WorkUndo };
+        if (args.undo) await undoWork(tx, event.id, args.undo);
+        else if ((await tx.escrowProjection.findUnique({ where: { escrowIdHash: event.escrowIdHash! } }))?.issueId)
+          throw new Error("Cannot safely undo work submission without its recorded snapshot");
+      } else {
+        const args = event.args as unknown as { undo?: DepositUndo };
+        if (args.undo) await undoDeposit(tx, event.id, args.undo);
+        else if (await tx.fundingReservation.findUnique({ where: { escrowIdHash: event.escrowIdHash! } }))
+          throw new Error("Cannot safely undo deposit without its recorded snapshot");
       }
     }
     for (const hash of new Set(stale.map((event) => event.escrowIdHash).filter((hash): hash is string => hash !== null))) {

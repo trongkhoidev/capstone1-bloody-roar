@@ -44,3 +44,35 @@ export async function undoDeposit(tx: Prisma.TransactionClient, eventId: string,
   await tx.issue.update({ where: { id: issue.id }, data: { status: snapshot.issue.status, developerId: snapshot.issue.developerId } });
   await tx.notification.deleteMany({ where: { dedupeKey: { startsWith: `${eventId}:` } } });
 }
+
+export type WorkUndo = {
+  issueId: string;
+  submissions: Array<{ id: string; status: string; submittedAt: string; supersededAt: string | null; onChainEventId: string | null; changesRequested: boolean; reviewNotes: string | null; reviewedAt: string | null }>;
+  intents: Array<{ id: string; status: IntentStatus; confirmedByEventId: string | null }>;
+};
+
+export async function captureWorkUndo(tx: Prisma.TransactionClient, escrowIdHash: string, deliveryHash: string): Promise<WorkUndo | null> {
+  const projection = await tx.escrowProjection.findUnique({ where: { escrowIdHash } });
+  if (!projection?.issueId || !projection.escrowKey) return null;
+  await tx.$queryRaw`SELECT id FROM issues WHERE id = ${projection.issueId} FOR UPDATE`;
+  const submissions = await tx.submission.findMany({ where: { issueId: projection.issueId, OR: [{ status: "SUBMITTED" }, { deliveryHash: { equals: deliveryHash, mode: "insensitive" } }] },
+    select: { id: true, status: true, submittedAt: true, supersededAt: true, onChainEventId: true, changesRequested: true, reviewNotes: true, reviewedAt: true } });
+  const intents = await tx.transactionIntent.findMany({ where: { escrowKey: projection.escrowKey, method: "submitWork" }, select: { id: true, status: true, confirmedByEventId: true } });
+  return { issueId: projection.issueId, submissions: submissions.map((s) => ({ ...s, submittedAt: s.submittedAt.toISOString(), supersededAt: s.supersededAt?.toISOString() ?? null, reviewedAt: s.reviewedAt?.toISOString() ?? null })), intents };
+}
+
+export async function undoWork(tx: Prisma.TransactionClient, eventId: string, snapshot: WorkUndo): Promise<void> {
+  await tx.$queryRaw`SELECT id FROM issues WHERE id = ${snapshot.issueId} FOR UPDATE`;
+  for (const original of snapshot.submissions) {
+    const current = await tx.submission.findUnique({ where: { id: original.id } });
+    if (!current || current.changesRequested !== original.changesRequested || current.reviewNotes !== original.reviewNotes || current.reviewedAt?.toISOString() !== (original.reviewedAt ?? undefined))
+      throw new Error("Cannot safely undo work submission: review changed since projection");
+    const target = current.onChainEventId === eventId && current.status === "SUBMITTED";
+    const superseded = current.status === "SUPERSEDED" && original.status === "SUBMITTED" && current.onChainEventId === original.onChainEventId;
+    if (!target && !superseded) throw new Error("Cannot safely undo work submission: submission changed since projection");
+    await tx.submission.update({ where: { id: original.id }, data: { status: original.status as import("@bloody-roar/database").SubmissionStatus,
+      submittedAt: new Date(original.submittedAt), supersededAt: original.supersededAt ? new Date(original.supersededAt) : null, onChainEventId: original.onChainEventId } });
+  }
+  for (const intent of snapshot.intents) await tx.transactionIntent.updateMany({ where: { id: intent.id, confirmedByEventId: eventId }, data: { status: intent.status, confirmedByEventId: intent.confirmedByEventId } });
+  await tx.notification.deleteMany({ where: { dedupeKey: { startsWith: `${eventId}:` } } });
+}

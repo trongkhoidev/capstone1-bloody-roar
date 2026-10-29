@@ -5,7 +5,7 @@ import {
 } from "@bloody-roar/shared/escrow";
 import { applyFoldEffects } from "../effects";
 import { notifyProjectionChanged } from "./notify";
-import { captureDepositUndo } from "./undo";
+import { captureDepositUndo, captureWorkUndo } from "./undo";
 import type { RawLog } from "../chain/client";
 import type { IndexerConfig } from "./checkpoint";
 
@@ -65,7 +65,8 @@ export async function projectLog(tx: Prisma.TransactionClient, config: IndexerCo
   const meta: EventMeta = { chainId: config.chainId, contractAddress: config.escrowAddress as Hex, ...position,
     blockHash: log.blockHash as Hex, txHash: log.transactionHash as Hex, blockTimestamp };
   const folded = foldEscrowEvent(state, event, meta);
-  const undo = event.name === "Deposited" && escrowIdHash ? await captureDepositUndo(tx, escrowIdHash) : null;
+  const undo = event.name === "Deposited" && escrowIdHash ? await captureDepositUndo(tx, escrowIdHash) :
+    event.name === "WorkSubmitted" && escrowIdHash ? await captureWorkUndo(tx, escrowIdHash, event.deliveryHash) : null;
   const args = { topics: log.topics, data: log.data, blockTimestamp: blockTimestamp.toString(), ...(undo ? { undo } : {}) };
   const row = await tx.chainEvent.upsert({
     where: { chainId_contractAddress_txHash_logIndex: key },
@@ -80,7 +81,8 @@ export async function projectLog(tx: Prisma.TransactionClient, config: IndexerCo
   }
   await applyFoldEffects(tx, folded.effects, { ...meta, chainEventId: row.id, escrowIdHash: escrowIdHash ?? "0x" });
   if (!escrowIdHash || !folded.state) return;
-  const fields = projectionFields(folded.state, meta.blockNumber, folded.effects);
+  const delivery = event.name === "WorkSubmitted" && previous?.issueId ? await tx.submission.findFirst({ where: { issueId: previous.issueId, deliveryHash: { equals: event.deliveryHash, mode: "insensitive" } }, select: { id: true } }) : null;
+  const fields = { ...projectionFields(folded.state, meta.blockNumber, folded.effects), ...(event.name === "WorkSubmitted" ? { externalDelivery: !delivery } : {}) };
   const projection = await tx.escrowProjection.upsert({
     where: { escrowIdHash },
     create: { ...fields, escrowIdHash, chainId: config.chainId, contractAddress: config.escrowAddress, orphan: true, projectionVersion: 1 },

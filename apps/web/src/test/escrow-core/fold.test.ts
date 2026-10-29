@@ -134,6 +134,8 @@ describe("Deposited", () => {
         escrowIdHash: ESCROW,
         client: CLIENT,
         developer: DEVELOPER,
+        arbiter: ARBITER,
+        feeRecipient: FEE,
         amount: AMOUNT,
         deliveryDeadline: DEADLINE,
         termsHash: hash("11"),

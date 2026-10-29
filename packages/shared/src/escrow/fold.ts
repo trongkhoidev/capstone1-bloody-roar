@@ -116,6 +116,8 @@ function deposited(
         escrowIdHash: event.escrowIdHash,
         client: event.client,
         developer: event.developer,
+        arbiter: event.arbiter,
+        feeRecipient: event.feeRecipient,
         amount: event.amount,
         deliveryDeadline: event.deliveryDeadline,
         termsHash: event.termsHash,

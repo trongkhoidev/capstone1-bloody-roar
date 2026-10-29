@@ -159,6 +159,8 @@ export type FoldEffect =
       escrowIdHash: Hex;
       client: Hex;
       developer: Hex;
+      arbiter: Hex;
+      feeRecipient: Hex;
       amount: bigint;
       deliveryDeadline: bigint;
       termsHash: Hex;

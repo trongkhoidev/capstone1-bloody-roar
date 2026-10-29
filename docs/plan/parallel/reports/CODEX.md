@@ -1,4 +1,11 @@
-ĐANG DỞ: P1-13. Bước tiếp theo: khóa issue khi sửa/duyệt/xóa tiêu chí, kiểm reservation active, tăng termsVersion khi bộ tiêu chí được duyệt thay đổi; thêm test race và chạy gate.
+ĐANG DỞ: P1-9 (deadline theo chain). Bước tiếp theo: dùng timestamp block cho createSubmissionDraft và prepareSubmitWork, giữ khóa DB ngắn, test evm_increaseTime qua deadline; sau đó làm P1-14.
+
+## P1-13 — phiên bản tiêu chí
+
+- `07397ca`: khóa issue khi tạo/sửa/xóa tiêu chí và trước khi lưu AI draft; từ chối reservation active. Duyệt, bỏ duyệt, sửa hoặc xóa tiêu chí đã duyệt tăng termsVersion trong cùng transaction; chỉnh draft chưa duyệt hoặc ghi chú không đổi phiên bản.
+- `bun run --cwd apps/web test -- src/test/test-case-terms.db.test.ts` với TEST_DATABASE_URL trỏ bloody_codex_test pass; kiểm tra tăng/không tăng phiên bản, chặn active reservation và race update/selectDeveloper với termsHash được tính lại. Test AI/manual cũ pass sau cập nhật mock.
+- Gate typecheck, lint, web/worker/database/contracts pass 476/64/3/35; lint bốn cảnh báo any cũ. Gate phase C và `test:e2e:local` chưa hoàn tất.
+
 
 ## P1-12 — quyền và hành động
 

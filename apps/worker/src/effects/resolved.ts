@@ -9,6 +9,9 @@ export async function applyResolved(tx: Prisma.TransactionClient, effect: Resolv
   const projection = await tx.escrowProjection.findUnique({ where: { escrowIdHash: effect.escrowIdHash } });
   if (!projection) throw new Error("Cannot resolve an escrow without a projection");
   if (projection.chainId !== meta.chainId || projection.contractAddress.toLowerCase() !== meta.contractAddress.toLowerCase()) throw new Error("Resolution belongs to another chain or contract");
+  const pending = await tx.settlementProposal.findFirst({ where: { escrowIdHash: effect.escrowIdHash, status: "PENDING" } });
+  if (effect.resolution === "SETTLEMENT" && !pending) throw new Error("Settlement resolution has no pending proposal");
+  if (pending) await tx.settlementProposal.update({ where: { id: pending.id }, data: { status: effect.resolution === "SETTLEMENT" ? "ACCEPTED" : "VOIDED", closedEventId: meta.chainEventId } });
   const credits = new Map<string, bigint>();
   for (const [wallet, amount] of [[effect.client, effect.clientAmount], [effect.developer, effect.developerAmount], [effect.feeRecipient, effect.platformFee]] as const) {
     const address = wallet.toLowerCase();

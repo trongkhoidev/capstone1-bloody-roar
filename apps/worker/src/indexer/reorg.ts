@@ -2,7 +2,7 @@ import { checkpointKey, loadCheckpoint, lockCheckpoint, type IndexerConfig } fro
 import { getBlockByNumber } from "../chain/client";
 import type { ScanDeps } from "./scanner";
 import { rebuildEscrowProjection } from "./rebuild";
-import { undoDeposit, undoWork, undoResolved, type DepositUndo, type WorkUndo, type ResolvedUndo } from "./undo";
+import { undoDeposit, undoWork, undoResolved, undoSettlement, type DepositUndo, type WorkUndo, type ResolvedUndo, type SettlementUndo } from "./undo";
 
 // Compares the hash stored at lastScannedBlock with the node's hash. On a mismatch, rewinds the
 // cursor by reorgWindow blocks and marks events whose block hash changed as non-canonical.
@@ -46,10 +46,14 @@ export async function handleReorg({ db, rpc, config }: ScanDeps): Promise<{ rewo
     const stale = candidates.filter((event) => staleSet.has(event.id));
     if (stale.length > 0) await tx.chainEvent.updateMany({ where: { id: { in: staleIds } }, data: { canonical: false } });
     if (stale.some((event) => event.eventName === "Claimed")) throw new Error("Cannot safely undo a claimed balance until CLAIMED undo is implemented");
-    const reversible = stale.filter((event) => (event.eventName === "Deposited" || event.eventName === "WorkSubmitted" || event.eventName === "EscrowResolved") && event.escrowIdHash)
+    const reversible = stale.filter((event) => (event.eventName === "Deposited" || event.eventName === "WorkSubmitted" || event.eventName === "EscrowResolved" || event.eventName === "SettlementProposed" || event.eventName === "SettlementRevoked") && event.escrowIdHash)
       .sort((a, b) => a.blockNumber === b.blockNumber ? b.txIndex - a.txIndex || b.logIndex - a.logIndex : a.blockNumber > b.blockNumber ? -1 : 1);
     for (const event of reversible) {
-      if (event.eventName === "EscrowResolved") {
+      if (event.eventName === "SettlementProposed" || event.eventName === "SettlementRevoked") {
+        const args = event.args as unknown as { undo?: SettlementUndo };
+        if (!args.undo) throw new Error("Cannot safely undo settlement without its recorded snapshot");
+        await undoSettlement(tx, event.id, args.undo);
+      } else if (event.eventName === "EscrowResolved") {
         const args = event.args as unknown as { undo?: ResolvedUndo };
         if (!args.undo) throw new Error("Cannot safely undo resolution without its recorded snapshot");
         await undoResolved(tx, event.id, args.undo, config.chainId, config.escrowAddress);

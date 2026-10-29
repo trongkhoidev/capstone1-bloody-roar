@@ -11,6 +11,7 @@ const chainId = 730000001, contractAddress = address();
 let client: Awaited<ReturnType<typeof prisma.user.create>>, developer: typeof client, fee: typeof client;
 let tokenId = "";
 const issueIds: string[] = [];
+const escrowHashes: string[] = [];
 const eventIds: string[] = [];
 beforeAll(async () => {
   assertTestDatabase(process.env.TEST_DATABASE_URL);
@@ -22,6 +23,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await prisma.notification.deleteMany({ where: { userId: { in: [client.id, developer.id, fee.id] } } });
   await prisma.claimableBalance.deleteMany({ where: { chainId, contractAddress } });
+  await prisma.settlementProposal.deleteMany({ where: { escrowIdHash: { in: escrowHashes } } });
   await prisma.escrowProjection.deleteMany({ where: { chainId, contractAddress } });
   await prisma.issue.deleteMany({ where: { id: { in: issueIds } } });
   await prisma.token.deleteMany({ where: { id: tokenId } });
@@ -33,6 +35,8 @@ for (const kind of kinds) test(`resolves ${kind} using the amounts in the event`
   const issue = await prisma.issue.create({ data: { title: kind, description: "resolution", category: "BUG_FIX", status: "IN_PROGRESS", bountyAmount: "100", tokenId, clientId: client.id, developerId: developer.id, requiredSkills: [] } });
   issueIds.push(issue.id);
   const key = `resolution-${issue.id}`, escrowIdHash = keccakUtf8(key), deadline = new Date(Date.now() + 86400_000);
+  escrowHashes.push(escrowIdHash);
+  if (kind === "SETTLEMENT") await prisma.settlementProposal.create({ data: { escrowIdHash, proposer: client.walletAddress, clientBps: 2000, status: "PENDING", proposedEventId: `proposal-${issue.id}` } });
   await prisma.escrowProjection.create({ data: { issueId: issue.id, escrowKey: key, escrowIdHash, chainId, contractAddress, client: client.walletAddress, developer: developer.walletAddress, arbiter: address(), feeRecipient: fee.walletAddress, amountRaw: "100", depositedAt: new Date(), deliveryDeadline: deadline, reviewDeadline: deadline, termsHash: `0x${"11".repeat(32)}`, phase: "FUNDED", lastProjectedBlock: 100n } });
   const amounts = kind === "MISSED_DELIVERY_REFUND" ? [100n, 0n, 0n] as const : [20n, 78n, 2n] as const;
   const effect: Extract<FoldEffect, { kind: "ESCROW_RESOLVED" }> = { kind: "ESCROW_RESOLVED", escrowIdHash, resolution: kind, client: client.walletAddress as Hex, developer: developer.walletAddress as Hex, feeRecipient: fee.walletAddress as Hex, clientAmount: amounts[0], developerAmount: amounts[1], platformFee: amounts[2], decisionHash: `0x${"00".repeat(32)}` };

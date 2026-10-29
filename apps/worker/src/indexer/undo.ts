@@ -80,6 +80,7 @@ export async function undoWork(tx: Prisma.TransactionClient, eventId: string, sn
 export type ResolvedUndo = {
   issue: { id: string; status: IssueStatus; outcome: import("@bloody-roar/database").EscrowResolutionKind | null; completedAt: string | null } | null;
   resolution: import("@bloody-roar/database").EscrowResolutionKind;
+  settlement: { id: string; status: string; closedEventId: string | null } | null;
   credits: Array<{ address: string; amount: string }>;
   intents: Array<{ id: string; status: IntentStatus; confirmedByEventId: string | null }>;
 };
@@ -89,12 +90,13 @@ export async function captureResolvedUndo(tx: Prisma.TransactionClient, effect: 
   if (projection.issueId) await tx.$queryRaw`SELECT id FROM issues WHERE id = ${projection.issueId} FOR UPDATE`;
   const issue = projection.issueId ? await tx.issue.findUniqueOrThrow({ where: { id: projection.issueId }, select: { id: true, status: true, outcome: true, completedAt: true } }) : null;
   const intents = projection.issueId ? await tx.transactionIntent.findMany({ where: { issueId: projection.issueId, chainId: projection.chainId, contractAddress: { equals: projection.contractAddress, mode: "insensitive" } }, select: { id: true, status: true, confirmedByEventId: true } }) : [];
+  const settlement = await tx.settlementProposal.findFirst({ where: { escrowIdHash: effect.escrowIdHash, status: "PENDING" }, select: { id: true, status: true, closedEventId: true } });
   const credits = new Map<string, bigint>();
   for (const [wallet, amount] of [[effect.client, effect.clientAmount], [effect.developer, effect.developerAmount], [effect.feeRecipient, effect.platformFee]] as const) {
     const address = wallet.toLowerCase();
     if (amount > 0n) credits.set(address, (credits.get(address) ?? 0n) + amount);
   }
-  return { issue: issue ? { ...issue, completedAt: issue.completedAt?.toISOString() ?? null } : null, resolution: effect.resolution,
+  return { issue: issue ? { ...issue, completedAt: issue.completedAt?.toISOString() ?? null } : null, resolution: effect.resolution, settlement,
     credits: [...credits].map(([address, amount]) => ({ address, amount: amount.toString() })), intents };
 }
 
@@ -105,9 +107,38 @@ export async function undoResolved(tx: Prisma.TransactionClient, eventId: string
     if (current.status !== IssueStatus.COMPLETED || current.outcome !== snapshot.resolution) throw new Error("Cannot safely undo resolution: issue changed since projection");
     await tx.issue.update({ where: { id: snapshot.issue.id }, data: { status: snapshot.issue.status, outcome: snapshot.issue.outcome, completedAt: snapshot.issue.completedAt ? new Date(snapshot.issue.completedAt) : null } });
   }
+  if (snapshot.settlement) {
+    const restored = await tx.settlementProposal.updateMany({ where: { id: snapshot.settlement.id, closedEventId: eventId, status: { in: ["ACCEPTED", "VOIDED"] } }, data: { status: snapshot.settlement.status, closedEventId: snapshot.settlement.closedEventId } });
+    if (!restored.count) throw new Error("Cannot safely undo settlement resolution");
+  }
   for (const credit of snapshot.credits) {
     const updated = await tx.claimableBalance.updateMany({ where: { chainId, contractAddress: contractAddress.toLowerCase(), address: credit.address, amountRaw: { gte: credit.amount } }, data: { amountRaw: { decrement: credit.amount } } });
     if (!updated.count) throw new Error("Cannot safely undo resolution: claimable balance changed");
+  }
+  for (const intent of snapshot.intents) await tx.transactionIntent.updateMany({ where: { id: intent.id, confirmedByEventId: eventId }, data: { status: intent.status, confirmedByEventId: intent.confirmedByEventId } });
+  await tx.notification.deleteMany({ where: { dedupeKey: { startsWith: `${eventId}:` } } });
+}
+
+export type SettlementUndo = {
+  issueId: string | null;
+  pending: { id: string; status: string; closedEventId: string | null } | null;
+  intents: Array<{ id: string; status: IntentStatus; confirmedByEventId: string | null }>;
+};
+export async function captureSettlementUndo(tx: Prisma.TransactionClient, escrowIdHash: string): Promise<SettlementUndo> {
+  const projection = await tx.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash } });
+  if (projection.issueId) await tx.$queryRaw`SELECT id FROM issues WHERE id = ${projection.issueId} FOR UPDATE`;
+  const pending = await tx.settlementProposal.findFirst({ where: { escrowIdHash, status: "PENDING" }, select: { id: true, status: true, closedEventId: true } });
+  const intents = projection.escrowKey ? await tx.transactionIntent.findMany({ where: { escrowKey: projection.escrowKey }, select: { id: true, status: true, confirmedByEventId: true } }) : [];
+  return { issueId: projection.issueId, pending, intents };
+}
+export async function undoSettlement(tx: Prisma.TransactionClient, eventId: string, snapshot: SettlementUndo): Promise<void> {
+  if (snapshot.issueId) await tx.$queryRaw`SELECT id FROM issues WHERE id = ${snapshot.issueId} FOR UPDATE`;
+  if (snapshot.pending) {
+    const restored = await tx.settlementProposal.updateMany({ where: { id: snapshot.pending.id, status: "REVOKED", closedEventId: eventId }, data: { status: snapshot.pending.status, closedEventId: snapshot.pending.closedEventId } });
+    if (!restored.count) throw new Error("Cannot safely undo settlement revocation");
+  } else {
+    const deleted = await tx.settlementProposal.deleteMany({ where: { proposedEventId: eventId, status: "PENDING" } });
+    if (!deleted.count) throw new Error("Cannot safely undo settlement proposal");
   }
   for (const intent of snapshot.intents) await tx.transactionIntent.updateMany({ where: { id: intent.id, confirmedByEventId: eventId }, data: { status: intent.status, confirmedByEventId: intent.confirmedByEventId } });
   await tx.notification.deleteMany({ where: { dedupeKey: { startsWith: `${eventId}:` } } });

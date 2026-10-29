@@ -270,6 +270,49 @@ try {
   assert.equal((await prisma.transactionIntent.findUniqueOrThrow({ where: { id: release.intentId } })).status, "SUBMITTED");
   console.log("Real release credited payouts and reorg reversed the resolution");
 
+  const mineToCheckpoint = async () => {
+    const checkpoint = await prisma.projectionCheckpoint.findUniqueOrThrow({ where: { chainId_contractAddress: { chainId: config.chainId, contractAddress: config.escrowAddress } } });
+    await rpc.call("evm_mine", []);
+    while (BigInt(await rpc.call<string>("eth_blockNumber", [])) < checkpoint.lastScannedBlock) await rpc.call("evm_mine", []);
+  };
+  const proposalSnapshot = await rpc.call<string>("evm_snapshot", []);
+  const proposal = (await graphql(`mutation($issue: ID!) { prepareProposeSettlement(issueId: $issue, clientBps: 3000) { intentId contractAddress data } }`, { issue: issueId })).prepareProposeSettlement as { intentId: string; contractAddress: Hex; data: Hex };
+  const proposalHash = await send(client, proposal.contractAddress, proposal.data);
+  await record(proposal.intentId, proposalHash);
+  while (await scanOnce({ db: prisma, rpc, config })) { /* scan proposed settlement */ }
+  const pending = await prisma.settlementProposal.findFirstOrThrow({ where: { escrowIdHash, status: "PENDING" } });
+  assert.equal(pending.clientBps, 3000);
+  assert.equal((await prisma.transactionIntent.findUniqueOrThrow({ where: { id: proposal.intentId } })).status, "CONFIRMED");
+  assert.ok(await prisma.notification.findFirst({ where: { userId: developerUser.id, type: "SETTLEMENT_PROPOSED", data: { path: ["issueId"], equals: issueId } } }));
+  const selfAccept = await execute(`mutation($issue: ID!) { prepareAcceptSettlement(issueId: $issue) { intentId } }`, { db: prisma, user: clientUser }, { issue: issueId });
+  assert.equal(selfAccept.errors?.[0]?.extensions?.code, "FORBIDDEN");
+  const acceptance = (await devGraphql(`mutation($issue: ID!) { prepareAcceptSettlement(issueId: $issue) { intentId contractAddress data } }`, { issue: issueId })).prepareAcceptSettlement as { intentId: string; contractAddress: Hex; data: Hex };
+  const acceptanceSnapshot = await rpc.call<string>("evm_snapshot", []);
+  const acceptanceHash = await send(developer, acceptance.contractAddress, acceptance.data);
+  await devGraphql(`mutation($id: ID!, $hash: String!) { recordTransactionSubmitted(intentId: $id, txHash: $hash) { status } }`, { id: acceptance.intentId, hash: acceptanceHash });
+  while (await scanOnce({ db: prisma, rpc, config })) { /* scan acceptance */ }
+  assert.equal((await prisma.issue.findUniqueOrThrow({ where: { id: issueId } })).outcome, "SETTLEMENT");
+  assert.equal((await prisma.settlementProposal.findUniqueOrThrow({ where: { id: pending.id } })).status, "ACCEPTED");
+  assert.equal(await claimable(client), "30000000");
+  assert.equal(await claimable(developer), "68250000");
+  assert.equal(await claimable(accounts[6]!), "1750000");
+  assert.equal(await rpc.call<boolean>("evm_revert", [acceptanceSnapshot]), true);
+  await mineToCheckpoint();
+  assert.ok(await handleReorg({ db: prisma, rpc, config }));
+  assert.equal((await prisma.settlementProposal.findUniqueOrThrow({ where: { id: pending.id } })).status, "PENDING");
+  const revocation = (await graphql(`mutation($issue: ID!) { prepareRevokeSettlement(issueId: $issue) { intentId contractAddress data } }`, { issue: issueId })).prepareRevokeSettlement as { intentId: string; contractAddress: Hex; data: Hex };
+  const revocationHash = await send(client, revocation.contractAddress, revocation.data);
+  await record(revocation.intentId, revocationHash);
+  while (await scanOnce({ db: prisma, rpc, config })) { /* scan revocation */ }
+  assert.equal((await prisma.settlementProposal.findUniqueOrThrow({ where: { id: pending.id } })).status, "REVOKED");
+  assert.ok(await prisma.notification.findFirst({ where: { userId: developerUser.id, type: "SETTLEMENT_REVOKED", data: { path: ["issueId"], equals: issueId } } }));
+  assert.equal(await rpc.call<boolean>("evm_revert", [proposalSnapshot]), true);
+  await mineToCheckpoint();
+  assert.ok(await handleReorg({ db: prisma, rpc, config }));
+  assert.equal(await prisma.settlementProposal.findUnique({ where: { id: pending.id } }), null);
+  assert.equal((await prisma.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash } })).settlementProposer, null);
+  console.log("E14: proposal, acceptance, revocation and their reorg undo verified");
+
   await prisma.escrowProjection.update({ where: { escrowIdHash }, data: { deliveryDeadline: new Date(Date.now() - 1000) } });
   const expired = await execute(`mutation($issue: ID!) { createSubmissionDraft(issueId: $issue, description: "late") { id } }`, { db: prisma, user: developerUser }, { issue: issueId });
   assert.equal(expired.errors?.[0]?.extensions?.code, "DEADLINE_PASSED");
@@ -279,6 +322,7 @@ try {
   if (issueId) {
     await prisma.notification.deleteMany({ where: { data: { path: ["issueId"], equals: issueId } } });
     await prisma.transactionIntent.deleteMany({ where: { issueId } });
+    await prisma.settlementProposal.deleteMany({ where: { escrowIdHash } });
     await prisma.escrowProjection.deleteMany({ where: { escrowIdHash } });
     await prisma.fundingReservation.deleteMany({ where: { issueId } });
     await prisma.application.deleteMany({ where: { issueId } });

@@ -1,7 +1,7 @@
-import { randomUUID } from "node:crypto";
-import { Prisma, type PrismaClient } from "@bloody-roar/database";
+import { type PrismaClient } from "@bloody-roar/database";
 import { getBlockByNumber, getLogs, getSafeBlock, hexToNumber, RpcRangeError, type RawLog, type RpcClient } from "../chain/client";
 import { checkpointKey, DECODER_VERSION, loadCheckpoint, type IndexerConfig } from "./checkpoint";
+import { projectLog } from "./project";
 
 export type ScanDeps = { db: PrismaClient; rpc: RpcClient; config: IndexerConfig };
 export type ScanResult = { from: bigint; to: bigint; events: number };
@@ -41,35 +41,32 @@ export async function scanOnce({ db, rpc, config }: ScanDeps): Promise<ScanResul
   const toBlock = await getBlockByNumber(rpc, to);
   if (!toBlock) return null;
 
+  const ordered = [...logs].sort((a, b) => {
+    const block = BigInt(a.blockNumber) - BigInt(b.blockNumber);
+    return block < 0n ? -1 : block > 0n ? 1 : hexToNumber(a.transactionIndex) - hexToNumber(b.transactionIndex) || hexToNumber(a.logIndex) - hexToNumber(b.logIndex);
+  });
+  const blocks = new Map<string, { hash: string; timestamp: bigint }>();
+  for (const log of ordered) {
+    const n = BigInt(log.blockNumber);
+    if (n < from || n > to || log.address.toLowerCase() !== config.escrowAddress.toLowerCase()) throw new Error("RPC returned a log outside the requested range or contract");
+    let block = blocks.get(log.blockNumber);
+    if (!block) {
+      const response = await rpc.call<{ hash: string; timestamp: string } | null>("eth_getBlockByNumber", [log.blockNumber, false]);
+      if (!response?.timestamp) throw new Error(`RPC returned an invalid block for ${n}`);
+      block = { hash: response.hash, timestamp: BigInt(response.timestamp) };
+      blocks.set(log.blockNumber, block);
+    }
+    if (block.hash.toLowerCase() !== log.blockHash.toLowerCase()) throw new Error(`RPC returned an invalid block for ${n}`);
+  }
   await db.$transaction(async (tx) => {
-    if (logs.length > 0) await insertChainEvents(tx, config, logs);
-    // shortcut: no decode or fold yet (A2 not merged), so no projection row changes here.
-    // Upgrade: decode each log with A2's decodeEscrowLog, fold, then applyFoldEffects in this transaction.
+    for (const log of ordered) await projectLog(tx, config, log, blocks.get(log.blockNumber)!.timestamp);
     await tx.projectionCheckpoint.update({
       where: checkpointKey(config),
-      data: { lastScannedBlock: to, lastSafeBlock: safe.number, lastCanonicalBlockHash: toBlock.hash },
+      data: { lastScannedBlock: to, lastSafeBlock: safe.number, lastCanonicalBlockHash: toBlock.hash, decoderVersion: DECODER_VERSION },
     });
-  });
+  }, { timeout: 30_000 });
 
   return { from, to, events: logs.length };
-}
-
-// ON CONFLICT DO NOTHING would lose a log that moved to a new block after a reorg,
-// so a stale copy (other block hash, or marked non-canonical) is updated to the new block.
-async function insertChainEvents(tx: Prisma.TransactionClient, config: IndexerConfig, logs: RawLog[]): Promise<void> {
-  const rows = logs.map(
-    (log) => Prisma.sql`(
-      ${randomUUID()}, ${config.chainId}, ${config.escrowAddress}, ${log.transactionHash}, ${hexToNumber(log.logIndex)},
-      ${BigInt(log.blockNumber)}, ${log.blockHash}, ${hexToNumber(log.transactionIndex)}, ${log.topics[0] ?? ""},
-      ${JSON.stringify({ topics: log.topics, data: log.data })}::jsonb, ${DECODER_VERSION}, true
-    )`,
-  );
-  await tx.$executeRaw`
-    INSERT INTO chain_events (id, "chainId", "contractAddress", "txHash", "logIndex", "blockNumber", "blockHash", "txIndex", "eventName", args, "decoderVersion", canonical)
-    VALUES ${Prisma.join(rows)}
-    ON CONFLICT ("chainId", "contractAddress", "txHash", "logIndex") DO UPDATE SET
-      "blockNumber" = EXCLUDED."blockNumber", "blockHash" = EXCLUDED."blockHash", "txIndex" = EXCLUDED."txIndex", canonical = true
-    WHERE chain_events."blockHash" <> EXCLUDED."blockHash" OR chain_events.canonical = false`;
 }
 
 const minBigInt = (a: bigint, b: bigint): bigint => (a < b ? a : b);

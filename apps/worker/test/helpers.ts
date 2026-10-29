@@ -1,3 +1,4 @@
+import { keccakUtf8 } from "@bloody-roar/shared/escrow";
 import type { PrismaClient } from "@bloody-roar/database";
 import { RpcRangeError, type RawLog, type RpcClient } from "../src/chain/client";
 import type { IndexerConfig } from "../src/indexer/checkpoint";
@@ -28,7 +29,7 @@ export function fakeRpc(chain: FakeChain): RpcClient {
         const [tag] = params as [string];
         const number = tag === "safe" || tag === "latest" ? chain.safe : BigInt(tag);
         const hash = chain.blockHash.get(number);
-        return (hash ? { number: hex(number), hash } : null) as T;
+        return (hash ? { number: hex(number), hash, timestamp: "0x6aaa0000" } : null) as T;
       }
       if (method === "eth_getLogs") {
         const [{ fromBlock, toBlock }] = params as [{ fromBlock: string; toBlock: string }];
@@ -50,7 +51,7 @@ export function fakeRpc(chain: FakeChain): RpcClient {
 export function rawLog(o: { address: string; block: number; blockHash: string; tx: string; txIndex?: number; logIndex?: number }): RawLog {
   return {
     address: o.address,
-    topics: ["0x" + "11".repeat(32)],
+    topics: [keccakUtf8("OwnershipTransferred(address,address)"), "0x" + "0".repeat(24) + "11".repeat(20), "0x" + "0".repeat(24) + "22".repeat(20)],
     data: "0x",
     blockNumber: hex(o.block),
     blockHash: o.blockHash,

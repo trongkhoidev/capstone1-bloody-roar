@@ -185,6 +185,14 @@ test("accepts a deposit that matches the reservation (BE-36)", async () => {
   );
 });
 
+test("rejects a deposit from a different contract without changing the reservation", async () => {
+  const s = await scenario({ reservationStatus: "AWAITING_FUNDING", issueStatus: "AWAITING_FUNDING" });
+  const eventMeta = { ...meta(s.escrowIdHash), contractAddress: address() as `0x${string}` };
+  await expect(apply(s.effect(), eventMeta)).rejects.toThrow("does not match the reservation");
+  expect((await prisma.fundingReservation.findUniqueOrThrow({ where: { id: s.reservation.id } })).status).toBe("AWAITING_FUNDING");
+  expect((await prisma.issue.findUniqueOrThrow({ where: { id: s.issue.id } })).status).toBe("AWAITING_FUNDING");
+});
+
 test("replaying the same event does not notify twice", async () => {
   const s = await scenario({ reservationStatus: "AWAITING_FUNDING", issueStatus: "AWAITING_FUNDING" });
   const eventMeta = meta(s.escrowIdHash);

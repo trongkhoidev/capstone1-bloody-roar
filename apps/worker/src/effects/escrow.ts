@@ -55,7 +55,11 @@ export async function applyFunded(
     where: { escrowIdHash: effect.escrowIdHash },
   });
   // shortcut: deposit không đi qua backend (QĐ-05) chưa tạo projection orphan, cần làm sau
-  if (!reservation || reservation.status === ReservationStatus.FUNDED) return;
+  if (!reservation) return;
+  if (reservation.chainId !== meta.chainId || reservation.contractAddress.toLowerCase() !== meta.contractAddress.toLowerCase()) {
+    throw new Error("Deposit contract or chain does not match the reservation");
+  }
+  if (reservation.status === ReservationStatus.FUNDED) return;
 
   const issue = await tx.issue.findUniqueOrThrow({
     where: { id: reservation.issueId },

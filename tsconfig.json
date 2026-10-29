@@ -16,6 +16,7 @@
     "baseUrl": ".",
     "paths": {
       "@bloody-roar/shared": ["./packages/shared/src"],
+      "@bloody-roar/shared/escrow": ["./packages/shared/src/escrow"],
       "@bloody-roar/database": ["./packages/database/src"],
       "@bloody-roar/database/test-guard": ["./packages/database/src/test-guard.ts"]
     }

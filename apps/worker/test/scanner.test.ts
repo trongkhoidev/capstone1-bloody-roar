@@ -36,8 +36,8 @@ test("stores each log once and moves the cursor to the safe head", async () => {
 
   const events = await storedEvents();
   expect(events.map((e) => [e.txHash, e.blockNumber, e.canonical, e.decoderVersion])).toEqual([
-    ["0xtx1", 101n, true, 0],
-    ["0xtx2", 103n, true, 0],
+    ["0xtx1", 101n, true, 1],
+    ["0xtx2", 103n, true, 1],
   ]);
   expect(await cursor()).toMatchObject({ lastScannedBlock: 110n, lastSafeBlock: 110n, lastCanonicalBlockHash: "0xh110" });
   expect(await scanOnce({ db: prisma, rpc, config })).toBeNull();

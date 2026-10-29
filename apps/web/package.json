@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "PORT=4000 NEXT_PUBLIC_APP_URL=http://localhost:4000 bun run server.ts",
+    "dev": "PORT=${PORT:-4000} NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:${PORT:-4000}} bun run server.ts",
     "build": "next build",
     "start": "NODE_ENV=production bun run server.ts",
     "lint": "next lint",
@@ -13,7 +13,8 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:e2e:backend": "bun run scripts/e2e-login.ts && bun run scripts/e2e-issue.ts && bun run scripts/e2e-chat.ts && bun run scripts/e2e-workflow.ts",
     "test:escrow": "bun run scripts/e2e-escrow.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "serve:local": "PORT=${PORT:-4010} bun run server.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1131.0",

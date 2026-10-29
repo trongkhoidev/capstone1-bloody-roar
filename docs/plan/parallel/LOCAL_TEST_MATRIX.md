@@ -36,4 +36,5 @@
 | E30 | apps/worker/test/deadline-notifications.test.ts | bun run --cwd apps/worker test -- test/deadline-notifications.test.ts | Pass job/pg_notify; E2E toàn luồng chờ harness |
 | P1-8 | apps/web/src/test/escrow-deposit.test.ts; apps/worker/test/effects-escrow.test.ts | bun run --cwd apps/web test -- src/test/escrow-deposit.test.ts; bun run --cwd apps/worker test | Pass; `a777558` |
 | E5 | tests/e2e/scanner-deposit.ts | NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass deposit thực và thông báo với fixture reservation; toàn luồng E1–E4 chờ harness; `a777558` |
-| P1-9 | apps/web/src/test/submission-draft.test.ts | bun run --cwd apps/web test -- src/test/submission-draft.test.ts | Dở; 8/8 test DB giả pass, effect/reorg/E9 chưa làm; `e538635` |
+| P1-9 | apps/web/src/test/submission-draft.test.ts; apps/worker/test/scanner-projection.test.ts; tests/e2e/scanner-deposit.ts | bun run --cwd apps/web test -- src/test/submission-draft.test.ts; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass; `e538635`, `2c417cd` |
+| E9 | tests/e2e/scanner-deposit.ts | NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass Hardhat với fixture deposit, reorg và resubmit; `2c417cd` |

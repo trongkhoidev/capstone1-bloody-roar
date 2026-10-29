@@ -1,4 +1,12 @@
-ĐANG DỞ: P1-9. Bước tiếp theo: triển khai effect WORK_SUBMITTED (hash lạ externalDelivery, supersede, xác nhận intent, thông báo client), snapshot/đảo effect khi reorg; bỏ submitWork/reviewSubmission cũ, kiểm tra race sửa draft sau prepare, rồi chạy E9 trên Hardhat.
+ĐANG DỞ: P1-10. Bước tiếp theo: triển khai effect ESCROW_RESOLVED, ClaimableBalance, notification và đảo effect khi reorg; test từng resolutionKind, sau đó tiếp tục phase C.
+
+## P1-9 — hoàn tất
+
+- `e538635`, `2c417cd`: tạo và sửa bản nháp, chuẩn bị submitWork, requestChanges, fold WorkSubmitted theo hash, supersede, xác nhận intent theo txHash, thông báo client và cờ externalDelivery. Sau khi chuẩn bị giao dịch, sửa tạo bản nháp mới để hash cũ vẫn khớp nếu giao dịch được gửi muộn. Đã bỏ mutation submitWork/reviewSubmission cũ; frontend và e2e-workflow cũ còn tham chiếu và nằm ngoài frontend scope/cần cập nhật harness.
+- Migration externalDelivery đã chạy deploy trên bloody_codex_local và bloody_codex_test. `bun run --cwd apps/web test -- src/test/submission-draft.test.ts src/test/graphql-schema.test.ts`: 10/10 pass. `NODE_ENV=test bun run tests/e2e/scanner-deposit.ts` trên test DB và Hardhat local: pass E9 với deposit fixture, request changes, nộp lại, hash lạ, deadline; snapshot/revert work và hash lạ khôi phục submission; E22/E23/E24 cũng pass. Chưa chứng minh toàn luồng E1–E4.
+- Gate `bun run typecheck && bun run lint && bun run --cwd apps/web test && bun run --cwd apps/worker test && bun run --cwd packages/database test && bun run contracts:test` pass: web 458, worker 57, database 3, contracts 35; lint bốn cảnh báo any cũ. `test:e2e:local` còn chờ N-8, phase C chưa xong.
+- Reorg với review off-chain đã thay đổi sau event dừng an toàn thay vì xóa ghi chú; cần xử lý luồng khôi phục khi hoàn thiện harness. Cần kiểm tra thêm race khi event được index trước recordTransactionSubmitted: intent có thể không được xác nhận nếu record đến muộn.
+
 
 ## P1-9 — điểm dừng
 

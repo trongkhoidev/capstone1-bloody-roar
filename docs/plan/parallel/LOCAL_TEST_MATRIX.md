@@ -31,3 +31,6 @@
 | P1-3 | apps/worker/test/reconciliation.test.ts; tests/e2e/scanner-deposit.ts | bun run --cwd apps/worker test; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass; `eb13815` |
 | E23 | tests/e2e/scanner-deposit.ts | NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass mismatch projection, claimable, solvency; `eb13815` |
 | P1-4 | apps/worker/test/intents.test.ts | bun run --cwd apps/worker test -- test/intents.test.ts | Pass 7/7; `df7418b`; trace không hỗ trợ thì lý do chung |
+| P1-5 | apps/worker/test/reservations.test.ts; apps/worker/test/deadline-notifications.test.ts; apps/worker/test/effects-escrow.test.ts | bun run --cwd apps/worker test | Pass; `1fb8c75` |
+| E7 | apps/worker/test/reservations.test.ts | bun run --cwd apps/worker test -- test/reservations.test.ts | Pass job/idempotency; E2E toàn luồng chờ harness |
+| E30 | apps/worker/test/deadline-notifications.test.ts | bun run --cwd apps/worker test -- test/deadline-notifications.test.ts | Pass job/pg_notify; E2E toàn luồng chờ harness |

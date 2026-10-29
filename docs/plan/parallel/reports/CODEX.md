@@ -1,4 +1,10 @@
-ĐANG DỞ: P1-5. Bước tiếp theo: gửi RESERVATION_EXPIRED và DEADLINE_APPROACHING idempotent từ job, kiểm thử race và chạy gate phase B.
+ĐANG DỞ: P1-8. Bước tiếp theo: triển khai prepareEscrowDeposit, kiểm balance/allowance và các pre-check bằng RPC giả; tiếp tục phase C.
+
+## P1-5 và gate phase B
+
+- `1fb8c75`: job hết hạn gửi RESERVATION_EXPIRED cho developer; job deadline gửi DEADLINE_APPROACHING cho các bên, phát pg_notify khi insert mới. Update reservation theo trạng thái hiện tại để không ghi đè deposit đồng thời; effect deposit cũng retry nếu reservation/issue thay đổi.
+- Test `reservations.test.ts`, `deadline-notifications.test.ts`, `effects-escrow.test.ts`: pass; gồm hai job hết hạn đồng thời, chạy lại deadline, pg_notify và race với deposit. Theo mục ĐỔI QUYẾT ĐỊNH cuối DECISIONS.md, dedupe deadline thêm userId để gửi cả hai bên.
+- Gate phase B: E22/E23/E24 pass qua `NODE_ENV=test bun run tests/e2e/scanner-deposit.ts` sau deploy Hardhat local trên bloody_codex_test; deposit thực E5 cũng pass. `bun run typecheck && bun run lint && bun run --cwd apps/web test && bun run --cwd apps/worker test && bun run --cwd packages/database test && bun run contracts:test` pass; contract 35/35, lint có bốn cảnh báo any cũ. Chưa chạy được `bun run test:e2e:local` vì N-8 chưa có.
 
 ## P1-4 — custom error
 
@@ -92,7 +98,7 @@ Gate sau P0-5 và `60ca0cc`: `bun run typecheck && bun run lint && bun run --cwd
 | P1-2 | xong | `50df7d0`: E22/E24 deposit trên Hardhat pass; các effect khác chờ P1-9/P1-16 |
 | P1-3 | xong | `eb13815`: E23 Hardhat pass |
 | P1-4 | xong | `df7418b`: custom error/fallback/race pass |
-| P1-5 | chưa làm | Chưa triển khai |
+| P1-5 | xong | `1fb8c75`: jobs idempotent, pg_notify và race pass |
 | P1-6 | xong | `f287f80`: worker 48/48 |
 | P1-7 | xong | `5468126`: worker 48/48, thử viem với Hardhat |
 | P1-8 | chưa làm | Chưa triển khai |

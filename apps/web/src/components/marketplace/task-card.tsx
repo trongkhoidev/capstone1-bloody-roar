@@ -43,7 +43,7 @@ export function TaskCard({ issue }: { issue: IssueItem }) {
       data-testid={`task-card-${issue.id}`}
     >
       <div className="mb-4 flex items-center justify-between gap-3">
-        <span className="rounded-full border border-[hsl(var(--accent)/0.25)] bg-[hsl(var(--accent)/0.1)] px-2.5 py-1 text-[11px] font-semibold text-[hsl(var(--accent))]">
+        <span className="rounded-full border border-[hsl(var(--ring)/0.25)] bg-[hsl(var(--ring)/0.1)] px-2.5 py-1 text-[11px] font-semibold text-[hsl(var(--ring))]">
           {CATEGORY_LABELS[issue.category] ?? issue.category.replaceAll("_", " ")}
         </span>
         <span className={`flex items-center gap-1.5 text-[11px] font-medium ${isOpen ? "text-[hsl(var(--success))]" : "text-[hsl(var(--foreground-muted))]"}`}>
@@ -90,7 +90,7 @@ export function TaskCard({ issue }: { issue: IssueItem }) {
               {issue.client.avatar ? <Image src={issue.client.avatar} alt="" width={28} height={28} unoptimized className="h-full w-full object-cover" /> : (issue.client.name?.[0] ?? issue.client.walletAddress.slice(2, 4)).toUpperCase()}
             </span>
             <span className="max-w-[112px] truncate text-[hsl(var(--foreground-muted))]">{issue.client.name || `${issue.client.walletAddress.slice(0, 6)}…${issue.client.walletAddress.slice(-4)}`}</span>
-            {issue.client.isGithubVerified && <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-[hsl(var(--accent))]" aria-label="GitHub verified" />}
+            {issue.client.isGithubVerified && <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-[hsl(var(--ring))]" aria-label="GitHub verified" />}
           </span>
           <span className="flex shrink-0 items-center gap-3">
             <span title="Applicants" className="inline-flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" />{issue.applicationCount ?? 0}</span>

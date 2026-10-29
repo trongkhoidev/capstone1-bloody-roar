@@ -27,7 +27,7 @@ export function Navbar() {
   const isAdmin = pathname.startsWith("/admin");
 
   return (
-    <header className="top sticky top-0 z-40 w-full backdrop-blur-md">
+    <header className="top sticky top-0 z-40 w-full">
       <div className="top-in">
         {/* Logo with Claude Design Silver Wolf Mark */}
         <div className="flex items-center gap-6">

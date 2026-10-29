@@ -22,60 +22,60 @@
        ----------------------------------------------------------------------- */
 
     /* Neutral document surfaces, inspired by technical Q&A tools. */
-    --background: 0 0% 100%;
-    --background-secondary: 210 20% 98%;
-    --background-tertiary: 210 16% 94%;
+    --background: 216 24% 96%;
+    --background-secondary: 220 23% 97%;
+    --background-tertiary: 217 22% 93%;
 
     /* Foreground / text */
-    --foreground: 210 12% 16%;
-    --foreground-muted: 210 8% 40%;
-    --foreground-subtle: 210 7% 52%;
+    --foreground: 216 13% 8%;
+    --foreground-muted: 220 11% 33%;
+    --foreground-subtle: 221 11% 40%;
 
-    /* Primary blue is reserved for links and direct actions. */
-    --primary: 206 100% 40%;
+    /* Primary is near-black: one filled action per screen. */
+    --primary: 216 13% 8%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 206 100% 34%;
-    --primary-muted: 206 55% 93%;
+    --primary-hover: 221 16% 20%;
+    --primary-muted: 215 70% 95%;
 
-    /* Secondary — Slate */
-    --secondary: 210 17% 94%;
-    --secondary-foreground: 210 12% 20%;
+    /* Secondary: neutral tone steps, no second hue. */
+    --secondary: 217 22% 93%;
+    --secondary-foreground: 221 16% 20%;
 
-    /* Accent — Electric blue */
-    --accent: 206 100% 40%;
-    --accent-foreground: 0 0% 98%;
+    /* Accent is the one hue: links, data and focus. */
+    --accent: 217 22% 93%;
+    --accent-foreground: 216 13% 8%;
 
     /* Surface / cards */
     --card: 0 0% 100%;
-    --card-foreground: 210 12% 16%;
-    --card-border: 210 13% 87%;
+    --card-foreground: 216 13% 8%;
+    --card-border: 220 19% 91%;
 
     /* Popover / dropdown */
     --popover: 0 0% 100%;
-    --popover-foreground: 210 12% 16%;
+    --popover-foreground: 216 13% 8%;
 
     /* Borders */
-    --border: 210 13% 87%;
-    --border-muted: 210 16% 93%;
+    --border: 220 19% 91%;
+    --border-muted: 220 21% 95%;
 
     /* Input */
-    --input: 210 13% 78%;
-    --input-focus: 206 100% 40%;
+    --input: 219 16% 83%;
+    --input-focus: 216 74% 43%;
 
     /* States */
-    --success: 142 62% 30%;
-    --success-foreground: 0 0% 98%;
-    --warning: 36 82% 36%;
-    --warning-foreground: 0 0% 10%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --success: 150 55% 31%;
+    --success-foreground: 0 0% 100%;
+    --warning: 23 83% 31%;
+    --warning-foreground: 0 0% 100%;
+    --destructive: 358 69% 45%;
+    --destructive-foreground: 0 0% 100%;
 
     /* Muted / disabled */
-    --muted: 210 17% 94%;
-    --muted-foreground: 210 8% 40%;
+    --muted: 217 22% 93%;
+    --muted-foreground: 221 11% 40%;
 
     /* Ring (focus indicator) */
-    --ring: 206 100% 40%;
+    --ring: 216 74% 43%;
 
     /* -----------------------------------------------------------------------
        Radius
@@ -94,66 +94,54 @@
     /* -----------------------------------------------------------------------
        Shadows
        ----------------------------------------------------------------------- */
-    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+    --shadow-sm: none;
     --shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
     --shadow-md: 0 3px 8px rgba(15, 23, 42, 0.12);
     --shadow-lg: 0 8px 20px rgba(15, 23, 42, 0.14);
-    --shadow-glow: 0 1px 2px rgba(15, 23, 42, 0.08);
-    --shadow-glow-blue: 0 1px 2px rgba(15, 23, 42, 0.08);
-  }
-
-  /* Light theme overrides (if needed for admin pages) */
-  .light {
-    --background: 0 0% 98%;
-    --background-secondary: 0 0% 95%;
-    --foreground: 220 13% 8%;
-    --card: 0 0% 100%;
-    --card-border: 220 13% 88%;
-    --border: 220 13% 88%;
-    --muted: 220 13% 92%;
-    --muted-foreground: 220 12% 45%;
+    --shadow-glow: none;
+    --shadow-glow-blue: none;
   }
 
   .dark,
   [data-theme="dark"] {
-    --background: 220 18% 7%;
-    --background-secondary: 222 18% 10%;
-    --background-tertiary: 221 17% 13%;
-    --foreground: 220 17% 94%;
-    --foreground-muted: 220 10% 76%;
-    --foreground-subtle: 219 9% 61%;
-    --primary: 218 86% 59%;
-    --primary-foreground: 0 0% 100%;
-    --primary-hover: 218 86% 65%;
-    --primary-muted: 218 40% 18%;
-    --secondary: 221 17% 13%;
-    --secondary-foreground: 220 17% 92%;
-    --accent: 218 86% 59%;
-    --accent-foreground: 0 0% 100%;
-    --card: 222 18% 10%;
-    --card-foreground: 220 17% 94%;
+    --background: 220 17% 7%;
+    --background-secondary: 222 19% 11%;
+    --background-tertiary: 220 18% 13%;
+    --foreground: 220 19% 94%;
+    --foreground-muted: 221 13% 76%;
+    --foreground-subtle: 220 10% 61%;
+    --primary: 220 19% 94%;
+    --primary-foreground: 220 17% 7%;
+    --primary-hover: 0 0% 100%;
+    --primary-muted: 218 39% 17%;
+    --secondary: 223 17% 16%;
+    --secondary-foreground: 220 20% 91%;
+    --accent: 223 17% 16%;
+    --accent-foreground: 220 19% 94%;
+    --card: 222 19% 11%;
+    --card-foreground: 220 19% 94%;
     --card-border: 221 16% 20%;
-    --popover: 222 18% 10%;
-    --popover-foreground: 220 17% 94%;
+    --popover: 222 19% 11%;
+    --popover-foreground: 220 19% 94%;
     --border: 221 16% 20%;
-    --border-muted: 221 15% 27%;
-    --input: 221 16% 20%;
-    --input-focus: 218 86% 59%;
-    --success: 142 58% 52%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 90% 58%;
-    --warning-foreground: 222 24% 8%;
-    --destructive: 0 72% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --muted: 222 17% 16%;
-    --muted-foreground: 220 10% 76%;
-    --ring: 218 86% 59%;
+    --border-muted: 223 17% 16%;
+    --input: 220 15% 27%;
+    --input-focus: 219 100% 74%;
+    --success: 148 55% 55%;
+    --success-foreground: 220 17% 7%;
+    --warning: 33 85% 62%;
+    --warning-foreground: 220 17% 7%;
+    --destructive: 3 100% 73%;
+    --destructive-foreground: 220 17% 7%;
+    --muted: 220 18% 13%;
+    --muted-foreground: 221 13% 76%;
+    --ring: 219 100% 74%;
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
     --shadow-md: 0 3px 8px rgba(0, 0, 0, 0.6);
     --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.7);
-    --shadow-glow: 0 0 12px hsl(218 86% 59% / 0.2);
-    --shadow-glow-blue: 0 0 16px hsl(218 86% 59% / 0.25);
+    --shadow-glow: none;
+    --shadow-glow-blue: none;
   }
 }
 

@@ -258,15 +258,15 @@ export function MarketplaceView({ initialSearch = "" }: { initialSearch?: string
                 </div>
                 <div className="panel-b">
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-[var(--ink-2)]">Open Bounties</span>
+                    <span className="text-[var(--ink-2)]">Open bounties</span>
                     <span className="mono font-bold text-[var(--ink)]">{stats.openBounties}</span>
                   </div>
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-[var(--ink-2)]">Active Hunters</span>
+                    <span className="text-[var(--ink-2)]">Active developers</span>
                     <span className="mono font-bold text-[var(--ink)]">{stats.activeHunters}</span>
                   </div>
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-[var(--ink-2)]">Escrow Volume</span>
+                    <span className="text-[var(--ink-2)]">Locked in escrow</span>
                     <span className="mono font-bold text-[var(--gold)]">
                       {stats.bountyPool.length ? stats.bountyPool.map((p) => `${p.amount} ${p.symbol}`).join(", ") : "184,320 USDC"}
                     </span>
@@ -291,9 +291,9 @@ export function MarketplaceView({ initialSearch = "" }: { initialSearch?: string
               </div>
 
               <div className="panel note">
-                <div className="panel-h text-[var(--gold)] font-bold">Escrow Guarantee</div>
+                <div className="panel-h text-[var(--gold)] font-bold">Escrow guarantee</div>
                 <div className="panel-b text-xs text-[var(--ink-2)] leading-relaxed">
-                  Every bounty is locked on Base Sepolia. Payouts are verified by smart contract receipts. Full refunds pay 0% platform fee.
+                  Each reward is locked on Base Sepolia. Payouts are checked against smart contract receipts. A full refund pays no platform fee.
                 </div>
               </div>
             </aside>

@@ -8,11 +8,11 @@ import { Navbar } from "@/components/layout/Navbar";
 
 export const metadata: Metadata = {
   title: {
-    default: "Bloody-Roar — Decentralized Bounty Marketplace",
+    default: "Bloody-Roar · Engineering bounties",
     template: "%s | Bloody-Roar",
   },
   description:
-    "Hire developers trustlessly. Blockchain escrow + AI Guard + AI Dispute resolution. Zero platform bias.",
+    "Engineering bounties with rewards held in escrow. AI Guard and AI dispute review.",
   keywords: [
     "blockchain",
     "bounty",
@@ -29,15 +29,15 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:4000",
     siteName: "Bloody-Roar",
-    title: "Bloody-Roar — Decentralized Bounty Marketplace",
+    title: "Bloody-Roar · Engineering bounties",
     description:
-      "Replace trust with mathematics and AI. Blockchain escrow for freelance developers.",
+      "Engineering bounties with rewards held in escrow. AI Guard and AI dispute review.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Bloody-Roar — Decentralized Bounty Marketplace",
+    title: "Bloody-Roar · Engineering bounties",
     description:
-      "Replace trust with mathematics and AI. Blockchain escrow for freelance developers.",
+      "Engineering bounties with rewards held in escrow. AI Guard and AI dispute review.",
   },
   robots: {
     index: true,
@@ -55,6 +55,12 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;700&family=Geist+Mono:wght@400;500&display=swap"
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem("bloody-roar-theme")||(window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");var d=document.documentElement;d.classList.toggle("dark",t==="dark");d.classList.toggle("light",t==="light");d.dataset.theme=t;d.style.colorScheme=t;}catch(e){}})();`,

@@ -235,7 +235,7 @@ export function UserMenu() {
         aria-expanded={isDropdownOpen}
       >
         {/* Avatar */}
-        <div className="h-7 w-7 rounded-full bg-[var(--brand)] flex items-center justify-center text-xs font-bold text-white overflow-hidden shadow-xs shrink-0">
+        <div className="h-7 w-7 rounded-full bg-[var(--brand)] flex items-center justify-center text-xs font-bold text-[var(--cta-ink)] overflow-hidden shadow-xs shrink-0">
           {user.avatar ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img

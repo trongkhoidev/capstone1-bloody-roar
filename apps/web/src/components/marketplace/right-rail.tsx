@@ -52,18 +52,17 @@ export function MarketplaceRightRail({ onTagClick }: RightRailProps) {
       <Card className="border-[hsl(var(--warning)/0.3)] bg-[hsl(var(--warning)/0.04)]">
         <CardHeader className="pb-2">
           <CardTitle className="text-xs font-bold text-[hsl(var(--warning))] flex items-center gap-1.5">
-            <span>🛡️</span>
-            <span>Cơ Chế Ký Quỹ Escrow Minh Bạch</span>
+            <span>Cách escrow hoạt động</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="text-xs text-[hsl(var(--foreground-muted))] space-y-2 leading-relaxed">
           <p>
-            Tiền thưởng bounty được <strong className="text-[hsl(var(--foreground))]">khóa an toàn trên Smart Contract</strong> Base Sepolia trước khi developer bắt đầu code.
+            Tiền thưởng được <strong className="text-[hsl(var(--foreground))]">khóa trên smart contract Base Sepolia</strong> trước khi developer bắt đầu làm việc.
           </p>
           <ul className="list-disc list-inside space-y-1 text-[11px] text-[hsl(var(--foreground-subtle))]">
-            <li>Zero Rug-pull: Tiền nằm trên blockchain</li>
-            <li>AI Guard: Tự động che mật khẩu & secrets trong chat</li>
-            <li>Tranh chấp giải quyết bởi AI Arbiter trong 24h</li>
+            <li>Tiền nằm trên blockchain, không qua tay nền tảng</li>
+            <li>AI Guard che mật khẩu và khóa bí mật trong chat</li>
+            <li>AI Arbiter xử lý tranh chấp trong 24 giờ</li>
           </ul>
         </CardContent>
       </Card>

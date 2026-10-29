@@ -103,7 +103,7 @@ export function ProfileView() {
             <div className="mt-2 flex items-center justify-between text-sm"><span className="text-[hsl(var(--foreground-muted))]">{t("completedTasks")}</span><strong>{profile?.completedTaskCount ?? authUser.completedTaskCount}</strong></div>
           </div>
           {profile?.role === "DEVELOPER" && <div className="glass rounded-xl p-5">
-            <div className="flex items-center gap-2 font-semibold"><ShieldCheck className="h-4 w-4 text-[hsl(var(--accent))]" />{t("verifiableCredentials")}</div>
+            <div className="flex items-center gap-2 font-semibold"><ShieldCheck className="h-4 w-4 text-[hsl(var(--ring))]" />{t("verifiableCredentials")}</div>
             {profile.attestations.length ? <div className="mt-3 space-y-3">{profile.attestations.map((attestation) => <article key={attestation.attestationUid} className="rounded-lg border border-[hsl(var(--border))] p-3">
               <div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold">{attestation.type.replaceAll("_", " ")}</span><span className={`rounded-full px-2 py-0.5 text-[10px] ${attestation.revokedAt ? "bg-[hsl(var(--destructive)/0.1)] text-[hsl(var(--destructive))]" : "bg-[hsl(var(--success)/0.1)] text-[hsl(var(--success))]"}`}>{attestation.revokedAt ? "Revoked" : "Active"}</span></div>
               <p className="mt-2 break-all font-mono text-[10px] text-[hsl(var(--foreground-muted))]">UID: {attestation.attestationUid}</p>

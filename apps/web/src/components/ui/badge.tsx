@@ -21,7 +21,7 @@ const badgeVariants = cva(
         warning:
           "border-transparent bg-[hsl(var(--warning)/0.15)] text-[hsl(var(--warning))] border-[hsl(var(--warning)/0.3)]",
         glow: "border-[hsl(var(--primary)/0.4)] bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))]",
-        tag: "border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] text-[hsl(var(--foreground-muted))] hover:border-[hsl(var(--accent)/0.4)] hover:text-[hsl(var(--accent))]",
+        tag: "border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] text-[hsl(var(--foreground-muted))] hover:border-[hsl(var(--ring)/0.4)] hover:text-[hsl(var(--ring))]",
       },
     },
     defaultVariants: {

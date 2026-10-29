@@ -36,7 +36,8 @@ async function main() {
     );
   }
 
-  const [deployer, localOwner, localArbiter, localFeeRecipient] = await ethers.getSigners();
+  const signers = await ethers.getSigners();
+  const deployer = signers[0], localOwner = signers[0], localArbiter = signers[5], localFeeRecipient = signers[6];
   if (!deployer) throw new Error("No deployment signer is configured");
 
   let tokenAddress = process.env.USDC_ADDRESS;
@@ -55,7 +56,7 @@ async function main() {
       console.log(`Local MockUSDC deployed to ${tokenAddress}`);
     }
     if (!localOwner || !localArbiter || !localFeeRecipient) {
-      throw new Error("Local deployment needs four distinct Hardhat signers");
+      throw new Error("Local deployment needs Hardhat signers 0, 5, and 6");
     }
     ownerSafe ||= localOwner.address;
     arbiterSafe ||= localArbiter.address;

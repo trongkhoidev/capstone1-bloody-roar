@@ -110,6 +110,7 @@
       "version": "1.0.0",
       "dependencies": {
         "@bloody-roar/database": "workspace:*",
+        "@bloody-roar/shared": "workspace:*",
         "pg": "^8.23.1",
       },
       "devDependencies": {

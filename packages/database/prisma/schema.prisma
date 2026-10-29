@@ -111,6 +111,7 @@ enum NotificationType {
   FUNDING_REQUIRED
   RESERVATION_EXPIRED
   DEPOSIT_CONFIRMED
+  DEPOSIT_MISMATCHED
   WORK_SUBMITTED
   CHANGES_REQUESTED
   SETTLEMENT_PROPOSED
@@ -277,6 +278,7 @@ model User {
   submissions      Submission[]
   attestations     Attestation[]
   issueComments    IssueComment[]
+  issueViews       IssueView[]
 
   @@index([walletAddress])
   @@index([githubId])
@@ -368,6 +370,7 @@ model Issue {
   isDraft     Boolean   @default(false) // Draft before publish
   publishedAt DateTime?
   viewCount   Int       @default(0) // Analytics
+  hiddenAt    DateTime?
 
   // Escrow terms (v2, BE-14 / QĐ-23)
   deliveryDeadline DateTime?
@@ -393,6 +396,7 @@ model Issue {
   submissions  Submission[]
   review       Review?
   comments     IssueComment[]
+  views        IssueView[]
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -598,6 +602,7 @@ model Dispute {
   finalRulingAt DateTime?
   noticeDeadline DateTime? // Final ruling + 24h
   resolvedAt          DateTime?
+  raisedAt            DateTime?
 
   // Challenge tracking
   challengedById String?
@@ -1034,4 +1039,17 @@ model GithubWebhookDelivery {
   receivedAt DateTime @default(now())
 
   @@map("github_webhook_deliveries")
+}
+
+model IssueView {
+  id       String   @id @default(cuid())
+  issueId  String
+  userId   String
+  viewedAt DateTime @default(now())
+  issue    Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([issueId, userId])
+  @@index([issueId])
+  @@map("issue_views")
 }

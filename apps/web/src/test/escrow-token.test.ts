@@ -1,10 +1,11 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { utils } from "ethers";
+import type * as EthersModule from "ethers";
 import { toFunctionSelector } from "@bloody-roar/shared/escrow";
 
 const rpc = vi.hoisted(() => ({ call: vi.fn() }));
 vi.mock("ethers", async (importOriginal) => {
-  const original = await importOriginal<typeof import("ethers")>();
+  const original = await importOriginal<typeof EthersModule>();
   return { ...original, providers: { ...original.providers, JsonRpcProvider: class { call = rpc.call; } } };
 });
 import { readEscrowToken } from "../lib/escrow/token";

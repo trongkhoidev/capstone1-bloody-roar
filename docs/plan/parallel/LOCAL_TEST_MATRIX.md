@@ -40,3 +40,5 @@
 | E9 | tests/e2e/scanner-deposit.ts | NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass Hardhat với fixture deposit, reorg và resubmit; `2c417cd` |
 | P1-10 | apps/worker/test/effects-resolved.test.ts; tests/e2e/scanner-deposit.ts | bun run --cwd apps/worker test -- test/effects-resolved.test.ts; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass 7/7 và release/reorg Hardhat; `ffb6f50` |
 | E10 | tests/e2e/scanner-deposit.ts | NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Dở: release và credit pass, effect claim chưa triển khai; `ffb6f50` |
+| P1-11 | apps/web/src/test/settlement.test.ts; tests/e2e/scanner-deposit.ts | bun run --cwd apps/web test -- src/test/settlement.test.ts; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass 5 test và settlement/reorg Hardhat; `eebb77e` |
+| E14 | tests/e2e/scanner-deposit.ts | NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass với fixture deposit, accept/revoke và reorg; `eebb77e` |

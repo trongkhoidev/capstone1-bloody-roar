@@ -1,4 +1,11 @@
-ĐANG DỞ: P1-11. Bước tiếp theo: triển khai prepareProposeSettlement/prepareRevokeSettlement/prepareAcceptSettlement, effect và lịch sử settlement kèm hoàn tác reorg; kiểm thử E14 trên Hardhat.
+ĐANG DỞ: P1-12. Bước tiếp theo: triển khai availability thuần theo projection/thời gian, expose IssueRef.escrow, reservation, latestSubmission và viewerCapabilities; test từng phase.
+
+## P1-11 — settlement
+
+- `eebb77e`: chuẩn bị propose/revoke/accept với kiểm tra participant, phase, tỷ lệ và proposer; effect lưu lịch sử PENDING/REVOKED/ACCEPTED/VOIDED, xác nhận intent, thông báo bên còn lại và hoàn tác các event khi reorg.
+- `bun run --cwd apps/web test -- src/test/settlement.test.ts`: pass 5 test; `NODE_ENV=test bun run tests/e2e/scanner-deposit.ts` trên bloody_codex_test và Hardhat pass E14: propose 3000 bps, self-accept bị từ chối, accept chia 30/68,25/1,75 USDC, revert accept, revoke và revert cả propose/revoke. E9 và release/reorg cũng pass; fixture deposit không phải toàn bộ E1–E4.
+- Gate typecheck, lint, web/worker/database/contracts pass 463/64/3/35; lint có bốn cảnh báo any cũ. Gate phase C E3–E14/E31 và `test:e2e:local` chưa hoàn tất.
+
 
 ## P1-10 — escrow resolution
 

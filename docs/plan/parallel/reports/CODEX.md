@@ -1,4 +1,10 @@
-ĐANG DỞ: P1-3. Bước tiếp theo: thực hiện reconciler on-chain và kịch bản E23; sau đó tiếp tục P1-4/P1-5 và gate phase B.
+ĐANG DỞ: P1-4. Bước tiếp theo: giải mã custom error của giao dịch revert bằng ABI contract, kiểm thử và tiếp tục P1-5.
+
+## P1-3 — reconciler và E23
+
+- `eb13815`: job định kỳ so sánh escrow, settlement, dispute, claimable và isSolvent với block đã index; tạo/cập nhật/đóng finding theo chain và contract. Bỏ qua khi indexer chưa tới head, không ghi finding khi RPC lỗi hoặc checkpoint/projection thay đổi trong lúc đối chiếu.
+- `NODE_ENV=test bun run tests/e2e/scanner-deposit.ts` trên Hardhat/bloody_codex_test pass E22/E23/E24. E23 kiểm chain khớp, sửa amount projection tạo finding, sửa lại đóng finding; kiểm mismatch claimable và insolvency rồi phục hồi. `apps/worker/test/reconciliation.test.ts` kiểm bỏ qua khi indexer trễ.
+- Gate typecheck, lint, test web/worker/database và contracts pass; worker 52/52, contracts 35/35, lint có bốn cảnh báo any cũ. Luồng dispute/settlement toàn phần còn chờ P1-16/P1-11.
 
 ## P1-2 — reorg và replay
 
@@ -79,7 +85,7 @@ Gate sau P0-5 và `60ca0cc`: `bun run typecheck && bun run lint && bun run --cwd
 | P0-9 | xong | 6080c61 |
 | P1-1 | xong | `8a3c28d`: log ABI + Hardhat deposit thực pass |
 | P1-2 | xong | `50df7d0`: E22/E24 deposit trên Hardhat pass; các effect khác chờ P1-9/P1-16 |
-| P1-3 | chưa làm | Chưa triển khai |
+| P1-3 | xong | `eb13815`: E23 Hardhat pass |
 | P1-4 | chưa làm | Chưa triển khai |
 | P1-5 | chưa làm | Chưa triển khai |
 | P1-6 | xong | `f287f80`: worker 48/48 |

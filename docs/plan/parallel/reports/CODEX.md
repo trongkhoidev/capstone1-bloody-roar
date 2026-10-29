@@ -1,4 +1,11 @@
-ĐANG DỞ: P1-9 (deadline theo chain). Bước tiếp theo: dùng timestamp block cho createSubmissionDraft và prepareSubmitWork, giữ khóa DB ngắn, test evm_increaseTime qua deadline; sau đó làm P1-14.
+ĐANG DỞ: P1-14. Bước tiếp theo: thay thống kê tiền legacy bằng EscrowProjection/ClaimableBalance, public userStats(userId), thống kê admin theo chain/contract với số nguyên chuỗi; test và tiếp tục phase C.
+
+## P1-9 — sửa deadline theo chain
+
+- `321d55b`: createSubmissionDraft và prepareSubmitWork đọc timestamp block ngoài transaction, rồi khóa issue và kiểm tra lại projection; khi chain qua deadline, cả hai từ chối.
+- `bun run --cwd apps/web test -- src/test/submission-draft.test.ts`: pass 11/11. `NODE_ENV=test bun run tests/e2e/scanner-deposit.ts` trên test DB/Hardhat pass; evm_increaseTime qua deadline xác nhận hai mutation từ chối mà không sửa deadline DB. E9/E14 và reorg tiếp tục pass.
+- Gate typecheck, lint, web/worker/database/contracts pass 478/64/3/35; lint bốn cảnh báo any cũ. Gate phase C và `test:e2e:local` chưa hoàn tất.
+
 
 ## P1-13 — phiên bản tiêu chí
 

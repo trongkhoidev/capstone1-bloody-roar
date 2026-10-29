@@ -26,7 +26,7 @@ export const SUPPORTED_CHAIN_IDS = {
 } as const;
 
 // The client stays on Base Sepolia until frontend chain selection is implemented.
-export const ACTIVE_CHAIN_ID = typeof window === "undefined"
+export const ACTIVE_CHAIN_ID = typeof (globalThis as { window?: unknown }).window === "undefined"
   ? Number(process.env.CHAIN_ID || SUPPORTED_CHAIN_IDS.BASE_SEPOLIA)
   : SUPPORTED_CHAIN_IDS.BASE_SEPOLIA;
 

@@ -11,7 +11,7 @@
     "build": "bun run --cwd apps/web build",
     "start": "bun run --cwd apps/web start",
     "lint": "bun run --cwd apps/web lint",
-    "typecheck": "bun run --cwd apps/web typecheck",
+    "typecheck": "bun run --cwd apps/web typecheck && bun run --cwd apps/worker typecheck && bun x tsc --noEmit -p tsconfig.json",
     "test:e2e:backend": "bun run --cwd apps/web test:e2e:backend",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "db:generate": "bun run --cwd packages/database db:generate",

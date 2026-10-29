@@ -4,6 +4,7 @@ import { IssueRef } from "./issue.module";
 import { FundingReservationRef } from "../escrow/reservation.module";
 import { EscrowPhaseEnum, ResolutionKindEnum } from "../escrow/escrow.module";
 import { SubmissionRef, SUBMISSION_INCLUDE } from "../submission/submission.module";
+import { readChainTime } from "../../../lib/escrow/chain-time";
 import { availableActions, type AvailableAction } from "../../../lib/escrow/availability";
 import type { EscrowProjection, RulingRecord } from "@bloody-roar/database";
 
@@ -27,7 +28,7 @@ const EscrowProjectionRef = builder.prismaObject("EscrowProjection", { fields: (
   phase: t.expose("phase", { type: EscrowPhaseEnum }), resolutionKind: t.expose("resolutionKind", { type: ResolutionKindEnum }),
   settlementProposer: t.exposeString("settlementProposer", { nullable: true }), settlementClientBps: t.exposeInt("settlementClientBps", { nullable: true }),
   projectionVersion: t.exposeInt("projectionVersion"), orphan: t.exposeBoolean("orphan"),
-  availableActions: t.field({ type: [ActionRef], resolve: async (p, _args, ctx) => availableActions(p, new Date(), await currentRuling(ctx.db, p)) }),
+  availableActions: t.field({ type: [ActionRef], resolve: async (p, _args, ctx) => availableActions(p, await readChainTime(p.chainId), await currentRuling(ctx.db, p)) }),
 }) });
 
 type Capabilities = { canApply: boolean; canSelect: boolean; canFund: boolean; canSubmit: boolean; canRelease: boolean; canDispute: boolean;
@@ -65,7 +66,8 @@ builder.prismaObjectFields(IssueRef, (t) => ({
       user ? ctx.db.application.findUnique({ where: { issueId_developerId: { issueId: issue.id, developerId: user.id } }, select: { status: true } }) : null,
     ]);
     const ruling = projection ? await currentRuling(ctx.db, projection) : null;
-    const actions = projection ? availableActions(projection, now, ruling) : [];
+    const chainNow = projection ? await readChainTime(projection.chainId) : now;
+    const actions = projection ? availableActions(projection, chainNow, ruling) : [];
     const enabled = (action: string) => actions.some((a) => a.action === action && !a.reasonDisabled);
     const wallet = enabledUser ? user!.walletAddress.toLowerCase() : "";
     const isClient = !!projection && wallet === projection.client.toLowerCase() && user?.id === issue.clientId;

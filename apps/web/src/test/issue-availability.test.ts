@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { Prisma } from "@bloody-roar/database";
 import { execute, loadSchema } from "./graphql-execute";
+vi.mock("../lib/escrow/chain-time", () => ({ readChainTime: vi.fn(async () => new Date()) }));
 beforeAll(loadSchema, 60_000);
 const client = { id: "client", role: "CLIENT", walletAddress: "0x1111111111111111111111111111111111111111", isBanned: false };
 const developer = { id: "developer", role: "DEVELOPER", walletAddress: "0x2222222222222222222222222222222222222222", isBanned: false };

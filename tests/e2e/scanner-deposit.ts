@@ -313,6 +313,14 @@ try {
   assert.equal((await prisma.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash } })).settlementProposer, null);
   console.log("E14: proposal, acceptance, revocation and their reorg undo verified");
 
+  await rpc.call("evm_increaseTime", [40 * 86400]);
+  await rpc.call("evm_mine", []);
+  const availability = await graphql(`query($issue: ID!) { issue(id: $issue) { escrow { availableActions { action reasonDisabled } } viewerCapabilities { canClaimReviewTimeout } } }`, { issue: issueId });
+  const issueAvailability = availability.issue as { escrow: { availableActions: Array<{ action: string; reasonDisabled: string | null }> }; viewerCapabilities: { canClaimReviewTimeout: boolean } };
+  assert.equal(issueAvailability.viewerCapabilities.canClaimReviewTimeout, true);
+  assert.equal(issueAvailability.escrow.availableActions.find((a) => a.action === "claimReviewTimeout")?.reasonDisabled, null);
+  console.log("Issue availability uses advanced Hardhat block time");
+
   await prisma.escrowProjection.update({ where: { escrowIdHash }, data: { deliveryDeadline: new Date(Date.now() - 1000) } });
   const expired = await execute(`mutation($issue: ID!) { createSubmissionDraft(issueId: $issue, description: "late") { id } }`, { db: prisma, user: developerUser }, { issue: issueId });
   assert.equal(expired.errors?.[0]?.extensions?.code, "DEADLINE_PASSED");

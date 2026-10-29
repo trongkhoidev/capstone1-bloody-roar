@@ -6,6 +6,7 @@ import type { Prisma } from "@bloody-roar/database";
 import type { FoldEffect } from "@bloody-roar/shared/escrow";
 import { applyFunded, type EffectMeta } from "./escrow";
 import { applyWorkSubmitted } from "./work";
+import { applyResolved } from "./resolved";
 
 export async function applyFoldEffects(
   tx: Prisma.TransactionClient,
@@ -20,7 +21,10 @@ export async function applyFoldEffects(
       case "WORK_SUBMITTED":
         await applyWorkSubmitted(tx, effect, meta);
         break;
-      // TODO(A4): SETTLEMENT_PROPOSED/REVOKED (BE-49a), ESCROW_RESOLVED (BE-44), CLAIMED (BE-48)
+      case "ESCROW_RESOLVED":
+        await applyResolved(tx, effect, meta);
+        break;
+      // TODO(A4): SETTLEMENT_PROPOSED/REVOKED (BE-49a), CLAIMED (BE-48)
       default:
         break;
     }

@@ -247,6 +247,29 @@ try {
   assert.ok(await handleReorg({ db: prisma, rpc, config }));
   assert.equal((await prisma.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash } })).externalDelivery, false);
   assert.equal((await prisma.submission.findUniqueOrThrow({ where: { id: draft2.id } })).status, "SUBMITTED");
+  const feeUser = await user(accounts[6]!, "DEVELOPER");
+  const release = (await graphql(`mutation($id: ID!) { prepareReleaseFunds(issueId: $id) { intentId contractAddress data } }`, { id: issueId })).prepareReleaseFunds as { intentId: string; contractAddress: Hex; data: Hex };
+  const releaseSnapshot = await rpc.call<string>("evm_snapshot", []);
+  const releaseHash = await send(client, release.contractAddress, release.data);
+  await record(release.intentId, releaseHash);
+  while (await scanOnce({ db: prisma, rpc, config })) { /* scan release */ }
+  assert.equal((await prisma.issue.findUniqueOrThrow({ where: { id: issueId } })).outcome, "RELEASE");
+  assert.equal((await prisma.issue.findUniqueOrThrow({ where: { id: issueId } })).status, "COMPLETED");
+  assert.equal((await prisma.transactionIntent.findUniqueOrThrow({ where: { id: release.intentId } })).status, "CONFIRMED");
+  const claimable = async (wallet: Hex) => (await prisma.claimableBalance.findUniqueOrThrow({ where: { chainId_contractAddress_address: { chainId: config.chainId, contractAddress: config.escrowAddress, address: wallet.toLowerCase() } } })).amountRaw.toFixed();
+  assert.equal(await claimable(developer), "97500000");
+  assert.equal(await claimable(accounts[6]!), "2500000");
+  assert.equal(await prisma.notification.count({ where: { type: "ESCROW_RESOLVED", data: { path: ["issueId"], equals: issueId } } }), 2);
+  assert.ok(await prisma.notification.findFirst({ where: { type: "FUNDS_CLAIMABLE", userId: feeUser.id, data: { path: ["issueId"], equals: issueId } } }));
+  assert.equal(await rpc.call<boolean>("evm_revert", [releaseSnapshot]), true);
+  await rpc.call("evm_mine", []);
+  assert.ok(await handleReorg({ db: prisma, rpc, config }));
+  assert.equal((await prisma.issue.findUniqueOrThrow({ where: { id: issueId } })).status, "IN_PROGRESS");
+  assert.equal(await claimable(developer), "0");
+  assert.equal(await claimable(accounts[6]!), "0");
+  assert.equal((await prisma.transactionIntent.findUniqueOrThrow({ where: { id: release.intentId } })).status, "SUBMITTED");
+  console.log("Real release credited payouts and reorg reversed the resolution");
+
   await prisma.escrowProjection.update({ where: { escrowIdHash }, data: { deliveryDeadline: new Date(Date.now() - 1000) } });
   const expired = await execute(`mutation($issue: ID!) { createSubmissionDraft(issueId: $issue, description: "late") { id } }`, { db: prisma, user: developerUser }, { issue: issueId });
   assert.equal(expired.errors?.[0]?.extensions?.code, "DEADLINE_PASSED");

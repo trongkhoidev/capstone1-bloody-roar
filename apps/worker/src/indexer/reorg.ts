@@ -2,7 +2,7 @@ import { checkpointKey, loadCheckpoint, lockCheckpoint, type IndexerConfig } fro
 import { getBlockByNumber } from "../chain/client";
 import type { ScanDeps } from "./scanner";
 import { rebuildEscrowProjection } from "./rebuild";
-import { undoDeposit, undoWork, type DepositUndo, type WorkUndo } from "./undo";
+import { undoDeposit, undoWork, undoResolved, type DepositUndo, type WorkUndo, type ResolvedUndo } from "./undo";
 
 // Compares the hash stored at lastScannedBlock with the node's hash. On a mismatch, rewinds the
 // cursor by reorgWindow blocks and marks events whose block hash changed as non-canonical.
@@ -45,10 +45,15 @@ export async function handleReorg({ db, rpc, config }: ScanDeps): Promise<{ rewo
     const staleSet = new Set(staleIds);
     const stale = candidates.filter((event) => staleSet.has(event.id));
     if (stale.length > 0) await tx.chainEvent.updateMany({ where: { id: { in: staleIds } }, data: { canonical: false } });
-    const reversible = stale.filter((event) => (event.eventName === "Deposited" || event.eventName === "WorkSubmitted") && event.escrowIdHash)
+    if (stale.some((event) => event.eventName === "Claimed")) throw new Error("Cannot safely undo a claimed balance until CLAIMED undo is implemented");
+    const reversible = stale.filter((event) => (event.eventName === "Deposited" || event.eventName === "WorkSubmitted" || event.eventName === "EscrowResolved") && event.escrowIdHash)
       .sort((a, b) => a.blockNumber === b.blockNumber ? b.txIndex - a.txIndex || b.logIndex - a.logIndex : a.blockNumber > b.blockNumber ? -1 : 1);
     for (const event of reversible) {
-      if (event.eventName === "WorkSubmitted") {
+      if (event.eventName === "EscrowResolved") {
+        const args = event.args as unknown as { undo?: ResolvedUndo };
+        if (!args.undo) throw new Error("Cannot safely undo resolution without its recorded snapshot");
+        await undoResolved(tx, event.id, args.undo, config.chainId, config.escrowAddress);
+      } else if (event.eventName === "WorkSubmitted") {
         const args = event.args as unknown as { undo?: WorkUndo };
         if (args.undo) await undoWork(tx, event.id, args.undo);
         else if ((await tx.escrowProjection.findUnique({ where: { escrowIdHash: event.escrowIdHash! } }))?.issueId)

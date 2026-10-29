@@ -151,3 +151,7 @@ Không có việc nào chặn Codex. Khi deploy, người dùng cần:
 ## ĐỔI QUYẾT ĐỊNH — khóa chống trùng thông báo deadline
 
 `DEADLINE_APPROACHING` dùng `deadline:{escrowId}:{kind}:{userId}` thay cho `deadline:{escrowId}:{kind}` trong FIX_LIST. Cột `Notification.dedupeKey` là duy nhất toàn bảng; thêm userId để cả client và developer liên quan đều nhận đúng một thông báo cho cùng mốc, kể cả khi job chạy lại.
+
+## ĐỔI QUYẾT ĐỊNH — reputation sau escrow resolution
+
+P1-10 tạm để TODO(P1-22) gọi `recalcReputation` trong transaction của effect. Hàm chưa tồn tại; P1-22 sẽ triển khai và nối lại trước gate cuối.

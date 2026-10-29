@@ -5,7 +5,7 @@ import {
 } from "@bloody-roar/shared/escrow";
 import { applyFoldEffects } from "../effects";
 import { notifyProjectionChanged } from "./notify";
-import { captureDepositUndo, captureWorkUndo } from "./undo";
+import { captureDepositUndo, captureWorkUndo, captureResolvedUndo } from "./undo";
 import type { RawLog } from "../chain/client";
 import type { IndexerConfig } from "./checkpoint";
 
@@ -65,7 +65,8 @@ export async function projectLog(tx: Prisma.TransactionClient, config: IndexerCo
   const meta: EventMeta = { chainId: config.chainId, contractAddress: config.escrowAddress as Hex, ...position,
     blockHash: log.blockHash as Hex, txHash: log.transactionHash as Hex, blockTimestamp };
   const folded = foldEscrowEvent(state, event, meta);
-  const undo = event.name === "Deposited" && escrowIdHash ? await captureDepositUndo(tx, escrowIdHash) :
+  const resolution = folded.effects.find((effect) => effect.kind === "ESCROW_RESOLVED");
+  const undo = resolution ? await captureResolvedUndo(tx, resolution) : event.name === "Deposited" && escrowIdHash ? await captureDepositUndo(tx, escrowIdHash) :
     event.name === "WorkSubmitted" && escrowIdHash ? await captureWorkUndo(tx, escrowIdHash, event.deliveryHash) : null;
   const args = { topics: log.topics, data: log.data, blockTimestamp: blockTimestamp.toString(), ...(undo ? { undo } : {}) };
   const row = await tx.chainEvent.upsert({

@@ -26,7 +26,7 @@ export function escrowTarget() {
 }
 
 export async function createPreparedCall(
-  db: PrismaClient,
+  db: Pick<PrismaClient, "transactionIntent">,
   input: {
     userId: string;
     method: EscrowMethod;
@@ -34,11 +34,12 @@ export async function createPreparedCall(
     issueId?: string | null;
     escrowKey?: string | null;
     expiresInMinutes?: number;
+    expiresAt?: Date;
   },
 ): Promise<PreparedCall> {
   const { contractAddress, chainId } = escrowTarget();
   const data = encodeEscrowCall(input.method, input.args);
-  const expiresAt = new Date(
+  const expiresAt = input.expiresAt ?? new Date(
     Date.now() + (input.expiresInMinutes ?? ESCROW_CONSTANTS.INTENT_MINUTES) * 60_000,
   );
 

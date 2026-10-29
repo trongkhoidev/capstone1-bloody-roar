@@ -147,6 +147,7 @@ function notificationsFor(eventMeta: ReturnType<typeof meta>) {
 test("accepts a deposit that matches the reservation (BE-36)", async () => {
   const s = await scenario({ reservationStatus: "AWAITING_FUNDING", issueStatus: "AWAITING_FUNDING" });
   const eventMeta = meta(s.escrowIdHash);
+  await prisma.transactionIntent.updateMany({ where: { escrowKey: s.reservation.escrowKey }, data: { txHash: eventMeta.txHash.toLowerCase() } });
 
   await apply(s.effect(), eventMeta);
 
@@ -180,9 +181,18 @@ test("accepts a deposit that matches the reservation (BE-36)", async () => {
   expect(await notificationsFor(eventMeta)).toEqual(
     expect.arrayContaining([
       { userId: client.id, type: "DEPOSIT_CONFIRMED" },
-      { userId: developer.id, type: "DEPOSIT_CONFIRMED" },
+      { userId: developer.id, type: "APPLICATION_ACCEPTED" },
+      { userId: developer.id, type: "TASK_ASSIGNED" },
+      { userId: rival.id, type: "APPLICATION_REJECTED" },
     ]),
   );
+});
+
+test("does not confirm a different submitted transaction", async () => {
+  const s = await scenario({ reservationStatus: "AWAITING_FUNDING", issueStatus: "AWAITING_FUNDING" });
+  await prisma.transactionIntent.updateMany({ where: { escrowKey: s.reservation.escrowKey }, data: { txHash: "0xother" } });
+  await apply(s.effect(), meta(s.escrowIdHash));
+  expect((await prisma.transactionIntent.findFirstOrThrow({ where: { escrowKey: s.reservation.escrowKey } })).status).toBe("SUBMITTED");
 });
 
 test("rejects a deposit from a different contract without changing the reservation", async () => {
@@ -212,7 +222,7 @@ test("replaying the same event does not notify twice", async () => {
   await apply(s.effect(), eventMeta);
   await apply(s.effect(), eventMeta);
 
-  expect(await notificationsFor(eventMeta)).toHaveLength(2);
+  expect(await notificationsFor(eventMeta)).toHaveLength(4);
 });
 
 test("marks a deposit with a different amount as mismatched and reopens the issue (BE-66c)", async () => {

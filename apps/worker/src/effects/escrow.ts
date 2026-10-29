@@ -20,6 +20,7 @@ import {
   type FoldEffect,
   type Hex,
 } from "@bloody-roar/shared/escrow";
+import { notifyNotificationCreated } from "../indexer/notify";
 
 export type EffectMeta = EventMeta & { chainEventId: string; escrowIdHash: Hex };
 type FundedEffect = Extract<FoldEffect, { kind: "FUNDED" }>;
@@ -34,14 +35,15 @@ async function notify(
   tx: Prisma.TransactionClient,
   meta: EffectMeta,
   userIds: string[],
-  input: { type: "DEPOSIT_CONFIRMED" | "DEPOSIT_MISMATCHED"; title: string; body: string; link: string; data: Record<string, string> },
+  input: { type: "DEPOSIT_CONFIRMED" | "DEPOSIT_MISMATCHED" | "APPLICATION_ACCEPTED" | "APPLICATION_REJECTED" | "TASK_ASSIGNED"; title: string; body: string; link: string; data: Record<string, string> },
 ) {
   for (const userId of new Set(userIds)) {
-    await createNotificationIdempotent(tx, {
+    const notification = await createNotificationIdempotent(tx, {
       ...input,
       dedupeKey: `${meta.chainEventId}:${userId}:${input.type}`,
       userId,
     });
+    if (notification) await notifyNotificationCreated(tx, { userId, id: notification.id });
   }
 }
 
@@ -116,6 +118,10 @@ async function acceptDeposit(
     data: { status: IssueStatus.IN_PROGRESS, developerId: reservation.developerId },
   });
   if (!moved.count) throw new Error("Issue changed while applying deposit; retry");
+  const rejected = await tx.application.findMany({
+    where: { issueId: reservation.issueId, id: { not: reservation.applicationId }, status: ApplicationStatus.PENDING },
+    select: { developerId: true },
+  });
   await tx.application.update({
     where: { id: reservation.applicationId },
     data: { status: ApplicationStatus.ACCEPTED },
@@ -155,18 +161,30 @@ async function acceptDeposit(
     where: {
       escrowKey: reservation.escrowKey,
       method: "deposit",
+      txHash: meta.txHash.toLowerCase(),
       status: {
-        in: [IntentStatus.AWAITING_SIGNATURE, IntentStatus.SUBMITTED, IntentStatus.PENDING_SAFE_HEAD],
+        in: [IntentStatus.SUBMITTED, IntentStatus.PENDING_SAFE_HEAD],
       },
     },
     data: { status: IntentStatus.CONFIRMED, confirmedByEventId: meta.chainEventId },
   });
-  await notify(tx, meta, [reservation.clientId, reservation.developerId], {
-    type: "DEPOSIT_CONFIRMED",
-    title: "Đã nạp ký quỹ",
-    body: `Ký quỹ cho “${issueTitle}” đã được ghi nhận on-chain.`,
-    link: `/issues/${reservation.issueId}`,
-    data: { issueId: reservation.issueId, reservationId: reservation.id },
+  const data = { issueId: reservation.issueId, reservationId: reservation.id };
+  const link = `/issues/${reservation.issueId}`;
+  await notify(tx, meta, [reservation.clientId], {
+    type: "DEPOSIT_CONFIRMED", title: "Đã nạp ký quỹ",
+    body: `Ký quỹ cho “${issueTitle}” đã được ghi nhận on-chain.`, link, data,
+  });
+  await notify(tx, meta, [reservation.developerId], {
+    type: "APPLICATION_ACCEPTED", title: "Ứng tuyển được chấp nhận",
+    body: `Bạn đã được chọn thực hiện “${issueTitle}”.`, link, data,
+  });
+  await notify(tx, meta, [reservation.developerId], {
+    type: "TASK_ASSIGNED", title: "Công việc đã sẵn sàng",
+    body: `Ký quỹ cho “${issueTitle}” đã được nạp; bạn có thể bắt đầu.`, link, data,
+  });
+  await notify(tx, meta, rejected.map((application) => application.developerId), {
+    type: "APPLICATION_REJECTED", title: "Ứng tuyển chưa được chọn",
+    body: `Một ứng viên khác đã được chọn cho “${issueTitle}”.`, link, data,
   });
 }
 

@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@bloody-roar/database";
-import type { RpcClient } from "../chain/rpc";
+import type { RpcClient } from "../chain/client";
 import type { WorkerConfig } from "../config";
 import { errorMessage, type Logger } from "../log";
 

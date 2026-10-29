@@ -1,5 +1,5 @@
-// Minimal JSON-RPC client. viem is not allowed for A3 (only pg and @types/pg), so the
-// few calls the worker needs are written here. Decoding of escrow logs lives in A2's code.
+import { createPublicClient, http } from "@bloody-roar/shared";
+
 export type RawLog = {
   address: string;
   topics: string[];
@@ -29,36 +29,26 @@ export type RpcClient = {
 const RANGE_ERROR = /block range|range is too (large|wide)|query returned more than|too many (results|logs)/i;
 
 export function createRpcClient({ url, fetch: doFetch = fetch, timeoutMs = 10_000 }: RpcOptions): RpcClient {
-  let id = 0;
+  const client = createPublicClient({ transport: http(url, { timeout: timeoutMs, retryCount: 0, ...(doFetch !== fetch ? { fetchFn: doFetch } : {}) }) });
+  const request = client.request as unknown as (args: { method: string; params: unknown[] }) => Promise<unknown>;
   let lastLatencyMs: number | null = null;
   let errorStreak = 0;
-
   return {
-    get lastLatencyMs() {
-      return lastLatencyMs;
-    },
-    get errorStreak() {
-      return errorStreak;
-    },
+    get lastLatencyMs() { return lastLatencyMs; },
+    get errorStreak() { return errorStreak; },
     async call<T>(method: string, params: unknown[]): Promise<T> {
       const started = performance.now();
       try {
-        const res = await doFetch(url, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ jsonrpc: "2.0", id: ++id, method, params }),
-          signal: AbortSignal.timeout(timeoutMs),
-        });
-        const body = (await res.json()) as { result?: T; error?: { code: number; message: string } };
-        if (body.error) {
-          if (RANGE_ERROR.test(body.error.message)) throw new RpcRangeError(body.error.message);
-          throw new Error(`${method} failed: ${body.error.message}`);
-        }
+        const result = await request({ method, params });
         errorStreak = 0;
-        return body.result as T;
-      } catch (err) {
-        if (!(err instanceof RpcRangeError)) errorStreak++;
-        throw err;
+        return result as T;
+      } catch (error) {
+        const details = error && typeof error === "object" && "details" in error ? error.details : undefined;
+        const short = error && typeof error === "object" && "shortMessage" in error ? error.shortMessage : undefined;
+        const message = typeof details === "string" ? details : typeof short === "string" ? short : error instanceof Error ? error.message : String(error);
+        if (RANGE_ERROR.test(message)) throw new RpcRangeError(message);
+        errorStreak++;
+        throw new Error(`${method} failed: ${message}`, { cause: error });
       } finally {
         lastLatencyMs = Math.round(performance.now() - started);
       }

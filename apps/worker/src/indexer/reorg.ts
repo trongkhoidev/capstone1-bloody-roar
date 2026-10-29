@@ -1,5 +1,5 @@
 import { checkpointKey, loadCheckpoint, type IndexerConfig } from "./checkpoint";
-import { getBlockByNumber } from "../chain/rpc";
+import { getBlockByNumber } from "../chain/client";
 import type { ScanDeps } from "./scanner";
 
 // Compares the hash stored at lastScannedBlock with the node's hash. On a mismatch, rewinds the

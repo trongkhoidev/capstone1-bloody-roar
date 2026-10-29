@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@bloody-roar/database";
-import { RpcRangeError, type RawLog, type RpcClient } from "../src/chain/rpc";
+import { RpcRangeError, type RawLog, type RpcClient } from "../src/chain/client";
 import type { IndexerConfig } from "../src/indexer/checkpoint";
 import { scanOnce, type ScanDeps } from "../src/indexer/scanner";
 

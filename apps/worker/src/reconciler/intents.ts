@@ -1,5 +1,5 @@
 import type { IntentStatus, PrismaClient } from "@bloody-roar/database";
-import { getReceipt, type RpcClient, type RpcReceipt } from "../chain/rpc";
+import { getReceipt, type RpcClient, type RpcReceipt } from "../chain/client";
 
 // A submitted tx with no receipt after this long is DROPPED. The plan says "N blocks";
 // TransactionIntent has no block column, so the rule uses wall-clock time (INTENT_MINUTES = 30).

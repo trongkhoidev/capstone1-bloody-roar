@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createRpcClient, getLogs, getReceipt, getSafeBlock, RpcRangeError } from "../src/chain/rpc";
+import { createRpcClient, getLogs, getReceipt, getSafeBlock, RpcRangeError } from "../src/chain/client";
 
 // A fetch that answers every POST with the given JSON-RPC body.
 const fetchReturning = (body: unknown) => (async () => new Response(JSON.stringify(body))) as unknown as typeof fetch;

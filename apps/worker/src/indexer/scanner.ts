@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { Prisma, type PrismaClient } from "@bloody-roar/database";
-import { getBlockByNumber, getLogs, getSafeBlock, hexToNumber, RpcRangeError, type RawLog, type RpcClient } from "../chain/rpc";
+import { getBlockByNumber, getLogs, getSafeBlock, hexToNumber, RpcRangeError, type RawLog, type RpcClient } from "../chain/client";
 import { checkpointKey, DECODER_VERSION, loadCheckpoint, type IndexerConfig } from "./checkpoint";
 
 export type ScanDeps = { db: PrismaClient; rpc: RpcClient; config: IndexerConfig };

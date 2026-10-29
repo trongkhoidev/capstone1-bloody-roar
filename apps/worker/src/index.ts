@@ -1,6 +1,6 @@
 // Worker entrypoint: one instance per database (advisory lock), health on WORKER_PORT, jobs on a scheduler.
 import { prisma } from "@bloody-roar/database";
-import { createRpcClient } from "./chain/rpc";
+import { createRpcClient } from "./chain/client";
 import { loadConfig } from "./config";
 import { logger as log, errorMessage } from "./log";
 import { jobs } from "./jobs";

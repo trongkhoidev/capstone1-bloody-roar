@@ -2,7 +2,7 @@
 // Escrow deposits need A2's calldata encoder; until it lands, MockUSDC transfers stand in for chain activity.
 import { spawn, type ChildProcess } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { createRpcClient, type RpcClient } from "../src/chain/rpc";
+import { createRpcClient, type RpcClient } from "../src/chain/client";
 
 const CONTRACTS = new URL("../../contracts/", import.meta.url);
 const TRANSFER = "0xa9059cbb";

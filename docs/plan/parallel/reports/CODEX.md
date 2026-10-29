@@ -1,4 +1,15 @@
-ĐANG DỞ: N-1. Bước tiếp theo: chạy test web và worker với TEST_DATABASE_URL=bloody_codex_test, sửa lỗi phát sinh, rồi tiếp tục N-2 theo phase A.
+ĐANG DỞ: N-2. Bước tiếp theo: đọc các module escrow web và config worker, chuẩn hóa biến môi trường theo D-ENV-1; tiếp tục phase A và sửa hai lỗi typecheck worker tại effects/escrow.ts:138–139.
+
+## Cập nhật sau review phase A
+
+- Kế hoạch đã commit `0644ecc` theo quyết định bổ sung.
+- N-1/P0-9 và review: `6080c61` kiểm host localhost/127.0.0.1, gán URL không thể truy cập khi thiếu TEST_DATABASE_URL, preload database, guard test DB, bảo vệ reset tích hợp và ignore tests/e2e/.run/. `bun test tests/e2e/check-env.test.ts packages/database/test/test-guard.test.ts` pass 12/12; `git check-ignore tests/e2e/.run/example.pid` pass.
+- `bun run --cwd apps/web test` không có TEST_DATABASE_URL: 480 pass, 1 test DB bỏ qua; với TEST_DATABASE_URL, `bun run --cwd apps/web test -- src/test/escrow-reservation.db.test.ts` pass 1/1. `bun run --cwd packages/database test` pass 2/2 trên bloody_codex_test.
+- Mục 2.2: tạo bloody_codex_local sau khi xác minh host và tên; `bun run --cwd packages/database db:migrate:prod` pass. Địa chỉ admin đã được review xác nhận; còn chờ manifest escrow.
+- P0-1: `3118318` xóa template và test không dùng theo D-NOTI-1; kiểm tra từng NotificationType có nơi tạo và E2E vẫn phải hoàn tất ở phase E/G.
+- P0-2: `fe78f0e` thêm dependency workspace shared. Test worker hiện pass 45/45 trên bloody_codex_test.
+- P0-3: `d39cc3b` thêm schema/migration; db:generate và migrate deploy trên bloody_codex_test lẫn bloody_codex_local pass. Worker typecheck vẫn fail do hai trường arbiter và feeRecipient không có trong effect FUNDED (src/effects/escrow.ts:138–139); cần sửa trước khi coi nghiệm thu P0-3 hoàn tất.
+- `bun run typecheck && bun run lint` pass sau thay đổi, lint 4 cảnh báo any có sẵn. Lưu ý typecheck gốc hiện chỉ chạy web. Gate phase A, contracts test và E2E chưa chạy.
 
 ## Cập nhật phiên local
 

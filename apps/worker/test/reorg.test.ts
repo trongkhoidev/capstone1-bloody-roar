@@ -52,3 +52,21 @@ test("a reorg marks orphaned events non-canonical and re-includes events that mo
     lastCanonicalBlockHash: "0xB105",
   });
 });
+
+
+test("an unavailable RPC block does not orphan events or move the checkpoint", async () => {
+  await cleanupChain(prisma, config);
+  const chain = newChain();
+  chain.safe = 101n;
+  chain.blockHash.set(100n, "0xA100");
+  chain.blockHash.set(101n, "0xA101");
+  chain.logs = [rawLog({ address, block: 100, blockHash: "0xA100", tx: "0xmissing" })];
+  await scanToHead({ db: prisma, rpc: fakeRpc(chain), config });
+  chain.blockHash.set(101n, "0xB101");
+  chain.blockHash.delete(100n);
+  await expect(handleReorg({ db: prisma, rpc: fakeRpc(chain), config })).rejects.toThrow("no block for 100");
+  expect((await prisma.chainEvent.findFirstOrThrow({ where: { ...where, txHash: "0xmissing" } })).canonical).toBe(true);
+  expect((await prisma.projectionCheckpoint.findUniqueOrThrow({ where: { chainId_contractAddress: where } })).lastScannedBlock).toBe(101n);
+  chain.blockHash.delete(101n);
+  await expect(handleReorg({ db: prisma, rpc: fakeRpc(chain), config })).rejects.toThrow("no block for 101");
+});

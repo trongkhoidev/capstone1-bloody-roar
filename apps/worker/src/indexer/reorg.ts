@@ -10,7 +10,8 @@ export async function handleReorg({ db, rpc, config }: ScanDeps): Promise<{ rewo
   const checkpoint = await loadCheckpoint(db, config);
   if (checkpoint.lastCanonicalBlockHash === "") return null;
   const current = await getBlockByNumber(rpc, checkpoint.lastScannedBlock);
-  if (current?.hash === checkpoint.lastCanonicalBlockHash) return null;
+  if (!current) throw new Error(`RPC returned no block for ${checkpoint.lastScannedBlock}`);
+  if (current.hash === checkpoint.lastCanonicalBlockHash) return null;
 
   const floor = config.escrowDeployBlock - 1n;
   const target = maxBigInt(floor, checkpoint.lastScannedBlock - BigInt(config.reorgWindow));
@@ -23,7 +24,11 @@ export async function handleReorg({ db, rpc, config }: ScanDeps): Promise<{ rewo
   const hashByBlock = new Map<string, string | null>();
   for (const event of candidates) {
     const key = event.blockNumber.toString();
-    if (!hashByBlock.has(key)) hashByBlock.set(key, (await getBlockByNumber(rpc, event.blockNumber))?.hash ?? null);
+    if (!hashByBlock.has(key)) {
+      const block = await getBlockByNumber(rpc, event.blockNumber);
+      if (!block) throw new Error(`RPC returned no block for ${event.blockNumber}`);
+      hashByBlock.set(key, block.hash);
+    }
     if (hashByBlock.get(key) !== event.blockHash) staleIds.push(event.id);
   }
 

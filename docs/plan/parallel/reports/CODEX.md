@@ -1,4 +1,12 @@
-ĐANG DỞ: P1-12. Bước tiếp theo: triển khai availability thuần theo projection/thời gian, expose IssueRef.escrow, reservation, latestSubmission và viewerCapabilities; test từng phase.
+ĐANG DỞ: P1-13. Bước tiếp theo: khóa issue khi sửa/duyệt/xóa tiêu chí, kiểm reservation active, tăng termsVersion khi bộ tiêu chí được duyệt thay đổi; thêm test race và chạy gate.
+
+## P1-12 — quyền và hành động
+
+- `f875b62`, `7cd68e3`: Issue có escrow projection, reservation, latestSubmission và viewerCapabilities; ẩn reservation/submission khỏi người ngoài, tính action theo phase và ranh giới contract. RPC lấy timestamp block mới nhất, kiểm chain ID và fail closed nếu không đọc được.
+- `bun run --cwd apps/web test -- src/test/escrow-chain-time.test.ts src/test/issue-availability.test.ts src/test/escrow-availability.test.ts`: pass 12/12. `NODE_ENV=test bun run tests/e2e/scanner-deposit.ts` trên test DB/Hardhat pass; tăng chain time 40 ngày làm review timeout xuất hiện qua GraphQL. E9, E14 và reorg cũng pass.
+- Gate typecheck, lint, web/worker/database/contracts pass 475/64/3/35; lint bốn cảnh báo any cũ. Gate phase C và `test:e2e:local` chưa hoàn tất.
+- Cần sửa P1-9: createSubmissionDraft và prepareSubmitWork vẫn kiểm deadline bằng đồng hồ server, trong khi contract dùng thời gian block; kiểm thử E9 hiện chỉ sửa deadline DB. Dùng readChainTime và test evm_increaseTime trước khi coi phase C hoàn tất.
+
 
 ## P1-11 — settlement
 

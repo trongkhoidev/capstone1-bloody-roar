@@ -75,8 +75,8 @@ function fakeDb(
     tx,
     $transaction: vi.fn(async (fn: (client: typeof tx) => unknown) => fn(tx)),
     notification: {
-      findUnique: vi.fn().mockResolvedValue(null),
-      create: vi.fn().mockResolvedValue({}),
+      createMany: vi.fn().mockResolvedValue({ count: 1 }),
+      findUniqueOrThrow: vi.fn().mockResolvedValue({}),
     },
     fundingReservation: {
       findUnique: vi.fn(),
@@ -175,12 +175,13 @@ describe("selectDeveloper (BE-23, BE-41f)", () => {
       where: { id: "issue-1", status: "OPEN" },
       data: { status: "AWAITING_FUNDING" },
     });
-    expect(db.notification.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
+    expect(db.notification.createMany).toHaveBeenCalledWith({
+      skipDuplicates: true,
+      data: [expect.objectContaining({
         userId: developer.id,
         type: "FUNDING_REQUIRED",
         dedupeKey: "reservation:reservation-1:FUNDING_REQUIRED",
-      }),
+      })],
     });
   });
 

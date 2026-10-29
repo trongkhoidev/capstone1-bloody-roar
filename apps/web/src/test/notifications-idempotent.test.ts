@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Prisma, type PrismaClient } from "@prisma/client";
+import { type PrismaClient } from "@prisma/client";
 import { createNotificationIdempotent } from "@bloody-roar/database";
 
 const input = {
@@ -10,23 +10,16 @@ const input = {
   body: "A dispute was raised on your task.",
 };
 
-// In-memory stand-in for `db.notification`; `blindFind` simulates losing a race after the existence check.
-function fakeDb({ blindFind = false } = {}) {
+function fakeDb() {
   const rows = new Map<string, { id: string; dedupeKey: string }>();
   const notification = {
-    findUnique: async ({ where }: { where: { dedupeKey: string } }) =>
-      blindFind ? null : (rows.get(where.dedupeKey) ?? null),
-    create: async ({ data }: { data: { dedupeKey: string } }) => {
-      if (rows.has(data.dedupeKey)) {
-        throw new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
-          code: "P2002",
-          clientVersion: "5.22.0",
-        });
-      }
-      const row = { id: `n${rows.size + 1}`, ...data };
-      rows.set(data.dedupeKey, row);
-      return row;
+    createMany: async ({ data }: { data: Array<{ dedupeKey: string }> }) => {
+      const row = data[0]!;
+      if (rows.has(row.dedupeKey)) return { count: 0 };
+      rows.set(row.dedupeKey, { id: `n${rows.size + 1}`, ...row });
+      return { count: 1 };
     },
+    findUniqueOrThrow: async ({ where }: { where: { dedupeKey: string } }) => rows.get(where.dedupeKey),
   };
   return { db: { notification } as unknown as PrismaClient, rows };
 }
@@ -43,18 +36,10 @@ describe("createNotificationIdempotent", () => {
     expect(rows.size).toBe(1);
   });
 
-  it("returns null when a concurrent insert with the same key wins the race", async () => {
-    const { db, rows } = fakeDb({ blindFind: true });
-    rows.set(input.dedupeKey, { id: "n0", dedupeKey: input.dedupeKey });
-
-    await expect(createNotificationIdempotent(db, input)).resolves.toBeNull();
-  });
-
   it("rethrows errors that are not unique violations", async () => {
     const db = {
       notification: {
-        findUnique: async () => null,
-        create: async () => {
+        createMany: async () => {
           throw new Error("connection lost");
         },
       },

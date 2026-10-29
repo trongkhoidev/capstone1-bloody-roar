@@ -15,7 +15,7 @@
 | P0-8 | xong | 8301319 |
 | Gate typecheck | xong | `a386eec` | bun run typecheck kiểm web, worker, database và shared |
 
-Gate trước P0-5: `bun run typecheck && bun run lint && bun run --cwd apps/web test && bun run --cwd apps/worker test && bun run --cwd packages/database test && bun run contracts:test` pass trên bloody_codex_test; contracts 35/35; lint 4 cảnh báo any cũ. Sau P0-5, các test liên quan, typecheck bốn package và lint pass. `test:e2e:local` chưa có harness; gate cuối chưa hoàn tất.
+Gate sau P0-5 và `60ca0cc`: `bun run typecheck && bun run lint && bun run --cwd apps/web test && bun run --cwd apps/worker test && bun run --cwd packages/database test && bun run contracts:test` pass trên bloody_codex_test; contracts 35/35; lint 4 cảnh báo any cũ. `test:e2e:local` chưa có harness; gate cuối chưa hoàn tất.
 
 ## Cập nhật sau review phase A
 

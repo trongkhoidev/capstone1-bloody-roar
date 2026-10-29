@@ -6,7 +6,7 @@ import { io } from "socket.io-client";
 
 import "../src/lib/env";
 
-const base = "http://localhost:3000";
+const base = "http://localhost:4000";
 
 const TEST_CLIENT_KEY = "0x0000000000000000000000000000000000000000000000000000000000000001";
 const TEST_DEV_KEY = "0x0000000000000000000000000000000000000000000000000000000000000002";
@@ -14,11 +14,11 @@ const TEST_STRANGER_KEY = "0x000000000000000000000000000000000000000000000000000
 
 async function gql<T = any>(
   query: string,
-  token?: string,
+  cookie?: string,
   variables?: Record<string, unknown>
 ): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (cookie) headers.Cookie = cookie;
   const res = await fetch(`${base}/api/graphql`, {
     method: "POST",
     headers,
@@ -40,14 +40,14 @@ async function login(privateKey: string): Promise<string> {
     headers: { "Content-Type": "application/json" },
   });
   assert.strictEqual(loginRes.status, 200, "Login failed");
-  const { token } = await loginRes.json();
-  assert(token, "Missing token");
-  return token;
+  const cookie = loginRes.headers.get("set-cookie")?.split(";")[0] ?? "";
+  assert(cookie.startsWith("bloody_token="), "Missing HttpOnly session cookie");
+  return cookie;
 }
 
-function connectSocket(token?: string) {
+function connectSocket(cookie?: string) {
   return new Promise<any>((resolve, reject) => {
-    const socket = io(base, { auth: token ? { token } : {} });
+    const socket = io(base, { extraHeaders: cookie ? { Cookie: cookie } : {} });
     socket.on("connect", () => resolve(socket));
     socket.on("connect_error", (err) => reject(err));
   });
@@ -63,6 +63,16 @@ async function run() {
 
   const clientWallet = new PrivateKeyWallet(TEST_CLIENT_KEY);
   const devWallet = new PrivateKeyWallet(TEST_DEV_KEY);
+  const strangerWallet = new PrivateKeyWallet(TEST_STRANGER_KEY);
+  const fixtureAddresses = await Promise.all(
+    [clientWallet, devWallet, strangerWallet].map(async (wallet) =>
+      (await wallet.getAddress()).toLowerCase()
+    )
+  );
+  const originalRoles = await prisma.user.findMany({
+    where: { walletAddress: { in: fixtureAddresses } },
+    select: { walletAddress: true, role: true },
+  });
 
   // 1. Login 3 ví
   console.log("1. Logging in...");
@@ -70,6 +80,17 @@ async function run() {
   const devToken = await login(TEST_DEV_KEY);
   const strangerToken = await login(TEST_STRANGER_KEY);
   console.log("   ✓ Tokens generated");
+
+  // The seeded test client wallet defaults to DEVELOPER. Switch roles through
+  // the same profile mutation used by the UI, then restore fixture roles below.
+  for (const [cookie, role] of [[clientToken, "CLIENT"], [devToken, "DEVELOPER"], [strangerToken, "DEVELOPER"]] as const) {
+    const result = await gql(
+      `mutation($input: UpdateProfileInput!) { updateProfile(input: $input) { role } }`,
+      cookie,
+      { input: { role } }
+    );
+    assert.strictEqual(result.data?.updateProfile?.role, role, `Could not set test account role to ${role}`);
+  }
 
   // Tạo Issue để test
   const usdc = await prisma.token.findFirst({ where: { symbol: "USDC" } });
@@ -91,17 +112,41 @@ async function run() {
     }
   );
   
+  assert(created.data?.createIssue?.id, `createIssue failed: ${JSON.stringify(created.errors ?? created)}`);
   const issueId = created.data.createIssue.id;
 
   const devAddress = await devWallet.getAddress();
   const devUser = await prisma.user.findUnique({ where: { walletAddress: devAddress.toLowerCase() } });
   assert(devUser, "Dev user not found");
 
-  // Gán developer vào issue thủ công qua Prisma để bypass các luồng apply rườm rà
-  await prisma.issue.update({
-    where: { id: issueId },
-    data: { developerId: devUser.id, status: "IN_PROGRESS" }
-  });
+  // Apply from both developers and let the client choose exactly one.
+  const devApplication = await gql(
+    `mutation($input: ApplyToIssueInput!) { applyToIssue(input: $input) { id status developerId } }`,
+    devToken,
+    { input: { issueId, message: "I can complete this task." } }
+  );
+  const strangerApplication = await gql(
+    `mutation($input: ApplyToIssueInput!) { applyToIssue(input: $input) { id status developerId } }`,
+    strangerToken,
+    { input: { issueId, message: "I would also like to work on this." } }
+  );
+  assert.strictEqual(devApplication.data?.applyToIssue?.status, "PENDING");
+  assert.strictEqual(strangerApplication.data?.applyToIssue?.status, "PENDING");
+
+  const assignment = await gql(
+    `mutation($input: AssignDeveloperInput!) { assignDeveloper(input: $input) { id status developerId } }`,
+    clientToken,
+    { input: { issueId, applicationId: devApplication.data.applyToIssue.id } }
+  );
+  assert.strictEqual(assignment.data?.assignDeveloper?.status, "IN_PROGRESS");
+  assert.strictEqual(assignment.data?.assignDeveloper?.developerId, devUser.id);
+  const finalApplications = await gql(
+    `query($issueId: String!) { applications(issueId: $issueId) { id status developerId } }`,
+    clientToken,
+    { issueId }
+  );
+  assert.strictEqual(finalApplications.data?.applications?.find((application: any) => application.id === devApplication.data.applyToIssue.id)?.status, "ACCEPTED");
+  assert.strictEqual(finalApplications.data?.applications?.find((application: any) => application.id === strangerApplication.data.applyToIssue.id)?.status, "REJECTED");
 
   // -------------------------------------------------------------------
   // D-4: GraphQL messages()
@@ -135,7 +180,7 @@ async function run() {
 
   await new Promise<void>((resolve, reject) => {
     strangerSocket.emit("task:join", issueId, (err?: string) => {
-      if (err === "Forbidden") resolve();
+      if (err === "You cannot access this task room") resolve();
       else reject(new Error("Stranger should be Forbidden"));
     });
   });
@@ -239,6 +284,14 @@ async function run() {
   strangerSocket.disconnect();
 
   await prisma.issue.delete({ where: { id: issueId } });
+  await prisma.notification.deleteMany({ where: { link: `/issues/${issueId}` } });
+  await Promise.all(originalRoles.map(({ walletAddress, role }) =>
+    prisma.user.update({ where: { walletAddress }, data: { role } })
+  ));
+  await Promise.all([clientToken, devToken, strangerToken].map((cookie) =>
+    fetch(`${base}/api/auth/logout`, { method: "POST", headers: { Cookie: cookie } })
+  ));
+  await prisma.$disconnect();
 
   console.log("\n✅ All E2E Chat Module assertions passed!");
   process.exit(0);

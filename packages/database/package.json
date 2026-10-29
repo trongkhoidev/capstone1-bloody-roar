@@ -8,6 +8,7 @@
     "db:migrate:prod": "POTHOS_OUTPUT=\"${PWD}/../../apps/web/src/graphql/generated/pothos-types.ts\" prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:seed": "bun run src/seed.ts",
+    "db:seed:prod": "bun run src/seed-prod.ts",
     "db:push": "POTHOS_OUTPUT=\"${PWD}/../../apps/web/src/graphql/generated/pothos-types.ts\" prisma db push",
     "db:reset": "POTHOS_OUTPUT=\"${PWD}/../../apps/web/src/graphql/generated/pothos-types.ts\" prisma migrate reset"
   },

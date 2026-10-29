@@ -12,7 +12,7 @@ generator client {
 generator pothos {
   provider     = "prisma-pothos-types"
   clientOutput = "@prisma/client"
-  output       = env("POTHOS_OUTPUT")
+  output       = "../../../apps/web/src/graphql/generated/pothos-types.ts"
 }
 
 datasource db {
@@ -34,7 +34,7 @@ enum UserRole {
 enum IssueStatus {
   OPEN // Accepting applications
   IN_PROGRESS // Developer assigned, work started
-  COMPLETED // Payment released, work done
+  COMPLETED // Resolution allocated developer funds; claims are separate
   CANCELLED // Cancelled by client (before assignment)
   DISPUTED // Dispute raised, funds frozen
 }
@@ -60,10 +60,30 @@ enum ApplicationStatus {
 
 enum EscrowStatus {
   AWAITING_DELIVERY // Funds locked, dev working
-  COMPLETED // Funds released to developer
-  CANCELLED // Mutual cancel, refunded to client
+  COMPLETED // Funds allocated; recipient claims are separate
+  CANCELLED // Full client refund allocated
   DISPUTED // Dispute raised, funds frozen
-  RESOLUTION_PROPOSED // Arbiter proposed split, in 24h timelock
+  RESOLUTION_PROPOSED // Legacy business status; use EscrowPhase for ruling state
+}
+
+enum EscrowPhase {
+  NONE
+  FUNDED
+  DISPUTED
+  INITIAL_RULING
+  CHALLENGED
+  FINAL_RULING
+  RESOLVED
+}
+
+enum EscrowResolutionKind {
+  NONE
+  RELEASE
+  MISSED_DELIVERY_REFUND
+  REVIEW_TIMEOUT
+  SETTLEMENT
+  RULING
+  ARBITER_TIMEOUT_SPLIT
 }
 
 enum DisputeStatus {
@@ -71,7 +91,8 @@ enum DisputeStatus {
   ANALYZING // AI analyzing evidence
   PROPOSED // Resolution proposed by arbiter
   RESOLVED // Resolution executed on-chain
-  CHALLENGED // Resolution challenged during 24h window
+  CHALLENGED // Resolution challenged during 7-day window
+  FINAL_RULING // Final decision posted, in 24h notice period
 }
 
 enum NotificationType {
@@ -97,6 +118,11 @@ enum TransactionType {
   CANCEL
   DISPUTE
   RESOLVE
+  WORK
+  SETTLEMENT
+  EVIDENCE
+  RULING
+  CHALLENGE
 }
 
 enum TransactionStatus {
@@ -197,6 +223,7 @@ model User {
   reviewsReceived  Review[]       @relation("ReviewDeveloper")
   submissions      Submission[]
   attestations     Attestation[]
+  issueComments    IssueComment[]
 
   @@index([walletAddress])
   @@index([githubId])
@@ -242,6 +269,22 @@ model Session {
 
   @@index([userId])
   @@map("sessions")
+}
+
+// One-time SIWE challenge issued by the server. The raw nonce is never stored.
+model AuthChallenge {
+  id            String    @id @default(cuid())
+  nonceHash     String    @unique
+  walletAddress String
+  domain        String
+  uri           String
+  chainId       Int
+  expiresAt     DateTime
+  consumedAt    DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([expiresAt])
+  @@map("auth_challenges")
 }
 
 // Issue — a bounty task posted by a Client
@@ -290,6 +333,7 @@ model Issue {
   testCases    TestCase[]
   submissions  Submission[]
   review       Review?
+  comments     IssueComment[]
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -329,6 +373,8 @@ model Application {
 model Escrow {
   id     String       @id @default(cuid())
   status EscrowStatus @default(AWAITING_DELIVERY)
+  phase EscrowPhase @default(FUNDED)
+  resolutionKind EscrowResolutionKind @default(NONE)
 
   // On-chain data
   txHashDeposit   String? // Transaction hash for deposit
@@ -341,6 +387,14 @@ model Escrow {
   tokenId        String
   token          Token   @relation(fields: [tokenId], references: [id])
   arbiterAddress String?
+  feeRecipientAddress String?
+  termsHash String?
+  deliveryHash String?
+  settlementProposer String?
+  settlementClientBps Int?
+  lastChainBlock Int?
+  lastChainTransactionIndex Int?
+  lastChainLogIndex Int?
   platformFeeBps Int     @default(250) // 2.5% in basis points, snapshot at deposit
 
   // Amounts (human-readable, mirror of on-chain state)
@@ -352,7 +406,10 @@ model Escrow {
   // Timelock info
   depositedAt    DateTime?
   releasedAt     DateTime?
-  timeoutClaimAt DateTime? // 30 days after deposit
+  timeoutClaimAt DateTime? // Deprecated alias of reviewDeadline
+  deliveryDeadline DateTime?
+  reviewDeadline DateTime? // deliveryDeadline + 7 days
+  resolvedAt DateTime? // Allocation recorded; recipients still need claim(address)
 
   issueId     String @unique
   issue       Issue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
@@ -377,12 +434,15 @@ model Escrow {
 // Transaction — blockchain transaction log
 model Transaction {
   id          String            @id @default(cuid())
-  txHash      String            @unique
+  txHash      String
+  logIndex    Int               @default(0)
   type        TransactionType
   status      TransactionStatus @default(PENDING)
   from        String? // Sender address (audit)
   to          String? // Recipient address (audit)
   blockNumber Int?
+  blockHash   String?
+  confirmations Int?
   gasUsed     BigInt? // Raw gas units
   gasPrice    BigInt? // wei
   chainId     Int
@@ -394,6 +454,7 @@ model Transaction {
 
   @@index([escrowId])
   @@index([txHash])
+  @@unique([chainId, to, txHash, logIndex])
   @@map("transactions")
 }
 
@@ -462,9 +523,17 @@ model Dispute {
 
   // Resolution details
   proposedClientRatio Decimal? // Arbiter's proposed ratio
-  finalClientRatio    Decimal? // Executed ratio after timelock
+  finalClientRatio    Decimal? // Client percentage of resolved principal allocation
   proposedAt          DateTime? // When arbiter proposed
-  challengeDeadline   DateTime? // proposedAt + 24h
+  challengeDeadline   DateTime? // Initial ruling + 7 days
+  evidenceManifestHash String?
+  counterpartyEvidenceHash String?
+  evidenceResponseDeadline DateTime?
+  arbiterTimeoutAt DateTime?
+  initialDecisionHash String?
+  finalDecisionHash String?
+  finalRulingAt DateTime?
+  noticeDeadline DateTime? // Final ruling + 24h
   resolvedAt          DateTime?
 
   // Challenge tracking
@@ -553,6 +622,22 @@ model Review {
 
   @@index([developerId])
   @@map("reviews")
+}
+
+// IssueComment — public discussion and clarifying questions on a bounty
+model IssueComment {
+  id        String   @id @default(cuid())
+  body      String
+  issueId   String
+  issue     Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([issueId, createdAt])
+  @@index([userId])
+  @@map("issue_comments")
 }
 
 // Attestation — EAS on-chain reputation/certificate (v1.5)

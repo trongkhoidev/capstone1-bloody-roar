@@ -9,7 +9,7 @@ import { UserRef } from "../user/user.module";
 const SubmissionStatusEnum = builder.enumType(SubmissionStatus, {
   name: "SubmissionStatus",
 });
-const SUBMISSION_INCLUDE = {
+export const SUBMISSION_INCLUDE = {
   developer: true,
   issue: { include: ISSUE_INCLUDE },
 } satisfies Prisma.SubmissionInclude;

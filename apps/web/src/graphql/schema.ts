@@ -37,3 +37,5 @@ import "./modules/admin/admin.module";
 
 // Build and export the schema
 export const schema = builder.toSchema();
+
+import "./modules/submission/draft.module";

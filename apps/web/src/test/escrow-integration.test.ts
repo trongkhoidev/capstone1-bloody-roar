@@ -3,11 +3,9 @@ import { Prisma } from "@bloody-roar/database";
 import { getEscrowChainSettings, isEscrowConcurrencyError } from "../lib/escrow/integration";
 
 const originalEnv = {
-  ESCROW_RPC_URL: process.env.ESCROW_RPC_URL,
-  ESCROW_CONTRACT_ADDRESS: process.env.ESCROW_CONTRACT_ADDRESS,
-  ESCROW_CONTRACT_ADDRESS_BASE_SEPOLIA: process.env.ESCROW_CONTRACT_ADDRESS_BASE_SEPOLIA,
-  BASE_SEPOLIA_RPC_URL: process.env.BASE_SEPOLIA_RPC_URL,
-  ESCROW_CHAIN_ID: process.env.ESCROW_CHAIN_ID,
+  RPC_URL: process.env.RPC_URL,
+  ESCROW_ADDRESS: process.env.ESCROW_ADDRESS,
+  CHAIN_ID: process.env.CHAIN_ID,
   ESCROW_MIN_CONFIRMATIONS: process.env.ESCROW_MIN_CONFIRMATIONS,
 };
 
@@ -19,28 +17,32 @@ afterEach(() => {
 });
 
 describe("escrow chain configuration", () => {
-  it("uses the repository's documented Base Sepolia environment variables", () => {
-    delete process.env.ESCROW_RPC_URL;
-    delete process.env.ESCROW_CONTRACT_ADDRESS;
-    delete process.env.ESCROW_CHAIN_ID;
+  it("reads the shared chain environment variables", () => {
+    process.env.RPC_URL = "http://127.0.0.1:8545";
+    process.env.ESCROW_ADDRESS = "0x1111111111111111111111111111111111111111";
+    process.env.CHAIN_ID = "31337";
     delete process.env.ESCROW_MIN_CONFIRMATIONS;
-    process.env.BASE_SEPOLIA_RPC_URL = "https://base-sepolia.example.invalid/rpc";
-    process.env.ESCROW_CONTRACT_ADDRESS_BASE_SEPOLIA = "0x1111111111111111111111111111111111111111";
-
     expect(getEscrowChainSettings()).toEqual({
-      rpcUrl: "https://base-sepolia.example.invalid/rpc",
+      rpcUrl: "http://127.0.0.1:8545",
       contractAddress: "0x1111111111111111111111111111111111111111",
-      chainId: 84532,
+      chainId: 31337,
       minConfirmations: 3,
     });
   });
 
+  it.each(["RPC_URL", "ESCROW_ADDRESS"])("reports missing %s", (key) => {
+    process.env.RPC_URL = "http://127.0.0.1:8545";
+    process.env.ESCROW_ADDRESS = "0x1111111111111111111111111111111111111111";
+    delete process.env[key];
+    expect(() => getEscrowChainSettings()).toThrow(key);
+  });
+
   it("rejects an unsafe confirmation setting", () => {
-    process.env.ESCROW_RPC_URL = "https://example.invalid/rpc";
-    process.env.ESCROW_CONTRACT_ADDRESS = "0x1111111111111111111111111111111111111111";
+    process.env.RPC_URL = "https://example.invalid/rpc";
+    process.env.ESCROW_ADDRESS = "0x1111111111111111111111111111111111111111";
     process.env.ESCROW_MIN_CONFIRMATIONS = "0";
 
-    expect(() => getEscrowChainSettings()).toThrow("not configured");
+    expect(() => getEscrowChainSettings()).toThrow("RPC_URL");
   });
 
   it("classifies unique and serialization conflicts as retryable escrow races", () => {

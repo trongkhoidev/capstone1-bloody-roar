@@ -12,17 +12,15 @@ import {
 import { ACTIVE_CHAIN_ID } from "@bloody-roar/shared";
 import { gqlError } from "../../graphql/errors";
 
-// shortcut: đọc env như getEscrowChainSettings, chuyển sang lib/config/env.ts khi A1 merge
 export function escrowTarget() {
-  const contractAddress =
-    process.env.ESCROW_CONTRACT_ADDRESS ?? process.env.ESCROW_CONTRACT_ADDRESS_BASE_SEPOLIA;
-  const chainId = Number(process.env.ESCROW_CHAIN_ID ?? ACTIVE_CHAIN_ID);
+  const contractAddress = process.env.ESCROW_ADDRESS;
+  const chainId = Number(process.env.CHAIN_ID ?? ACTIVE_CHAIN_ID);
   if (
     !contractAddress ||
     !/^0x[0-9a-fA-F]{40}$/.test(contractAddress) ||
-    !Number.isSafeInteger(chainId)
+    !Number.isSafeInteger(chainId) || chainId < 1
   ) {
-    throw gqlError("Escrow chain integration is not configured", "ESCROW_NOT_CONFIGURED");
+    throw gqlError("ESCROW_ADDRESS or CHAIN_ID is invalid or missing", "ESCROW_NOT_CONFIGURED");
   }
   return { contractAddress: contractAddress as `0x${string}`, chainId };
 }

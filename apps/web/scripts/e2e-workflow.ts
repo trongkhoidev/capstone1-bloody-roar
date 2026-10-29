@@ -972,7 +972,7 @@ async function main() {
     });
     assert.equal((await clearedSession.json()).user, null);
 
-    const contractAddressConfigured = Boolean(process.env.ESCROW_CONTRACT_ADDRESS_BASE_SEPOLIA);
+    const contractAddressConfigured = Boolean(process.env.ESCROW_ADDRESS);
     if (!contractAddressConfigured)
       console.log(
         "   Contract transaction flow skipped: no deployed escrow address is configured.",

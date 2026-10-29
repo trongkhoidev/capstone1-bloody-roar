@@ -97,9 +97,9 @@ async function run(): Promise<void> {
     clientWallet,
   ).deploy(token.address, ownerWallet.address, arbiterWallet.address, feeWallet.address);
   await escrow.deployed();
-  process.env.ESCROW_RPC_URL = rpcUrl;
-  process.env.ESCROW_CHAIN_ID = String(network.chainId);
-  process.env.ESCROW_CONTRACT_ADDRESS = escrow.address;
+  process.env.RPC_URL = rpcUrl;
+  process.env.CHAIN_ID = String(network.chainId);
+  process.env.ESCROW_ADDRESS = escrow.address;
   process.env.ESCROW_MIN_CONFIRMATIONS = "3";
   const { schema } = await import("../src/graphql/schema");
   const users: User[] = [],

@@ -6,7 +6,7 @@ import { resolve } from "node:path";
 
 loadEnv({ path: resolve(__dirname, "../../.env"), quiet: true });
 const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY || "";
-const BASE_SEPOLIA_RPC = process.env.BASE_SEPOLIA_RPC_URL || "";
+const BASE_SEPOLIA_RPC = process.env.RPC_URL || "";
 
 const config: HardhatUserConfig = {
   solidity: {

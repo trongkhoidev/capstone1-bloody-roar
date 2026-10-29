@@ -105,8 +105,8 @@ function selectVariables(deliveryDeadline = inDays(30)) {
 }
 
 beforeEach(() => {
-  vi.stubEnv("ESCROW_CONTRACT_ADDRESS", CONTRACT);
-  vi.stubEnv("ESCROW_CHAIN_ID", "84532");
+  vi.stubEnv("ESCROW_ADDRESS", CONTRACT);
+  vi.stubEnv("CHAIN_ID", "84532");
 });
 
 describe("selectDeveloper (BE-23, BE-41f)", () => {

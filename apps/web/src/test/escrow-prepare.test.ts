@@ -23,8 +23,8 @@ function fakeDb() {
 
 describe("createPreparedCall", () => {
   beforeEach(() => {
-    vi.stubEnv("ESCROW_CONTRACT_ADDRESS", CONTRACT);
-    vi.stubEnv("ESCROW_CHAIN_ID", "84532");
+    vi.stubEnv("ESCROW_ADDRESS", CONTRACT);
+    vi.stubEnv("CHAIN_ID", "84532");
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-10-27T00:00:00Z"));
   });
@@ -78,7 +78,7 @@ describe("createPreparedCall", () => {
   });
 
   it("refuses to prepare when the escrow contract is not configured", async () => {
-    vi.stubEnv("ESCROW_CONTRACT_ADDRESS", "");
+    vi.stubEnv("ESCROW_ADDRESS", "");
     const db = fakeDb();
 
     await expect(
@@ -87,7 +87,7 @@ describe("createPreparedCall", () => {
         method: "deposit",
         args: ARGS,
       }),
-    ).rejects.toThrow("Escrow chain integration is not configured");
+    ).rejects.toThrow("ESCROW_ADDRESS");
     expect(db.transactionIntent.create).not.toHaveBeenCalled();
   });
 });

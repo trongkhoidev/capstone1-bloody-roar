@@ -25,22 +25,21 @@ export function isEscrowConcurrencyError(
 }
 
 export function getEscrowChainSettings(): EscrowChainSettings {
-  const rpcUrl = process.env.ESCROW_RPC_URL ?? process.env.BASE_SEPOLIA_RPC_URL;
-  const contractAddress =
-    process.env.ESCROW_CONTRACT_ADDRESS ?? process.env.ESCROW_CONTRACT_ADDRESS_BASE_SEPOLIA;
-  const chainId = Number(process.env.ESCROW_CHAIN_ID ?? "84532");
+  const rpcUrl = process.env.RPC_URL;
+  const contractAddress = process.env.ESCROW_ADDRESS;
+  const chainId = Number(process.env.CHAIN_ID ?? "84532");
   const minConfirmations = Number(process.env.ESCROW_MIN_CONFIRMATIONS ?? "3");
   if (
     !rpcUrl ||
     !/^https?:\/\//.test(rpcUrl) ||
     !contractAddress ||
     !utils.isAddress(contractAddress) ||
-    !Number.isSafeInteger(chainId) ||
+    !Number.isSafeInteger(chainId) || chainId < 1 ||
     !Number.isSafeInteger(minConfirmations) ||
     minConfirmations < 1 ||
     minConfirmations > 100
   ) {
-    throw gqlError("Escrow chain integration is not configured", "ESCROW_NOT_CONFIGURED");
+    throw gqlError("RPC_URL, ESCROW_ADDRESS or CHAIN_ID is invalid or missing", "ESCROW_NOT_CONFIGURED");
   }
   return { rpcUrl, contractAddress: utils.getAddress(contractAddress), chainId, minConfirmations };
 }

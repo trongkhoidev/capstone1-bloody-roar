@@ -23,8 +23,8 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("selectDeveloper under concurren
 
   beforeAll(async () => {
     assertTestDatabase(process.env.TEST_DATABASE_URL);
-    vi.stubEnv("ESCROW_CONTRACT_ADDRESS", randomHex(20));
-    vi.stubEnv("ESCROW_CHAIN_ID", String(ACTIVE_CHAIN_ID));
+    vi.stubEnv("ESCROW_ADDRESS", randomHex(20));
+    vi.stubEnv("CHAIN_ID", String(ACTIVE_CHAIN_ID));
     await loadSchema();
 
     client = await prisma.user.create({

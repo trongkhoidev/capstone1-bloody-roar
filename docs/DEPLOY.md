@@ -61,7 +61,7 @@ Không cần key thirdweb: đăng nhập dùng ví injected (MetaMask, Coinbase)
 | GitHub | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_CALLBACK_URL=https://<domain>/api/auth/github/callback`, `GITHUB_TOKEN_ENCRYPTION_KEY` (64 ký tự hex), `GITHUB_WEBHOOK_SECRET` | Liên kết GitHub đang có lỗi đã biết (BUG-1), nên có thể để sau. |
 | Log | `LOG_LEVEL=info` | |
 
-Các biến blockchain (`BASE_SEPOLIA_RPC_URL`, `ESCROW_CONTRACT_ADDRESS_*`, `DEPLOYER_PRIVATE_KEY`) **chưa cần** cho bản này: backend chưa tích hợp escrow. **Không bao giờ** đặt `DEPLOYER_PRIVATE_KEY` trên Railway.
+Web và worker dùng chung `RPC_URL`, `CHAIN_ID`, `ESCROW_ADDRESS` và `ESCROW_DEPLOY_BLOCK`. **Không bao giờ** đặt `DEPLOYER_PRIVATE_KEY` trên Railway.
 
 ## 4. Role và trang tương ứng
 

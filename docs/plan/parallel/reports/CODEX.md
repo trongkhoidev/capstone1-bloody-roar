@@ -1,4 +1,12 @@
-ĐANG DỞ: P1-8. Bước tiếp theo: triển khai prepareEscrowDeposit, kiểm balance/allowance và các pre-check bằng RPC giả; tiếp tục phase C.
+ĐANG DỞ: P1-9. Bước tiếp theo: triển khai submission draft, prepareSubmitWork, effect WORK_SUBMITTED và requestChanges; bổ sung đảo effect khi reorg và test E9.
+
+## P1-8 — chuẩn bị deposit
+
+- `a777558`: prepareEscrowDeposit kiểm chữ ký và trạng thái reservation, issue, chain, token, deadline, balance, allowance và paused; tạo intent approve nếu cần và deposit trong transaction. Scanner chỉ xác nhận deposit intent có txHash trùng event. Effect FUNDED gửi thông báo cho client và các developer liên quan.
+- `bun run --cwd apps/web test -- src/test/escrow-deposit.test.ts`: pass 14 test. `NODE_ENV=test bun run tests/e2e/scanner-deposit.ts` với TEST_DATABASE_URL trỏ bloody_codex_test và Hardhat local đã deploy: pass ký EIP-712, chuẩn bị approve/deposit, gửi giao dịch thực, xác nhận deposit và thông báo; đồng thời pass lại E22/E23/E24. Fixture tạo reservation trực tiếp, chưa chứng minh toàn bộ E1–E4.
+- Gate `bun run typecheck && bun run lint && bun run --cwd apps/web test && bun run --cwd apps/worker test && bun run --cwd packages/database test && bun run contracts:test`: pass; lint còn bốn cảnh báo any cũ. `test:e2e:local` chưa có vì N-8 chưa triển khai.
+- Intent approve có thể vẫn PENDING_SAFE_HEAD vì scanner chỉ index event escrow, chưa index ERC20 Approval; cần xử lý và kiểm thử trong các bước tiếp theo. Reorg hiện chỉ đảo effect deposit; các effect mới cần cơ chế đảo riêng. Hardhat đã dừng; cần deploy lại khi chạy node mới.
+
 
 ## P1-5 và gate phase B
 

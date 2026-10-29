@@ -34,3 +34,5 @@
 | P1-5 | apps/worker/test/reservations.test.ts; apps/worker/test/deadline-notifications.test.ts; apps/worker/test/effects-escrow.test.ts | bun run --cwd apps/worker test | Pass; `1fb8c75` |
 | E7 | apps/worker/test/reservations.test.ts | bun run --cwd apps/worker test -- test/reservations.test.ts | Pass job/idempotency; E2E toàn luồng chờ harness |
 | E30 | apps/worker/test/deadline-notifications.test.ts | bun run --cwd apps/worker test -- test/deadline-notifications.test.ts | Pass job/pg_notify; E2E toàn luồng chờ harness |
+| P1-8 | apps/web/src/test/escrow-deposit.test.ts; apps/worker/test/effects-escrow.test.ts | bun run --cwd apps/web test -- src/test/escrow-deposit.test.ts; bun run --cwd apps/worker test | Pass; `a777558` |
+| E5 | tests/e2e/scanner-deposit.ts | NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass deposit thực và thông báo với fixture reservation; toàn luồng E1–E4 chờ harness; `a777558` |

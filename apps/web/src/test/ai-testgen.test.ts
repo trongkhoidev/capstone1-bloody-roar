@@ -33,6 +33,9 @@ describe("generateTestCases context (AI-10)", () => {
     });
     const created: Array<Record<string, unknown>> = [];
     const tx = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      issue: { findUnique: vi.fn().mockResolvedValue({ clientId: client.id, status: "OPEN" }) },
+      fundingReservation: { findFirst: vi.fn().mockResolvedValue(null) },
       testCase: {
         deleteMany: vi.fn((_args: unknown) => Promise.resolve({ count: 0 })),
         createMany: vi.fn((args: { data: Array<Record<string, unknown>> }) => {

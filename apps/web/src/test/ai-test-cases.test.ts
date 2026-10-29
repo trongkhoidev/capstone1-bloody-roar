@@ -21,14 +21,17 @@ function callMutation(name: string, args: Record<string, unknown>, user: unknown
 
 function fakeDb({ status = "OPEN", clientId = client.id }: { status?: string; clientId?: string } = {}) {
   const issue = { clientId, status };
-  return {
-    issue: { findUnique: vi.fn(async () => issue) },
+  const db = {
+    $queryRaw: vi.fn().mockResolvedValue([]),
+    issue: { findUnique: vi.fn(async () => issue), update: vi.fn() },
+    fundingReservation: { findFirst: vi.fn().mockResolvedValue(null) },
     testCase: {
       create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({ id: "tc-1", ...data })),
-      findUnique: vi.fn(async () => ({ id: "tc-1", issue })),
+      findUnique: vi.fn(async () => ({ id: "tc-1", issueId: "issue-1", isApproved: false, issue })),
       delete: vi.fn(async () => ({ id: "tc-1" })),
     },
   };
+  return { ...db, $transaction: vi.fn(async (run: (tx: typeof db) => unknown) => run(db)) };
 }
 
 describe("manual acceptance criteria", () => {

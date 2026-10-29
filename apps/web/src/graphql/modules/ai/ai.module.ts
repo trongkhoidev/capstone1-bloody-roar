@@ -123,6 +123,7 @@ builder.mutationField("generateTestCases", (t) =>
         });
         const generated = GeneratedCasesSchema.parse(parseAIJson(completion.text));
         const cases = await ctx.db.$transaction(async (tx) => {
+          await lockCriteriaIssue(tx, issue.id, user.id);
           await tx.testCase.deleteMany({ where: { issueId: issue.id, source: TestCaseSource.AI, isApproved: false } });
           await tx.testCase.createMany({
             data: generated.testCases.map((testCase) => ({
@@ -139,6 +140,7 @@ builder.mutationField("generateTestCases", (t) =>
         });
         return cases.map(toGraphqlTestCase);
       } catch (error) {
+        if (error && typeof error === "object" && "extensions" in error) throw error;
         if (error instanceof z.ZodError || error instanceof SyntaxError) {
           throw gqlError("The AI returned acceptance criteria in an unsupported format. Try again.", "AI_INVALID_RESPONSE");
         }
@@ -147,6 +149,16 @@ builder.mutationField("generateTestCases", (t) =>
     },
   }),
 );
+
+// Lock the issue before editing criteria so selection cannot commit stale terms.
+async function lockCriteriaIssue(tx: Prisma.TransactionClient, issueId: string, userId: string) {
+  await tx.$queryRaw`SELECT id FROM issues WHERE id = ${issueId} FOR UPDATE`;
+  const issue = await tx.issue.findUnique({ where: { id: issueId }, select: { clientId: true, status: true } });
+  if (!issue) throw gqlError("Task not found", "NOT_FOUND");
+  if (issue.clientId !== userId) throw gqlError("Only the task owner can review acceptance criteria", "FORBIDDEN");
+  const active = await tx.fundingReservation.findFirst({ where: { issueId, status: { in: ["AWAITING_FUNDING", "FUNDED"] } }, select: { id: true } });
+  if (issue.status !== IssueStatus.OPEN || active) throw gqlError("Acceptance criteria are locked after assignment", "ISSUE_NOT_EDITABLE");
+}
 
 const UpdateTestCaseSchema = z.object({
   id: z.string().min(1),
@@ -180,19 +192,19 @@ builder.mutationField("updateTestCase", (t) =>
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
       const input = parseOrThrow(UpdateTestCaseSchema, Object.fromEntries(Object.entries(args.input).filter(([, value]) => value !== null && value !== undefined)));
-      const testCase = await ctx.db.testCase.findUnique({ where: { id: input.id }, include: { issue: { select: { clientId: true, status: true } } } });
-      if (!testCase) throw gqlError("Acceptance criterion not found", "NOT_FOUND");
-      if (testCase.issue.clientId !== user.id) throw gqlError("Only the task owner can review acceptance criteria", "FORBIDDEN");
-      if (testCase.issue.status !== IssueStatus.OPEN) throw gqlError("Acceptance criteria are locked after assignment", "ISSUE_NOT_EDITABLE");
-
-      const changes = Object.fromEntries(Object.entries(input).filter(([key]) => key !== "id"));
-      const editsCriteria = ["title", "description", "given", "when", "then", "priority", "isEdgeCase"].some((key) => key in input);
-      const updatedTestCase = await ctx.db.testCase.update({
-        where: { id: testCase.id },
-        data: {
-          ...changes,
-          ...(editsCriteria && input.isApproved === undefined ? { isApproved: false } : {}),
-        } as Prisma.TestCaseUpdateInput,
+      const updatedTestCase = await ctx.db.$transaction(async (tx) => {
+        const initial = await tx.testCase.findUnique({ where: { id: input.id }, select: { issueId: true } });
+        if (!initial) throw gqlError("Acceptance criterion not found", "NOT_FOUND");
+        await lockCriteriaIssue(tx, initial.issueId, user.id);
+        const testCase = await tx.testCase.findUnique({ where: { id: input.id } });
+        if (!testCase || testCase.issueId !== initial.issueId) throw gqlError("Acceptance criterion not found", "NOT_FOUND");
+        const changes = Object.fromEntries(Object.entries(input).filter(([key]) => key !== "id"));
+        const editsCriteria = ["title", "description", "given", "when", "then", "priority", "isEdgeCase"].some((key) => key in input);
+        const approved = input.isApproved ?? (editsCriteria ? false : testCase.isApproved);
+        const termsChanged = approved !== testCase.isApproved || (testCase.isApproved && editsCriteria);
+        const updated = await tx.testCase.update({ where: { id: testCase.id }, data: { ...changes, isApproved: approved } as Prisma.TestCaseUpdateInput });
+        if (termsChanged) await tx.issue.update({ where: { id: initial.issueId }, data: { termsVersion: { increment: 1 } } });
+        return updated;
       });
       return toGraphqlTestCase(updatedTestCase);
     },
@@ -228,13 +240,9 @@ builder.mutationField("createTestCase", (t) =>
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
       const { issueId, ...fields } = parseOrThrow(CreateTestCaseSchema, Object.fromEntries(Object.entries(args.input).filter(([, value]) => value !== null && value !== undefined)));
-      const issue = await ctx.db.issue.findUnique({ where: { id: issueId }, select: { clientId: true, status: true } });
-      if (!issue) throw gqlError("Task not found", "NOT_FOUND");
-      if (issue.clientId !== user.id) throw gqlError("Only the task owner can review acceptance criteria", "FORBIDDEN");
-      if (issue.status !== IssueStatus.OPEN) throw gqlError("Acceptance criteria are locked after assignment", "ISSUE_NOT_EDITABLE");
-
-      const testCase = await ctx.db.testCase.create({
-        data: { ...fields, issueId, source: TestCaseSource.MANUAL, isApproved: false },
+      const testCase = await ctx.db.$transaction(async (tx) => {
+        await lockCriteriaIssue(tx, issueId, user.id);
+        return tx.testCase.create({ data: { ...fields, issueId, source: TestCaseSource.MANUAL, isApproved: false } });
       });
       return toGraphqlTestCase(testCase);
     },
@@ -246,13 +254,16 @@ builder.mutationField("deleteTestCase", (t) =>
     args: { id: t.arg.id({ required: true }) },
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
-      const testCase = await ctx.db.testCase.findUnique({ where: { id: String(args.id) }, include: { issue: { select: { clientId: true, status: true } } } });
-      if (!testCase) throw gqlError("Acceptance criterion not found", "NOT_FOUND");
-      if (testCase.issue.clientId !== user.id) throw gqlError("Only the task owner can review acceptance criteria", "FORBIDDEN");
-      if (testCase.issue.status !== IssueStatus.OPEN) throw gqlError("Acceptance criteria are locked after assignment", "ISSUE_NOT_EDITABLE");
-
-      await ctx.db.testCase.delete({ where: { id: testCase.id } });
-      return true;
+      return ctx.db.$transaction(async (tx) => {
+        const initial = await tx.testCase.findUnique({ where: { id: String(args.id) }, select: { issueId: true } });
+        if (!initial) throw gqlError("Acceptance criterion not found", "NOT_FOUND");
+        await lockCriteriaIssue(tx, initial.issueId, user.id);
+        const testCase = await tx.testCase.findUnique({ where: { id: String(args.id) } });
+        if (!testCase || testCase.issueId !== initial.issueId) throw gqlError("Acceptance criterion not found", "NOT_FOUND");
+        await tx.testCase.delete({ where: { id: testCase.id } });
+        if (testCase.isApproved) await tx.issue.update({ where: { id: initial.issueId }, data: { termsVersion: { increment: 1 } } });
+        return true;
+      });
     },
   }),
 );

@@ -1,3 +1,5 @@
+import { assertTestDatabase } from "../../packages/database/src/test-guard";
+
 const forbidden = ["AWS_S3_BUCKET", "AI_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY"] as const;
 
 for (const name of forbidden) {
@@ -17,13 +19,4 @@ if (aiBaseUrl) {
   }
 }
 
-let databaseName: string;
-try {
-  const url = new URL(process.env.TEST_DATABASE_URL ?? "");
-  databaseName = decodeURIComponent(url.pathname.slice(1));
-} catch {
-  throw new Error("TEST_DATABASE_URL must point to a database ending in _test");
-}
-if (!databaseName.endsWith("_test")) {
-  throw new Error("TEST_DATABASE_URL must point to a database ending in _test");
-}
+assertTestDatabase(process.env.TEST_DATABASE_URL);

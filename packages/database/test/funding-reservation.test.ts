@@ -1,3 +1,9 @@
+import { assertTestDatabase } from "../src/test-guard";
+
+assertTestDatabase(process.env.TEST_DATABASE_URL);
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
+process.env.DIRECT_URL = process.env.TEST_DATABASE_URL;
+
 import { afterAll, expect, test } from "bun:test";
 import { PrismaClient } from "@prisma/client";
 

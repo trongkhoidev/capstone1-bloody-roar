@@ -1,4 +1,12 @@
-ĐANG DỞ: P1-1. Bước tiếp theo: tích hợp decode, fold, effect và projection trong transaction scanner; bổ sung test deposit thực và xử lý reorg/replay theo phase B.
+ĐANG DỞ: P1-2. Bước tiếp theo: rebuild projection và đảo các effect liên quan khi reorg/replay; kiểm E22 và E24 trên Hardhat và database test.
+
+## P1-1 và local deploy
+
+- P1-1 `8a3c28d`: scanner sắp thứ tự log, decode, fold lịch sử canonical và cập nhật event, effect, projection, checkpoint, pg_notify trong transaction. Kiểm tra hash block và từ chối contract/chain sai. Test `scanner-projection.test.ts` kiểm deposit + delivery đảo thứ tự, rescan và rollback khi log sai.
+- Deposit thật: khởi động Hardhat, `bun run --cwd apps/contracts deploy:local`, `NODE_ENV=test bun run tests/e2e/scanner-deposit.ts` trên bloody_codex_test pass: projection FUNDED, reservation FUNDED và issue IN_PROGRESS. PID của Hardhat được ghi vào .run và dừng. Gate `bun run typecheck && bun run lint && bun run --cwd apps/web test && bun run --cwd apps/worker test && bun run --cwd packages/database test && bun run contracts:test` pass; web 435/435, contracts 35/35.
+- Local deploy `9f85dfc`: owner #0, arbiter #5, fee recipient #6 theo D-ACC-1; đã kiểm manifest bằng eth_accounts. ESCROW_ADDRESS và ESCROW_DEPLOY_BLOCK trong .env worktree lấy từ manifest; Hardhat hiện đã dừng, cần deploy lại khi khởi động node mới.
+- `bun run --cwd apps/contracts typecheck` phát hiện lỗi CommonJS có sẵn trong export-abi; `7670048` sửa và lệnh đã pass. `bun run apps/contracts/scripts/export-abi.ts` xuất 114 mục và không thay đổi ABI được track.
+- P1-2 chưa xong: reorg/replay hiện chưa dựng lại projection hoặc đảo effect; E22/E24 chưa chạy. Các effect cho WORK_SUBMITTED, dispute, settlement và claim vẫn thuộc các mục P1 khác; test P1-1 chỉ chứng minh projection và effect FUNDED.
 
 ## Phase B: finality, logger, RPC
 
@@ -62,7 +70,7 @@ Gate sau P0-5 và `60ca0cc`: `bun run typecheck && bun run lint && bun run --cwd
 | P0-7 | xong | c9eb936 |
 | P0-8 | xong | 8301319 |
 | P0-9 | xong | 6080c61 |
-| P1-1 | chưa làm | Chưa triển khai |
+| P1-1 | xong | `8a3c28d`: log ABI + Hardhat deposit thực pass |
 | P1-2 | chưa làm | Chưa triển khai |
 | P1-3 | chưa làm | Chưa triển khai |
 | P1-4 | chưa làm | Chưa triển khai |

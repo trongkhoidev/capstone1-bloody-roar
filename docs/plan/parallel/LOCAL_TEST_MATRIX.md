@@ -23,3 +23,5 @@
 | N-4 | apps/worker/test/scanner.test.ts; apps/worker/test/rpc.test.ts | bun run --cwd apps/worker test -- test/scanner.test.ts test/rpc.test.ts test/config.test.ts | Pass 13/13; `42f4335` |
 | P1-6 | apps/worker/test/scheduler.test.ts | bun run --cwd apps/worker test | Pass 48/48; `f287f80` |
 | P1-7 | apps/worker/test/rpc.test.ts | bun run --cwd apps/worker test | Pass 48/48 và smoke Hardhat; `5468126` |
+| P1-1 | apps/worker/test/scanner-projection.test.ts; tests/e2e/scanner-deposit.ts | bun run --cwd apps/worker test -- test/scanner-projection.test.ts; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass với database test và Hardhat local; `8a3c28d` |
+| 2.3 | tests/e2e/scanner-deposit.ts | bun run --cwd apps/contracts deploy:local; eth_accounts | Pass vai trò #0/#5/#6; `9f85dfc` |

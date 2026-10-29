@@ -25,7 +25,10 @@ export const SUPPORTED_CHAIN_IDS = {
   // mainnet (1/8453) sẽ thêm khi lên production
 } as const;
 
-export const ACTIVE_CHAIN_ID = 84532;
+// The client stays on Base Sepolia until frontend chain selection is implemented.
+export const ACTIVE_CHAIN_ID = typeof window === "undefined"
+  ? Number(process.env.CHAIN_ID || SUPPORTED_CHAIN_IDS.BASE_SEPOLIA)
+  : SUPPORTED_CHAIN_IDS.BASE_SEPOLIA;
 
 // =============================================================================
 // ISSUE / BOUNTY

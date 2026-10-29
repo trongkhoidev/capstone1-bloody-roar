@@ -566,7 +566,7 @@ builder.mutationField("createIssue", (t) =>
       });
       if (!token || !token.isActive || token.chainId !== ACTIVE_CHAIN_ID) {
         throw gqlError(
-          "Bounty token không tồn tại hoặc không được hỗ trợ trên Base Sepolia",
+          "Bounty token không tồn tại hoặc không được hỗ trợ trên chain hiện tại",
           "INVALID_TOKEN",
         );
       }

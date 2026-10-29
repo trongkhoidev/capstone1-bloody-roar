@@ -197,6 +197,8 @@ builder.mutationField("selectDeveloper", (t) =>
             const sequence = (await tx.fundingReservation.count({ where: { issueId: issue.id } })) + 1;
             const escrowKey = buildEscrowKey(issue.id, sequence);
             const target = escrowTarget();
+            if (issue.token.chainId !== target.chainId)
+              throw gqlError("Token không thuộc chain đang hoạt động", "INVALID_TOKEN");
             const amountRaw = parseTokenAmount(issue.bountyAmount.toFixed(), issue.token.decimals);
 
             const reservation = await tx.fundingReservation.create({

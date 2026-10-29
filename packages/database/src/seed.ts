@@ -5,6 +5,8 @@
 import { prisma, UserRole, IssueCategory, IssueStatus } from "./index";
 
 async function main() {
+  const chainId = Number(process.env.CHAIN_ID || "84532");
+  if (!Number.isSafeInteger(chainId) || chainId < 1) throw new Error("CHAIN_ID must be a positive integer");
   console.log("🌱 Seeding database...");
 
   // -----------------------------------------------------------------------
@@ -68,7 +70,7 @@ async function main() {
   const usdc = await prisma.token.upsert({
     where: {
       chainId_address: {
-        chainId: 84532,
+        chainId,
         address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
       },
     },
@@ -78,7 +80,7 @@ async function main() {
       name: "USD Coin",
       address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
       decimals: 6,
-      chainId: 84532,
+      chainId,
       isActive: true,
       sortOrder: 1,
     },

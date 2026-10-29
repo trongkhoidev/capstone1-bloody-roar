@@ -1,5 +1,6 @@
 import { utils } from "ethers";
 import { Prisma } from "@bloody-roar/database";
+import { ACTIVE_CHAIN_ID } from "@bloody-roar/shared";
 import { gqlError } from "../../graphql/errors";
 import {
   EscrowVerificationError,
@@ -27,7 +28,7 @@ export function isEscrowConcurrencyError(
 export function getEscrowChainSettings(): EscrowChainSettings {
   const rpcUrl = process.env.RPC_URL;
   const contractAddress = process.env.ESCROW_ADDRESS;
-  const chainId = Number(process.env.CHAIN_ID ?? "84532");
+  const chainId = Number(process.env.CHAIN_ID ?? ACTIVE_CHAIN_ID);
   const minConfirmations = Number(process.env.ESCROW_MIN_CONFIRMATIONS ?? "3");
   if (
     !rpcUrl ||

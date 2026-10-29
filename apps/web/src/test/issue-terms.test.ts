@@ -62,6 +62,14 @@ const createInput = {
 };
 
 describe("createIssue bounty and deadline", () => {
+  it("rejects a token from a different chain", async () => {
+    const db = fakeDb();
+    db.token.findUnique.mockResolvedValue({ ...usdc, chainId: ACTIVE_CHAIN_ID + 1 });
+    const result = await execute(CREATE_ISSUE, { user: client, db }, { input: createInput });
+    expect(result.errors).toBeDefined();
+    expect(db.issue.create).not.toHaveBeenCalled();
+  });
+
   it("stores the bounty as a normalized decimal and returns it as TokenAmount", async () => {
     const db = fakeDb(issueRow({ bountyAmount: new Prisma.Decimal("100.5") }));
 

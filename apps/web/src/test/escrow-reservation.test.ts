@@ -26,7 +26,7 @@ function issueRow(overrides: Record<string, unknown> = {}) {
     status: "OPEN",
     isDraft: false,
     clientId: client.id,
-    token: { address: TOKEN_ADDRESS, decimals: 6, symbol: "USDC" },
+    token: { address: TOKEN_ADDRESS, decimals: 6, symbol: "USDC", chainId: 84532 },
     ...overrides,
   };
 }
@@ -110,6 +110,13 @@ beforeEach(() => {
 });
 
 describe("selectDeveloper (BE-23, BE-41f)", () => {
+  it("rejects a token from a different chain", async () => {
+    const db = fakeDb({ issue: { token: { address: TOKEN_ADDRESS, decimals: 6, symbol: "USDC", chainId: 31337 } } });
+    const result = await execute(SELECT, { user: client, db }, selectVariables());
+    expect(result.errors?.[0]?.extensions?.code).toBe("INVALID_TOKEN");
+    expect(db.tx.fundingReservation.create).not.toHaveBeenCalled();
+  });
+
   it("creates an AWAITING_FUNDING reservation with the escrow key, hash and terms", async () => {
     const db = fakeDb();
     const deliveryDeadline = inDays(30);

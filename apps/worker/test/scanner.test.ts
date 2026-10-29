@@ -58,3 +58,20 @@ test("an RPC range refusal halves the span until the node accepts it", async () 
   expect(result).toEqual({ from: 111n, to: 112n, events: 0 });
   expect((await cursor()).lastScannedBlock).toBe(112n);
 });
+
+
+test("latest finality scans without requesting the safe tag", async () => {
+  const chain = chainUpTo(113n);
+  const fake = fakeRpc(chain);
+  const tags: unknown[] = [];
+  const rpc = {
+    ...fake,
+    async call<T>(method: string, params: unknown[]): Promise<T> {
+      if (method === "eth_getBlockByNumber") tags.push(params[0]);
+      return fake.call<T>(method, params);
+    },
+  };
+  await scanOnce({ db: prisma, rpc, config: { ...config, finality: "latest" } });
+  expect(tags).toContain("latest");
+  expect(tags).not.toContain("safe");
+});

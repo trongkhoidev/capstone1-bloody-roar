@@ -12,7 +12,7 @@ let rangeWindow: number | null = null;
 
 export async function scanOnce({ db, rpc, config }: ScanDeps): Promise<ScanResult | null> {
   const checkpoint = await loadCheckpoint(db, config);
-  const safe = await getSafeBlock(rpc);
+  const safe = await getSafeBlock(rpc, config.finality);
   if (!safe) return null;
   if (safe.number <= checkpoint.lastScannedBlock) {
     await db.projectionCheckpoint.update({ where: checkpointKey(config), data: { lastSafeBlock: safe.number } });

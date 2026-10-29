@@ -26,7 +26,7 @@ export function fakeRpc(chain: FakeChain): RpcClient {
     async call<T>(method: string, params: unknown[]): Promise<T> {
       if (method === "eth_getBlockByNumber") {
         const [tag] = params as [string];
-        const number = tag === "safe" ? chain.safe : BigInt(tag);
+        const number = tag === "safe" || tag === "latest" ? chain.safe : BigInt(tag);
         const hash = chain.blockHash.get(number);
         return (hash ? { number: hex(number), hash } : null) as T;
       }
@@ -70,6 +70,7 @@ export function testConfig(overrides: Partial<IndexerConfig> = {}): IndexerConfi
     escrowAddress: `0x${(suffix * 1000 + counter).toString(16).padStart(40, "0")}`,
     escrowDeployBlock: 100n,
     rangeSize: 2000,
+    finality: "safe",
     reorgWindow: 64,
     ...overrides,
   };

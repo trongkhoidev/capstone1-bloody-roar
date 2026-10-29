@@ -3,6 +3,7 @@ export type WorkerConfig = {
   port: number;
   rpcUrl: string;
   chainId: number;
+  finality: "safe" | "latest";
   escrowAddress: string; // lowercase 0x address, stored lowercase in ChainEvent
   escrowDeployBlock: bigint;
   rangeSize: number; // max blocks per eth_getLogs; halved when the RPC refuses a range
@@ -28,6 +29,8 @@ export function loadConfig(env: Env = process.env): WorkerConfig {
     return value;
   };
 
+  const finality = env.FINALITY?.trim() || "safe";
+  if (finality !== "safe" && finality !== "latest") errors.push("FINALITY must be safe or latest");
   const rpcUrl = required("RPC_URL");
   if (rpcUrl && !URL.canParse(rpcUrl)) errors.push("RPC_URL must be a URL");
   const chainIdRaw = required("CHAIN_ID");
@@ -44,6 +47,7 @@ export function loadConfig(env: Env = process.env): WorkerConfig {
     port: integer("WORKER_PORT", 4300, 1),
     rpcUrl,
     chainId: Number(chainIdRaw),
+    finality: finality as "safe" | "latest",
     escrowAddress: escrowAddress.toLowerCase(),
     escrowDeployBlock: BigInt(deployBlockRaw),
     rangeSize: integer("INDEXER_RANGE_SIZE", 2000, 1),

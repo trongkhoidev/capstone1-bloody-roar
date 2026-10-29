@@ -13,6 +13,8 @@ test("loads a valid env with defaults and lowercases the escrow address", () => 
   const config = loadConfig(valid);
   expect(config.rpcUrl).toBe(valid.RPC_URL);
   expect(config.chainId).toBe(84532);
+  expect(config.finality).toBe("safe");
+  expect(loadConfig({ ...valid, FINALITY: "latest" }).finality).toBe("latest");
   expect(config.escrowAddress).toBe("0x" + "ab".repeat(20));
   expect(config.escrowDeployBlock).toBe(12345n);
   expect(config.port).toBe(4300);
@@ -30,6 +32,7 @@ test("reports every missing or invalid value at once", () => {
   expect(() => loadConfig({ ...valid, RPC_URL: undefined, CHAIN_ID: "0", ESCROW_ADDRESS: "0x12" })).toThrow(
     /RPC_URL is required.*CHAIN_ID must be a positive integer.*ESCROW_ADDRESS must be a 0x address/,
   );
+  expect(() => loadConfig({ ...valid, FINALITY: "pending" })).toThrow(/FINALITY must be safe or latest/);
   expect(() => loadConfig({ ...valid, CHAIN_ID: undefined })).toThrow(/CHAIN_ID is required/);
   expect(() => loadConfig({ ...valid, ESCROW_DEPLOY_BLOCK: undefined })).toThrow(/ESCROW_DEPLOY_BLOCK is required/);
   expect(() => loadConfig({ ...valid, DATABASE_URL: undefined })).toThrow(/DIRECT_URL or DATABASE_URL is required/);

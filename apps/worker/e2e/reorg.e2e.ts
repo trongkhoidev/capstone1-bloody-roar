@@ -16,7 +16,7 @@ try {
   if (!from) throw new Error("hardhat has no accounts");
   const token = await deployMockUsdc(rpc, from);
   escrowAddress = token.address;
-  const config = { chainId, escrowAddress, escrowDeployBlock: token.blockNumber, rangeSize: 2000, reorgWindow: 64 };
+  const config = { chainId, escrowAddress, escrowDeployBlock: token.blockNumber, rangeSize: 2000, reorgWindow: 64, finality: "latest" as const };
   const where = { chainId, contractAddress: escrowAddress };
 
   // Base state below the snapshot: a mint. Then one transfer, which the scanner stores.

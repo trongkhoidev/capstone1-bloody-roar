@@ -70,8 +70,8 @@ const toBlock = (block: { number: string; hash: string } | null): RpcBlock | nul
   block ? { number: BigInt(block.number), hash: block.hash } : null;
 
 // null when the node has no "safe" tag yet
-export async function getSafeBlock(rpc: RpcClient): Promise<RpcBlock | null> {
-  return toBlock(await rpc.call("eth_getBlockByNumber", ["safe", false]));
+export async function getSafeBlock(rpc: RpcClient, finality: "safe" | "latest" = "safe"): Promise<RpcBlock | null> {
+  return toBlock(await rpc.call("eth_getBlockByNumber", [finality, false]));
 }
 
 export async function getBlockByNumber(rpc: RpcClient, number: bigint): Promise<RpcBlock | null> {

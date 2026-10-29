@@ -1,7 +1,7 @@
 import { type Prisma, type PrismaClient } from "@bloody-roar/database";
 import type { WorkerConfig } from "../config";
 
-export type IndexerConfig = Pick<WorkerConfig, "chainId" | "escrowAddress" | "escrowDeployBlock" | "rangeSize" | "reorgWindow">;
+export type IndexerConfig = Pick<WorkerConfig, "chainId" | "escrowAddress" | "escrowDeployBlock" | "rangeSize" | "reorgWindow" | "finality">;
 
 // Raw logs are stored with decoderVersion 0 until A2's decoder lands.
 export const DECODER_VERSION = 0;

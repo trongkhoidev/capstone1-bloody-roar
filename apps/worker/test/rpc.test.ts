@@ -50,3 +50,15 @@ test("maps a receipt status to 0 or 1", async () => {
   const pending = createRpcClient({ url: "http://rpc", fetch: fetchReturning({ result: null }) });
   expect(await getReceipt(pending, "0xt")).toBeNull();
 });
+
+
+test("latest finality never requests the safe tag", async () => {
+  const tags: unknown[] = [];
+  const rpc = createRpcClient({ url: "http://rpc", fetch: (async (_url: string, init: RequestInit) => {
+    const request = JSON.parse(String(init.body));
+    tags.push(request.params[0]);
+    return new Response(JSON.stringify({ result: { number: "0x65", hash: "0xabc" } }));
+  }) as unknown as typeof fetch });
+  expect(await getSafeBlock(rpc, "latest")).toEqual({ number: 101n, hash: "0xabc" });
+  expect(tags).toEqual(["latest"]);
+});

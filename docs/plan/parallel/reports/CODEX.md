@@ -1,4 +1,21 @@
-ĐANG DỞ: N-2. Bước tiếp theo: đọc các module escrow web và config worker, chuẩn hóa biến môi trường theo D-ENV-1; tiếp tục phase A và sửa hai lỗi typecheck worker tại effects/escrow.ts:138–139.
+ĐANG DỞ: P0-4 / P1-17. Bước tiếp theo: thay luồng dispute cũ bằng luồng on-chain cần thiết, rồi xóa mutation escrow xác nhận bằng txHash và các module/test legacy theo FIX_LIST.
+
+## Tiến độ phase A
+
+| ID | Trạng thái | Commit | Kiểm tra |
+| --- | --- | --- | --- |
+| N-2 | xong | `f9903af` | 39 test escrow web và 3 test config worker pass; typecheck/lint pass |
+| N-3 | xong | `e19d656`, `a386eec` | 29 test token/issue pass; CHAIN_ID=31337 trên server pass |
+| N-5 | xong | `c21c18d` | serve:local health trả 200 tại 4012; PID trong tests/e2e/.run đã dừng |
+| N-7 | xong | `3858428` | AI mock 127.0.0.1:4019, 2 test pass; model router gọi mock |
+| P0-3 | xong | d39cc3b, d8fc33e |
+| P0-5 | xong | deb01d4 |
+| P0-6 | xong | fb0a25f |
+| P0-7 | xong | c9eb936 |
+| P0-8 | xong | 8301319 |
+| Gate typecheck | xong | `a386eec` | bun run typecheck kiểm web, worker, database và shared |
+
+Gate trước P0-5: `bun run typecheck && bun run lint && bun run --cwd apps/web test && bun run --cwd apps/worker test && bun run --cwd packages/database test && bun run contracts:test` pass trên bloody_codex_test; contracts 35/35; lint 4 cảnh báo any cũ. Sau P0-5, các test liên quan, typecheck bốn package và lint pass. `test:e2e:local` chưa có harness; gate cuối chưa hoàn tất.
 
 ## Cập nhật sau review phase A
 
@@ -24,15 +41,15 @@
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
-| P0-1 | dở | 13 template cho enum hiện tại; test 21/21 pass; DEPOSIT_MISMATCHED chờ P0-3 |
-| P0-2 | chưa làm | Chưa triển khai |
-| P0-3 | chưa làm | Chưa triển khai |
+| P0-1 | dở | 3118318 (xóa template; E2E chờ) |
+| P0-2 | xong | fe78f0e |
+| P0-3 | xong | d39cc3b, d8fc33e |
 | P0-4 | chưa làm | Chưa triển khai |
-| P0-5 | chưa làm | Chưa triển khai |
-| P0-6 | chưa làm | Chưa triển khai |
-| P0-7 | chưa làm | Chưa triển khai |
-| P0-8 | chưa làm | Chưa triển khai |
-| P0-9 | chưa làm | Chưa triển khai |
+| P0-5 | xong | deb01d4 |
+| P0-6 | xong | fb0a25f |
+| P0-7 | xong | c9eb936 |
+| P0-8 | xong | 8301319 |
+| P0-9 | xong | 6080c61 |
 | P1-1 | chưa làm | Chưa triển khai |
 | P1-2 | chưa làm | Chưa triển khai |
 | P1-3 | chưa làm | Chưa triển khai |

@@ -9,4 +9,12 @@
 | Review: runtime ignore | — | git check-ignore tests/e2e/.run/example.pid | Pass; `6080c61` |
 | P0-1 | — | — | Dở: xóa template `3118318`; chờ kiểm nơi tạo/E2E |
 | P0-2 | apps/worker/test/effects-escrow.test.ts | bun run --cwd apps/worker test | Pass 45/45; `fe78f0e` |
-| P0-3 | apps/worker/test/effects-escrow.test.ts | bun run --cwd apps/worker test; bun run --cwd apps/worker typecheck | Dở: test 45/45 pass; typecheck còn 2 lỗi effect; `d39cc3b` |
+| P0-3 | apps/worker/test/effects-escrow.test.ts; apps/web/src/test/escrow-core/fold.test.ts | bun run --cwd apps/worker typecheck | Pass; `d39cc3b`, `d8fc33e` |
+| N-2 | apps/web/src/test/escrow-integration.test.ts; apps/worker/test/config.test.ts | bun run --cwd apps/web test -- src/test/escrow-integration.test.ts | Pass; `f9903af` |
+| N-3 | apps/web/src/test/issue-terms.test.ts; apps/web/src/test/escrow-reservation.test.ts | bun run --cwd apps/web test -- src/test/issue-terms.test.ts src/test/escrow-reservation.test.ts | Pass; `e19d656` |
+| N-5 | — | PORT=4012 bun run --cwd apps/web serve:local; GET /api/health | Pass; `c21c18d` |
+| N-7 | tests/e2e/mocks/ai-server.test.ts | bun test tests/e2e/mocks/ai-server.test.ts | Pass; `3858428` |
+| P0-5 | apps/web/src/test/escrow-token.test.ts; apps/web/src/test/escrow-reservation.test.ts | bun run --cwd apps/web test -- src/test/escrow-token.test.ts src/test/escrow-reservation.test.ts | Pass; `deb01d4` |
+| P0-6 | apps/web/src/test/escrow-release.test.ts | bun run --cwd apps/web test -- src/test/escrow-release.test.ts | Pass; `fb0a25f` |
+| P0-7 | packages/database/test/notifications.test.ts | bun run --cwd packages/database test | Pass; `c9eb936` |
+| P0-8 | apps/worker/test/reorg.test.ts | bun run --cwd apps/worker test -- test/reorg.test.ts | Pass; `8301319` |

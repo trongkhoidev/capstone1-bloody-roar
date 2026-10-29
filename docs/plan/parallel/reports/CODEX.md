@@ -1,4 +1,11 @@
-ĐANG DỞ: P1-10. Bước tiếp theo: triển khai effect ESCROW_RESOLVED, ClaimableBalance, notification và đảo effect khi reorg; test từng resolutionKind, sau đó tiếp tục phase C.
+ĐANG DỞ: P1-11. Bước tiếp theo: triển khai prepareProposeSettlement/prepareRevokeSettlement/prepareAcceptSettlement, effect và lịch sử settlement kèm hoàn tác reorg; kiểm thử E14 trên Hardhat.
+
+## P1-10 — escrow resolution
+
+- `ffb6f50`: effect ESCROW_RESOLVED chuyển issue COMPLETED, ghi outcome và cộng ClaimableBalance theo số nguyên từ event; thông báo hai bên và ví có số dư được đăng ký; snapshot/đảo issue, intent và khoản ghi có khi reorg. Escrow ngoài backend vẫn được ghi có. Khớp intent release theo issue/chain/contract/txHash.
+- `bun run --cwd apps/worker test -- test/effects-resolved.test.ts`: pass 7/7, sáu loại kết thúc, số tiền 0, escrow ngoài và undo. `NODE_ENV=test bun run tests/e2e/scanner-deposit.ts` với test DB và Hardhat: release thật ghi 97,5/2,5 USDC, phát thông báo và reorg khôi phục; deposit, E9, E22/E23/E24 vẫn pass. E10 chưa hoàn tất vì effect CLAIMED chưa có.
+- Gate typecheck, lint, test web/worker/database/contracts pass: 458/64/3/35; lint bốn cảnh báo any cũ. Phase C và gate cuối còn chờ harness và các mục tiếp theo. TODO(P1-22) gọi recalcReputation đã ghi trong DECISIONS. Reorg chứa event Claimed hiện dừng an toàn cho tới khi effect/undo CLAIMED được triển khai.
+
 
 ## P1-9 — hoàn tất
 

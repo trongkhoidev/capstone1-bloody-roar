@@ -1,4 +1,11 @@
-ĐANG DỞ: P1-14. Bước tiếp theo: thay thống kê tiền legacy bằng EscrowProjection/ClaimableBalance, public userStats(userId), thống kê admin theo chain/contract với số nguyên chuỗi; test và tiếp tục phase C.
+ĐANG DỞ: P1-15. Bước tiếp theo: bổ sung test Submission có ý nghĩa trên DB thật, giữ test race selectDeveloper; chạy gate rồi tiếp tục P1-36/P1-37.
+
+## P1-14 — thống kê projection
+
+- `1fce246`: userStats(userId) public, giữ fallback user hiện tại; tổng tiền và claimable theo chain/contract dùng chuỗi số nguyên, adminStats lấy payout, fee, disputeRateBps và thời gian giải quyết từ projection và event canonical. completedBounties dùng projection và metadata token thay escrow legacy.
+- `bun run --cwd apps/web test -- src/test/analytics-projection.test.ts src/test/analytics-projection.db.test.ts` với TEST_DATABASE_URL trỏ bloody_codex_test: pass, gồm hai contract, quyền public/admin, số tiền vượt 2^53 và thời gian tranh chấp.
+- Gate typecheck, lint, web/worker/database/contracts pass 483/64/3/35; lint bốn cảnh báo any cũ. Claimable sau giao dịch claim phụ thuộc effect CLAIMED còn chưa triển khai. Gate phase C và `test:e2e:local` chưa hoàn tất.
+
 
 ## P1-9 — sửa deadline theo chain
 

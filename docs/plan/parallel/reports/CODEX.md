@@ -1,4 +1,11 @@
-ĐANG DỞ: P1-2. Bước tiếp theo: rebuild projection và đảo các effect liên quan khi reorg/replay; kiểm E22 và E24 trên Hardhat và database test.
+ĐANG DỞ: P1-3. Bước tiếp theo: thực hiện reconciler on-chain và kịch bản E23; sau đó tiếp tục P1-4/P1-5 và gate phase B.
+
+## P1-2 — reorg và replay
+
+- `50df7d0`: lưu snapshot các thay đổi do deposit, đảo effect nếu event bị orphan, dựng lại projection từ event canonical; replay CLI dựng projection rồi quét lại. Scanner, reorg và replay khóa checkpoint để tránh ghi chồng. Nếu không đủ snapshot hoặc trạng thái off-chain đã thay đổi ngoài dự kiến, reorg dừng và rollback thay vì ghi đè.
+- E22/E24: `NODE_ENV=test bun run tests/e2e/scanner-deposit.ts` sau deploy Hardhat local trên bloody_codex_test pass: snapshot, deposit A, revert, deposit B, A non-canonical/B canonical, projection FUNDED; sửa projection rồi replay qua `bun run worker:replay --from ...` khôi phục FUNDED. Các PID được ghi trong .run và dừng.
+- Test `scanner-projection.test.ts`, `reorg.test.ts`, `replay.test.ts`, `scanner.test.ts` pass, gồm giữ nguyên trạng thái khi thiếu block RPC hoặc assignment đã thay đổi và kiểm tra replay đồng thời. Gate typecheck, lint, web, worker, database và contracts pass; lint 4 cảnh báo cũ; contracts 35/35.
+- Snapshot hiện chỉ bao phủ effect deposit đã triển khai. Khi thêm effect delivery, dispute, settlement, claim trong P1-9/P1-16, cần bổ sung cơ chế đảo effect tương ứng và test reorg, không coi E22 deposit là bằng chứng cho toàn bộ lifecycle.
 
 ## P1-1 và local deploy
 
@@ -6,7 +13,7 @@
 - Deposit thật: khởi động Hardhat, `bun run --cwd apps/contracts deploy:local`, `NODE_ENV=test bun run tests/e2e/scanner-deposit.ts` trên bloody_codex_test pass: projection FUNDED, reservation FUNDED và issue IN_PROGRESS. PID của Hardhat được ghi vào .run và dừng. Gate `bun run typecheck && bun run lint && bun run --cwd apps/web test && bun run --cwd apps/worker test && bun run --cwd packages/database test && bun run contracts:test` pass; web 435/435, contracts 35/35.
 - Local deploy `9f85dfc`: owner #0, arbiter #5, fee recipient #6 theo D-ACC-1; đã kiểm manifest bằng eth_accounts. ESCROW_ADDRESS và ESCROW_DEPLOY_BLOCK trong .env worktree lấy từ manifest; Hardhat hiện đã dừng, cần deploy lại khi khởi động node mới.
 - `bun run --cwd apps/contracts typecheck` phát hiện lỗi CommonJS có sẵn trong export-abi; `7670048` sửa và lệnh đã pass. `bun run apps/contracts/scripts/export-abi.ts` xuất 114 mục và không thay đổi ABI được track.
-- P1-2 chưa xong: reorg/replay hiện chưa dựng lại projection hoặc đảo effect; E22/E24 chưa chạy. Các effect cho WORK_SUBMITTED, dispute, settlement và claim vẫn thuộc các mục P1 khác; test P1-1 chỉ chứng minh projection và effect FUNDED.
+- Các effect cho WORK_SUBMITTED, dispute, settlement và claim vẫn thuộc các mục P1 khác; test P1-1 chỉ chứng minh projection và effect FUNDED.
 
 ## Phase B: finality, logger, RPC
 
@@ -71,7 +78,7 @@ Gate sau P0-5 và `60ca0cc`: `bun run typecheck && bun run lint && bun run --cwd
 | P0-8 | xong | 8301319 |
 | P0-9 | xong | 6080c61 |
 | P1-1 | xong | `8a3c28d`: log ABI + Hardhat deposit thực pass |
-| P1-2 | chưa làm | Chưa triển khai |
+| P1-2 | xong | `50df7d0`: E22/E24 deposit trên Hardhat pass; các effect khác chờ P1-9/P1-16 |
 | P1-3 | chưa làm | Chưa triển khai |
 | P1-4 | chưa làm | Chưa triển khai |
 | P1-5 | chưa làm | Chưa triển khai |

@@ -51,7 +51,7 @@ const reservation = (issueId: string, suffix: string, expiresAt: Date) => ({
   termsVersion: 1,
   expiresAt,
 });
-await prisma.fundingReservation.create({ data: reservation(expiredIssue.id, "a", hours(-1)) });
+const expiredReservation = await prisma.fundingReservation.create({ data: reservation(expiredIssue.id, "a", hours(-1)) });
 await prisma.fundingReservation.create({ data: reservation(liveIssue.id, "b", hours(1)) });
 
 afterAll(async () => {
@@ -63,10 +63,12 @@ afterAll(async () => {
 });
 
 test("an unfunded reservation past its expiry is expired and its issue returns to OPEN", async () => {
-  await expireReservations({ db: prisma, log, now: () => now });
+  const runs = await Promise.all([expireReservations({ db: prisma, log, now: () => now }), expireReservations({ db: prisma, log, now: () => now })]);
+  expect(runs.reduce((sum, count) => sum + count, 0)).toBe(1);
 
   const statusOf = async (issueId: string) => (await prisma.fundingReservation.findFirstOrThrow({ where: { issueId } })).status;
   expect(await statusOf(expiredIssue.id)).toBe("EXPIRED");
+  expect(await prisma.notification.count({ where: { userId: client.id, type: "RESERVATION_EXPIRED", dedupeKey: `reservation:${expiredReservation.id}:expired` } })).toBe(1);
   expect(await prisma.issue.findUniqueOrThrow({ where: { id: expiredIssue.id } })).toMatchObject({ status: "OPEN" });
 
   expect(await statusOf(liveIssue.id)).toBe("AWAITING_FUNDING");
@@ -75,4 +77,5 @@ test("an unfunded reservation past its expiry is expired and its issue returns t
 
 test("running again changes nothing", async () => {
   expect(await expireReservations({ db: prisma, log, now: () => now })).toBe(0);
+  expect(await prisma.notification.count({ where: { userId: client.id, type: "RESERVATION_EXPIRED" } })).toBe(1);
 });

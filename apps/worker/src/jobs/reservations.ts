@@ -1,24 +1,36 @@
+import { createNotificationIdempotent } from "@bloody-roar/database";
+import { notifyNotificationCreated } from "../indexer/notify";
 import type { Job, JobContext } from "../runtime/scheduler";
 
-// QĐ-16: a reservation not funded before its expiry expires, and its issue goes back to OPEN.
-// Late deposits are handled by the applier (QĐ-17), not here.
+// QĐ-16: an expired unfunded hold reopens its issue and notifies the selected developer.
 export async function expireReservations({ db, log, now }: Pick<JobContext, "db" | "log" | "now">): Promise<number> {
+  const at = now();
   const expired = await db.fundingReservation.findMany({
-    where: { status: "AWAITING_FUNDING", expiresAt: { lte: now() } },
-    select: { id: true, issueId: true },
+    where: { status: "AWAITING_FUNDING", expiresAt: { lte: at } },
+    select: { id: true, issueId: true, developerId: true },
   });
-  if (expired.length === 0) return 0;
-
-  await db.$transaction([
-    db.fundingReservation.updateMany({ where: { id: { in: expired.map((r) => r.id) } }, data: { status: "EXPIRED" } }),
-    db.issue.updateMany({
-      where: { id: { in: expired.map((r) => r.issueId) }, status: "AWAITING_FUNDING" },
-      data: { status: "OPEN" },
-    }),
-  ]);
-  // shortcut: logged only. Upgrade: notify the developer with RESERVATION_EXPIRED through createNotificationIdempotent (A5).
-  for (const r of expired) log.info({ reservationId: r.id, issueId: r.issueId }, "reservation expired");
-  return expired.length;
+  let count = 0;
+  for (const reservation of expired) {
+    const changed = await db.$transaction(async (tx) => {
+      const updated = await tx.fundingReservation.updateMany({ where: { id: reservation.id, status: "AWAITING_FUNDING", expiresAt: { lte: at } }, data: { status: "EXPIRED" } });
+      if (!updated.count) return false;
+      const active = await tx.fundingReservation.count({ where: { issueId: reservation.issueId, status: { in: ["AWAITING_FUNDING", "FUNDED"] } } });
+      if (!active) await tx.issue.updateMany({ where: { id: reservation.issueId, status: "AWAITING_FUNDING" }, data: { status: "OPEN" } });
+      const notification = await createNotificationIdempotent(tx, {
+        dedupeKey: `reservation:${reservation.id}:expired`, userId: reservation.developerId,
+        type: "RESERVATION_EXPIRED", title: "Giữ chỗ ký quỹ đã hết hạn",
+        body: "Khách hàng chưa nạp ký quỹ trong thời hạn giữ chỗ.", link: `/issues/${reservation.issueId}`,
+        data: { issueId: reservation.issueId, reservationId: reservation.id },
+      });
+      if (notification) await notifyNotificationCreated(tx, { userId: reservation.developerId, id: notification.id });
+      return true;
+    });
+    if (changed) {
+      count++;
+      log.info({ reservationId: reservation.id, issueId: reservation.issueId }, "reservation expired");
+    }
+  }
+  return count;
 }
 
 export const reservationsJob: Job = {

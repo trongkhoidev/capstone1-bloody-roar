@@ -147,3 +147,7 @@ Không có việc nào chặn Codex. Khi deploy, người dùng cần:
 2. Chọn nơi deploy và cấp biến môi trường thật (Q9).
 3. Build Docker trên nơi có đủ RAM, hoặc để Railway build (BE-88).
 4. Ra lệnh mở PR (Q7).
+
+## ĐỔI QUYẾT ĐỊNH — khóa chống trùng thông báo deadline
+
+`DEADLINE_APPROACHING` dùng `deadline:{escrowId}:{kind}:{userId}` thay cho `deadline:{escrowId}:{kind}` trong FIX_LIST. Cột `Notification.dedupeKey` là duy nhất toàn bảng; thêm userId để cả client và developer liên quan đều nhận đúng một thông báo cho cùng mốc, kể cả khi job chạy lại.

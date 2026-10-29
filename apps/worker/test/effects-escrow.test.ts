@@ -2,7 +2,7 @@ import { assertTestDatabase } from "@bloody-roar/database/test-guard";
 import { beforeAll } from "bun:test";
 import { afterAll, expect, test } from "bun:test";
 import { randomBytes } from "node:crypto";
-import { prisma } from "@bloody-roar/database";
+import { prisma, type Prisma } from "@bloody-roar/database";
 import { keccakUtf8, type FoldEffect } from "@bloody-roar/shared/escrow";
 import { applyFoldEffects } from "../src/effects";
 
@@ -191,6 +191,18 @@ test("rejects a deposit from a different contract without changing the reservati
   await expect(apply(s.effect(), eventMeta)).rejects.toThrow("does not match the reservation");
   expect((await prisma.fundingReservation.findUniqueOrThrow({ where: { id: s.reservation.id } })).status).toBe("AWAITING_FUNDING");
   expect((await prisma.issue.findUniqueOrThrow({ where: { id: s.issue.id } })).status).toBe("AWAITING_FUNDING");
+});
+
+test("retries when a reservation changes before deposit is applied", async () => {
+  const s = await scenario({ reservationStatus: "AWAITING_FUNDING", issueStatus: "AWAITING_FUNDING" });
+  const fake = {
+    fundingReservation: { findUnique: async () => s.reservation, updateMany: async () => ({ count: 0 }) },
+    issue: { findUniqueOrThrow: async () => ({ status: "AWAITING_FUNDING", title: s.issue.title }) },
+    user: { findUniqueOrThrow: async ({ where }: { where: { id: string } }) => ({ walletAddress: where.id === client.id ? client.walletAddress : developer.walletAddress }) },
+  } as unknown as Prisma.TransactionClient;
+  await expect(applyFoldEffects(fake, [s.effect()], meta(s.escrowIdHash))).rejects.toThrow("Reservation changed");
+  await expect(applyFoldEffects(fake, [s.effect({ amount: 1n })], meta(s.escrowIdHash))).rejects.toThrow("Reservation changed");
+  expect((await prisma.fundingReservation.findUniqueOrThrow({ where: { id: s.reservation.id } })).status).toBe("AWAITING_FUNDING");
 });
 
 test("replaying the same event does not notify twice", async () => {

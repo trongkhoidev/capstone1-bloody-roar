@@ -89,7 +89,7 @@ export async function applyFunded(
   // QĐ-17: deposit đến sau hạn được nhận nếu issue vẫn OPEN (không có reservation khác đang chạy)
   const late = reservation.status !== ReservationStatus.AWAITING_FUNDING;
   if (reasons.length === 0 && (!late || issue.status === IssueStatus.OPEN)) {
-    await acceptDeposit(tx, reservation, effect, meta, issue.title);
+    await acceptDeposit(tx, reservation, effect, meta, issue.title, issue.status);
     return;
   }
   await markMismatch(tx, reservation, issue, reasons, meta, late);
@@ -101,18 +101,21 @@ async function acceptDeposit(
   effect: FundedEffect,
   meta: EffectMeta,
   issueTitle: string,
+  issueStatus: IssueStatus,
 ) {
   const depositedAt = fromUnix(meta.blockTimestamp);
   const deliveryDeadline = fromUnix(effect.deliveryDeadline);
 
-  await tx.fundingReservation.update({
-    where: { id: reservation.id },
+  const funded = await tx.fundingReservation.updateMany({
+    where: { id: reservation.id, status: reservation.status },
     data: { status: ReservationStatus.FUNDED, fundedAt: depositedAt },
   });
-  await tx.issue.update({
-    where: { id: reservation.issueId },
+  if (!funded.count) throw new Error("Reservation changed while applying deposit; retry");
+  const moved = await tx.issue.updateMany({
+    where: { id: reservation.issueId, status: issueStatus },
     data: { status: IssueStatus.IN_PROGRESS, developerId: reservation.developerId },
   });
+  if (!moved.count) throw new Error("Issue changed while applying deposit; retry");
   await tx.application.update({
     where: { id: reservation.applicationId },
     data: { status: ApplicationStatus.ACCEPTED },
@@ -176,10 +179,11 @@ async function markMismatch(
   meta: EffectMeta,
   late: boolean,
 ) {
-  await tx.fundingReservation.update({
-    where: { id: reservation.id },
+  const changed = await tx.fundingReservation.updateMany({
+    where: { id: reservation.id, status: reservation.status },
     data: { status: ReservationStatus.MISMATCHED },
   });
+  if (!changed.count) throw new Error("Reservation changed while applying deposit; retry");
   // Reservation đang giữ issue thì mở lại để issue không bị kẹt. Khoản on-chain lệch do admin xử lý.
   // Reservation đã hết hạn không được động vào issue, vì issue có thể đang do reservation khác giữ.
   if (!late) {

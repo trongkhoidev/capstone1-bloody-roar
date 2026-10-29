@@ -1,4 +1,5 @@
-import type { EscrowPhase } from "@bloody-roar/database";
+import { createNotificationIdempotent, type EscrowPhase } from "@bloody-roar/database";
+import { notifyNotificationCreated } from "../indexer/notify";
 import type { Job, JobContext } from "../runtime/scheduler";
 
 // Contract timers (QĐ-03). The contract owns the real clock; these only decide when to tell users.
@@ -28,6 +29,15 @@ export type DeadlineKind =
   | "ARBITER_STALL";
 
 export type DueNotice = { kind: DeadlineKind; at: Date; dedupeKey: string };
+
+const noticeBody: Record<DeadlineKind, string> = {
+  MISSED_DELIVERY: "Đã đến hạn giao hàng nhưng chưa có bản giao trên chain.",
+  REVIEW_TIMEOUT: "Thời hạn xem xét bản giao đã kết thúc.",
+  EVIDENCE_ENDING: "Thời hạn bổ sung bằng chứng sắp kết thúc.",
+  CHALLENGE_ENDED: "Thời hạn phản đối quyết định ban đầu đã kết thúc.",
+  FINAL_NOTICE_ENDED: "Thời hạn công bố quyết định cuối cùng đã kết thúc.",
+  ARBITER_STALL: "Đã đến hạn xử lý tranh chấp khi trọng tài chưa ra quyết định.",
+};
 
 // Returns the notices whose exit has opened (or whose evidence window is about to close) by `now`.
 // The dedupe key is stable, so re-running the job never repeats a notice.
@@ -64,6 +74,7 @@ async function runDeadlines({ db, log, now }: JobContext): Promise<void> {
       disputeRaisedAt: true,
       challengedAt: true,
       escrowIdHash: true,
+      issueId: true,
     },
   });
   if (projections.length === 0) return;
@@ -82,8 +93,21 @@ async function runDeadlines({ db, log, now }: JobContext): Promise<void> {
       initialNoticeEndsAt: latestNotice(p.escrowIdHash, "INITIAL"),
       finalNoticeEndsAt: latestNotice(p.escrowIdHash, "FINAL"),
     };
+    if (!p.issueId) continue;
+    const issue = await db.issue.findUnique({ where: { id: p.issueId }, select: { clientId: true, developerId: true } });
+    if (!issue) continue;
     for (const notice of dueDeadlineNotices(input, now())) {
-      // shortcut: logged only. Upgrade: write with createNotificationIdempotent (A5) once it merges.
+      const recipients = new Set([issue.clientId, issue.developerId].filter((id): id is string => !!id));
+      for (const userId of recipients) {
+        await db.$transaction(async (tx) => {
+          const notification = await createNotificationIdempotent(tx, {
+            dedupeKey: `${notice.dedupeKey}:${userId}`, userId, type: "DEADLINE_APPROACHING",
+            title: "Mốc thời gian ký quỹ", body: noticeBody[notice.kind],
+            link: `/issues/${p.issueId}`, data: { issueId: p.issueId!, escrowId: p.id, kind: notice.kind },
+          });
+          if (notification) await notifyNotificationCreated(tx, { userId, id: notification.id });
+        });
+      }
       log.info({ escrowId: p.id, kind: notice.kind, dedupeKey: notice.dedupeKey, at: notice.at }, "deadline notice due");
     }
   }

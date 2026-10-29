@@ -3,11 +3,14 @@ import { createHash } from "node:crypto";
 import { computeDeliveryHash } from "@bloody-roar/shared/escrow";
 import { execute, loadSchema } from "./graphql-execute";
 
+const chainClock = vi.hoisted(() => ({ readChainTime: vi.fn(async (_chainId: number) => new Date()) }));
+vi.mock("../lib/escrow/chain-time", () => chainClock);
 beforeAll(loadSchema, 60_000);
+const contract = "0x2222222222222222222222222222222222222222";
 const actor = { id: "developer", walletAddress: "0x1111111111111111111111111111111111111111", role: "DEVELOPER", isBanned: false };
 const mutation = `mutation($issue: ID!, $id: ID, $text: String, $files: [ID!]) { createSubmissionDraft(issueId: $issue, submissionId: $id, description: $text, attachmentIds: $files) { id status } }`;
 let issue: { id: string; developerId: string; status: string; githubRepo: string | null };
-let projection: { phase: string; developer: string; deliveryDeadline: Date };
+let projection: { id: string; chainId: number; contractAddress: string; phase: string; developer: string; deliveryDeadline: Date };
 let existing: null | { id: string; issueId: string; developerId: string; status: string };
 let files: Array<{ id: string; fileUrl: string; sha256: string; fileMime: string; fileSize: number }>;
 function db() {
@@ -16,14 +19,15 @@ function db() {
     submission: { findUnique: vi.fn(async () => existing), create: vi.fn(async ({ data }) => data), update: vi.fn(async ({ data, where }) => ({ ...data, id: where.id })) },
     transactionIntent: { findFirst: vi.fn().mockResolvedValue(null) },
     attachment: { findMany: vi.fn(async () => files) } };
-  return { tx, $transaction: vi.fn(async (fn: (value: typeof tx) => unknown) => fn(tx)) };
+  return { ...tx, tx, $transaction: vi.fn(async (fn: (value: typeof tx) => unknown) => fn(tx)) };
 }
 async function run(database = db(), variables: Record<string, unknown> = {}) {
   return execute(mutation, { user: actor, db: database }, { issue: "issue", text: "finished", ...variables });
 }
 beforeEach(() => {
   issue = { id: "issue", developerId: actor.id, status: "IN_PROGRESS", githubRepo: null };
-  projection = { phase: "FUNDED", developer: actor.walletAddress, deliveryDeadline: new Date(Date.now() + 60_000) };
+  vi.stubEnv("CHAIN_ID", "31337"); vi.stubEnv("ESCROW_ADDRESS", contract); chainClock.readChainTime.mockImplementation(async () => new Date());
+  projection = { id: "projection", chainId: 31337, contractAddress: contract, phase: "FUNDED", developer: actor.walletAddress, deliveryDeadline: new Date(Date.now() + 60_000) };
   existing = null;
   files = [];
 });
@@ -55,6 +59,10 @@ describe("createSubmissionDraft", () => {
     issue.developerId = actor.id; projection.phase = "DISPUTED"; expect((await run()).errors?.[0]?.extensions?.code).toBe("INVALID_PHASE");
     projection.phase = "FUNDED"; projection.deliveryDeadline = new Date(Date.now() - 1000); expect((await run()).errors?.[0]?.extensions?.code).toBe("DEADLINE_PASSED");
   });
+  it("rejects when chain time has advanced past the deadline", async () => {
+    chainClock.readChainTime.mockResolvedValue(new Date(Date.now() + 120_000));
+    expect((await run()).errors?.[0]?.extensions?.code).toBe("DEADLINE_PASSED");
+  });
   it("rejects editing a submitted version and unattached files", async () => {
     existing = { id: "old", issueId: "issue", developerId: actor.id, status: "SUBMITTED" };
     expect((await run(db(), { id: "old" })).errors?.[0]?.extensions?.code).toBe("SUBMISSION_NOT_DRAFT");
@@ -64,7 +72,6 @@ describe("createSubmissionDraft", () => {
 
 describe("prepareSubmitWork", () => {
   const query = `mutation($id: ID!) { prepareSubmitWork(submissionId: $id) { method data args { name value } } }`;
-  const contract = "0x2222222222222222222222222222222222222222";
   const hash = `0x${"ab".repeat(32)}`;
   function prepareDb() {
     const draft = { id: "draft", issueId: "issue", developerId: actor.id, status: "DRAFT", deliveryHash: hash, manifest: {} };
@@ -72,7 +79,7 @@ describe("prepareSubmitWork", () => {
     const tx = { $queryRaw: vi.fn().mockResolvedValue([]), submission: { findUnique: vi.fn(async () => draft) },
       issue: { findUnique: vi.fn(async () => issue) }, escrowProjection: { findUnique: vi.fn(async () => chain) },
       transactionIntent: { create: vi.fn(async () => ({ id: "intent" })) } };
-    return { draft, chain, tx, $transaction: vi.fn(async (fn: (value: typeof tx) => unknown) => fn(tx)) };
+    return { ...tx, draft, chain, tx, $transaction: vi.fn(async (fn: (value: typeof tx) => unknown) => fn(tx)) };
   }
   beforeEach(() => { vi.stubEnv("CHAIN_ID", "31337"); vi.stubEnv("ESCROW_ADDRESS", contract); });
   it("prepares the hash for the configured escrow", async () => {
@@ -80,6 +87,11 @@ describe("prepareSubmitWork", () => {
     expect(result.errors).toBeUndefined();
     expect(result.data?.prepareSubmitWork).toMatchObject({ method: "submitWork", args: [{ name: "escrowId", value: "escrow-1" }, { name: "deliveryHash", value: hash }] });
     expect(database.tx.transactionIntent.create).toHaveBeenCalledOnce();
+  });
+  it("rejects preparation when chain time is past the deadline", async () => {
+    const database = prepareDb(); chainClock.readChainTime.mockResolvedValue(new Date(Date.now() + 120_000));
+    expect((await execute(query, { user: actor, db: database }, { id: "draft" })).errors?.[0]?.extensions?.code).toBe("DEADLINE_PASSED");
+    expect(database.tx.transactionIntent.create).not.toHaveBeenCalled();
   });
   it("rejects an expired deadline and a wrong contract", async () => {
     const database = prepareDb(); database.chain.deliveryDeadline = new Date(Date.now() - 1000);

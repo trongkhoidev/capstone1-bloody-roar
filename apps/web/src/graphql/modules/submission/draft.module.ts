@@ -3,7 +3,8 @@ import { createNotificationIdempotent, NOTIFICATION_CREATED_CHANNEL, EscrowPhase
 import { computeDeliveryHash } from "@bloody-roar/shared/escrow";
 import { z } from "zod";
 import { builder } from "../../builder";
-import { requireAuth } from "../../context";
+import { requireAuth, type GraphQLContext } from "../../context";
+import { readChainTime } from "../../../lib/escrow/chain-time";
 import { gqlError, parseOrThrow } from "../../errors";
 import { SubmissionRef, SUBMISSION_INCLUDE } from "./submission.module";
 import { PreparedCallRef } from "../escrow/release.module";
@@ -22,6 +23,18 @@ const draftSchema = z.object({
   message: "Tệp đính kèm bị lặp",
 });
 
+async function deliveryClock(ctx: GraphQLContext, issueId: string, userId: string) {
+  const issue = await ctx.db.issue.findUnique({ where: { id: issueId }, select: { developerId: true } });
+  if (!issue) throw gqlError("Bài toán không tồn tại", "NOT_FOUND");
+  if (issue.developerId !== userId) throw gqlError("Chỉ developer được giao bài mới tạo bản nháp", "FORBIDDEN");
+  const projection = await ctx.db.escrowProjection.findUnique({ where: { issueId } });
+  if (!projection || projection.phase !== EscrowPhase.FUNDED) throw gqlError("Bài toán không ở trạng thái nhận bài nộp", "INVALID_PHASE");
+  const target = escrowTarget();
+  if (projection.chainId !== target.chainId || projection.contractAddress.toLowerCase() !== target.contractAddress.toLowerCase())
+    throw gqlError("Ký quỹ không khớp cấu hình", "ESCROW_CHAIN_MISMATCH");
+  return { now: await readChainTime(projection.chainId), id: projection.id, chainId: projection.chainId, contractAddress: projection.contractAddress };
+}
+
 builder.mutationField("createSubmissionDraft", (t) => t.field({
   type: SubmissionRef,
   args: {
@@ -35,6 +48,7 @@ builder.mutationField("createSubmissionDraft", (t) => t.field({
       description: args.description ?? "", pullRequestUrl: args.pullRequestUrl ?? "", commitSha: args.commitSha ?? "",
       attachmentIds: args.attachmentIds?.map(String) ?? [],
     });
+    const clock = await deliveryClock(ctx, input.issueId, user.id);
     return ctx.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM issues WHERE id = ${input.issueId} FOR UPDATE`;
       const issue = await tx.issue.findUnique({ where: { id: input.issueId }, select: { id: true, developerId: true, status: true, githubRepo: true } });
@@ -43,7 +57,9 @@ builder.mutationField("createSubmissionDraft", (t) => t.field({
       const projection = await tx.escrowProjection.findUnique({ where: { issueId: issue.id } });
       if (issue.status !== IssueStatus.IN_PROGRESS || !projection || projection.phase !== EscrowPhase.FUNDED || projection.developer.toLowerCase() !== user.walletAddress.toLowerCase())
         throw gqlError("Bài toán không ở trạng thái nhận bài nộp", "INVALID_PHASE");
-      if (new Date() > projection.deliveryDeadline) throw gqlError("Đã hết hạn giao hàng", "DEADLINE_PASSED");
+      if (projection.id !== clock.id || projection.chainId !== clock.chainId || projection.contractAddress.toLowerCase() !== clock.contractAddress.toLowerCase())
+        throw gqlError("Ký quỹ vừa thay đổi", "ESCROW_CHAIN_MISMATCH");
+      if (clock.now > projection.deliveryDeadline) throw gqlError("Đã hết hạn giao hàng", "DEADLINE_PASSED");
       if (input.pullRequestUrl) {
         const pr = new URL(input.pullRequestUrl);
         if (pr.protocol !== "https:" || pr.hostname !== "github.com" || !/^\/[^/]+\/[^/]+\/pull\/\d+\/?$/.test(pr.pathname))
@@ -85,14 +101,15 @@ builder.mutationField("prepareSubmitWork", (t) => t.field({
   resolve: async (_root, args, ctx) => {
     const user = requireAuth(ctx);
     const id = String(args.submissionId);
+    const submission = await ctx.db.submission.findUnique({ where: { id } });
+    if (!submission || submission.developerId !== user.id) throw gqlError("Bản nháp không tồn tại", "NOT_FOUND");
+    const clock = await deliveryClock(ctx, submission.issueId, user.id);
     return ctx.db.$transaction(async (tx) => {
-      const submission = await tx.submission.findUnique({ where: { id } });
-      if (!submission || submission.developerId !== user.id) throw gqlError("Bản nháp không tồn tại", "NOT_FOUND");
       await tx.$queryRaw`SELECT id FROM issues WHERE id = ${submission.issueId} FOR UPDATE`;
       const fresh = await tx.submission.findUnique({ where: { id } });
       const issue = await tx.issue.findUnique({ where: { id: submission.issueId }, select: { developerId: true, status: true } });
       const projection = await tx.escrowProjection.findUnique({ where: { issueId: submission.issueId } });
-      if (!fresh || fresh.status !== SubmissionStatus.DRAFT || !fresh.deliveryHash || !fresh.manifest)
+      if (!fresh || fresh.issueId !== submission.issueId || fresh.developerId !== user.id || fresh.status !== SubmissionStatus.DRAFT || !fresh.deliveryHash || !fresh.manifest)
         throw gqlError("Bản nháp không hợp lệ", "SUBMISSION_NOT_DRAFT");
       if (!issue || issue.developerId !== user.id || issue.status !== IssueStatus.IN_PROGRESS || !projection || !projection.escrowKey || projection.phase !== EscrowPhase.FUNDED)
         throw gqlError("Bài toán không ở trạng thái nhận bài nộp", "INVALID_PHASE");
@@ -100,7 +117,9 @@ builder.mutationField("prepareSubmitWork", (t) => t.field({
       const target = escrowTarget();
       if (projection.chainId !== target.chainId || projection.contractAddress.toLowerCase() !== target.contractAddress.toLowerCase())
         throw gqlError("Ký quỹ không khớp cấu hình", "ESCROW_CHAIN_MISMATCH");
-      if (new Date() > projection.deliveryDeadline) throw gqlError("Đã hết hạn giao hàng", "DEADLINE_PASSED");
+      if (projection.id !== clock.id || projection.chainId !== clock.chainId || projection.contractAddress.toLowerCase() !== clock.contractAddress.toLowerCase())
+        throw gqlError("Ký quỹ vừa thay đổi", "ESCROW_CHAIN_MISMATCH");
+      if (clock.now > projection.deliveryDeadline) throw gqlError("Đã hết hạn giao hàng", "DEADLINE_PASSED");
       return createPreparedCall(tx, { userId: user.id, issueId: submission.issueId, escrowKey: projection.escrowKey,
         method: "submitWork", expiresAt: new Date(Math.min(projection.deliveryDeadline.getTime(), Date.now() + 30 * 60_000)),
         args: { escrowId: projection.escrowKey, deliveryHash: fresh.deliveryHash } });

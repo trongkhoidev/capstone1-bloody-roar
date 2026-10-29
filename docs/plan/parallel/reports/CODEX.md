@@ -1,4 +1,10 @@
-ĐANG DỞ: P0-4 / P1-17. Bước tiếp theo: thay luồng dispute cũ bằng luồng on-chain cần thiết, rồi xóa mutation escrow xác nhận bằng txHash và các module/test legacy theo FIX_LIST.
+ĐANG DỞ: N-4. Bước tiếp theo: kiểm tra Hardhat safe/latest và thêm FINALITY cho worker; sau đó tiếp tục phase B. P1-16 sẽ tạo các mutation dispute on-chain ở phase D.
+
+## P0-4 / P1-17 — 2c0e108
+
+- Đã xóa bốn mutation escrow xác nhận bằng txHash, ba mutation dispute cũ, các module xác nhận/projection cũ và các test chỉ kiểm code đó. Schema test xác nhận chúng không còn; analyzeDispute dùng aiStatus, không đổi status, chỉ lưu báo cáo có citation hợp lệ.
+- `bun run typecheck && bun run lint && bun run --cwd apps/web test && bun run --cwd apps/worker test && bun run --cwd packages/database test && bun run contracts:test`: pass trên bloody_codex_test; web 435/435, contract 35/35, 4 cảnh báo lint any có sẵn. Các test mới `graphql-schema.test.ts` và `dispute-analysis.test.ts` pass.
+- Tham chiếu cũ vẫn có trong `apps/web/src/components/admin/admin-view.tsx` và `apps/web/scripts/e2e-{escrow,workflow}.ts`; chúng gọi mutation đã xóa. Frontend ngoài phạm vi theo kế hoạch; các script phải được thay/cập nhật cùng harness và luồng dispute ở phase D/G. Vì vậy điều kiện grep toàn bộ `apps/web/src` chưa đạt, dù backend không còn mutation cũ. Chưa có mutation dispute mới cho đến P1-16.
 
 ## Tiến độ phase A
 
@@ -44,7 +50,7 @@ Gate sau P0-5 và `60ca0cc`: `bun run typecheck && bun run lint && bun run --cwd
 | P0-1 | dở | 3118318 (xóa template; E2E chờ) |
 | P0-2 | xong | fe78f0e |
 | P0-3 | xong | d39cc3b, d8fc33e |
-| P0-4 | chưa làm | Chưa triển khai |
+| P0-4 | dở | `2c0e108`: backend xong; tham chiếu frontend và E2E cũ chờ phase D/G |
 | P0-5 | xong | deb01d4 |
 | P0-6 | xong | fb0a25f |
 | P0-7 | xong | c9eb936 |
@@ -66,7 +72,7 @@ Gate sau P0-5 và `60ca0cc`: `bun run typecheck && bun run lint && bun run --cwd
 | P1-14 | chưa làm | Chưa triển khai |
 | P1-15 | chưa làm | Chưa triển khai |
 | P1-16 | chưa làm | Chưa triển khai |
-| P1-17 | chưa làm | Chưa triển khai |
+| P1-17 | dở | `2c0e108`: backend xong; frontend cũ còn tham chiếu |
 | P1-18 | chưa làm | Chưa triển khai |
 | P1-19 | chưa làm | Chưa triển khai |
 | P1-20 | chưa làm | Chưa triển khai |

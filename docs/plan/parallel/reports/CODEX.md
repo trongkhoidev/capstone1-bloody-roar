@@ -1,4 +1,9 @@
-ĐANG DỞ: P1-4. Bước tiếp theo: giải mã custom error của giao dịch revert bằng ABI contract, kiểm thử và tiếp tục P1-5.
+ĐANG DỞ: P1-5. Bước tiếp theo: gửi RESERVATION_EXPIRED và DEADLINE_APPROACHING idempotent từ job, kiểm thử race và chạy gate phase B.
+
+## P1-4 — custom error
+
+- `df7418b`: đọc revert data từ debug_traceTransaction khi RPC hỗ trợ và giải mã tên lỗi theo ABI; nếu không có trace hoặc selector không hợp lệ, giữ lý do chung. Dùng conditional update để reconciler không ghi đè intent đã được scanner xác nhận đồng thời.
+- `bun run --cwd apps/worker test -- test/intents.test.ts`: pass 7/7 trên bloody_codex_test, gồm DeadlineNotReached, fallback và race. `bun run typecheck && bun run lint` pass; bốn cảnh báo lint cũ. RPC không hỗ trợ debug trace sẽ chỉ có lý do chung.
 
 ## P1-3 — reconciler và E23
 
@@ -86,7 +91,7 @@ Gate sau P0-5 và `60ca0cc`: `bun run typecheck && bun run lint && bun run --cwd
 | P1-1 | xong | `8a3c28d`: log ABI + Hardhat deposit thực pass |
 | P1-2 | xong | `50df7d0`: E22/E24 deposit trên Hardhat pass; các effect khác chờ P1-9/P1-16 |
 | P1-3 | xong | `eb13815`: E23 Hardhat pass |
-| P1-4 | chưa làm | Chưa triển khai |
+| P1-4 | xong | `df7418b`: custom error/fallback/race pass |
 | P1-5 | chưa làm | Chưa triển khai |
 | P1-6 | xong | `f287f80`: worker 48/48 |
 | P1-7 | xong | `5468126`: worker 48/48, thử viem với Hardhat |

@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
-import { createLogger } from "../src/log";
+import pino from "pino";
 import { startScheduler, type Job, type JobContext } from "../src/runtime/scheduler";
 
-const ctx = { log: createLogger(() => undefined) } as unknown as JobContext;
+const ctx = { log: pino({ level: "silent" }) } as unknown as JobContext;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 test("runs a job right away and then on its interval", async () => {

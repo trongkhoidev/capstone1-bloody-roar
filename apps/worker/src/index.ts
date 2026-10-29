@@ -2,13 +2,12 @@
 import { prisma } from "@bloody-roar/database";
 import { createRpcClient } from "./chain/rpc";
 import { loadConfig } from "./config";
-import { createLogger, errorMessage } from "./log";
+import { logger as log, errorMessage } from "./log";
 import { jobs } from "./jobs";
 import { tryAcquireWorkerLock } from "./runtime/lock";
 import { createHealthServer, health } from "./runtime/health";
 import { registerJob, startScheduler } from "./runtime/scheduler";
 
-const log = createLogger();
 
 async function main(): Promise<void> {
   const config = loadConfig();

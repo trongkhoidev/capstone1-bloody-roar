@@ -26,3 +26,17 @@ export async function loadCheckpoint(db: PrismaClient | Prisma.TransactionClient
     update: {},
   });
 }
+
+
+export async function lockCheckpoint(
+  tx: Prisma.TransactionClient,
+  config: IndexerConfig,
+  expected?: { lastScannedBlock: bigint; lastCanonicalBlockHash: string; replayStatus: string },
+) {
+  await tx.$queryRaw`SELECT 1 FROM projection_checkpoints WHERE "chainId" = ${config.chainId} AND "contractAddress" = ${config.escrowAddress} FOR UPDATE`;
+  const current = await tx.projectionCheckpoint.findUniqueOrThrow({ where: checkpointKey(config) });
+  if (expected && (current.lastScannedBlock !== expected.lastScannedBlock || current.lastCanonicalBlockHash !== expected.lastCanonicalBlockHash || current.replayStatus !== expected.replayStatus)) {
+    throw new Error("Indexer checkpoint changed during scan; retry");
+  }
+  return current;
+}

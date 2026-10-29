@@ -5,6 +5,8 @@ import { prisma } from "@bloody-roar/database";
 import { encodeAbiParameters, encodeEventTopics } from "@bloody-roar/shared";
 import { ESCROW_ABI, keccakUtf8, type Hex } from "@bloody-roar/shared/escrow";
 import { scanOnce } from "../src/indexer/scanner";
+import { handleReorg } from "../src/indexer/reorg";
+import { requestReplay } from "../src/indexer/replay";
 import { cleanupChain, fakeRpc, newChain, rawLog, testConfig } from "./helpers";
 
 const config = testConfig();
@@ -47,7 +49,7 @@ afterAll(async () => {
 });
 
 test("scanner orders deposit and delivery, folds state, applies effects and is idempotent", async () => {
-  const chain = newChain(); chain.safe = 100n; chain.blockHash.set(100n, "0xabc100");
+  const chain = newChain(); chain.safe = 100n; chain.blockHash.set(99n, "0xabc99"); chain.blockHash.set(100n, "0xabc100");
   const deposit = rawLog({ address: config.escrowAddress, block: 100, blockHash: "0xabc100", tx: "0xdeposit", txIndex: 0, logIndex: 0 });
   deposit.topics = [...encodeEventTopics({ abi: ESCROW_ABI, eventName: "Deposited", args: { escrowId: escrowKey, client: clientAddress, developer: developerAddress } })];
   deposit.data = encodeAbiParameters([{ type: "address" }, { type: "address" }, { type: "uint256" }, { type: "uint256" }, { type: "bytes32" }], [arbiter, feeRecipient, 100000000n, deadline, termsHash]);
@@ -67,6 +69,38 @@ test("scanner orders deposit and delivery, folds state, applies effects and is i
   await scanOnce({ db: prisma, rpc: fakeRpc(chain), config });
   expect(await prisma.chainEvent.count({ where: { escrowIdHash } })).toBe(2);
   expect((await prisma.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash } })).projectionVersion).toBe(2);
+
+  // Replace the deposit block: the orphaned deposit must be undone before its replacement is applied.
+  chain.blockHash.set(100n, "0xnew100");
+  const replacement = { ...deposit, blockHash: "0xnew100", transactionHash: "0xreplacement" };
+  chain.logs = [replacement];
+  expect(await handleReorg({ db: prisma, rpc: fakeRpc(chain), config })).toEqual({ rewoundTo: 99n });
+  expect(await prisma.escrowProjection.findUnique({ where: { escrowIdHash } })).toBeNull();
+  expect((await prisma.fundingReservation.findUniqueOrThrow({ where: { escrowIdHash } })).status).toBe("AWAITING_FUNDING");
+  expect((await prisma.issue.findUniqueOrThrow({ where: { id: issueId } })).status).toBe("AWAITING_FUNDING");
+  expect((await prisma.application.findUniqueOrThrow({ where: { id: applicationId } })).status).toBe("PENDING");
+  await scanOnce({ db: prisma, rpc: fakeRpc(chain), config });
+  const replaced = await prisma.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash } });
+  expect(replaced).toMatchObject({ phase: "FUNDED", issueId, deliveryHash: null, orphan: false });
+  const oldEvents = await prisma.chainEvent.findMany({ where: { escrowIdHash, canonical: false } });
+  expect(oldEvents).toHaveLength(2);
+  expect((await prisma.fundingReservation.findUniqueOrThrow({ where: { escrowIdHash } })).status).toBe("FUNDED");
+
+  // Replay rebuilds a corrupted projection from canonical events, then resumes scanning.
+  await prisma.escrowProjection.update({ where: { escrowIdHash }, data: { deliveryHash, phase: "DISPUTED" } });
+  await requestReplay(prisma, config, 100n);
+  expect(await prisma.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash } })).toMatchObject({ phase: "FUNDED", deliveryHash: null, issueId });
+  await scanOnce({ db: prisma, rpc: fakeRpc(chain), config });
+  expect((await prisma.projectionCheckpoint.findUniqueOrThrow({ where: { chainId_contractAddress: { chainId: config.chainId, contractAddress: config.escrowAddress } } })).replayStatus).toBe("IDLE");
+
+  // Do not overwrite an unrelated off-chain assignment during reorg.
+  await prisma.issue.update({ where: { id: issueId }, data: { status: "AWAITING_FUNDING", developerId: clientId } });
+  chain.blockHash.set(100n, "0xnewer100");
+  await expect(handleReorg({ db: prisma, rpc: fakeRpc(chain), config })).rejects.toThrow("issue changed since projection");
+  expect((await prisma.chainEvent.findFirstOrThrow({ where: { escrowIdHash, txHash: "0xreplacement" } })).canonical).toBe(true);
+  expect((await prisma.issue.findUniqueOrThrow({ where: { id: issueId } })).developerId).toBe(clientId);
+  await prisma.issue.update({ where: { id: issueId }, data: { status: "IN_PROGRESS", developerId } });
+  chain.blockHash.set(100n, "0xnew100");
 
   chain.safe = 101n; chain.blockHash.set(101n, "0xabc101");
   const valid = rawLog({ address: config.escrowAddress, block: 101, blockHash: "0xabc101", tx: "0xvalid", txIndex: 0 });

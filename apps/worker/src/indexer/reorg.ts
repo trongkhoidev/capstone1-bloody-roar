@@ -1,6 +1,8 @@
-import { checkpointKey, loadCheckpoint, type IndexerConfig } from "./checkpoint";
+import { checkpointKey, loadCheckpoint, lockCheckpoint, type IndexerConfig } from "./checkpoint";
 import { getBlockByNumber } from "../chain/client";
 import type { ScanDeps } from "./scanner";
+import { rebuildEscrowProjection } from "./rebuild";
+import { undoDeposit, type DepositUndo } from "./undo";
 
 // Compares the hash stored at lastScannedBlock with the node's hash. On a mismatch, rewinds the
 // cursor by reorgWindow blocks and marks events whose block hash changed as non-canonical.
@@ -17,7 +19,7 @@ export async function handleReorg({ db, rpc, config }: ScanDeps): Promise<{ rewo
   const target = maxBigInt(floor, checkpoint.lastScannedBlock - BigInt(config.reorgWindow));
   const candidates = await db.chainEvent.findMany({
     where: { chainId: config.chainId, contractAddress: config.escrowAddress, canonical: true, blockNumber: { gt: target } },
-    select: { id: true, blockNumber: true, blockHash: true },
+    select: { id: true, blockNumber: true, blockHash: true, txIndex: true, logIndex: true, eventName: true, escrowIdHash: true, args: true },
   });
 
   const staleIds: string[] = [];
@@ -32,14 +34,34 @@ export async function handleReorg({ db, rpc, config }: ScanDeps): Promise<{ rewo
     if (hashByBlock.get(key) !== event.blockHash) staleIds.push(event.id);
   }
 
-  const targetHash = (await getBlockByNumber(rpc, target))?.hash ?? "";
+  let targetHash = "";
+  if (target >= 0n) {
+    const targetBlock = await getBlockByNumber(rpc, target);
+    if (!targetBlock) throw new Error(`RPC returned no block for ${target}`);
+    targetHash = targetBlock.hash;
+  }
   await db.$transaction(async (tx) => {
-    if (staleIds.length > 0) await tx.chainEvent.updateMany({ where: { id: { in: staleIds } }, data: { canonical: false } });
+    await lockCheckpoint(tx, config, checkpoint);
+    const staleSet = new Set(staleIds);
+    const stale = candidates.filter((event) => staleSet.has(event.id));
+    if (stale.length > 0) await tx.chainEvent.updateMany({ where: { id: { in: staleIds } }, data: { canonical: false } });
+    const deposits = stale.filter((event) => event.eventName === "Deposited" && event.escrowIdHash)
+      .sort((a, b) => a.blockNumber === b.blockNumber ? b.txIndex - a.txIndex || b.logIndex - a.logIndex : a.blockNumber > b.blockNumber ? -1 : 1);
+    for (const event of deposits) {
+      const args = event.args as unknown as { undo?: DepositUndo };
+      if (args.undo) await undoDeposit(tx, event.id, args.undo);
+      else if (await tx.fundingReservation.findUnique({ where: { escrowIdHash: event.escrowIdHash! } })) {
+        throw new Error("Cannot safely undo deposit without its recorded snapshot");
+      }
+    }
+    for (const hash of new Set(stale.map((event) => event.escrowIdHash).filter((hash): hash is string => hash !== null))) {
+      await rebuildEscrowProjection(tx, config, hash);
+    }
     await tx.projectionCheckpoint.update({
       where: checkpointKey(config),
       data: { lastScannedBlock: target, lastCanonicalBlockHash: targetHash },
     });
-  });
+  }, { timeout: 30_000 });
   return { rewoundTo: target };
 }
 

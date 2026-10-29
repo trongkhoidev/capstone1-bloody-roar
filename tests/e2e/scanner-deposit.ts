@@ -18,6 +18,7 @@ const client = accounts[2], developer = accounts[3];
 if (!client || !developer) throw new Error("Missing Hardhat accounts");
 const { prisma } = await import("@bloody-roar/database");
 const { scanOnce } = await import("../../apps/worker/src/indexer/scanner");
+const { handleReorg } = await import("../../apps/worker/src/indexer/reorg");
 const config = { chainId: 31337, escrowAddress: manifest.address.toLowerCase(), escrowDeployBlock: BigInt(manifest.deployBlock), rangeSize: 2000, reorgWindow: 64, finality: "latest" as const };
 const suffix = randomBytes(8).toString("hex"), escrowKey = `br_e5_${suffix}`, escrowIdHash = keccakUtf8(escrowKey);
 const termsHash = `0x${randomBytes(32).toString("hex")}` as Hex;
@@ -33,10 +34,11 @@ async function user(walletAddress: Hex, role: "CLIENT" | "DEVELOPER") {
   createdUsers.push(created.id);
   return created;
 }
-async function send(from: Hex, to: Hex, data: Hex) {
-  const txHash = await rpc.call<Hex>("eth_sendTransaction", [{ from, to, data, gas: "0x500000" }]);
+async function send(from: Hex, to: Hex, data: Hex, gas = "0x500000") {
+  const txHash = await rpc.call<Hex>("eth_sendTransaction", [{ from, to, data, gas }]);
   const receipt = await rpc.call<{ status: string } | null>("eth_getTransactionReceipt", [txHash]);
   if (!receipt || receipt.status !== "0x1") throw new Error(`Local transaction failed: ${txHash}`);
+  return txHash.toLowerCase();
 }
 try {
   const where = { chainId: config.chainId, contractAddress: config.escrowAddress };
@@ -60,14 +62,43 @@ try {
   const mintAbi = [{ type: "function", name: "mint", stateMutability: "nonpayable", inputs: [{ name: "to", type: "address" }, { name: "amount", type: "uint256" }], outputs: [] }] as const;
   await send(client, manifest.token, encodeFunctionData({ abi: mintAbi, functionName: "mint", args: [client, 100000000n] }));
   await send(client, manifest.token, encodeErc20Approve(manifest.address, "100000000"));
-  await send(client, manifest.address, encodeEscrowCall("deposit", { escrowId: escrowKey, developer, amount: "100000000", deliveryDeadline: deadline.toString(), termsHash }));
+  const deposit = encodeEscrowCall("deposit", { escrowId: escrowKey, developer, amount: "100000000", deliveryDeadline: deadline.toString(), termsHash });
+  const snapshot = await rpc.call<string>("evm_snapshot", []);
+  const firstTx = await send(client, manifest.address, deposit);
   while (await scanOnce({ db: prisma, rpc, config })) { /* scan until caught up */ }
-  const projection = await prisma.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash } });
-  assert.equal(projection.phase, "FUNDED");
-  assert.equal(projection.issueId, issueId);
+  const first = await prisma.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash } });
+  assert.equal(first.phase, "FUNDED");
+  assert.equal(first.issueId, issueId);
   assert.equal((await prisma.issue.findUniqueOrThrow({ where: { id: issueId } })).status, "IN_PROGRESS");
   assert.equal((await prisma.fundingReservation.findUniqueOrThrow({ where: { escrowIdHash } })).status, "FUNDED");
   console.log("Real Hardhat deposit projected as FUNDED; issue IN_PROGRESS");
+
+  assert.equal(await rpc.call<boolean>("evm_revert", [snapshot]), true);
+  const replacementTx = await send(client, manifest.address, deposit, "0x510000");
+  assert.notEqual(replacementTx, firstTx);
+  assert.ok(await handleReorg({ db: prisma, rpc, config }));
+  while (await scanOnce({ db: prisma, rpc, config })) { /* scan until caught up */ }
+  const afterReorg = await prisma.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash } });
+  assert.equal(afterReorg.phase, "FUNDED");
+  assert.equal(afterReorg.issueId, issueId);
+  assert.equal((await prisma.chainEvent.findFirstOrThrow({ where: { txHash: firstTx, escrowIdHash } })).canonical, false);
+  assert.equal((await prisma.chainEvent.findFirstOrThrow({ where: { txHash: replacementTx, escrowIdHash } })).canonical, true);
+  assert.equal((await prisma.fundingReservation.findUniqueOrThrow({ where: { escrowIdHash } })).status, "FUNDED");
+  assert.equal((await prisma.issue.findUniqueOrThrow({ where: { id: issueId } })).status, "IN_PROGRESS");
+  console.log("Real Hardhat reorg replaced the orphaned deposit and restored the projection");
+
+  await prisma.escrowProjection.update({ where: { escrowIdHash }, data: { phase: "DISPUTED" } });
+  const replay = Bun.spawnSync(["bun", "run", "worker:replay", "--from", String(manifest.deployBlock)], {
+    env: { ...process.env, DATABASE_URL: process.env.TEST_DATABASE_URL, DIRECT_URL: process.env.TEST_DATABASE_URL,
+      RPC_URL: "http://127.0.0.1:8545", CHAIN_ID: "31337", ESCROW_ADDRESS: manifest.address,
+      ESCROW_DEPLOY_BLOCK: String(manifest.deployBlock), FINALITY: "latest" },
+    stdout: "pipe", stderr: "pipe",
+  });
+  if (replay.exitCode !== 0) throw new Error(`Replay CLI failed with exit code ${replay.exitCode}`);
+  assert.equal((await prisma.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash } })).phase, "FUNDED");
+  while (await scanOnce({ db: prisma, rpc, config })) { /* scan until caught up */ }
+  assert.equal((await prisma.projectionCheckpoint.findUniqueOrThrow({ where: { chainId_contractAddress: { chainId: config.chainId, contractAddress: config.escrowAddress } } })).replayStatus, "IDLE");
+  console.log("Replay rebuilt the canonical projection");
 } finally {
   if (issueId) {
     await prisma.notification.deleteMany({ where: { data: { path: ["issueId"], equals: issueId } } });

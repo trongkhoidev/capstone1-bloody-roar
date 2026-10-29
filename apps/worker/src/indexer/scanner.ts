@@ -1,6 +1,6 @@
 import { type PrismaClient } from "@bloody-roar/database";
 import { getBlockByNumber, getLogs, getSafeBlock, hexToNumber, RpcRangeError, type RawLog, type RpcClient } from "../chain/client";
-import { checkpointKey, DECODER_VERSION, loadCheckpoint, type IndexerConfig } from "./checkpoint";
+import { checkpointKey, DECODER_VERSION, loadCheckpoint, lockCheckpoint, type IndexerConfig } from "./checkpoint";
 import { projectLog } from "./project";
 
 export type ScanDeps = { db: PrismaClient; rpc: RpcClient; config: IndexerConfig };
@@ -59,10 +59,11 @@ export async function scanOnce({ db, rpc, config }: ScanDeps): Promise<ScanResul
     if (block.hash.toLowerCase() !== log.blockHash.toLowerCase()) throw new Error(`RPC returned an invalid block for ${n}`);
   }
   await db.$transaction(async (tx) => {
+    await lockCheckpoint(tx, config, checkpoint);
     for (const log of ordered) await projectLog(tx, config, log, blocks.get(log.blockNumber)!.timestamp);
     await tx.projectionCheckpoint.update({
       where: checkpointKey(config),
-      data: { lastScannedBlock: to, lastSafeBlock: safe.number, lastCanonicalBlockHash: toBlock.hash, decoderVersion: DECODER_VERSION },
+      data: { lastScannedBlock: to, lastSafeBlock: safe.number, lastCanonicalBlockHash: toBlock.hash, decoderVersion: DECODER_VERSION, ...(to === safe.number && checkpoint.replayStatus === "REPLAY_REQUESTED" ? { replayStatus: "IDLE" } : {}) },
     });
   }, { timeout: 30_000 });
 

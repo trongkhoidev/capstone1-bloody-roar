@@ -1,10 +1,11 @@
 import { type Prisma } from "@bloody-roar/database";
 import {
   decodeEscrowLog, ESCROW_DECODER_VERSION, ESCROW_CONSTANTS, foldEscrowEvent,
-  type DecodedEscrowEvent, type EscrowState, type EventMeta, type Hex,
+  type DecodedEscrowEvent, type EscrowState, type EventMeta, type FoldEffect, type Hex,
 } from "@bloody-roar/shared/escrow";
 import { applyFoldEffects } from "../effects";
 import { notifyProjectionChanged } from "./notify";
+import { captureDepositUndo } from "./undo";
 import type { RawLog } from "../chain/client";
 import type { IndexerConfig } from "./checkpoint";
 
@@ -18,6 +19,22 @@ export function decodeLog(log: RawLog): DecodedEscrowEvent {
 
 function before(a: { blockNumber: bigint; txIndex: number; logIndex: number }, b: { blockNumber: bigint; txIndex: number; logIndex: number }): boolean {
   return a.blockNumber < b.blockNumber || (a.blockNumber === b.blockNumber && (a.txIndex < b.txIndex || (a.txIndex === b.txIndex && a.logIndex < b.logIndex)));
+}
+
+export function projectionFields(next: EscrowState, lastProjectedBlock: bigint, effects: FoldEffect[]) {
+  const resolved = effects.find((effect) => effect.kind === "ESCROW_RESOLVED");
+  return {
+    client: next.client, developer: next.developer, arbiter: next.arbiter, feeRecipient: next.feeRecipient,
+    amountRaw: next.amount.toString(), depositedAt: date(next.depositedAt), deliveryDeadline: date(next.deliveryDeadline),
+    reviewDeadline: new Date(date(next.deliveryDeadline).getTime() + ESCROW_CONSTANTS.REVIEW_DAYS * dayMs),
+    termsHash: next.termsHash, deliveryHash: next.deliveryHash, phase: next.phase, resolutionKind: next.resolutionKind,
+    settlementProposer: next.settlement?.proposer ?? null, settlementClientBps: next.settlement?.clientBps ?? null,
+    disputeRaisedBy: next.dispute?.raisedBy ?? null, disputeRaisedAt: next.dispute ? date(next.dispute.raisedAt) : null,
+    raiserEvidenceHash: next.dispute?.raiserEvidenceHash ?? null, counterpartyEvidenceHash: next.dispute?.counterpartyEvidenceHash ?? null,
+    challengedAt: next.dispute?.challengedAt ? date(next.dispute.challengedAt) : null,
+    ...(resolved?.kind === "ESCROW_RESOLVED" ? { clientAmountRaw: resolved.clientAmount.toString(), developerAmountRaw: resolved.developerAmount.toString(), platformFeeRaw: resolved.platformFee.toString(), decisionHash: resolved.decisionHash } : {}),
+    lastProjectedBlock: lastProjectedBlock,
+  };
 }
 
 export async function projectLog(tx: Prisma.TransactionClient, config: IndexerConfig, log: RawLog, blockTimestamp: bigint): Promise<void> {
@@ -48,12 +65,14 @@ export async function projectLog(tx: Prisma.TransactionClient, config: IndexerCo
   const meta: EventMeta = { chainId: config.chainId, contractAddress: config.escrowAddress as Hex, ...position,
     blockHash: log.blockHash as Hex, txHash: log.transactionHash as Hex, blockTimestamp };
   const folded = foldEscrowEvent(state, event, meta);
+  const undo = event.name === "Deposited" && escrowIdHash ? await captureDepositUndo(tx, escrowIdHash) : null;
+  const args = { topics: log.topics, data: log.data, blockTimestamp: blockTimestamp.toString(), ...(undo ? { undo } : {}) };
   const row = await tx.chainEvent.upsert({
     where: { chainId_contractAddress_txHash_logIndex: key },
     create: { ...key, ...position, blockHash: log.blockHash, eventName: event.name, escrowIdHash,
-      args: { topics: log.topics, data: log.data, blockTimestamp: blockTimestamp.toString() }, decoderVersion: ESCROW_DECODER_VERSION },
+      args, decoderVersion: ESCROW_DECODER_VERSION },
     update: { ...position, blockHash: log.blockHash, eventName: event.name, escrowIdHash, canonical: true,
-      args: { topics: log.topics, data: log.data, blockTimestamp: blockTimestamp.toString() }, decoderVersion: ESCROW_DECODER_VERSION },
+      args, decoderVersion: ESCROW_DECODER_VERSION },
   });
   const previous = escrowIdHash ? await tx.escrowProjection.findUnique({ where: { escrowIdHash } }) : null;
   if (previous && (previous.chainId !== config.chainId || previous.contractAddress.toLowerCase() !== config.escrowAddress.toLowerCase())) {
@@ -61,20 +80,7 @@ export async function projectLog(tx: Prisma.TransactionClient, config: IndexerCo
   }
   await applyFoldEffects(tx, folded.effects, { ...meta, chainEventId: row.id, escrowIdHash: escrowIdHash ?? "0x" });
   if (!escrowIdHash || !folded.state) return;
-  const next = folded.state;
-  const resolved = folded.effects.find((effect) => effect.kind === "ESCROW_RESOLVED");
-  const fields = {
-    client: next.client, developer: next.developer, arbiter: next.arbiter, feeRecipient: next.feeRecipient,
-    amountRaw: next.amount.toString(), depositedAt: date(next.depositedAt), deliveryDeadline: date(next.deliveryDeadline),
-    reviewDeadline: new Date(date(next.deliveryDeadline).getTime() + ESCROW_CONSTANTS.REVIEW_DAYS * dayMs),
-    termsHash: next.termsHash, deliveryHash: next.deliveryHash, phase: next.phase, resolutionKind: next.resolutionKind,
-    settlementProposer: next.settlement?.proposer ?? null, settlementClientBps: next.settlement?.clientBps ?? null,
-    disputeRaisedBy: next.dispute?.raisedBy ?? null, disputeRaisedAt: next.dispute ? date(next.dispute.raisedAt) : null,
-    raiserEvidenceHash: next.dispute?.raiserEvidenceHash ?? null, counterpartyEvidenceHash: next.dispute?.counterpartyEvidenceHash ?? null,
-    challengedAt: next.dispute?.challengedAt ? date(next.dispute.challengedAt) : null,
-    ...(resolved?.kind === "ESCROW_RESOLVED" ? { clientAmountRaw: resolved.clientAmount.toString(), developerAmountRaw: resolved.developerAmount.toString(), platformFeeRaw: resolved.platformFee.toString(), decisionHash: resolved.decisionHash } : {}),
-    lastProjectedBlock: meta.blockNumber,
-  };
+  const fields = projectionFields(folded.state, meta.blockNumber, folded.effects);
   const projection = await tx.escrowProjection.upsert({
     where: { escrowIdHash },
     create: { ...fields, escrowIdHash, chainId: config.chainId, contractAddress: config.escrowAddress, orphan: true, projectionVersion: 1 },

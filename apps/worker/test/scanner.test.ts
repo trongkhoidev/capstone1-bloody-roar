@@ -75,3 +75,22 @@ test("latest finality scans without requesting the safe tag", async () => {
   expect(tags).toContain("latest");
   expect(tags).not.toContain("safe");
 });
+
+
+test("a concurrent replay invalidates a scan before it can advance the cursor", async () => {
+  const chain = chainUpTo(114n);
+  const fake = fakeRpc(chain);
+  let changed = false;
+  const rpc = {
+    ...fake,
+    async call<T>(method: string, params: unknown[]): Promise<T> {
+      if (method === "eth_getLogs" && !changed) {
+        changed = true;
+        await prisma.projectionCheckpoint.update({ where: { chainId_contractAddress: where }, data: { lastScannedBlock: 99n, replayStatus: "REPLAY_REQUESTED" } });
+      }
+      return fake.call<T>(method, params);
+    },
+  };
+  await expect(scanOnce({ db: prisma, rpc, config })).rejects.toThrow("checkpoint changed");
+  expect(await cursor()).toMatchObject({ lastScannedBlock: 99n, replayStatus: "REPLAY_REQUESTED" });
+});

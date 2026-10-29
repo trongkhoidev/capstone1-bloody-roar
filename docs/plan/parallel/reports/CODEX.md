@@ -1,3 +1,14 @@
+ĐANG DỞ: N-1. Bước tiếp theo: chạy test web và worker với TEST_DATABASE_URL=bloody_codex_test, sửa lỗi phát sinh, rồi tiếp tục N-2 theo phase A.
+
+## Cập nhật phiên local
+
+- Mục 2.2: đã sửa .env của worktree và packages/database/.env trỏ bloody_codex_local, xóa tên biến cũ, để trống dịch vụ thật, dùng cổng 4010/4011; ESCROW_ADDRESS và ESCROW_DEPLOY_BLOCK để trống đến khi có manifest sau deploy. ADMIN_WALLETS dùng địa chỉ chuẩn hardhat #1; cần xác nhận từ eth_accounts. Không commit .env.
+- N-14: commit `79c14b4`; `bun test tests/e2e/check-env.test.ts` pass 10/10. Chặn hostname giả localhost.example.com; AI_BASE_URL rỗng được phép.
+- N-1: commit `43f034a`; guard và preload đã thêm; `bun test tests/e2e/check-env.test.ts packages/database/test/test-guard.test.ts` pass 11/11; database test pass 2/2. Chưa chạy toàn bộ test web/worker.
+- PostgreSQL báo bloody_codex_test không tồn tại dù đặc tả nói đã có; đã tạo mới bằng Bun SQL sau khi kiểm tên, rồi chạy `bun run --cwd packages/database db:migrate:prod` với DATABASE_URL và DIRECT_URL trỏ bloody_codex_test: 7 migration pass.
+- `bun run typecheck && bun run lint`: pass, lint có 4 cảnh báo any có sẵn. Gate phase A và gate cuối chưa chạy.
+- Tài liệu DECISIONS.md, FIX_LIST.md và LOCAL_FULL_FLOW_SPEC.md đã có thay đổi chưa commit từ trước; giữ nguyên.
+
 # Báo cáo Codex — 29/10/2026
 
 | ID | Trạng thái | Bằng chứng |

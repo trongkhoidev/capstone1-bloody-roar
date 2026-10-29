@@ -5,5 +5,6 @@ import { deadlinesJob } from "./deadlines";
 import { indexerJob } from "./indexer";
 import { intentsJob } from "./intents";
 import { reservationsJob } from "./reservations";
+import { reconciliationJob } from "./reconciliation";
 
-export const jobs: Job[] = [indexerJob, intentsJob, reservationsJob, deadlinesJob, alertsJob];
+export const jobs: Job[] = [indexerJob, intentsJob, reservationsJob, deadlinesJob, reconciliationJob, alertsJob];

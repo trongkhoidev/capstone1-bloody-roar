@@ -19,6 +19,7 @@ if (!client || !developer) throw new Error("Missing Hardhat accounts");
 const { prisma } = await import("@bloody-roar/database");
 const { scanOnce } = await import("../../apps/worker/src/indexer/scanner");
 const { handleReorg } = await import("../../apps/worker/src/indexer/reorg");
+const { reconcileProjections } = await import("../../apps/worker/src/reconciler/projections");
 const config = { chainId: 31337, escrowAddress: manifest.address.toLowerCase(), escrowDeployBlock: BigInt(manifest.deployBlock), rangeSize: 2000, reorgWindow: 64, finality: "latest" as const };
 const suffix = randomBytes(8).toString("hex"), escrowKey = `br_e5_${suffix}`, escrowIdHash = keccakUtf8(escrowKey);
 const termsHash = `0x${randomBytes(32).toString("hex")}` as Hex;
@@ -42,7 +43,9 @@ async function send(from: Hex, to: Hex, data: Hex, gas = "0x500000") {
 }
 try {
   const where = { chainId: config.chainId, contractAddress: config.escrowAddress };
-  if (await prisma.chainEvent.count({ where }) || await prisma.projectionCheckpoint.findUnique({ where: { chainId_contractAddress: where } })) {
+  if (await prisma.chainEvent.count({ where }) || await prisma.projectionCheckpoint.findUnique({ where: { chainId_contractAddress: where } }) ||
+      await prisma.reconciliationFinding.count({ where: { kind: { startsWith: `chain:${config.chainId}:${config.escrowAddress}:` } } }) ||
+      await prisma.claimableBalance.count({ where })) {
     throw new Error("Scanner test requires an unused local contract address in the test database");
   }
   ownsIndexerFixture = true;
@@ -99,6 +102,43 @@ try {
   while (await scanOnce({ db: prisma, rpc, config })) { /* scan until caught up */ }
   assert.equal((await prisma.projectionCheckpoint.findUniqueOrThrow({ where: { chainId_contractAddress: { chainId: config.chainId, contractAddress: config.escrowAddress } } })).replayStatus, "IDLE");
   console.log("Replay rebuilt the canonical projection");
+
+  const reconcile = () => reconcileProjections({ db: prisma, rpc, config, now: () => new Date() });
+  const unavailable = { ...rpc, call: async <T>(method: string, params: unknown[]): Promise<T> => {
+    if (method === "eth_call") throw new Error("RPC unavailable");
+    return rpc.call<T>(method, params);
+  } };
+  await assert.rejects(reconcileProjections({ db: prisma, rpc: unavailable, config, now: () => new Date() }), /RPC unavailable/);
+  assert.equal(await prisma.reconciliationFinding.count({ where: { escrowIdHash } }), 0);
+  assert.equal(await reconcile(), 0);
+  await prisma.escrowProjection.update({ where: { escrowIdHash }, data: { amountRaw: "100000001" } });
+  assert.equal(await reconcile(), 1);
+  const finding = await prisma.reconciliationFinding.findFirstOrThrow({ where: { escrowIdHash, resolvedAt: null } });
+  assert.ok(finding.kind.endsWith(":amount"));
+  await prisma.escrowProjection.update({ where: { escrowIdHash }, data: { amountRaw: "100000000" } });
+  assert.equal(await reconcile(), 0);
+  assert.ok((await prisma.reconciliationFinding.findUniqueOrThrow({ where: { id: finding.id } })).resolvedAt);
+  console.log("Reconciler detected and closed a projection mismatch at the indexed block");
+
+  await prisma.claimableBalance.create({ data: { chainId: config.chainId, contractAddress: config.escrowAddress, address: client.toLowerCase(), amountRaw: "1" } });
+  assert.equal(await reconcile(), 1);
+  const claimFinding = await prisma.reconciliationFinding.findFirstOrThrow({ where: { kind: { endsWith: `:claimable:${client.toLowerCase()}` }, resolvedAt: null } });
+  await prisma.claimableBalance.update({ where: { chainId_contractAddress_address: { chainId: config.chainId, contractAddress: config.escrowAddress, address: client.toLowerCase() } }, data: { amountRaw: "0" } });
+  assert.equal(await reconcile(), 0);
+  assert.ok((await prisma.reconciliationFinding.findUniqueOrThrow({ where: { id: claimFinding.id } })).resolvedAt);
+
+  const burnAbi = [{ type: "function", name: "burn", stateMutability: "nonpayable", inputs: [{ name: "from", type: "address" }, { name: "amount", type: "uint256" }], outputs: [] }] as const;
+  await send(client, manifest.token, encodeFunctionData({ abi: burnAbi, functionName: "burn", args: [manifest.address, 1n] }));
+  assert.equal(await reconcile(), null); // do not compare an unindexed block
+  assert.equal(await prisma.reconciliationFinding.count({ where: { kind: { endsWith: ":solvency" }, resolvedAt: null } }), 0);
+  while (await scanOnce({ db: prisma, rpc, config })) { /* catch up to the token transaction */ }
+  assert.equal(await reconcile(), 1);
+  const solventFinding = await prisma.reconciliationFinding.findFirstOrThrow({ where: { kind: { endsWith: ":solvency" }, resolvedAt: null } });
+  await send(client, manifest.token, encodeFunctionData({ abi: mintAbi, functionName: "mint", args: [manifest.address, 1n] }));
+  while (await scanOnce({ db: prisma, rpc, config })) { /* catch up to the token transaction */ }
+  assert.equal(await reconcile(), 0);
+  assert.ok((await prisma.reconciliationFinding.findUniqueOrThrow({ where: { id: solventFinding.id } })).resolvedAt);
+  console.log("Reconciler detected and closed claimable and solvency mismatches");
 } finally {
   if (issueId) {
     await prisma.notification.deleteMany({ where: { data: { path: ["issueId"], equals: issueId } } });
@@ -109,6 +149,8 @@ try {
   }
   if (createdToken) await prisma.token.deleteMany({ where: { id: tokenId } });
   if (ownsIndexerFixture) {
+    await prisma.reconciliationFinding.deleteMany({ where: { kind: { startsWith: `chain:${config.chainId}:${config.escrowAddress}:` } } });
+    await prisma.claimableBalance.deleteMany({ where: { chainId: config.chainId, contractAddress: config.escrowAddress } });
     await prisma.chainEvent.deleteMany({ where: { chainId: config.chainId, contractAddress: config.escrowAddress } });
     await prisma.projectionCheckpoint.deleteMany({ where: { chainId: config.chainId, contractAddress: config.escrowAddress } });
   }

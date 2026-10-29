@@ -40,7 +40,7 @@ describe("local environment guard", () => {
     });
   }
 
-  for (const TEST_DATABASE_URL of ["", "postgresql://localhost/bloody_codex_local", "invalid"]) {
+  for (const TEST_DATABASE_URL of ["", "postgresql://localhost/bloody_codex_local", "postgresql://prod-db.example.com/app_test", "invalid"]) {
     test(`rejects TEST_DATABASE_URL ${TEST_DATABASE_URL}`, () => {
       const result = check({ TEST_DATABASE_URL });
       expect(result.exitCode).not.toBe(0);

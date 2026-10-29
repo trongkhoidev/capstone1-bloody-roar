@@ -1,7 +1,12 @@
+import { assertTestDatabase } from "@bloody-roar/database/test-guard";
+import { beforeAll } from "bun:test";
 import { afterAll, expect, test } from "bun:test";
 import { prisma } from "@bloody-roar/database";
 import { expireReservations } from "../src/jobs/reservations";
 import { createLogger } from "../src/log";
+
+beforeAll(() => assertTestDatabase(process.env.TEST_DATABASE_URL));
+assertTestDatabase(process.env.TEST_DATABASE_URL);
 
 const run = Date.now();
 const now = new Date("2027-01-01T12:00:00Z");

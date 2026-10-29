@@ -3,6 +3,7 @@
 import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { ACTIVE_CHAIN_ID } from "@bloody-roar/shared";
+import { assertTestDatabase } from "@bloody-roar/database/test-guard";
 import { prisma } from "@bloody-roar/database";
 import { execute, loadSchema } from "./graphql-execute";
 
@@ -14,13 +15,14 @@ const SELECT = `mutation($issueId: ID!, $applicationId: ID!, $deliveryDeadline: 
 
 const randomHex = (bytes: number) => `0x${randomBytes(bytes).toString("hex")}`;
 
-describe.skipIf(!process.env.DATABASE_URL)("selectDeveloper under concurrency (real database)", () => {
+describe.skipIf(!process.env.TEST_DATABASE_URL)("selectDeveloper under concurrency (real database)", () => {
   const ids: { users: string[]; tokenId?: string } = { users: [] };
   let issueId = "";
   let client: Awaited<ReturnType<typeof prisma.user.create>>;
   const applicationIds: string[] = [];
 
   beforeAll(async () => {
+    assertTestDatabase(process.env.TEST_DATABASE_URL);
     vi.stubEnv("ESCROW_CONTRACT_ADDRESS", randomHex(20));
     vi.stubEnv("ESCROW_CHAIN_ID", String(ACTIVE_CHAIN_ID));
     await loadSchema();

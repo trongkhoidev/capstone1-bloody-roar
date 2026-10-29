@@ -1,8 +1,13 @@
+import { assertTestDatabase } from "@bloody-roar/database/test-guard";
+import { beforeAll } from "bun:test";
 import { afterAll, expect, test } from "bun:test";
 import { randomBytes } from "node:crypto";
 import { prisma } from "@bloody-roar/database";
 import { keccakUtf8, type FoldEffect } from "@bloody-roar/shared/escrow";
 import { applyFoldEffects } from "../src/effects";
+
+beforeAll(() => assertTestDatabase(process.env.TEST_DATABASE_URL));
+assertTestDatabase(process.env.TEST_DATABASE_URL);
 
 const run = randomBytes(4).toString("hex");
 const DAY_MS = 86_400_000;

@@ -1,7 +1,11 @@
+import { assertTestDatabase } from "@bloody-roar/database/test-guard";
+import { beforeAll } from "bun:test";
 import { afterAll, expect, test } from "bun:test";
 import { prisma } from "@bloody-roar/database";
 import { INTENT_DROP_AFTER_MS, nextIntentState, reconcileIntents, type IntentView } from "../src/reconciler/intents";
 import { fakeRpc, newChain } from "./helpers";
+
+beforeAll(() => assertTestDatabase(process.env.TEST_DATABASE_URL));
 
 const now = new Date("2027-01-01T12:00:00Z");
 const minutesAgo = (m: number) => new Date(now.getTime() - m * 60_000);

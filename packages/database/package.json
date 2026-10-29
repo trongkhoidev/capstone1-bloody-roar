@@ -21,6 +21,7 @@
     "prisma": "^5.16.0"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./test-guard": "./src/test-guard.ts"
   }
 }

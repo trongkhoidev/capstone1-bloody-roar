@@ -1,4 +1,4 @@
-import { assertTestDatabase } from "../../packages/database/src/test-guard";
+import { assertTestDatabase } from "@bloody-roar/database/test-guard";
 
 const forbidden = ["AWS_S3_BUCKET", "AI_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY"] as const;
 

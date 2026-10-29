@@ -1,10 +1,5 @@
-import { assertTestDatabase } from "../src/test-guard";
-
-assertTestDatabase(process.env.TEST_DATABASE_URL);
-process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
-process.env.DIRECT_URL = process.env.TEST_DATABASE_URL;
-
-import { afterAll, expect, test } from "bun:test";
+import { assertTestDatabase } from "@bloody-roar/database/test-guard";
+import { afterAll, beforeAll, expect, test } from "bun:test";
 import { PrismaClient } from "@prisma/client";
 
 // Needs a migrated DATABASE_URL (bun run db:migrate). Rows are removed after the run.
@@ -28,6 +23,8 @@ const reservation = (suffix: string, status: "AWAITING_FUNDING" | "FUNDED" | "EX
   expiresAt: new Date("2026-10-28T00:00:00Z"),
   status,
 });
+
+beforeAll(() => assertTestDatabase(process.env.TEST_DATABASE_URL));
 
 test("one active reservation per issue; terminal rows are allowed", async () => {
   await db.fundingReservation.create({ data: reservation("a", "AWAITING_FUNDING") });

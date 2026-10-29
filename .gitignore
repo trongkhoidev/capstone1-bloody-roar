@@ -54,6 +54,7 @@ Thumbs.db
 *.swo
 
 # Test results
+tests/e2e/.run/
 playwright-report/
 test-results/
 coverage/

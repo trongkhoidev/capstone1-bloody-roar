@@ -1,7 +1,11 @@
+import { assertTestDatabase } from "@bloody-roar/database/test-guard";
+import { beforeAll } from "bun:test";
 import { afterAll, expect, test } from "bun:test";
 import { Client } from "pg";
 import { prisma, PROJECTION_CHANGED_CHANNEL } from "@bloody-roar/database";
 import { notifyProjectionChanged } from "../src/indexer/notify";
+
+beforeAll(() => assertTestDatabase(process.env.TEST_DATABASE_URL));
 
 const url = process.env.DIRECT_URL || process.env.DATABASE_URL || "";
 const listener = new Client({ connectionString: url });

@@ -1,8 +1,12 @@
+import { assertTestDatabase } from "@bloody-roar/database/test-guard";
+import { beforeAll } from "bun:test";
 import { afterAll, expect, test } from "bun:test";
 import { prisma } from "@bloody-roar/database";
 import { loadCheckpoint, checkpointKey } from "../src/indexer/checkpoint";
 import { requestReplay } from "../src/indexer/replay";
 import { cleanupChain, testConfig } from "./helpers";
+
+beforeAll(() => assertTestDatabase(process.env.TEST_DATABASE_URL));
 
 const config = testConfig(); // escrowDeployBlock 100n
 

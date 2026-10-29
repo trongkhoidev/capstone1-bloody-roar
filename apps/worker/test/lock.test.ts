@@ -1,5 +1,9 @@
+import { assertTestDatabase } from "@bloody-roar/database/test-guard";
+import { beforeAll } from "bun:test";
 import { expect, test } from "bun:test";
 import { tryAcquireWorkerLock } from "../src/runtime/lock";
+
+beforeAll(() => assertTestDatabase(process.env.TEST_DATABASE_URL));
 
 const url = process.env.DIRECT_URL || process.env.DATABASE_URL || "";
 

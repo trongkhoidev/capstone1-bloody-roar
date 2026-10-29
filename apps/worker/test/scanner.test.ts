@@ -1,7 +1,11 @@
+import { assertTestDatabase } from "@bloody-roar/database/test-guard";
+import { beforeAll } from "bun:test";
 import { afterAll, expect, test } from "bun:test";
 import { prisma } from "@bloody-roar/database";
 import { scanOnce } from "../src/indexer/scanner";
 import { cleanupChain, fakeRpc, newChain, rawLog, scanToHead, testConfig } from "./helpers";
+
+beforeAll(() => assertTestDatabase(process.env.TEST_DATABASE_URL));
 
 const config = testConfig();
 const where = { chainId: config.chainId, contractAddress: config.escrowAddress };

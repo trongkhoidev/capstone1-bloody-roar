@@ -15,6 +15,7 @@ describe("escrow token amount conversion", () => {
     const amount = BigNumber.from("1000001");
 
     expect(calculatePayout(amount, 250).toString()).toBe("975001");
+    expect(calculatePayout(BigNumber.from(1), 250).toString()).toBe("1");
   });
 
   it("rejects an invalid platform fee snapshot", () => {

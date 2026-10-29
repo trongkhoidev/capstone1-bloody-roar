@@ -1,14 +1,12 @@
-import { DisputeStatus, IssueStatus } from "@bloody-roar/database";
+import { DisputeStatus } from "@bloody-roar/database";
 import type { Prisma } from "@bloody-roar/database";
 import { z } from "zod";
 import { builder } from "../../builder";
 import { requireAdmin, requireAuth } from "../../context";
-import { gqlError, parseOrThrow } from "../../errors";
-import { createNotificationSafely } from "../../../lib/services/notifications";
+import { gqlError } from "../../errors";
 import { UserRef } from "../user/user.module";
 import { completeAI } from "../../../ai/model-router";
 import { scanAndMask } from "../../../ai/guard/scanner";
-import { confirmEscrowAction } from "../../../lib/escrow/confirmation";
 
 const DisputeStatusEnum = builder.enumType(DisputeStatus, { name: "DisputeStatus" });
 const DISPUTE_INCLUDE = { raisedBy: true, resolvedBy: true } satisfies Prisma.DisputeInclude;
@@ -110,101 +108,6 @@ builder.queryFields((t) => ({
   }),
 }));
 
-const TxHashSchema = z.string().regex(/^0x[0-9a-fA-F]{64}$/);
-const CommitmentHashSchema = TxHashSchema.refine(
-  (hash) => !/^0x0{64}$/.test(hash),
-  "Hash must be nonzero",
-);
-
-builder.mutationField("raiseDispute", (t) =>
-  t.fieldWithInput({
-    type: DisputeRef,
-    typeOptions: { name: "RaiseDisputeInput" },
-    input: {
-      issueId: t.input.id({ required: true }),
-      reason: t.input.string({ required: true }),
-      txHash: t.input.string({ required: false }),
-      evidenceManifestHash: t.input.string({ required: false }),
-    },
-    resolve: async (_root, args, ctx) => {
-      const user = requireAuth(ctx);
-      const input = parseOrThrow(
-        z.object({
-          issueId: z.string().min(1).max(191),
-          reason: z.string().trim().min(20).max(3000),
-          txHash: TxHashSchema.optional(),
-          evidenceManifestHash: CommitmentHashSchema.optional(),
-        }),
-        { ...args.input, issueId: String(args.input.issueId) },
-      );
-      if (input.txHash && input.evidenceManifestHash) {
-        const existing = await ctx.db.dispute.findUnique({ where: { issueId: input.issueId } });
-        const escrow = await confirmEscrowAction(ctx, {
-          ...input,
-          txHash: input.txHash,
-          action: "DISPUTE",
-          hash: input.evidenceManifestHash,
-        });
-        const dispute = await ctx.db.dispute.findUniqueOrThrow({
-          where: { issueId: input.issueId },
-          include: DISPUTE_INCLUDE,
-        });
-        const otherUserId = escrow.clientId === user.id ? escrow.developerId : escrow.clientId;
-        if (!existing && otherUserId)
-          await createNotificationSafely(ctx.db, {
-            userId: otherUserId,
-            type: "DISPUTE_RAISED",
-            title: "Đã mở tranh chấp",
-            body: input.reason,
-            actorId: user.id,
-            link: `/issues/${input.issueId}`,
-            data: { issueId: input.issueId, disputeId: dispute.id },
-          });
-        return dispute;
-      }
-
-      // Off-chain / test fallback
-      const issue = await ctx.db.issue.findUnique({ where: { id: input.issueId } });
-      if (!issue) throw gqlError("Bounty không tồn tại", "NOT_FOUND");
-      if (issue.clientId !== user.id && issue.developerId !== user.id) {
-        throw gqlError("Chỉ người tạo hoặc developer được giao việc mới có thể mở tranh chấp", "FORBIDDEN");
-      }
-      if (issue.status !== IssueStatus.IN_PROGRESS) {
-        throw gqlError("Chỉ có thể khiếu nại bounty đang thực hiện", "ISSUE_NOT_DISPUTABLE");
-      }
-      const existing = await ctx.db.dispute.findUnique({ where: { issueId: input.issueId } });
-      if (existing) throw gqlError("Tranh chấp cho bounty này đã tồn tại", "DISPUTE_ALREADY_EXISTS");
-
-      await ctx.db.issue.update({
-        where: { id: input.issueId },
-        data: { status: IssueStatus.DISPUTED },
-      });
-      const dispute = await ctx.db.dispute.create({
-        data: {
-          issueId: input.issueId,
-          raisedById: user.id,
-          reason: input.reason,
-          status: DisputeStatus.OPEN,
-        },
-        include: DISPUTE_INCLUDE,
-      });
-      const otherUserId = issue.clientId === user.id ? issue.developerId : issue.clientId;
-      if (otherUserId) {
-        await createNotificationSafely(ctx.db, {
-          userId: otherUserId,
-          type: "DISPUTE_RAISED",
-          title: "Đã mở tranh chấp",
-          body: input.reason,
-          actorId: user.id,
-          link: `/issues/${input.issueId}`,
-          data: { issueId: input.issueId, disputeId: dispute.id },
-        });
-      }
-      return dispute;
-    },
-  }),
-);
-
 const DisputeAnalysisSchema = z.object({
   summary: z.string().trim().min(30).max(2500),
   suggestedClientRatio: z.number().min(0).max(100),
@@ -297,8 +200,8 @@ builder.mutationField("analyzeDispute", (t) =>
 
       const previousStatus = dispute.status;
       const claimed = await ctx.db.dispute.updateMany({
-        where: { id: dispute.id, status: previousStatus },
-        data: { status: DisputeStatus.ANALYZING },
+        where: { id: dispute.id, status: previousStatus, OR: [{ aiStatus: null }, { aiStatus: { not: "ANALYZING" } }] },
+        data: { aiStatus: "ANALYZING" },
       });
       if (claimed.count !== 1)
         throw gqlError(
@@ -372,9 +275,9 @@ builder.mutationField("analyzeDispute", (t) =>
           generatedAt: new Date().toISOString(),
         };
         const updated = await ctx.db.dispute.updateMany({
-          where: { id: dispute.id, status: DisputeStatus.ANALYZING },
+          where: { id: dispute.id, status: previousStatus, aiStatus: "ANALYZING" },
           data: {
-            status: previousStatus,
+            aiStatus: "COMPLETED",
             aiReport: reportWithVerifiedCitations as Prisma.InputJsonValue,
             suggestedRatio: report.suggestedClientRatio,
             aiConfidenceScore: report.confidenceScore,
@@ -391,8 +294,8 @@ builder.mutationField("analyzeDispute", (t) =>
         });
       } catch (error) {
         await ctx.db.dispute.updateMany({
-          where: { id: dispute.id, status: DisputeStatus.ANALYZING },
-          data: { status: previousStatus },
+          where: { id: dispute.id, aiStatus: "ANALYZING" },
+          data: { aiStatus: "FAILED" },
         });
         if (error instanceof z.ZodError || error instanceof SyntaxError) {
           throw gqlError(
@@ -410,139 +313,3 @@ builder.mutationField("analyzeDispute", (t) =>
   }),
 );
 
-builder.mutationField("proposeDisputeResolution", (t) =>
-  t.fieldWithInput({
-    type: DisputeRef,
-    typeOptions: { name: "ProposeDisputeResolutionInput" },
-    input: {
-      issueId: t.input.id({ required: true }),
-      clientRatio: t.input.float({ required: true }),
-      note: t.input.string({ required: true }),
-      txHash: t.input.string({ required: false }),
-      decisionHash: t.input.string({ required: false }),
-    },
-    resolve: async (_root, args, ctx) => {
-      const admin = requireAdmin(ctx);
-      const input = parseOrThrow(
-        z.object({
-          issueId: z.string().min(1).max(191),
-          clientRatio: z
-            .number()
-            .min(0)
-            .max(100)
-            .refine(
-              (v) => Math.abs(v * 100 - Math.round(v * 100)) < 1e-8,
-              "Use at most two decimal places",
-            ),
-          note: z.string().trim().min(10).max(2000),
-          txHash: TxHashSchema.optional(),
-          decisionHash: CommitmentHashSchema.optional(),
-        }),
-        { ...args.input, issueId: String(args.input.issueId) },
-      );
-
-      if (input.txHash && input.decisionHash) {
-        const escrow = await ctx.db.escrow.findUnique({ where: { issueId: input.issueId } });
-        if (!escrow) throw gqlError("Escrow not found", "NOT_FOUND");
-        // A challenged ruling is followed by the final ruling, which has a 24h notice period.
-        const action =
-          escrow.phase === "CHALLENGED" || escrow.phase === "FINAL_RULING"
-            ? "FINAL_RULING"
-            : "INITIAL_RULING";
-        await confirmEscrowAction(ctx, {
-          issueId: input.issueId,
-          txHash: input.txHash,
-          action,
-          clientBps: Math.round(input.clientRatio * 100),
-          hash: input.decisionHash,
-          note: input.note,
-        });
-        return ctx.db.dispute.findUniqueOrThrow({
-          where: { issueId: input.issueId },
-          include: DISPUTE_INCLUDE,
-        });
-      }
-
-      // Off-chain / test fallback
-      const dispute = await ctx.db.dispute.findUnique({
-        where: { issueId: input.issueId },
-        include: { issue: true },
-      });
-      if (!dispute) throw gqlError("Tranh chấp không tồn tại", "NOT_FOUND");
-      if (dispute.status !== DisputeStatus.OPEN && dispute.status !== DisputeStatus.CHALLENGED) {
-        throw gqlError("Tranh chấp không ở trạng thái có thể đề xuất", "DISPUTE_NOT_PROPOSABLE");
-      }
-      const proposedAt = new Date();
-      return ctx.db.dispute.update({
-        where: { id: dispute.id },
-        data: {
-          status: DisputeStatus.PROPOSED,
-          proposedClientRatio: input.clientRatio,
-          proposedAt,
-          challengeDeadline: new Date(proposedAt.getTime() + 24 * 60 * 60 * 1000),
-          resolvedById: admin.id,
-          resolutionNote: input.note,
-        },
-        include: DISPUTE_INCLUDE,
-      });
-    },
-  }),
-);
-
-builder.mutationField("challengeDisputeResolution", (t) =>
-  t.field({
-    type: DisputeRef,
-    args: {
-      issueId: t.arg.string({ required: true }),
-      txHash: t.arg.string({ required: false }),
-    },
-    resolve: async (_root, args, ctx) => {
-      const user = requireAuth(ctx);
-      const input = parseOrThrow(
-        z.object({
-          issueId: z.string().min(1).max(191),
-          txHash: TxHashSchema.optional(),
-        }),
-        args,
-      );
-
-      if (input.txHash) {
-        await confirmEscrowAction(ctx, { ...input, txHash: input.txHash, action: "CHALLENGE" });
-        return ctx.db.dispute.findUniqueOrThrow({
-          where: { issueId: input.issueId },
-          include: DISPUTE_INCLUDE,
-        });
-      }
-
-      // Off-chain / test fallback
-      const dispute = await ctx.db.dispute.findUnique({
-        where: { issueId: input.issueId },
-        include: { issue: true },
-      });
-      if (!dispute) throw gqlError("Tranh chấp không tồn tại", "NOT_FOUND");
-      if (dispute.issue.clientId !== user.id && dispute.issue.developerId !== user.id) {
-        throw gqlError("Chỉ hai bên tham gia mới được phản đối", "FORBIDDEN");
-      }
-      if (
-        dispute.status !== DisputeStatus.PROPOSED ||
-        !dispute.challengeDeadline ||
-        dispute.challengeDeadline < new Date()
-      ) {
-        throw gqlError("Thời hạn phản đối đã hết hoặc chưa có đề xuất", "CHALLENGE_WINDOW_CLOSED");
-      }
-      // shortcut: one challenge per dispute, remove when the on-chain flow (BE-57) replaces this path
-      if (dispute.challengedAt) {
-        throw gqlError("Tranh chấp này đã được phản đối một lần", "CHALLENGE_ALREADY_USED");
-      }
-      return ctx.db.dispute.update({
-        where: { id: dispute.id },
-        data: {
-          status: DisputeStatus.CHALLENGED,
-          challengedById: user.id,
-          challengedAt: new Date(),
-        },
-        include: DISPUTE_INCLUDE,
-      });
-    },
-  }),
-);

@@ -2,7 +2,7 @@ import { checkpointKey, loadCheckpoint, lockCheckpoint, type IndexerConfig } fro
 import { getBlockByNumber } from "../chain/client";
 import type { ScanDeps } from "./scanner";
 import { rebuildEscrowProjection } from "./rebuild";
-import { undoDeposit, undoWork, undoResolved, undoSettlement, undoClaimed, type DepositUndo, type WorkUndo, type ResolvedUndo, type SettlementUndo, type ClaimedUndo } from "./undo";
+import { undoDeposit, undoWork, undoResolved, undoSettlement, undoClaimed, undoDispute, type DisputeUndo, type DepositUndo, type WorkUndo, type ResolvedUndo, type SettlementUndo, type ClaimedUndo } from "./undo";
 
 // Compares the hash stored at lastScannedBlock with the node's hash. On a mismatch, rewinds the
 // cursor by reorgWindow blocks and marks events whose block hash changed as non-canonical.
@@ -66,7 +66,8 @@ export async function handleReorg({ db, rpc, config }: ScanDeps): Promise<{ rewo
     const staleSet = new Set(staleIds);
     const stale = candidates.filter((event) => staleSet.has(event.id));
     if (stale.length > 0) await tx.chainEvent.updateMany({ where: { id: { in: staleIds } }, data: { canonical: false } });
-    const reversible = stale.filter((event) => event.eventName === "Claimed" || (event.eventName === "Deposited" || event.eventName === "WorkSubmitted" || event.eventName === "EscrowResolved" || event.eventName === "SettlementProposed" || event.eventName === "SettlementRevoked") && event.escrowIdHash)
+    const disputeEvents = ["DisputeRaised", "CounterpartyEvidenceSubmitted", "InitialRulingPosted", "RulingChallenged", "FinalRulingPosted"];
+    const reversible = stale.filter((event) => event.eventName === "Claimed" || (["Deposited", "WorkSubmitted", "EscrowResolved", "SettlementProposed", "SettlementRevoked", ...disputeEvents].includes(event.eventName) && event.escrowIdHash))
       .sort((a, b) => a.blockNumber === b.blockNumber ? b.txIndex - a.txIndex || b.logIndex - a.logIndex : a.blockNumber > b.blockNumber ? -1 : 1);
     for (const event of reversible) {
       // A hash may have been recorded after the event's undo snapshot was captured.
@@ -75,6 +76,10 @@ export async function handleReorg({ db, rpc, config }: ScanDeps): Promise<{ rewo
         const args = event.args as unknown as { undo?: ClaimedUndo };
         if (!args.undo) throw new Error("Cannot safely undo claim without its recorded snapshot");
         await undoClaimed(tx, event.id, args.undo, config.chainId, config.escrowAddress);
+      } else if (disputeEvents.includes(event.eventName)) {
+        const args = event.args as unknown as { undo?: DisputeUndo };
+        if (!args.undo) throw new Error("Cannot safely undo dispute without its recorded snapshot");
+        await undoDispute(tx, event.id, args.undo);
       } else if (event.eventName === "SettlementProposed" || event.eventName === "SettlementRevoked") {
         const args = event.args as unknown as { undo?: SettlementUndo };
         if (!args.undo) throw new Error("Cannot safely undo settlement without its recorded snapshot");

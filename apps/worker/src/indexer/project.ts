@@ -5,7 +5,7 @@ import {
 } from "@bloody-roar/shared/escrow";
 import { applyFoldEffects } from "../effects";
 import { notifyProjectionChanged } from "./notify";
-import { captureDepositUndo, captureWorkUndo, captureResolvedUndo, captureSettlementUndo, captureClaimedUndo } from "./undo";
+import { captureDepositUndo, captureWorkUndo, captureResolvedUndo, captureSettlementUndo, captureClaimedUndo, captureDisputeUndo } from "./undo";
 import type { RawLog } from "../chain/client";
 import type { IndexerConfig } from "./checkpoint";
 
@@ -66,7 +66,8 @@ export async function projectLog(tx: Prisma.TransactionClient, config: IndexerCo
     blockHash: log.blockHash as Hex, txHash: log.transactionHash as Hex, blockTimestamp };
   const folded = foldEscrowEvent(state, event, meta);
   const resolution = folded.effects.find((effect) => effect.kind === "ESCROW_RESOLVED");
-  const undo = event.name === "Claimed" ? await captureClaimedUndo(tx, config.chainId, config.escrowAddress, log.transactionHash, event.recipient, event.amount) : resolution ? await captureResolvedUndo(tx, resolution) : (event.name === "SettlementProposed" || event.name === "SettlementRevoked") && escrowIdHash ? await captureSettlementUndo(tx, escrowIdHash) : event.name === "Deposited" && escrowIdHash ? await captureDepositUndo(tx, escrowIdHash) :
+  const disputeEvent = ["DisputeRaised", "CounterpartyEvidenceSubmitted", "InitialRulingPosted", "RulingChallenged", "FinalRulingPosted"].includes(event.name);
+  const undo = disputeEvent && escrowIdHash ? await captureDisputeUndo(tx, escrowIdHash) : event.name === "Claimed" ? await captureClaimedUndo(tx, config.chainId, config.escrowAddress, log.transactionHash, event.recipient, event.amount) : resolution ? await captureResolvedUndo(tx, resolution) : (event.name === "SettlementProposed" || event.name === "SettlementRevoked") && escrowIdHash ? await captureSettlementUndo(tx, escrowIdHash) : event.name === "Deposited" && escrowIdHash ? await captureDepositUndo(tx, escrowIdHash) :
     event.name === "WorkSubmitted" && escrowIdHash ? await captureWorkUndo(tx, escrowIdHash, event.deliveryHash) : null;
   const args = { topics: log.topics, data: log.data, blockTimestamp: blockTimestamp.toString(), ...(undo ? { undo } : {}) };
   const row = await tx.chainEvent.upsert({

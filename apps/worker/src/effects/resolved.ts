@@ -38,11 +38,16 @@ export async function applyResolved(tx: Prisma.TransactionClient, effect: Resolv
   await tx.transactionIntent.updateMany({ where: { issueId: projection.issueId, chainId: meta.chainId, contractAddress: { equals: meta.contractAddress, mode: "insensitive" }, txHash: meta.txHash.toLowerCase(), status: { in: [IntentStatus.SUBMITTED, IntentStatus.PENDING_SAFE_HEAD] },
     method: { in: ["releaseFunds", "claimMissedDeliveryRefund", "claimReviewTimeout", "acceptSettlement", "finalizeRuling", "finalizeArbiterTimeoutSplit"] } }, data: { status: IntentStatus.CONFIRMED, confirmedByEventId: meta.chainEventId } });
   const recipients = await tx.user.findMany({ where: { walletAddress: { in: [...credits.keys()], mode: "insensitive" } }, select: { id: true, walletAddress: true } });
-  const send = async (userId: string, type: "ESCROW_RESOLVED" | "FUNDS_CLAIMABLE", body: string) => {
-    const notification = await createNotificationIdempotent(tx, { userId, type, title: type === "ESCROW_RESOLVED" ? "Ký quỹ đã kết thúc" : "Tiền đã có thể rút", body,
-      link: `/issues/${projection.issueId}`, data: { issueId: projection.issueId!, resolution: effect.resolution }, dedupeKey: `${meta.chainEventId}:${userId}:${type}` });
+  const disputeResolution = effect.resolution === "RULING" || effect.resolution === "ARBITER_TIMEOUT_SPLIT";
+  if (disputeResolution) {
+    const ruling = effect.resolution === "RULING" ? await tx.rulingRecord.findFirst({ where: { escrowIdHash: effect.escrowIdHash, decisionHash: { equals: effect.decisionHash, mode: "insensitive" } }, orderBy: { postedAt: "desc" } }) : null;
+    await tx.dispute.updateMany({ where: { issueId: projection.issueId }, data: { status: "RESOLVED", phase: "RESOLVED", finalClientBps: effect.resolution === "ARBITER_TIMEOUT_SPLIT" ? 5000 : ruling?.clientBps ?? null, resolvedAt: new Date(Number(meta.blockTimestamp) * 1000) } });
+  }
+  const send = async (userId: string, type: "ESCROW_RESOLVED" | "DISPUTE_RESOLVED" | "FUNDS_CLAIMABLE", body: string) => {
+    const notification = await createNotificationIdempotent(tx, { userId, type, title: type === "FUNDS_CLAIMABLE" ? "Tiền đã có thể rút" : "Ký quỹ đã kết thúc", body,
+      link: `/issues/${projection.issueId}`, data: { issueId: projection.issueId!, resolution: effect.resolution, chainEventId: meta.chainEventId }, dedupeKey: `${meta.chainEventId}:${userId}:${type}` });
     if (notification) await notifyNotificationCreated(tx, { userId, id: notification.id });
   };
-  for (const id of new Set([issue.clientId, issue.developerId].filter((id): id is string => !!id))) await send(id, "ESCROW_RESOLVED", `Ký quỹ cho “${issue.title}” đã được kết thúc.`);
+  for (const id of new Set([issue.clientId, issue.developerId].filter((id): id is string => !!id))) await send(id, disputeResolution ? "DISPUTE_RESOLVED" : "ESCROW_RESOLVED", `Ký quỹ cho “${issue.title}” đã được kết thúc.`);
   for (const recipient of recipients) await send(recipient.id, "FUNDS_CLAIMABLE", `Bạn có tiền có thể rút từ “${issue.title}”.`);
 }

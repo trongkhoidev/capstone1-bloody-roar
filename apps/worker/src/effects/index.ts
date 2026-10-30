@@ -8,6 +8,7 @@ import { applyFunded, type EffectMeta } from "./escrow";
 import { applyWorkSubmitted } from "./work";
 import { applyResolved } from "./resolved";
 import { applySettlement } from "./settlement";
+import { applyDispute } from "./dispute";
 import { applyClaimed } from "./claimed";
 
 export async function applyFoldEffects(
@@ -29,6 +30,13 @@ export async function applyFoldEffects(
       case "SETTLEMENT_PROPOSED":
       case "SETTLEMENT_REVOKED":
         await applySettlement(tx, effect, meta);
+        break;
+      case "DISPUTE_RAISED":
+      case "COUNTERPARTY_EVIDENCE_SUBMITTED":
+      case "INITIAL_RULING_POSTED":
+      case "RULING_CHALLENGED":
+      case "FINAL_RULING_POSTED":
+        await applyDispute(tx, effect, meta);
         break;
       case "CLAIMED":
         await applyClaimed(tx, effect, meta);

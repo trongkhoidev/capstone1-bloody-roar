@@ -80,6 +80,7 @@ export async function undoWork(tx: Prisma.TransactionClient, eventId: string, sn
 export type ResolvedUndo = {
   issue: { id: string; status: IssueStatus; outcome: import("@bloody-roar/database").EscrowResolutionKind | null; completedAt: string | null } | null;
   resolution: import("@bloody-roar/database").EscrowResolutionKind;
+  dispute?: DisputeUndo;
   settlement: { id: string; status: string; closedEventId: string | null } | null;
   credits: Array<{ address: string; amount: string }>;
   intents: Array<{ id: string; status: IntentStatus; confirmedByEventId: string | null }>;
@@ -97,7 +98,8 @@ export async function captureResolvedUndo(tx: Prisma.TransactionClient, effect: 
     if (amount > 0n) credits.set(address, (credits.get(address) ?? 0n) + amount);
   }
   return { issue: issue ? { ...issue, completedAt: issue.completedAt?.toISOString() ?? null } : null, resolution: effect.resolution, settlement,
-    credits: [...credits].map(([address, amount]) => ({ address, amount: amount.toString() })), intents };
+    credits: [...credits].map(([address, amount]) => ({ address, amount: amount.toString() })), intents,
+    ...(["RULING", "ARBITER_TIMEOUT_SPLIT"].includes(effect.resolution) ? { dispute: await captureDisputeUndo(tx, effect.escrowIdHash) } : {}) };
 }
 
 export async function undoResolved(tx: Prisma.TransactionClient, eventId: string, snapshot: ResolvedUndo, chainId: number, contractAddress: string): Promise<void> {
@@ -117,6 +119,7 @@ export async function undoResolved(tx: Prisma.TransactionClient, eventId: string
   }
   for (const intent of snapshot.intents) await tx.transactionIntent.updateMany({ where: { id: intent.id, confirmedByEventId: eventId }, data: { status: intent.status, confirmedByEventId: intent.confirmedByEventId } });
   await tx.notification.deleteMany({ where: { dedupeKey: { startsWith: `${eventId}:` } } });
+  if (snapshot.dispute) await undoDispute(tx, eventId, snapshot.dispute);
 }
 
 export type SettlementUndo = {
@@ -158,4 +161,52 @@ export async function undoClaimed(tx: Prisma.TransactionClient, eventId: string,
   await tx.claimableBalance.upsert({ where: { chainId_contractAddress_address: key }, create: { ...key, amountRaw: snapshot.amount }, update: { amountRaw: { increment: snapshot.amount } } });
   for (const intent of snapshot.intents) await tx.transactionIntent.updateMany({ where: { id: intent.id, confirmedByEventId: eventId }, data: { status: intent.status, confirmedByEventId: intent.confirmedByEventId } });
   await tx.notification.deleteMany({ where: { dedupeKey: { startsWith: `${eventId}:` } } });
+}
+
+const disputeSelect = {
+  id: true, status: true, reason: true, phase: true, raisedById: true, raisedAt: true,
+  evidenceManifestHash: true, counterpartyEvidenceHash: true, evidenceResponseDeadline: true, arbiterTimeoutAt: true,
+  proposedClientBps: true, initialDecisionHash: true, proposedAt: true, challengeDeadline: true,
+  challengedAt: true, challengedById: true, finalClientBps: true, finalDecisionHash: true, finalRulingAt: true, noticeDeadline: true, resolvedAt: true,
+} satisfies Prisma.DisputeSelect;
+type DisputeSnapshot = Prisma.DisputeGetPayload<{ select: typeof disputeSelect }>;
+export type DisputeUndo = {
+  issue: { id: string; status: IssueStatus } | null;
+  dispute: DisputeSnapshot | null;
+  manifests: Array<{ id: string; disputeId: string | null; onChainEventId: string | null }>;
+  intents: Array<{ id: string; status: IntentStatus; confirmedByEventId: string | null }>;
+};
+
+export async function captureDisputeUndo(tx: Prisma.TransactionClient, escrowIdHash: string): Promise<DisputeUndo> {
+  const projection = await tx.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash } });
+  if (!projection.issueId) return { issue: null, dispute: null, manifests: [], intents: [] };
+  await tx.$queryRaw`SELECT id FROM issues WHERE id = ${projection.issueId} FOR UPDATE`;
+  const [issue, dispute, manifests, intents] = await Promise.all([
+    tx.issue.findUniqueOrThrow({ where: { id: projection.issueId }, select: { id: true, status: true } }),
+    tx.dispute.findUnique({ where: { issueId: projection.issueId }, select: disputeSelect }),
+    tx.evidenceManifest.findMany({ where: { issueId: projection.issueId }, select: { id: true, disputeId: true, onChainEventId: true } }),
+    tx.transactionIntent.findMany({ where: { issueId: projection.issueId, chainId: projection.chainId, contractAddress: { equals: projection.contractAddress, mode: "insensitive" } }, select: { id: true, status: true, confirmedByEventId: true } }),
+  ]);
+  // ChainEvent.args is JSON; dates are restored by Prisma from their ISO representation.
+  return JSON.parse(JSON.stringify({ issue, dispute, manifests, intents })) as DisputeUndo;
+}
+
+export async function undoDispute(tx: Prisma.TransactionClient, eventId: string, snapshot: DisputeUndo): Promise<void> {
+  if (!snapshot.issue) return;
+  await tx.$queryRaw`SELECT id FROM issues WHERE id = ${snapshot.issue.id} FOR UPDATE`;
+  const issue = await tx.issue.findUniqueOrThrow({ where: { id: snapshot.issue.id }, select: { status: true } });
+  if (issue.status !== snapshot.issue.status && issue.status !== IssueStatus.DISPUTED)
+    throw new Error("Cannot safely undo dispute: issue changed since projection");
+  for (const manifest of snapshot.manifests) await tx.evidenceManifest.updateMany({ where: { id: manifest.id, onChainEventId: eventId }, data: { disputeId: manifest.disputeId, onChainEventId: manifest.onChainEventId } });
+  if (snapshot.dispute) {
+    const { id, ...data } = snapshot.dispute;
+    await tx.dispute.update({ where: { id }, data });
+  } else {
+    await tx.dispute.deleteMany({ where: { issueId: snapshot.issue.id } });
+  }
+  await tx.issue.update({ where: { id: snapshot.issue.id }, data: { status: snapshot.issue.status } });
+  await tx.rulingRecord.deleteMany({ where: { chainEventId: eventId } });
+  await tx.reconciliationFinding.deleteMany({ where: { kind: "UNKNOWN_DECISION_HASH", actual: { path: ["chainEventId"], equals: eventId } } });
+  for (const intent of snapshot.intents) await tx.transactionIntent.updateMany({ where: { id: intent.id, confirmedByEventId: eventId }, data: { status: intent.status, confirmedByEventId: intent.confirmedByEventId } });
+  await tx.notification.deleteMany({ where: { data: { path: ["chainEventId"], equals: eventId } } });
 }

@@ -52,7 +52,7 @@ for (const kind of kinds) test(`resolves ${kind} using the amounts in the event`
     expect(BigInt(current ?? "0") - BigInt(prior)).toBe(amount);
     expect(await prisma.notification.count({ where: { userId: user.id, type: "FUNDS_CLAIMABLE", dedupeKey: { startsWith: meta.chainEventId } } })).toBe(amount > 0n ? 1 : 0);
   }
-  expect(await prisma.notification.count({ where: { type: "ESCROW_RESOLVED", dedupeKey: { startsWith: meta.chainEventId } } })).toBe(2);
+  expect(await prisma.notification.count({ where: { type: kind === "RULING" || kind === "ARBITER_TIMEOUT_SPLIT" ? "DISPUTE_RESOLVED" : "ESCROW_RESOLVED", dedupeKey: { startsWith: meta.chainEventId } } })).toBe(2);
   await prisma.$transaction((tx) => undoResolved(tx, meta.chainEventId, undo, chainId, contractAddress));
   expect(await prisma.issue.findUniqueOrThrow({ where: { id: issue.id } })).toMatchObject({ status: "IN_PROGRESS", outcome: null });
   const restored = await prisma.claimableBalance.findMany({ where: { chainId, contractAddress } });

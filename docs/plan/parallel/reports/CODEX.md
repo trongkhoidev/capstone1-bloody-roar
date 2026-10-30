@@ -1,4 +1,4 @@
-ĐANG DỞ: P1-16f. Bước tiếp theo: viết test effect dispute, snapshot/undo và reorg; triển khai worker theo event chain.
+ĐANG DỞ: P1-17 / AI-11. Bước tiếp theo: kiểm tra analyzeDispute và bổ sung kiểm admin, thời gian timeout, bps và AILog.
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -36,7 +36,7 @@
 | P1-13 | xong | `07397ca`; test theo LOCAL_TEST_MATRIX.md |
 | P1-14 | xong | `1fce246`; test theo LOCAL_TEST_MATRIX.md |
 | P1-15 | xong | `9c0da1e`; test theo LOCAL_TEST_MATRIX.md |
-| P1-16 | dở | Migration, evidence và prepare raise/counter đã test; ruling và worker còn lại |
+| P1-16 | dở | API và worker test pass; E15–E17 chờ harness |
 | P1-17 | dở | `2c0e108`: backend xong; frontend cũ còn tham chiếu |
 | P1-18 | chưa làm | Chưa triển khai |
 | P1-19 | chưa làm | Chưa triển khai |
@@ -68,6 +68,10 @@
 ## Bị chặn
 
 - Z-6: `bun run build` lỗi `RangeError: Division by zero` trong `@vercel/nft`. Đã thử build trong worktree, thêm outputFileTracingRoot, rồi loại `.uploads` và `tests` khỏi tracing; cả ba vẫn lỗi. Typecheck và lint pass. Theo FINISH_PLAN, không chặn gate và tiếp tục phase khác.
+
+## P1-16f — effect dispute và reorg
+
+- Worker tạo/cập nhật dispute, gắn manifest, ghi ruling/unknown decision, xác nhận intent và gửi notification từ event chain; resolution tranh chấp gửi DISPUTE_RESOLVED. Snapshot/undo tích hợp reorg, test vòng event và scanner/reorg pass; worker 70/70, typecheck và lint pass. E15–E17 chờ harness.
 
 ## P1-16e — challenge và finalize
 

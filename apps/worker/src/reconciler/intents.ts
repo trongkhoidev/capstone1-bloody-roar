@@ -6,6 +6,7 @@ import { checkpointKey, lockCheckpoint, type IndexerConfig } from "../indexer/ch
 
 const eventForMethod: Record<string, string> = {
   deposit: "Deposited", submitWork: "WorkSubmitted", proposeSettlement: "SettlementProposed",
+  raiseDispute: "DisputeRaised", submitCounterpartyEvidence: "CounterpartyEvidenceSubmitted", challengeRuling: "RulingChallenged",
   revokeSettlement: "SettlementRevoked", claim: "Claimed", releaseFunds: "EscrowResolved",
   claimMissedDeliveryRefund: "EscrowResolved", claimReviewTimeout: "EscrowResolved",
   acceptSettlement: "EscrowResolved", finalizeRuling: "EscrowResolved", finalizeArbiterTimeoutSplit: "EscrowResolved",

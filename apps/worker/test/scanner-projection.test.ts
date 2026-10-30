@@ -93,6 +93,25 @@ test("scanner orders deposit and delivery, folds state, applies effects and is i
   await scanOnce({ db: prisma, rpc: fakeRpc(chain), config });
   expect((await prisma.projectionCheckpoint.findUniqueOrThrow({ where: { chainId_contractAddress: { chainId: config.chainId, contractAddress: config.escrowAddress } } })).replayStatus).toBe("IDLE");
 
+  // A dispute event must project and undo through the real scanner/reorg path.
+  chain.safe = 101n; chain.blockHash.set(101n, "0xdispute101");
+  const dispute = rawLog({ address: config.escrowAddress, block: 101, blockHash: "0xdispute101", tx: "0xdispute" });
+  dispute.topics = [...encodeEventTopics({ abi: ESCROW_ABI, eventName: "DisputeRaised", args: { escrowId: escrowKey, raisedBy: clientAddress } })];
+  dispute.data = encodeAbiParameters([{ type: "bytes32" }], [hash()]);
+  chain.logs = [dispute];
+  await scanOnce({ db: prisma, rpc: fakeRpc(chain), config });
+  expect((await prisma.dispute.findUniqueOrThrow({ where: { issueId } })).status).toBe("OPEN");
+  expect((await prisma.issue.findUniqueOrThrow({ where: { id: issueId } })).status).toBe("DISPUTED");
+  expect((await prisma.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash } })).phase).toBe("DISPUTED");
+  chain.blockHash.set(101n, "0xreplacement101");
+  await handleReorg({ db: prisma, rpc: fakeRpc(chain), config });
+  expect(await prisma.dispute.findUnique({ where: { issueId } })).toBeNull();
+  expect((await prisma.issue.findUniqueOrThrow({ where: { id: issueId } })).status).toBe("IN_PROGRESS");
+  expect((await prisma.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash } })).phase).toBe("FUNDED");
+  expect((await prisma.chainEvent.findFirstOrThrow({ where: { txHash: "0xdispute", chainId: config.chainId } })).canonical).toBe(false);
+  chain.safe = 100n; chain.logs = [replacement];
+  await scanOnce({ db: prisma, rpc: fakeRpc(chain), config });
+
   // Do not overwrite an unrelated off-chain assignment during reorg.
   await prisma.issue.update({ where: { id: issueId }, data: { status: "AWAITING_FUNDING", developerId: clientId } });
   chain.blockHash.set(100n, "0xnewer100");

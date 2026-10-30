@@ -1,4 +1,11 @@
-ĐANG DỞ: BE-45/BE-46 / E12-E13. Bước tiếp theo: sửa pre-check refund/review timeout theo timestamp block, kiểm permissionless và chạy test Hardhat bằng evm_increaseTime.
+ĐANG DỞ: BE-35 / race intent. Bước tiếp theo: xử lý recordTransactionSubmitted đến sau khi event đã fold; xác nhận chỉ khi event canonical khớp, đồng bộ reorg và bổ sung test race trước khi tiếp tục gate phase C.
+
+## BE-45/BE-46 — E12/E13
+
+- `6a44ad2`: refund và review timeout kiểm timestamp block, chain/contract; giữ quyền gọi permissionless. `bun run --cwd apps/web test -- src/test/escrow-release.test.ts`: pass 18/18, gồm biên deadline.
+- `NODE_ENV=test bun run tests/e2e/scanner-deposit.ts` với bloody_codex_test và Hardhat pass E12/E13: trước hạn từ chối, tăng chain time, outsider resolve refund/timeout, client claim đủ 100 USDC; E9/E10/E11/E14/E22/E23/E24 cũng pass. Fixture tạo reservation trực tiếp, chưa phải harness E1–E31.
+- Gate typecheck, lint, web/worker/database/contracts pass 489/67/3/35; lint bốn cảnh báo any cũ. Gate phase C và gate cuối chưa hoàn tất.
+
 
 ## BE-48 — claim và reorg
 

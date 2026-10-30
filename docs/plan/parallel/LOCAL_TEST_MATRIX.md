@@ -51,3 +51,4 @@
 | P1-37 / D5 | apps/web/src/test/issue-pagination-files.db.test.ts; apps/web/src/test/graphql-schema.test.ts | bun run --cwd apps/web test -- src/test/issue-pagination-files.db.test.ts | Pass DB và schema; `dde1bc7` |
 | D4 | apps/web/src/test/profile-input.test.ts | bun run --cwd apps/web test -- src/test/profile-input.test.ts | Pass 4/4; đã có validation/unique |
 | BE-48 / E10 / E11 | apps/worker/test/effects-claimed.test.ts; apps/worker/test/reorg.test.ts; tests/e2e/scanner-deposit.ts | bun run --cwd apps/worker test -- test/effects-claimed.test.ts test/reorg.test.ts; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass claim/reorg Hardhat; fixture reservation; `3c872b3` |
+| BE-45/BE-46 / E12/E13 | apps/web/src/test/escrow-release.test.ts; tests/e2e/scanner-deposit.ts | bun run --cwd apps/web test -- src/test/escrow-release.test.ts; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass 18/18 và Hardhat; `6a44ad2` |

@@ -297,3 +297,16 @@ E19 kiểm `escrow:invalidate` sau `submitWork`, không sau deposit. Quyền joi
 - `createIssue` và `applyToIssue`: ma trận cũ ghi `CLIENT_ROLE_REQUIRED` và `DEVELOPER_ROLE_REQUIRED`. Code đã bỏ chặn theo role (QĐ-21, BE-09), chỉ chặn ADMIN (`ADMIN_NOT_ALLOWED`). Đã sửa ma trận theo code. Chủ bài không ứng tuyển bài của mình (`SELF_APPLICATION`).
 - Mutation escrow (`prepareProposeSettlement`, `prepareAcceptSettlement`, `prepareRevokeSettlement`, `prepareChallengeRuling`, `prepareSubmitCounterpartyEvidence`, `prepareReleaseFunds`): resolver tải projection trước, không có escrow thì trả `NOT_FOUND` trước khi kiểm quyền. Ma trận ghi `FORBIDDEN` là đúng khi đã có escrow. E28 chạy trên issue chưa có escrow nên kiểm `NOT_FOUND`. Chưa có test nào kiểm `FORBIDDEN` ở trạng thái có escrow; ghi là khoảng trống.
 - E28 phủ mọi dòng trong `AUTHZ_MATRIX.md` và kiểm 10 mutation đã gỡ đều vắng mặt khỏi schema. Mười ba mutation trong schema chưa có dòng ma trận và chưa có case trong E28: `attachIssueFile`, `cancelReservation`, `createTestCase`, `deleteMessage`, `deleteTestCase`, `editMessage`, `prepareEscrowDeposit`, `prepareSubmitWork`, `recordIssueView`, `recordTransactionSubmitted`, `requestChanges`, `setUserRole`, `submitFundingIntent`. Thêm dòng ma trận và case cho chúng là việc của lần sau.
+
+## BỔ SUNG FE-2 — làm mới trang issue không dùng react-query
+
+Trang chi tiết issue giữ dữ liệu bằng `useState` và hàm `load()` có sẵn, chưa chuyển sang react-query. Hai cơ chế làm mới giữ nguyên theo đặc tả: `escrow:invalidate` gọi `load()`, và sau mỗi giao dịch thì gọi lại mỗi 4 giây, tối đa 30 lần. Lý do: chuyển cả trang sang react-query đổi luồng state của một trang lớn, vượt phạm vi "không đổi hành vi" của C5. Socket mở bằng `io()` riêng trong trang, giống cách `chat-room.tsx` đang làm.
+
+## BỔ SUNG S-2 — tên hằng số thời gian theo giây
+
+`packages/shared/src/constants/index.ts` có `HOUR_SECONDS = 3_600` và `DAY_SECONDS = 86_400` (số thường). `escrow/fold.ts` lấy bản bigint bằng `BigInt(DAY_SECONDS)`. Hằng `*_MS` giữ nguyên cho phía web và worker, vì chúng là mili-giây.
+
+## BỔ SUNG S-3 — import type cho thông báo giữ nguyên
+
+`packages/database/src/notifications.ts` đã import type từ `@prisma/client`, đúng điều đặc tả cho phép. Không có import vòng nào cần tránh, nên không đổi file.
+

@@ -1,7 +1,6 @@
 import { fundingIntentTypedData, type Hex } from "@bloody-roar/shared/escrow";
-import { ensureActiveChain } from "./client";
-
-type Ethereum = { request(args: { method: string; params?: unknown[] }): Promise<unknown> };
+import type { TypedDataDomain } from "ethers";
+import { walletSigner } from "./send-prepared";
 
 export type FundingReservation = {
   chainId: number;
@@ -15,11 +14,7 @@ export type FundingReservation = {
 
 // Signs the EIP-712 funding intent for a reservation. Same typed data the local harness signs.
 export async function signFundingIntent(reservation: FundingReservation, client: string, developer: string) {
-  await ensureActiveChain();
-  const ethereum = (globalThis as unknown as { ethereum?: Ethereum }).ethereum;
-  if (!ethereum) throw new Error("Ví Web3 chưa sẵn sàng.");
-  const [from] = (await ethereum.request({ method: "eth_requestAccounts" })) as string[];
-
+  const signer = await walletSigner();
   const nonceBytes = crypto.getRandomValues(new Uint8Array(16));
   const nonce = BigInt(`0x${Array.from(nonceBytes, (byte) => byte.toString(16).padStart(2, "0")).join("")}`);
   const expiry = new Date(Date.now() + 10 * 60_000);
@@ -37,13 +32,8 @@ export async function signFundingIntent(reservation: FundingReservation, client:
     nonce,
   });
 
-  // Wallets expect the EIP712Domain type in the payload; bigints travel as decimal strings.
-  const payload = JSON.stringify(
-    { ...typed, types: { EIP712Domain: [
-      { name: "name", type: "string" }, { name: "version", type: "string" }, { name: "chainId", type: "uint256" }, { name: "verifyingContract", type: "address" },
-    ], ...typed.types } },
-    (_key, value) => (typeof value === "bigint" ? value.toString() : value),
-  );
-  const signature = (await ethereum.request({ method: "eth_signTypedData_v4", params: [from, payload] })) as string;
+  // ethers adds EIP712Domain itself, so types holds only FundingIntent; bigints go as decimal strings.
+  const message = Object.fromEntries(Object.entries(typed.message).map(([key, value]) => [key, typeof value === "bigint" ? value.toString() : value]));
+  const signature = await signer._signTypedData(typed.domain as TypedDataDomain, { FundingIntent: [...typed.types.FundingIntent] }, message);
   return { signature, nonce: nonce.toString(), intentExpiry: expiry.toISOString() };
 }

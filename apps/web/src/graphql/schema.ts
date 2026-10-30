@@ -28,6 +28,7 @@ import "./modules/submission/draft.module";
 import "./modules/ai/ai.module";
 import "./modules/escrow/escrow.module";
 import "./modules/escrow/reservation.module";
+import "./modules/escrow/select.module";
 import "./modules/escrow/intent.module";
 import "./modules/escrow/release.module";
 import "./modules/escrow/settlement.module";

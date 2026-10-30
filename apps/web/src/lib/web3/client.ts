@@ -164,15 +164,15 @@ export async function getInjectedChainId(walletId?: string): Promise<number> {
  * Move an injected wallet to the network used by this product. Wallets that
  * do not yet know Base Sepolia receive a standard EIP-3085 add-chain request.
  */
-export async function ensureBaseSepolia(walletId?: string): Promise<void> {
+export async function ensureChain(chain: ChainConfig, walletId?: string): Promise<void> {
   const ethereum = getInjectedEthereum(walletId);
   if (!ethereum) throw new Error("Ví Web3 chưa sẵn sàng.");
-  if (await getInjectedChainId(walletId) === BASE_SEPOLIA_CHAIN.chainId) return;
+  if (await getInjectedChainId(walletId) === chain.chainId) return;
 
   try {
     await ethereum.request({
       method: "wallet_switchEthereumChain",
-      params: [{ chainId: BASE_SEPOLIA_CHAIN.chainHex }],
+      params: [{ chainId: chain.chainHex }],
     });
   } catch (error: unknown) {
     const code = typeof error === "object" && error !== null ? (error as { code?: number }).code : undefined;
@@ -180,23 +180,29 @@ export async function ensureBaseSepolia(walletId?: string): Promise<void> {
     await ethereum.request({
       method: "wallet_addEthereumChain",
       params: [{
-        chainId: BASE_SEPOLIA_CHAIN.chainHex,
-        chainName: BASE_SEPOLIA_CHAIN.name,
-        rpcUrls: [BASE_SEPOLIA_CHAIN.rpcUrl],
-        blockExplorerUrls: [BASE_SEPOLIA_CHAIN.blockExplorer],
-        nativeCurrency: BASE_SEPOLIA_CHAIN.nativeCurrency,
+        chainId: chain.chainHex,
+        chainName: chain.name,
+        rpcUrls: [chain.rpcUrl],
+        blockExplorerUrls: [chain.blockExplorer],
+        nativeCurrency: chain.nativeCurrency,
       }],
     });
     await ethereum.request({
       method: "wallet_switchEthereumChain",
-      params: [{ chainId: BASE_SEPOLIA_CHAIN.chainHex }],
+      params: [{ chainId: chain.chainHex }],
     });
   }
 
-  if (await getInjectedChainId(walletId) !== BASE_SEPOLIA_CHAIN.chainId) {
-    throw new Error("Vui lòng chuyển ví sang Base Sepolia để tiếp tục.");
+  if (await getInjectedChainId(walletId) !== chain.chainId) {
+    throw new Error(`Vui lòng chuyển ví sang ${chain.name} để tiếp tục.`);
   }
 }
+
+// Chain the app talks to: local Hardhat when NEXT_PUBLIC_CHAIN_ID is 31337, otherwise Base Sepolia.
+export const ACTIVE_CHAIN: ChainConfig = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 84532) === 31337 ? LOCALHOST_CHAIN : BASE_SEPOLIA_CHAIN;
+
+export const ensureBaseSepolia = (walletId?: string) => ensureChain(BASE_SEPOLIA_CHAIN, walletId);
+export const ensureActiveChain = (walletId?: string) => ensureChain(ACTIVE_CHAIN, walletId);
 
 
 /**

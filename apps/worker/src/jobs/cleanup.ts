@@ -1,8 +1,8 @@
+import { DAY_MS } from "@bloody-roar/shared/constants";
 import { unlink } from "node:fs/promises";
 import path from "node:path";
 import type { Job, JobContext } from "../runtime/scheduler";
 
-const DAY_MS = 86_400_000;
 
 // Housekeeping (P1-35): drop expired or long-revoked sessions, abandoned uploads, and old webhook deliveries.
 async function runCleanup({ db, now }: JobContext): Promise<void> {

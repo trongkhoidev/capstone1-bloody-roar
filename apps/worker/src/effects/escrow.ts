@@ -2,6 +2,7 @@
 // Effect escrow của A4: FUNDED (BE-36, BE-66c). Chạy trong cùng transaction với ChainEvent.
 // Thông báo dùng dedupeKey = {chainEventId}:{userId}:{type} (BE-62), nên replay không gửi trùng.
 
+import { DAY_MS } from "@bloody-roar/shared/constants";
 import {
   ApplicationStatus,
   createNotificationIdempotent,
@@ -26,7 +27,6 @@ export type EffectMeta = EventMeta & { chainEventId: string; escrowIdHash: Hex }
 type FundedEffect = Extract<FoldEffect, { kind: "FUNDED" }>;
 type Reservation = FundingReservation;
 
-const DAY_MS = 86_400_000;
 
 // Thời gian on-chain là giây unix (uint256)
 const fromUnix = (seconds: bigint) => new Date(Number(seconds) * 1000);

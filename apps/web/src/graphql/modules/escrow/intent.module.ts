@@ -2,6 +2,7 @@
 // Chữ ký ký quỹ (BE-32) và trạng thái giao dịch (BE-35). Không đặt CONFIRMED: chỉ applier làm,
 // sau khi event deposit đã được fold (xem apps/worker/src/effects/escrow.ts).
 
+import { MINUTE_MS } from "@bloody-roar/shared/constants";
 import { z } from "zod";
 import { IntentStatus, ReservationStatus } from "@bloody-roar/database";
 import {
@@ -21,7 +22,6 @@ import { PreparedCallRef } from "./release.module";
 import { createPreparedCall, escrowTarget } from "../../../lib/escrow/prepare";
 import { readFundingState } from "../../../lib/escrow/funding";
 
-const MINUTE_MS = 60_000;
 
 const IntentStatusEnum = builder.enumType(IntentStatus, { name: "IntentStatus" });
 

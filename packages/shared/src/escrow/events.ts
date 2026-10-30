@@ -1,5 +1,6 @@
 // packages/shared/src/escrow/events.ts
 // Decode log của contract thành DecodedEscrowEvent. escrowId là indexed string nên log chỉ có keccak256 của nó.
+import { MAX_BPS } from "../constants/index";
 import { decodeEventLog } from "viem";
 import { ESCROW_ABI } from "./abi";
 import { ESCROW_RESOLUTION_KINDS, type DecodedEscrowEvent, type Hex } from "./types";
@@ -13,7 +14,6 @@ export type RawLog = {
   data: Hex;
 };
 
-const MAX_BPS = 10_000;
 
 function bps(value: unknown): number {
   const n = Number(value);

@@ -9,16 +9,30 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AuthRequiredPanel } from "@/components/auth/auth-required-panel";
 import { useUiPreferences } from "@/lib/ui-preferences";
+import { sendPreparedCalls, type PreparedCall } from "@/lib/web3/send-prepared";
+
+const CLAIMABLE_QUERY = `query MyClaimable { myClaimable { chainId contractAddress address amountRaw } }`;
+const PREPARE_CLAIM = `mutation PrepareClaim($recipient: String!) { prepareClaim(recipient: $recipient) { intentId method contractAddress data value } }`;
+const RECORD_TX = `mutation RecordTx($id: ID!, $hash: String!) { recordTransactionSubmitted(intentId: $id, txHash: $hash) { id } }`;
+
+// Escrow balances use six decimal places (USDC raw units).
+const formatRaw = (raw: string) => (Number(raw) / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 6 });
 
 const DASHBOARD_QUERY = `query Dashboard {
   userStats { postedTasks workingTasks completedTasks applications completedPayouts }
-  myIssues { id title status category bountyAmount createdAt updatedAt expiresAt developerId clientId token { symbol } }
-  myApplications { id status createdAt issue { id title status bountyAmount token { symbol } client { name } } }
+  myIssues { id title status category bountyAmount { formatted } createdAt updatedAt expiresAt developerId clientId token { symbol } }
+  myApplications { id status createdAt issue { id title status bountyAmount { formatted } token { symbol } client { name } } }
 }`;
 
 type DashboardTask = { id: string; title: string; status: string; category: string; bountyAmount: number; createdAt: string; updatedAt: string; expiresAt?: string | null; developerId?: string | null; clientId: string; token: { symbol: string } };
 type DashboardApplication = { id: string; status: string; createdAt: string; issue: { id: string; title: string; status: string; bountyAmount: number; token: { symbol: string }; client: { name?: string | null } } };
 type DashboardData = { userStats: { postedTasks: number; workingTasks: number; completedTasks: number; applications: number; completedPayouts: number }; myIssues: DashboardTask[]; myApplications: DashboardApplication[] };
+// The API returns bounty amounts as TokenAmount objects; the view works with plain numbers.
+type DashboardRaw = {
+  userStats: DashboardData["userStats"];
+  myIssues: Array<Omit<DashboardTask, "bountyAmount"> & { bountyAmount: { formatted: string } }>;
+  myApplications: Array<Omit<DashboardApplication, "issue"> & { issue: Omit<DashboardApplication["issue"], "bountyAmount"> & { bountyAmount: { formatted: string } } }>;
+};
 type Tab = "all" | "posted" | "working" | "applications";
 
 const STATUS_LABELS: Record<string, string> = { OPEN: "Open", IN_PROGRESS: "In progress", COMPLETED: "Completed", CANCELLED: "Cancelled", DISPUTED: "Disputed", PENDING: "Pending", ACCEPTED: "Accepted", REJECTED: "Not selected", WITHDRAWN: "Withdrawn" };
@@ -32,12 +46,43 @@ export function DashboardView() {
   const [tab, setTab] = useState<Tab>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [claimable, setClaimable] = useState<string>("0");
+  const [claiming, setClaiming] = useState(false);
+  const [claimNotice, setClaimNotice] = useState<string | null>(null);
+
+  const loadClaimable = () => graphqlRequest<{ myClaimable: Array<{ amountRaw: string }> }>(CLAIMABLE_QUERY)
+    .then((result) => setClaimable(result.myClaimable.reduce((sum, row) => sum + BigInt(row.amountRaw), 0n).toString()))
+    .catch(() => undefined);
+
+  useEffect(() => {
+    if (user) void loadClaimable();
+  }, [user]);
+
+  // Withdraws the whole claimable balance to the connected wallet.
+  const claimFunds = async () => {
+    if (!user?.walletAddress) return;
+    setClaiming(true); setError(null); setClaimNotice(null);
+    try {
+      const prepared = await graphqlRequest<{ prepareClaim: PreparedCall }>(PREPARE_CLAIM, { recipient: user.walletAddress });
+      await sendPreparedCalls([prepared.prepareClaim], (intentId, txHash) => graphqlRequest(RECORD_TX, { id: intentId, hash: txHash }).then(() => undefined));
+      setClaimNotice("Payout withdrawn to your wallet.");
+      await loadClaimable();
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not withdraw funds."); }
+    finally { setClaiming(false); }
+  };
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
     let active = true;
-    void graphqlRequest<DashboardData>(DASHBOARD_QUERY)
-      .then((result) => { if (active) setData(result); })
+    void graphqlRequest<DashboardRaw>(DASHBOARD_QUERY)
+      .then((result) => {
+        if (!active) return;
+        setData({
+          userStats: result.userStats,
+          myIssues: result.myIssues.map((task) => ({ ...task, bountyAmount: Number(task.bountyAmount.formatted) })),
+          myApplications: result.myApplications.map((application) => ({ ...application, issue: { ...application.issue, bountyAmount: Number(application.issue.bountyAmount.formatted) } })),
+        });
+      })
       .catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : "Could not load your dashboard."); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -55,6 +100,13 @@ export function DashboardView() {
   return (
     <div className={`br min-h-screen ${theme === "dark" ? "dark" : ""}`}>
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        {BigInt(claimable) > 0n && (
+          <section className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[hsl(var(--border))] p-4">
+            <p className="text-sm">Available to withdraw: <strong>{formatRaw(claimable)} USDC</strong></p>
+            <Button className="btn btn-p" disabled={claiming} onClick={() => void claimFunds()}>Rút tiền</Button>
+            {claimNotice && <p role="status" className="w-full text-xs text-[hsl(var(--success))]">{claimNotice}</p>}
+          </section>
+        )}
         <div className="flex flex-wrap items-end justify-between gap-4 animate-fade-in">
           <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">Workspace</p><h1 className="mt-1 font-outfit text-3xl font-bold text-[var(--ink)]">Dashboard</h1><p className="mt-1 text-sm text-[var(--ink-3)]">Track the work you posted and the tasks you applied for.</p></div>
           <Button asChild className="btn btn-p"><Link href="/issues/create"><Plus className="mr-2 h-4 w-4" />Post a bounty</Link></Button>

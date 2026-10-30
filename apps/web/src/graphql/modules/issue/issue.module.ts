@@ -4,6 +4,7 @@
 // - issue(id): detail (client + token + applicationCount)
 // - createIssue(input): post a new bounty (auth required)
 
+import { DAY_MS } from "@bloody-roar/shared/constants";
 import { guardMessage } from "../../../ai/guard/service";
 import {
   builder,
@@ -36,7 +37,6 @@ import {
 
 // Ngân sách lưu ở numeric(20,6), nên input chỉ nhận tối đa 6 chữ số thập phân để không bị làm tròn
 const BOUNTY_TEXT = /^\d+(\.\d{1,6})?$/;
-const DAY_MS = 86_400_000;
 
 function issueBountyRaw(issue: { bountyAmount: { toFixed(): string }; token: { decimals: number } }) {
   return parseTokenAmountInput(issue.bountyAmount.toFixed(), issue.token);

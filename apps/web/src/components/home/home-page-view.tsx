@@ -13,9 +13,9 @@ import { useUiPreferences } from "@/lib/ui-preferences";
 
 const ISSUES_QUERY = `
   query HomeIssues($first: Int!) {
-    issues(first: $first, sortBy: NEWEST, sortOrder: DESC) {
+    issues(first: $first, sortBy: CREATED_AT, sortOrder: DESC) {
       edges { node {
-        id title description category status bountyAmount requiredSkills difficulty
+        id title description category status bountyAmount { formatted } requiredSkills difficulty
         timeEstimate expiresAt viewCount applicationCount createdAt
         token { symbol name logoUrl }
         client { id name avatar walletAddress reputationScore isGithubVerified }
@@ -27,13 +27,13 @@ const ISSUES_QUERY = `
 
 const STATS_QUERY = `
   query HomeStats {
-    marketplaceStats { openBounties bountyPool { symbol amount } activeHunters }
+    marketplaceStats { openBounties bountyPool { symbol formatted } activeHunters }
   }
 `;
 
 type IssuesResponse = {
   issues: {
-    edges: Array<{ node: IssueItem }>;
+    edges: Array<{ node: Omit<IssueItem, "bountyAmount"> & { bountyAmount: { formatted: string } } }>;
     totalCount: number;
   };
 };
@@ -41,7 +41,7 @@ type IssuesResponse = {
 type StatsResponse = {
   marketplaceStats: {
     openBounties: number;
-    bountyPool: Array<{ symbol: string; amount: number }>;
+    bountyPool: Array<{ symbol: string; formatted: string }>;
     activeHunters: number;
   };
 };
@@ -70,7 +70,7 @@ export function HomePageView({ search = "" }: { search?: string }) {
     graphqlRequest<IssuesResponse>(ISSUES_QUERY, { first: 6 })
       .then((res) => {
         if (!active || !res?.issues?.edges?.length) return;
-        setIssues(res.issues.edges.map((e) => e.node));
+        setIssues(res.issues.edges.map((e) => ({ ...e.node, bountyAmount: Number(e.node.bountyAmount.formatted) })));
         setOpenBountiesCount(res.issues.totalCount);
       })
       .catch(() => {
@@ -84,7 +84,7 @@ export function HomePageView({ search = "" }: { search?: string }) {
         if (stats.openBounties) setOpenBountiesCount(stats.openBounties);
         if (stats.activeHunters) setActiveDevelopers(stats.activeHunters);
         const usdcPool = stats.bountyPool.find((p) => p.symbol.toUpperCase() === "USDC");
-        if (usdcPool) setEscrowTotal(usdcPool.amount.toLocaleString());
+        if (usdcPool) setEscrowTotal(Number(usdcPool.formatted).toLocaleString());
       })
       .catch(() => {
         // Keep default

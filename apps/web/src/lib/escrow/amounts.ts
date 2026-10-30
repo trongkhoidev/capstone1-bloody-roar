@@ -1,7 +1,7 @@
+import { MAX_BPS } from "@bloody-roar/shared/constants";
 import { utils } from "ethers";
 import type { BigNumber } from "ethers";
 
-const MAX_BPS = 10_000;
 
 export function decimalAmountToRaw(value: string, decimals: number): BigNumber {
   if (!Number.isInteger(decimals) || decimals < 0 || decimals > 255) {

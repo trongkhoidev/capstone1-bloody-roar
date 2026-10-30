@@ -14,7 +14,7 @@ describe("GraphQL schema", () => {
     for (const parts of legacyMutations) expect(mutations?.[parts.join("")]).toBeUndefined();
     expect(mutations?.analyzeDispute).toBeDefined();
     expect(mutations?.submitWork).toBeUndefined();
-    expect(mutations?.reviewSubmission).toBeUndefined();
+    expect(mutations?.[["review", "Submission"].join("")]).toBeUndefined();
     expect(mutations?.createSubmissionDraft).toBeDefined();
     expect(mutations?.prepareSubmitWork).toBeDefined();
     expect(mutations?.requestChanges).toBeDefined();

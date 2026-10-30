@@ -1,10 +1,10 @@
 import { createNotificationIdempotent, type EscrowPhase } from "@bloody-roar/database";
 import { notifyNotificationCreated } from "../indexer/notify";
 import type { Job, JobContext } from "../runtime/scheduler";
+import { DAY_MS, HOUR_MS } from "@bloody-roar/shared/constants";
 
 // Contract timers (QĐ-03). The contract owns the real clock; these only decide when to tell users.
-export const HOUR_MS = 3_600_000;
-export const DAY_MS = 24 * HOUR_MS;
+export { DAY_MS, HOUR_MS };
 export const EVIDENCE_MS = 72 * HOUR_MS;
 export const ARBITER_STALL_MS = 30 * DAY_MS;
 

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { schema } from "../graphql/schema";
+import { callQuery } from "./helpers/call-query";
 
 const admin = { id: "admin-1", role: "ADMIN", walletAddress: "0xadmin" };
 const client = { id: "client-1", role: "CLIENT", walletAddress: "0xclient" };
@@ -8,12 +8,6 @@ const finding = { id: "finding-1", escrowIdHash: "0xkey", kind: "chain:31337:0xe
 const intent = { id: "intent-1", status: "SUBMITTED", submittedAt: new Date(Date.now() - 3_600_000) };
 const config = { chainId: 31337, contractAddress: "0xescrow", paused: false, owner: "0xowner", arbiter: "0xarbiter", feeRecipient: "0xfee" };
 
-// Calls a query resolver directly; the GraphQL engine instance differs between test and schema modules.
-function callQuery(name: string, args: Record<string, unknown>, user: unknown, db: unknown) {
-  const field = schema.getQueryType()?.getFields()[name];
-  if (!field?.resolve) throw new Error(`no resolver for ${name}`);
-  return field.resolve({} as never, args, { db, user } as never, {} as never);
-}
 
 // Returns the GraphQL error code a call throws, or undefined when it does not throw.
 function codeOf(run: () => unknown) {

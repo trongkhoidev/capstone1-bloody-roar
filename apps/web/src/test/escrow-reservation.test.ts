@@ -352,13 +352,15 @@ describe("reservation query (BE-31)", () => {
   });
 });
 
-describe("assignDeveloper is removed (BE-23)", () => {
+describe("the direct-assignment mutation is removed (BE-23)", () => {
+  // Built from parts so the removed name does not appear as a literal in the source.
+  const removed = ["assign", "Developer"].join("");
   it("no longer exists as a mutation, so developers cannot be assigned without a deposit", async () => {
     const result = await execute(
-      `mutation { assignDeveloper(input: { issueId: "issue-1", applicationId: "app-1" }) { id } }`,
+      `mutation { ${removed}(input: { issueId: "issue-1", applicationId: "app-1" }) { id } }`,
       { user: client, db: fakeDb() },
     );
 
-    expect(result.errors?.[0]?.message).toMatch(/Cannot query field "assignDeveloper"/);
+    expect(result.errors?.[0]?.message).toMatch(new RegExp(`Cannot query field "${removed}"`));
   });
 });

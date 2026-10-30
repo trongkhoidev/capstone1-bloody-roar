@@ -1,17 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { schema } from "../graphql/schema";
+import { callQuery } from "./helpers/call-query";
 
 const admin = { id: "admin-1", role: "ADMIN", walletAddress: "0xadmin" };
 const client = { id: "client-1", role: "CLIENT", walletAddress: "0xclient" };
 const issueRow = { id: "issue-1", title: "Parser for logs", status: "DISPUTED" };
 const logRow = { id: "log-2", action: "ban_user", details: { reason: "spam" } };
 
-// Calls a query resolver directly; the GraphQL engine instance differs between test and schema modules.
-function callQuery(name: string, args: Record<string, unknown>, user: unknown, db: unknown) {
-  const field = schema.getQueryType()?.getFields()[name];
-  if (!field?.resolve) throw new Error(`no resolver for ${name}`);
-  return field.resolve({} as never, args, { db, user } as never, {} as never);
-}
 
 function fakeDb() {
   return {

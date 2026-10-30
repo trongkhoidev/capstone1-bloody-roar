@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { io } from "socket.io-client";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Eye, MessageSquare, ShieldCheck, Users, ExternalLink, Clock } from "lucide-react";
@@ -15,12 +16,19 @@ import { useUiPreferences } from "@/lib/ui-preferences";
 import { MarketplaceEmpty } from "./marketplace-empty";
 import { MOCK_ISSUES } from "./mock-issues";
 import type { IssueItem } from "./issue-card";
+import { sendPreparedCalls } from "@/lib/web3/send-prepared";
+import { signFundingIntent } from "@/lib/web3/funding-intent";
+
+// Date input value (YYYY-MM-DD) seven days out; the contract deadline is the end of that day in UTC.
+const defaultDeliveryDeadline = () => new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
 
 const ISSUE_QUERY = `
   query IssueDetail($id: ID!) {
     issue(id: $id) {
-      id title description category status bountyAmount requiredSkills difficulty timeEstimate
+      id title description category status bountyAmount { formatted } requiredSkills difficulty timeEstimate
       expiresAt viewCount applicationCount createdAt clientId developerId
+      viewerCapabilities { canSelect canFund canSubmit canRelease canRequestChanges canDispute canProposeSettlement canRevokeSettlement canAcceptSettlement canSubmitEvidence canChallengeRuling canFinalizeRuling canFinalizeArbiterTimeoutSplit canClaimMissedDeliveryRefund canClaimReviewTimeout }
+      escrow { availableActions { action reasonDisabled } }
       token { symbol name }
       attachments { id fileName fileUrl fileMime }
       client { id name avatar walletAddress reputationScore isGithubVerified }
@@ -39,17 +47,45 @@ const APPLICATIONS_QUERY = `
 `;
 
 const APPLY_MUTATION = `mutation Apply($input: ApplyToIssueInput!) { applyToIssue(input: $input) { id status } }`;
-const ASSIGN_MUTATION = `mutation Assign($input: AssignDeveloperInput!) { assignDeveloper(input: $input) { id status developerId } }`;
+const SELECT_DEVELOPER = `mutation SelectDeveloper($issue: ID!, $application: ID!, $deadline: String!) { selectDeveloper(issueId: $issue, applicationId: $application, deliveryDeadline: $deadline) { id status escrowKey termsHash amountRaw deliveryDeadline } }`;
+const RESERVATION_QUERY = `query Reservation($issueId: ID!) { reservation(issueId: $issueId) { id status chainId contractAddress tokenAddress escrowKey termsHash amountRaw deliveryDeadline } }`;
+const SUBMIT_FUNDING_INTENT = `mutation FundingIntent($id: ID!, $signature: String!, $nonce: String!, $expiry: String!) { submitFundingIntent(reservationId: $id, signature: $signature, nonce: $nonce, intentExpiry: $expiry) { id } }`;
+const PREPARE_DEPOSIT = `mutation PrepareDeposit($id: ID!) { prepareEscrowDeposit(reservationId: $id) { steps { intentId method contractAddress data value } } }`;
+const RECORD_TX = `mutation RecordTx($id: ID!, $hash: String!) { recordTransactionSubmitted(intentId: $id, txHash: $hash) { id } }`;
+const CREATE_DRAFT = `mutation CreateDraft($issue: ID!, $description: String!, $pullRequestUrl: String) { createSubmissionDraft(issueId: $issue, description: $description, pullRequestUrl: $pullRequestUrl) { id } }`;
+const PREPARE_SUBMIT = `mutation PrepareSubmit($id: ID!) { prepareSubmitWork(submissionId: $id) { intentId method contractAddress data value } }`;
+const PREPARE_RELEASE = `mutation PrepareRelease($id: ID!) { prepareReleaseFunds(issueId: $id) { intentId method contractAddress data value } }`;
+const REQUEST_CHANGES = `mutation RequestChanges($id: ID!, $notes: String!) { requestChanges(submissionId: $id, notes: $notes) { changesRequested } }`;
+const CREATE_EVIDENCE = `mutation CreateEvidence($issue: ID!, $statement: String!) { createEvidenceManifest(issueId: $issue, statement: $statement) { id } }`;
+const SUBMIT_COUNTERPARTY = `mutation PrepareCounterparty($issue: ID!, $manifest: ID!) { prepareSubmitCounterpartyEvidence(issueId: $issue, manifestId: $manifest) { intentId method contractAddress data value } }`;
+const SUBMIT_REVIEW = `mutation SubmitReview($issue: ID!, $rating: Int!, $comment: String) { submitReview(issueId: $issue, rating: $rating, comment: $comment) { id } }`;
+// Escrow actions the server allows for this viewer. Each row names the capability flag, the prepare mutation, and its arguments.
+const ESCROW_ACTIONS: Array<{ flag: keyof ViewerCapabilities; label: string; mutation: string; field: string; needsPercent?: boolean }> = [
+  { flag: "canRevokeSettlement", label: "Revoke settlement", mutation: "mutation($issue: ID!) { prepareRevokeSettlement(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareRevokeSettlement" },
+  { flag: "canAcceptSettlement", label: "Accept settlement", mutation: "mutation($issue: ID!) { prepareAcceptSettlement(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareAcceptSettlement" },
+  { flag: "canChallengeRuling", label: "Challenge ruling", mutation: "mutation($issue: ID!) { prepareChallengeRuling(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareChallengeRuling" },
+  { flag: "canFinalizeRuling", label: "Finalize ruling", mutation: "mutation($issue: ID!) { prepareFinalizeRuling(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareFinalizeRuling" },
+  { flag: "canFinalizeArbiterTimeoutSplit", label: "Split after arbiter timeout", mutation: "mutation($issue: ID!) { prepareFinalizeArbiterTimeoutSplit(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareFinalizeArbiterTimeoutSplit" },
+  { flag: "canClaimMissedDeliveryRefund", label: "Claim missed-delivery refund", mutation: "mutation($issue: ID!) { prepareClaimMissedDeliveryRefund(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareClaimMissedDeliveryRefund" },
+  { flag: "canClaimReviewTimeout", label: "Claim review timeout", mutation: "mutation($issue: ID!) { prepareClaimReviewTimeout(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareClaimReviewTimeout" },
+  { flag: "canProposeSettlement", label: "Propose settlement", mutation: "mutation($issue: ID!, $bps: Int!) { prepareProposeSettlement(issueId: $issue, clientBps: $bps) { intentId method contractAddress data value } }", field: "prepareProposeSettlement", needsPercent: true },
+];
+const PREPARE_RAISE_DISPUTE = `mutation PrepareRaise($issue: ID!, $manifest: ID!) { prepareRaiseDispute(issueId: $issue, manifestId: $manifest) { intentId method contractAddress data value } }`;
 const CANCEL_MUTATION = `mutation Cancel($id: ID!) { cancelIssue(id: $id) { id status } }`;
-const DISPUTE_MUTATION = `mutation Dispute($input: RaiseDisputeInput!) { raiseDispute(input: $input) { id status } }`;
 const SUBMISSIONS_QUERY = `query TaskSubmissions($issueId: String!) { submissions(issueId: $issueId) { id status description pullRequestUrl submittedAt reviewedAt reviewNotes developer { name walletAddress } } }`;
-const SUBMIT_WORK = `mutation SubmitWork($input: SubmitWorkInput!) { submitWork(input: $input) { id status } }`;
-const REVIEW_SUBMISSION = `mutation ReviewSubmission($input: ReviewSubmissionInput!) { reviewSubmission(input: $input) { id status } }`;
 
-type IssueDetail = IssueItem & { clientId: string; developerId?: string | null; developer?: IssueItem["client"] | null };
+type PreparedStep = { intentId: string; method: string; contractAddress: string; data: string; value: string };
+
+type ReservationRow = { id: string; status: string; chainId: number; contractAddress: string; tokenAddress: string; escrowKey: string; termsHash: string; amountRaw: string; deliveryDeadline: string };
+
+type ViewerCapabilities = { canSelect: boolean; canFund: boolean; canSubmit: boolean; canRelease: boolean; canRequestChanges: boolean; canDispute: boolean; canProposeSettlement: boolean; canRevokeSettlement: boolean; canAcceptSettlement: boolean; canSubmitEvidence: boolean; canChallengeRuling: boolean; canFinalizeRuling: boolean; canFinalizeArbiterTimeoutSplit: boolean; canClaimMissedDeliveryRefund: boolean; canClaimReviewTimeout: boolean };
+type IssueDetail = IssueItem & { clientId: string; developerId?: string | null; developer?: IssueItem["client"] | null; viewerCapabilities?: ViewerCapabilities | null; escrow?: { availableActions: Array<{ action: string; reasonDisabled: string | null }> } | null };
+// Availability action names whose refusal reason is shown to the viewer (same names the server uses).
+const REASON_ACTIONS = new Set(["proposeSettlement", "acceptSettlement", "revokeSettlement", "challengeRuling", "finalizeRuling", "finalizeArbiterTimeoutSplit", "claimMissedDeliveryRefund", "claimReviewTimeout"]);
 type Application = { id: string; status: string; message?: string | null; createdAt: string; developer: IssueItem["client"] & { skills?: string[] } };
 
-type DetailResponse = { issue: IssueDetail | null };
+type DetailResponse = { issue: (Omit<IssueDetail, "bountyAmount"> & { bountyAmount: { formatted: string } }) | null };
+
 type ApplicationResponse = { applications: Application[] };
 type Submission = { id: string; status: string; description?: string | null; pullRequestUrl?: string | null; submittedAt: string; reviewedAt?: string | null; reviewNotes?: string | null; developer: { name?: string | null; walletAddress: string } };
 type SubmissionResponse = { submissions: Submission[] };
@@ -66,8 +102,12 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const [applications, setApplications] = useState<Application[]>([]);
   const [applicationText, setApplicationText] = useState("");
   const [disputeReason, setDisputeReason] = useState("");
-  const [disputeTxHash, setDisputeTxHash] = useState("");
-  const [disputeEvidenceHash, setDisputeEvidenceHash] = useState("");
+  const [reservationId, setReservationId] = useState<string | null>(null);
+  const [settlementPercent, setSettlementPercent] = useState("50");
+  const [counterStatement, setCounterStatement] = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [deliveryDeadline, setDeliveryDeadline] = useState(defaultDeliveryDeadline);
   const [showDisputeForm, setShowDisputeForm] = useState(false);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [deliveryDescription, setDeliveryDescription] = useState("");
@@ -85,7 +125,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     setError(null);
     try {
       const result = await graphqlRequest<DetailResponse>(ISSUE_QUERY, { id: issueId });
-      setIssue(result.issue);
+      setIssue(result.issue ? { ...result.issue, bountyAmount: Number(result.issue.bountyAmount.formatted) } : null);
       setDemoMode(false);
     } catch (reason) {
       const demoIssue = MOCK_ISSUES.find((item) => item.id === issueId);
@@ -102,7 +142,37 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
 
   useEffect(() => { void load(); }, [load]);
 
+  // Live refresh: the server emits escrow:invalidate to the task room when a confirmed transaction changes the escrow.
+  useEffect(() => {
+    if (!user || demoMode) return;
+    const socket = io({ withCredentials: true, transports: ["websocket"] });
+    socket.emit("task:join", issueId);
+    socket.on("escrow:invalidate", () => { void load(); });
+    return () => { socket.disconnect(); };
+  }, [user, demoMode, issueId, load]);
+
+  // Fallback after an on-chain action: refresh every 4 seconds, up to 30 times, while the chain confirms.
+  const [chainPending, setChainPending] = useState(false);
+  const awaitChain = useCallback(() => {
+    setChainPending(true);
+    let tries = 0;
+    const timer = window.setInterval(() => {
+      tries += 1;
+      void load();
+      if (tries >= 30) { window.clearInterval(timer); setChainPending(false); }
+    }, 4000);
+  }, [load]);
+
   const isClient = Boolean(user && issue?.clientId === user.id);
+
+  useEffect(() => {
+    if (!isClient) return;
+    let active = true;
+    void graphqlRequest<{ reservation: ReservationRow | null }>(RESERVATION_QUERY, { issueId })
+      .then((result) => { if (active) setReservationId(result.reservation?.status === "AWAITING_FUNDING" ? result.reservation.id : null); })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, [isClient, issueId]);
   const isDeveloper = Boolean(user && issue?.developerId === user.id);
   const isAdmin = user?.role === "ADMIN";
   const canChat = Boolean(!demoMode && user && (isClient || isDeveloper || (isAdmin && issue?.status === "DISPUTED")));
@@ -125,20 +195,26 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     return () => { active = false; };
   }, [canChat, issueId]);
 
+  // Each on-chain step is recorded against its intent before its receipt is awaited (see sendPreparedCalls).
+  const recordTx = async (intentId: string, txHash: string) => {
+    await graphqlRequest(RECORD_TX, { id: intentId, hash: txHash });
+  };
+
   const submitDelivery = async (event: React.FormEvent) => {
     event.preventDefault(); setIsWorking(true); setError(null); setNotice(null);
     try {
-      await graphqlRequest(SUBMIT_WORK, {
-        input: {
-          issueId,
-          ...(deliveryDescription.trim() ? { description: deliveryDescription.trim() } : {}),
-          ...(pullRequestUrl.trim() ? { pullRequestUrl: pullRequestUrl.trim() } : {}),
-        },
+      const draft = await graphqlRequest<{ createSubmissionDraft: { id: string } }>(CREATE_DRAFT, {
+        issue: issueId,
+        description: deliveryDescription.trim(),
+        pullRequestUrl: pullRequestUrl.trim() || null,
       });
+      const prepared = await graphqlRequest<{ prepareSubmitWork: PreparedStep }>(PREPARE_SUBMIT, { id: draft.createSubmissionDraft.id });
+      await sendPreparedCalls([prepared.prepareSubmitWork], recordTx);
       setDeliveryDescription(""); setPullRequestUrl("");
       const refreshed = await graphqlRequest<SubmissionResponse>(SUBMISSIONS_QUERY, { issueId });
       setSubmissions(refreshed.submissions);
-      setNotice("Work submitted for client review. Escrow release will be finalized on-chain.");
+      setNotice("Work submitted on-chain. The client can review it now.");
+      awaitChain();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not submit work."); }
     finally { setIsWorking(false); }
   };
@@ -146,17 +222,54 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const reviewDelivery = async (submissionId: string, approved: boolean) => {
     setIsWorking(true); setError(null); setNotice(null);
     try {
-      await graphqlRequest(REVIEW_SUBMISSION, {
-        input: {
-          submissionId,
-          approved,
-          ...(reviewNotes.trim() ? { notes: reviewNotes.trim() } : {}),
-        },
-      });
+      if (approved) {
+        const prepared = await graphqlRequest<{ prepareReleaseFunds: PreparedStep }>(PREPARE_RELEASE, { id: issueId });
+        await sendPreparedCalls([prepared.prepareReleaseFunds], recordTx);
+        setNotice("Escrow released on-chain. The developer can claim the payout.");
+        awaitChain();
+      } else {
+        await graphqlRequest(REQUEST_CHANGES, { id: submissionId, notes: reviewNotes.trim() });
+        setNotice("Changes requested. The developer has been notified.");
+      }
       const refreshed = await graphqlRequest<SubmissionResponse>(SUBMISSIONS_QUERY, { issueId });
       setSubmissions(refreshed.submissions); setReviewNotes("");
-      setNotice(approved ? "Delivery approved. Client can now release escrow on-chain." : "Changes requested. The developer has been notified.");
+      await load();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not review delivery."); }
+    finally { setIsWorking(false); }
+  };
+
+  // Runs one prepare mutation from ESCROW_ACTIONS: the server builds the call, the wallet sends it.
+  const runEscrowAction = async (action: (typeof ESCROW_ACTIONS)[number], percent?: string) => {
+    setIsWorking(true); setError(null); setNotice(null);
+    try {
+      const variables: Record<string, unknown> = action.needsPercent
+        ? { issue: issueId, bps: Math.round(Number(percent) * 100) }
+        : { issue: issueId };
+      const prepared = await graphqlRequest<Record<string, PreparedStep>>(action.mutation, variables);
+      await sendPreparedCalls([prepared[action.field]!], recordTx);
+      setNotice(`${action.label}: sent on-chain.`);
+      awaitChain();
+    } catch (reason) { setError(reason instanceof Error ? reason.message : `Could not ${action.label.toLowerCase()}.`); }
+    finally { setIsWorking(false); }
+  };
+
+  const submitCounterpartyEvidence = async (event: React.FormEvent) => {
+    event.preventDefault(); setIsWorking(true); setError(null); setNotice(null);
+    try {
+      const evidence = await graphqlRequest<{ createEvidenceManifest: { id: string } }>(CREATE_EVIDENCE, { issue: issueId, statement: counterStatement.trim() });
+      const prepared = await graphqlRequest<{ prepareSubmitCounterpartyEvidence: PreparedStep }>(SUBMIT_COUNTERPARTY, { issue: issueId, manifest: evidence.createEvidenceManifest.id });
+      await sendPreparedCalls([prepared.prepareSubmitCounterpartyEvidence], recordTx);
+      setCounterStatement(""); setNotice("Counterparty evidence sent on-chain."); awaitChain();
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not submit evidence."); }
+    finally { setIsWorking(false); }
+  };
+
+  const submitReview = async (event: React.FormEvent) => {
+    event.preventDefault(); setIsWorking(true); setError(null); setNotice(null);
+    try {
+      await graphqlRequest(SUBMIT_REVIEW, { issue: issueId, rating: reviewRating, comment: reviewComment.trim() || null });
+      setNotice("Thanks for the review."); setReviewComment(""); await load();
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not save the review."); }
     finally { setIsWorking(false); }
   };
 
@@ -175,10 +288,35 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const assign = async (applicationId: string) => {
     setIsWorking(true); setError(null); setNotice(null);
     try {
-      await graphqlRequest(ASSIGN_MUTATION, { input: { issueId, applicationId } });
-      setNotice("Developer selected. You can now proceed to fund the escrow contract.");
+      const result = await graphqlRequest<{ selectDeveloper: { id: string } }>(SELECT_DEVELOPER, {
+        issue: issueId,
+        application: applicationId,
+        deadline: new Date(`${deliveryDeadline}T23:59:59Z`).toISOString(),
+      });
+      setReservationId(result.selectDeveloper.id);
+      setNotice("Developer selected. Fund the escrow to start the work.");
       await load();
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not assign developer."); }
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not select developer."); }
+    finally { setIsWorking(false); }
+  };
+
+  // Client funding: sign the funding intent, submit it, then send the approve and deposit calls the server prepared.
+  const fundEscrow = async () => {
+    const clientWallet = issue?.client?.walletAddress;
+    const developerWallet = issue?.developer?.walletAddress;
+    if (!clientWallet || !developerWallet) return;
+    setIsWorking(true); setError(null); setNotice(null);
+    try {
+      const { reservation } = await graphqlRequest<{ reservation: ReservationRow | null }>(RESERVATION_QUERY, { issueId });
+      if (!reservation) throw new Error("No funding reservation is waiting for this task.");
+      const intent = await signFundingIntent(reservation, clientWallet, developerWallet);
+      await graphqlRequest(SUBMIT_FUNDING_INTENT, { id: reservation.id, signature: intent.signature, nonce: intent.nonce, expiry: intent.intentExpiry });
+      const prepared = await graphqlRequest<{ prepareEscrowDeposit: { steps: PreparedStep[] } }>(PREPARE_DEPOSIT, { id: reservation.id });
+      await sendPreparedCalls(prepared.prepareEscrowDeposit.steps, recordTx);
+      setReservationId(null);
+      setNotice("Escrow funded. The developer can start the work.");
+      awaitChain();
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not fund the escrow."); }
     finally { setIsWorking(false); }
   };
 
@@ -193,9 +331,11 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const raiseDispute = async (event: React.FormEvent) => {
     event.preventDefault(); setIsWorking(true); setError(null); setNotice(null);
     try {
-      await graphqlRequest(DISPUTE_MUTATION, { input: { issueId, reason: disputeReason, txHash: disputeTxHash, evidenceManifestHash: disputeEvidenceHash } });
-      setNotice("Dispute transaction recorded. The arbiter will review the evidence.");
-      setShowDisputeForm(false); setDisputeReason(""); setDisputeTxHash(""); setDisputeEvidenceHash(""); await load();
+      const evidence = await graphqlRequest<{ createEvidenceManifest: { id: string } }>(CREATE_EVIDENCE, { issue: issueId, statement: disputeReason.trim() });
+      const prepared = await graphqlRequest<{ prepareRaiseDispute: PreparedStep }>(PREPARE_RAISE_DISPUTE, { issue: issueId, manifest: evidence.createEvidenceManifest.id });
+      await sendPreparedCalls([prepared.prepareRaiseDispute], recordTx);
+      setNotice("Dispute opened on-chain. The arbiter will review the evidence.");
+      setShowDisputeForm(false); setDisputeReason(""); awaitChain();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not open dispute."); }
     finally { setIsWorking(false); }
   };
@@ -318,6 +458,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
 
           {/* Notices & Banners */}
           {notice && <div className="banner bn-info"><div><b>Notice:</b> {notice}</div></div>}
+          {chainPending && <div className="banner bn-info"><div>Đang chờ chain xác nhận</div></div>}
           {error && <div className="banner bn-bad"><div><b>Error:</b> {error}</div></div>}
           {demoMode && (
             <div className="banner bn-warn">
@@ -384,6 +525,28 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                         <span className="badge b-open" style={{ marginLeft: "auto" }}>{applications.length} pending</span>
                       </div>
                       <div className="card-b">
+                        <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 12, marginBottom: 12 }}>
+                          Delivery deadline
+                          <input
+                            type="date"
+                            className="inp"
+                            style={{ height: 32, fontSize: 12 }}
+                            value={deliveryDeadline}
+                            min={new Date().toISOString().slice(0, 10)}
+                            onChange={(e) => setDeliveryDeadline(e.target.value)}
+                          />
+                        </label>
+                        {reservationId && issue.viewerCapabilities?.canFund && (
+                          <button
+                            type="button"
+                            className="btn btn-p btn-sm"
+                            style={{ marginBottom: 12 }}
+                            disabled={isWorking || demoMode}
+                            onClick={() => void fundEscrow()}
+                          >
+                            Fund escrow
+                          </button>
+                        )}
                         {applications.map((app) => (
                           <div
                             key={app.id}
@@ -411,7 +574,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                                 {app.message || "No cover letter provided."}
                               </p>
                             </div>
-                            {app.status === "PENDING" && (
+                            {app.status === "PENDING" && issue.viewerCapabilities?.canSelect && (
                               <button
                                 type="button"
                                 className="btn btn-p btn-sm"
@@ -436,7 +599,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
               {activeTab === "delivery" && (
                 <>
                   {/* Developer: Submit work */}
-                  {isDeveloper && issue.status === "IN_PROGRESS" && (
+                  {isDeveloper && issue.status === "IN_PROGRESS" && issue.viewerCapabilities?.canSubmit && (
                     <section className="card">
                       <div className="card-h">
                         <h2>Submit your delivery</h2>
@@ -524,7 +687,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                               </div>
                             )}
 
-                            {isClient && issue.status === "IN_PROGRESS" && (sub.status === "SUBMITTED" || sub.status === "UNDER_REVIEW") && (
+                            {isClient && issue.status === "IN_PROGRESS" && issue.viewerCapabilities?.canRelease && (sub.status === "SUBMITTED" || sub.status === "UNDER_REVIEW") && (
                               <div style={{ borderTop: "1px solid var(--line)", paddingTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
                                 <textarea
                                   className="inp"
@@ -562,6 +725,42 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
               )}
 
               {/* TAB 3: CHAT */}
+              {(isClient || isDeveloper) && issue.status === "IN_PROGRESS" && (
+                <section className="card">
+                  <div className="card-h"><h2>Escrow actions</h2></div>
+                  <div className="card-b" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {ESCROW_ACTIONS.filter((action) => issue.viewerCapabilities?.[action.flag]).map((action) => action.needsPercent ? (
+                      <div key={action.flag} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <input className="inp" type="number" min={0} max={100} step="0.01" style={{ height: 32, width: 90, fontSize: 12 }} value={settlementPercent} onChange={(e) => setSettlementPercent(e.target.value)} aria-label="Client share (%)" />
+                        <button type="button" className="btn btn-o btn-sm" disabled={isWorking || demoMode} onClick={() => void runEscrowAction(action, settlementPercent)}>{action.label}</button>
+                      </div>
+                    ) : (
+                      <button key={action.flag} type="button" className="btn btn-o btn-sm" disabled={isWorking || demoMode} onClick={() => void runEscrowAction(action)}>{action.label}</button>
+                    ))}
+                    {issue.viewerCapabilities?.canSubmitEvidence && (
+                      <form onSubmit={submitCounterpartyEvidence} style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%" }}>
+                        <textarea className="inp" rows={3} minLength={10} maxLength={5000} required value={counterStatement} onChange={(e) => setCounterStatement(e.target.value)} placeholder="Counterparty evidence statement (at least 10 characters)" />
+                        <button type="submit" className="btn btn-o btn-sm" disabled={isWorking || demoMode || counterStatement.trim().length < 10}>Submit counterparty evidence</button>
+                      </form>
+                    )}
+                    {(issue.escrow?.availableActions ?? []).filter((item) => item.reasonDisabled && REASON_ACTIONS.has(item.action)).map((item) => <p key={item.action} className="mut" style={{ fontSize: 12 }}>{item.action}: {item.reasonDisabled}</p>)}
+                  </div>
+                </section>
+              )}
+              {isClient && issue.status === "COMPLETED" && (
+                <section className="card">
+                  <div className="card-h"><h2>Review the developer</h2></div>
+                  <form onSubmit={submitReview} className="card-b" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <label style={{ fontSize: 12 }}>Rating
+                      <select className="inp" value={reviewRating} onChange={(e) => setReviewRating(Number(e.target.value))} style={{ height: 32, marginLeft: 8, fontSize: 12 }}>
+                        {[5, 4, 3, 2, 1].map((stars) => <option key={stars} value={stars}>{stars} stars</option>)}
+                      </select>
+                    </label>
+                    <textarea className="inp" rows={3} maxLength={2000} value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} placeholder="Optional comment" />
+                    <button type="submit" className="btn btn-p btn-sm" disabled={isWorking || demoMode}>Submit review</button>
+                  </form>
+                </section>
+              )}
               {activeTab === "chat" && canChat && issue.developerId && (
                 <section className="card">
                   <div className="card-h">
@@ -681,7 +880,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                     )
                   )}
 
-                  {canChat && issue.status === "IN_PROGRESS" && (
+                  {canChat && issue.status === "IN_PROGRESS" && issue.viewerCapabilities?.canDispute && (
                     <button
                       type="button"
                       className="btn btn-o btn-sm"
@@ -701,22 +900,6 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                         required
                         minLength={20}
                         placeholder="State dispute reason clearly..."
-                      />
-                      <input
-                        className="inp"
-                        style={{ height: 32, fontSize: 12 }}
-                        placeholder="Tx hash (0x...)"
-                        required
-                        value={disputeTxHash}
-                        onChange={(e) => setDisputeTxHash(e.target.value)}
-                      />
-                      <input
-                        className="inp"
-                        style={{ height: 32, fontSize: 12 }}
-                        placeholder="Evidence hash (0x...)"
-                        required
-                        value={disputeEvidenceHash}
-                        onChange={(e) => setDisputeEvidenceHash(e.target.value)}
                       />
                       <button type="submit" className="btn btn-bad btn-sm" disabled={isWorking}>
                         Confirm dispute

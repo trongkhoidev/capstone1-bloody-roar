@@ -18,13 +18,13 @@ const PAGE_SIZE = 12;
 const ISSUES_QUERY = `
   query MarketplaceIssues(
     $first: Int!, $after: String, $category: IssueCategory, $status: IssueStatus,
-    $bountyMin: Float, $bountyMax: Float, $skill: String, $search: String, $sortBy: IssueSortBy
+    $bountyMin: String, $bountyMax: String, $skill: String, $search: String, $sortBy: IssueSortBy
   ) {
     issues(first: $first, after: $after, category: $category, status: $status,
       bountyMin: $bountyMin, bountyMax: $bountyMax, skill: $skill, search: $search,
       sortBy: $sortBy, sortOrder: DESC) {
       edges { cursor node {
-        id title description category status bountyAmount requiredSkills difficulty
+        id title description category status bountyAmount { formatted } requiredSkills difficulty
         timeEstimate expiresAt viewCount applicationCount createdAt
         token { symbol name logoUrl }
         attachments { id fileName fileUrl fileMime }
@@ -38,20 +38,20 @@ const ISSUES_QUERY = `
 
 const STATS_QUERY = `
   query MarketplaceStats {
-    marketplaceStats { openBounties bountyPool { symbol amount } activeHunters }
+    marketplaceStats { openBounties bountyPool { symbol formatted } activeHunters }
   }
 `;
 
 type IssuesResponse = {
   issues: {
-    edges: Array<{ cursor: string; node: IssueItem }>;
+    edges: Array<{ cursor: string; node: Omit<IssueItem, "bountyAmount"> & { bountyAmount: { formatted: string } } }>;
     pageInfo: { hasNextPage: boolean; endCursor: string | null };
     totalCount: number;
   };
 };
 
 type StatsResponse = {
-  marketplaceStats: { openBounties: number; bountyPool: Array<{ symbol: string; amount: number }>; activeHunters: number };
+  marketplaceStats: { openBounties: number; bountyPool: Array<{ symbol: string; formatted: string }>; activeHunters: number };
 };
 
 type DataSource = "loading" | "live" | "demo";
@@ -104,8 +104,8 @@ export function MarketplaceView({ initialSearch = "" }: { initialSearch?: string
     first: PAGE_SIZE,
     category: filters.category || undefined,
     status: filters.status || undefined,
-    bountyMin: filters.bountyMin,
-    bountyMax: filters.bountyMax,
+    bountyMin: filters.bountyMin != null ? String(filters.bountyMin) : undefined,
+    bountyMax: filters.bountyMax != null ? String(filters.bountyMax) : undefined,
     skill: filters.selectedSkill,
     search: filters.search.trim() || undefined,
     sortBy: filters.sortBy === "HIGHEST_BOUNTY"
@@ -127,7 +127,7 @@ export function MarketplaceView({ initialSearch = "" }: { initialSearch?: string
     try {
       const result = await graphqlRequest<IssuesResponse>(ISSUES_QUERY, { ...variables, after }, signal);
       const page = result.issues;
-      const rows = page.edges.map(({ node }) => ({ ...node, applicationCount: node.applicationCount ?? 0 }));
+      const rows = page.edges.map(({ node }) => ({ ...node, bountyAmount: Number(node.bountyAmount.formatted), applicationCount: node.applicationCount ?? 0 }));
       setIssues((previous) => append ? [...previous, ...rows] : rows);
       setTotalCount(page.totalCount);
       setHasNextPage(page.pageInfo.hasNextPage);
@@ -164,7 +164,7 @@ export function MarketplaceView({ initialSearch = "" }: { initialSearch?: string
     if (!isAdmin) return;
     const controller = new AbortController();
     void graphqlRequest<StatsResponse>(STATS_QUERY, {}, controller.signal)
-      .then((result) => setStats(result.marketplaceStats))
+      .then((result) => setStats({ ...result.marketplaceStats, bountyPool: result.marketplaceStats.bountyPool.map((pool) => ({ symbol: pool.symbol, amount: Number(pool.formatted) })) }))
       .catch(() => undefined);
     return () => controller.abort();
   }, [isAdmin]);

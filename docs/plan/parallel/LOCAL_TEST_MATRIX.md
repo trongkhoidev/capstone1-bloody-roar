@@ -2,6 +2,7 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
+| P1-17 / còn lại | apps/web/src/test/dispute-analysis.test.ts | rg BUG-2; bun run --cwd apps/web test -- src/test/dispute-analysis.test.ts; bun run typecheck; bun run lint | Pass 2/2; AI-11 và frontend chờ; commit `docs(p1-17): record remaining review` |
 | P1-16f | apps/worker/test/effects-dispute.test.ts; apps/worker/test/scanner-projection.test.ts; apps/worker/test/effects-resolved.test.ts | bun run --cwd apps/worker test; bun run typecheck; bun run lint | Pass 70/70; commit `feat(p1-16f): project dispute events with reorg undo`; E15–E17 chờ harness |
 | P1-16e | apps/web/src/test/dispute-ruling.db.test.ts; apps/web/src/test/escrow-availability.test.ts | bun run --cwd apps/web test -- src/test/dispute-ruling.db.test.ts src/test/escrow-availability.test.ts; bun run typecheck; bun run lint | Pass 8/8; commit `feat(p1-16e): prepare ruling actions` |
 | P1-16d | apps/web/src/test/dispute-ruling.db.test.ts | bun run --cwd apps/web test -- src/test/dispute-ruling.db.test.ts; bun run typecheck; bun run lint | Pass 2/2; commit `feat(p1-16d): draft safe rulings` |

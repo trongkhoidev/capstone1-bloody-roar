@@ -2,6 +2,8 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { encodeEscrowCall } from "@bloody-roar/shared/escrow";
 import { execute, loadSchema } from "./graphql-execute";
 
+const clock = vi.hoisted(() => ({ readChainTime: vi.fn(async (_chainId: number) => new Date()) }));
+vi.mock("../lib/escrow/chain-time", () => clock);
 beforeAll(loadSchema, 60_000);
 
 const HOUR_MS = 3_600_000;
@@ -32,6 +34,7 @@ function projectionRow(overrides: Record<string, unknown> = {}) {
   const deliveryDeadline = new Date(Date.now() + 10 * DAY_MS);
   return {
     issueId: "issue-1",
+    chainId: 84532, contractAddress: CONTRACT,
     escrowKey: "br_issue-1_1",
     escrowIdHash: `0x${"22".repeat(32)}`,
     client: CLIENT_WALLET,
@@ -67,6 +70,7 @@ const PREPARE = (name: string) => `mutation($issueId: ID!) {
 }`;
 
 beforeEach(() => {
+  clock.readChainTime.mockImplementation(async () => new Date());
   vi.stubEnv("ESCROW_ADDRESS", CONTRACT);
   vi.stubEnv("CHAIN_ID", "84532");
 });
@@ -197,6 +201,23 @@ describe("prepareClaimReviewTimeout (BE-46)", () => {
 });
 
 const CLAIM = `mutation($recipient: String!) { prepareClaim(recipient: $recipient) { method data args { name value } } }`;
+
+describe("timeout chain-time boundaries", () => {
+  it("requires strictly later than delivery deadline for refund", async () => {
+    const deadline = new Date(Date.now() + DAY_MS); const db = fakeDb(projectionRow({ deliveryDeadline: deadline }));
+    clock.readChainTime.mockResolvedValue(deadline);
+    expect((await execute(PREPARE("prepareClaimMissedDeliveryRefund"), { user: outsider, db }, { issueId: "issue-1" })).errors?.[0]?.extensions?.code).toBe("DEADLINE_NOT_REACHED");
+    clock.readChainTime.mockResolvedValue(new Date(deadline.getTime() + 1000));
+    expect((await execute(PREPARE("prepareClaimMissedDeliveryRefund"), { user: outsider, db }, { issueId: "issue-1" })).errors).toBeUndefined();
+  });
+  it("allows review timeout at the exact chain deadline and rejects another chain", async () => {
+    const deadline = new Date(Date.now() + DAY_MS); const db = fakeDb(projectionRow({ deliveryHash: DELIVERY_HASH, reviewDeadline: deadline }));
+    clock.readChainTime.mockResolvedValue(deadline);
+    expect((await execute(PREPARE("prepareClaimReviewTimeout"), { user: outsider, db }, { issueId: "issue-1" })).errors).toBeUndefined();
+    const wrong = fakeDb(projectionRow({ chainId: 1, deliveryHash: DELIVERY_HASH, reviewDeadline: deadline }));
+    expect((await execute(PREPARE("prepareClaimReviewTimeout"), { user: outsider, db: wrong }, { issueId: "issue-1" })).errors?.[0]?.extensions?.code).toBe("ESCROW_CHAIN_MISMATCH");
+  });
+});
 
 describe("prepareClaim and myClaimable (BE-48)", () => {
   it("prepares claim(recipient) for the caller's own balance", async () => {

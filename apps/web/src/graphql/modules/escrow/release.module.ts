@@ -9,6 +9,7 @@ import type { GraphQLContext } from "../../context";
 import { requireAuth } from "../../context";
 import { gqlError } from "../../errors";
 import { createPreparedCall, escrowTarget } from "../../../lib/escrow/prepare";
+import { readChainTime } from "../../../lib/escrow/chain-time";
 
 const PreparedCallArgRef = builder
   .objectRef<{ name: string; value: string }>("PreparedCallArg")
@@ -53,6 +54,9 @@ const sameWallet = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
 async function projectionFor(issueId: string, ctx: GraphQLContext) {
   const projection = await ctx.db.escrowProjection.findUnique({ where: { issueId } });
   if (!projection || !projection.escrowKey) throw gqlError("Bài toán chưa có ký quỹ", "NOT_FOUND");
+  const target = escrowTarget();
+  if (projection.chainId !== target.chainId || projection.contractAddress.toLowerCase() !== target.contractAddress.toLowerCase())
+    throw gqlError("Ký quỹ không khớp cấu hình", "ESCROW_CHAIN_MISMATCH");
   return { ...projection, escrowKey: projection.escrowKey };
 }
 
@@ -93,7 +97,7 @@ builder.mutationField("prepareClaimMissedDeliveryRefund", (t) =>
         throw gqlError("Ký quỹ không ở trạng thái FUNDED", "INVALID_PHASE");
       if (projection.deliveryHash)
         throw gqlError("Đã có bản giao hàng, không thể hoàn tiền", "DELIVERY_EXISTS");
-      if (new Date() <= projection.deliveryDeadline)
+      if (await readChainTime(projection.chainId) <= projection.deliveryDeadline)
         throw gqlError("Chưa quá hạn giao hàng", "DEADLINE_NOT_REACHED");
       return createPreparedCall(ctx.db, {
         userId: user.id,
@@ -118,7 +122,7 @@ builder.mutationField("prepareClaimReviewTimeout", (t) =>
         throw gqlError("Ký quỹ không ở trạng thái FUNDED", "INVALID_PHASE");
       if (!projection.deliveryHash)
         throw gqlError("Chưa có bản giao hàng trên chain", "NO_DELIVERY");
-      if (new Date() < projection.reviewDeadline)
+      if (await readChainTime(projection.chainId) < projection.reviewDeadline)
         throw gqlError("Chưa hết cửa sổ review", "REVIEW_WINDOW_NOT_REACHED");
       return createPreparedCall(ctx.db, {
         userId: user.id,

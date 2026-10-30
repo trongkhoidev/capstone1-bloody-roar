@@ -28,7 +28,7 @@ const { reconcileProjections } = await import("../../apps/worker/src/reconciler/
 const config = { chainId: 31337, escrowAddress: manifest.address.toLowerCase(), escrowDeployBlock: BigInt(manifest.deployBlock), rangeSize: 2000, reorgWindow: 64, finality: "latest" as const };
 const suffix = randomBytes(8).toString("hex"), escrowKey = `br_e5_${suffix}`, escrowIdHash = keccakUtf8(escrowKey);
 const termsHash = `0x${randomBytes(32).toString("hex")}` as Hex;
-let issueId = "", tokenId = "";
+let issueId = "", issue2Id = "", tokenId = "";
 let createdToken = false;
 let ownsIndexerFixture = false;
 const createdUsers: string[] = [];
@@ -341,6 +341,28 @@ try {
   assert.equal((await prisma.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash } })).settlementProposer, null);
   console.log("E14: proposal, acceptance, revocation and their reorg undo verified");
 
+  const outsiderAccount = accounts[7]!;
+  const outsiderUser = await user(outsiderAccount, "DEVELOPER");
+  const secondIssue = await prisma.issue.create({ data: { title: "Missed delivery E12", description: "Permissionless refund after deadline.", category: "BUG_FIX", status: "AWAITING_FUNDING", bountyAmount: "100", tokenId, clientId: clientUser.id, requiredSkills: [] } });
+  issue2Id = secondIssue.id;
+  const secondApplication = await prisma.application.create({ data: { issueId: issue2Id, developerId: developerUser.id, status: "PENDING" } });
+  const secondKey = `br_e12_${suffix}`, secondHash = keccakUtf8(secondKey), secondTerms = `0x${randomBytes(32).toString("hex")}` as Hex;
+  const latestBlock = await rpc.call<{ timestamp: string }>("eth_getBlockByNumber", ["latest", false]);
+  const secondDeadline = BigInt(latestBlock.timestamp) + 30n * 86400n;
+  await prisma.fundingReservation.create({ data: { issueId: issue2Id, applicationId: secondApplication.id, clientId: clientUser.id, developerId: developerUser.id,
+    escrowKey: secondKey, escrowIdHash: secondHash, chainId: config.chainId, contractAddress: config.escrowAddress, tokenAddress: manifest.token.toLowerCase(), amountRaw: "100000000",
+    deliveryDeadline: new Date(Number(secondDeadline) * 1000), termsHash: secondTerms, termsVersion: 1, status: "AWAITING_FUNDING", expiresAt: new Date(Date.now() + 86400_000) } });
+  const { encodeErc20Approve } = await import("@bloody-roar/shared/escrow");
+  await send(client, manifest.token, encodeFunctionData({ abi: mintAbi, functionName: "mint", args: [client, 100000000n] }));
+  await send(client, manifest.token, encodeErc20Approve(manifest.address, "100000000"));
+  await send(client, manifest.address, encodeEscrowCall("deposit", { escrowId: secondKey, developer, amount: "100000000", deliveryDeadline: secondDeadline.toString(), termsHash: secondTerms }));
+  while (await scanOnce({ db: prisma, rpc, config })) { /* scan second deposit */ }
+  assert.equal((await prisma.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash: secondHash } })).phase, "FUNDED");
+  const refundQuery = `mutation($id: ID!) { prepareClaimMissedDeliveryRefund(issueId: $id) { intentId contractAddress data } }`;
+  const reviewQuery = `mutation($id: ID!) { prepareClaimReviewTimeout(issueId: $id) { intentId contractAddress data } }`;
+  assert.equal((await execute(refundQuery, { user: outsiderUser, db: prisma }, { id: issue2Id })).errors?.[0]?.extensions?.code, "DEADLINE_NOT_REACHED");
+  assert.equal((await execute(reviewQuery, { user: outsiderUser, db: prisma }, { id: issueId })).errors?.[0]?.extensions?.code, "REVIEW_WINDOW_NOT_REACHED");
+
   const lateDraft = await createDraft("draft before deadline");
   await rpc.call("evm_increaseTime", [40 * 86400]);
   await rpc.call("evm_mine", []);
@@ -354,6 +376,35 @@ try {
   assert.equal(latePreparation.errors?.[0]?.extensions?.code, "DEADLINE_PASSED");
   const expired = await execute(`mutation($issue: ID!) { createSubmissionDraft(issueId: $issue, description: "late") { id } }`, { db: prisma, user: developerUser }, { issue: issueId });
   assert.equal(expired.errors?.[0]?.extensions?.code, "DEADLINE_PASSED");
+  const outsiderGraphql = async (source: string, variables: Record<string, unknown>) => {
+    const result = await execute(source, { user: outsiderUser, db: prisma }, variables);
+    if (result.errors?.length || !result.data) throw new Error(result.errors?.[0]?.message ?? "Outsider GraphQL failed");
+    return result.data;
+  };
+  const sendOutsider = async (step: { intentId: string; contractAddress: Hex; data: Hex }) => {
+    const txHash = await send(outsiderAccount, step.contractAddress, step.data);
+    await outsiderGraphql(`mutation($id: ID!, $hash: String!) { recordTransactionSubmitted(intentId: $id, txHash: $hash) { status } }`, { id: step.intentId, hash: txHash });
+    while (await scanOnce({ db: prisma, rpc, config })) { /* scan timeout resolution */ }
+  };
+  const review = (await outsiderGraphql(reviewQuery, { id: issueId })).prepareClaimReviewTimeout as { intentId: string; contractAddress: Hex; data: Hex };
+  await sendOutsider(review);
+  assert.equal((await prisma.issue.findUniqueOrThrow({ where: { id: issueId } })).outcome, "REVIEW_TIMEOUT");
+  assert.equal(await claimable(developer), "97500000"); assert.equal(await claimable(accounts[6]!), "2500000");
+  const refund = (await outsiderGraphql(refundQuery, { id: issue2Id })).prepareClaimMissedDeliveryRefund as { intentId: string; contractAddress: Hex; data: Hex };
+  await sendOutsider(refund);
+  assert.equal((await prisma.issue.findUniqueOrThrow({ where: { id: issue2Id } })).outcome, "MISSED_DELIVERY_REFUND");
+  assert.equal(await claimable(client), "100000000");
+  const clientBalanceData = encodeFunctionData({ abi: balanceAbi, functionName: "balanceOf", args: [client] });
+  const beforeRefundClaim = decodeFunctionResult({ abi: balanceAbi, functionName: "balanceOf", data: await rpc.call<Hex>("eth_call", [{ to: manifest.token, data: clientBalanceData }, "latest"]) });
+  const clientClaim = (await graphql(`mutation($recipient: String!) { prepareClaim(recipient: $recipient) { intentId contractAddress data } }`, { recipient: client })).prepareClaim as { intentId: string; contractAddress: Hex; data: Hex };
+  fixtureIntentIds.push(clientClaim.intentId);
+  const clientClaimHash = await send(client, clientClaim.contractAddress, clientClaim.data); await record(clientClaim.intentId, clientClaimHash);
+  while (await scanOnce({ db: prisma, rpc, config })) { /* scan refund claim */ }
+  assert.equal(await claimable(client), "0");
+  const afterRefundClaim = decodeFunctionResult({ abi: balanceAbi, functionName: "balanceOf", data: await rpc.call<Hex>("eth_call", [{ to: manifest.token, data: clientBalanceData }, "latest"]) });
+  assert.equal(afterRefundClaim - beforeRefundClaim, 100000000n);
+  console.log("E12/E13: permissionless refund and review timeout follow chain time; client claimed refund");
+
   console.log("E9: draft, on-chain submit, work reorg, changes, resubmit, external hash and deadline verified");
 
 } finally {
@@ -365,6 +416,13 @@ try {
     await prisma.fundingReservation.deleteMany({ where: { issueId } });
     await prisma.application.deleteMany({ where: { issueId } });
     await prisma.issue.deleteMany({ where: { id: issueId } });
+  }
+  if (issue2Id) {
+    await prisma.notification.deleteMany({ where: { data: { path: ["issueId"], equals: issue2Id } } });
+    await prisma.transactionIntent.deleteMany({ where: { issueId: issue2Id } });
+    await prisma.escrowProjection.deleteMany({ where: { issueId: issue2Id } });
+    await prisma.fundingReservation.deleteMany({ where: { issueId: issue2Id } });
+    await prisma.issue.deleteMany({ where: { id: issue2Id } });
   }
   if (fixtureIntentIds.length) await prisma.transactionIntent.deleteMany({ where: { id: { in: fixtureIntentIds } } });
   if (createdToken) await prisma.token.deleteMany({ where: { id: tokenId } });

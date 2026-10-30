@@ -95,7 +95,7 @@ export const ISSUE_INCLUDE = {
   token: true,
   client: true,
   developer: true,
-  attachments: { where: { fileMime: { startsWith: "image/" } } },
+  attachments: { where: { purpose: "ISSUE_IMAGE", status: "ATTACHED", fileMime: { startsWith: "image/" } } },
   _count: { select: { applications: true } },
 } satisfies Prisma.IssueInclude;
 
@@ -126,7 +126,7 @@ export const IssueRef = builder.prismaObject("Issue", {
     viewCount: t.exposeInt("viewCount"),
     clientId: t.exposeString("clientId"),
     developerId: t.exposeString("developerId", { nullable: true }),
-    isDraft: t.exposeBoolean("isDraft"),
+    cursor: t.string({ resolve: (issue) => encodeCursor(issue.id) }),
     githubRepo: t.exposeString("githubRepo", { nullable: true }),
     termsVersion: t.exposeInt("termsVersion"),
     deliveryDeadline: t.string({
@@ -181,11 +181,11 @@ export const IssueRef = builder.prismaObject("Issue", {
 // Cursor pagination helpers + Connection types
 // ---------------------------------------------------------------------------
 
-function encodeCursor(id: string): string {
+export function encodeCursor(id: string): string {
   return Buffer.from(id, "utf8").toString("base64");
 }
 
-function decodeCursor(cursor: string): string {
+export function decodeCursor(cursor: string): string {
   if (!/^[A-Za-z0-9+/]+={0,2}$/.test(cursor)) {
     throw gqlError("Cursor không hợp lệ", "INVALID_CURSOR");
   }
@@ -484,14 +484,16 @@ builder.queryField("tokens", (t) =>
 builder.queryField("myIssues", (t) =>
   t.prismaField({
     type: [IssueRef],
-    resolve: (query, _root, _args, ctx) => {
+    args: { first: t.arg.int(), after: t.arg.string() },
+    resolve: async (query, _root, args, ctx) => {
       const user = requireAuth(ctx);
-      return ctx.db.issue.findMany({
-        ...query,
-        where: { OR: [{ clientId: user.id }, { developerId: user.id }] },
-        orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
-        include: ISSUE_INCLUDE,
-      });
+      const page = parseOrThrow(z.object({ first: z.number().int().min(1).max(MAX_PAGE_SIZE).nullish(), after: z.string().max(256).nullish() }), args);
+      const where: Prisma.IssueWhereInput = { OR: [{ clientId: user.id }, { developerId: user.id }] };
+      const cursor = page.after ? decodeCursor(page.after) : null;
+      if (cursor && !await ctx.db.issue.findFirst({ where: { ...where, id: cursor }, select: { id: true } }))
+        throw gqlError("Cursor không thuộc danh sách bài toán", "INVALID_CURSOR");
+      return ctx.db.issue.findMany({ ...query, where, orderBy: [{ updatedAt: "desc" }, { id: "asc" }], take: page.first ?? DEFAULT_PAGE_SIZE,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}), include: ISSUE_INCLUDE });
     },
   }),
 );
@@ -776,3 +778,26 @@ builder.mutationField("cancelIssue", (t) =>
     },
   }),
 );
+
+builder.mutationField("attachIssueFile", (t) => t.field({
+  type: AttachmentRef,
+  args: { issueId: t.arg.id({ required: true }), attachmentId: t.arg.id({ required: true }) },
+  resolve: async (_root, args, ctx) => {
+    const user = requireAuth(ctx), issueId = String(args.issueId), attachmentId = String(args.attachmentId);
+    return ctx.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM issues WHERE id = ${issueId} FOR UPDATE`;
+      const issue = await tx.issue.findUnique({ where: { id: issueId }, select: { clientId: true, status: true } });
+      if (!issue) throw gqlError("Bài toán không tồn tại", "NOT_FOUND");
+      if (issue.clientId !== user.id) throw gqlError("Chỉ chủ bài toán được đính kèm ảnh", "FORBIDDEN");
+      if (issue.status !== IssueStatus.OPEN) throw gqlError("Bài toán không còn chỉnh sửa được", "ISSUE_NOT_EDITABLE");
+      const attachment = await tx.attachment.findUnique({ where: { id: attachmentId } });
+      if (!attachment || attachment.uploaderId !== user.id || attachment.purpose !== "ISSUE_IMAGE" || attachment.status !== "ATTACHED" ||
+          !attachment.fileMime.toLowerCase().startsWith("image/") || attachment.messageId || (attachment.issueId && attachment.issueId !== issueId))
+        throw gqlError("Tệp đính kèm không hợp lệ", "INVALID_ATTACHMENT");
+      if (attachment.issueId === issueId) return attachment;
+      const moved = await tx.attachment.updateMany({ where: { id: attachmentId, uploaderId: user.id, purpose: "ISSUE_IMAGE", status: "ATTACHED", issueId: null, messageId: null }, data: { issueId } });
+      if (!moved.count) throw gqlError("Tệp vừa được gắn vào nơi khác", "INVALID_ATTACHMENT");
+      return tx.attachment.findUniqueOrThrow({ where: { id: attachmentId } });
+    });
+  },
+}));

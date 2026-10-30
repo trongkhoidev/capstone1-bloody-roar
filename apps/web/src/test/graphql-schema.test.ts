@@ -18,5 +18,8 @@ describe("GraphQL schema", () => {
     expect(mutations?.createSubmissionDraft).toBeDefined();
     expect(mutations?.prepareSubmitWork).toBeDefined();
     expect(mutations?.requestChanges).toBeDefined();
+    expect(mutations?.attachIssueFile).toBeDefined();
+    const issue = schema.getType("Issue");
+    expect(issue && "getFields" in issue ? issue.getFields().isDraft : undefined).toBeUndefined();
   }, 60_000);
 });

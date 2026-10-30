@@ -1,11 +1,12 @@
 import { ApplicationStatus, IssueStatus, Prisma, UserRole } from "@bloody-roar/database";
 import { z } from "zod";
 import { builder } from "../../builder";
+import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "@bloody-roar/shared";
 import { requireAuth } from "../../context";
 import { gqlError, parseOrThrow } from "../../errors";
 import { createNotificationSafely } from "../../../lib/services/notifications";
 import { UserRef } from "../user/user.module";
-import { ISSUE_INCLUDE, IssueRef } from "../issue/issue.module";
+import { ISSUE_INCLUDE, IssueRef, encodeCursor, decodeCursor } from "../issue/issue.module";
 
 const ApplicationStatusEnum = builder.enumType(ApplicationStatus, {
   name: "ApplicationStatus",
@@ -19,6 +20,7 @@ export const ApplicationRef = builder.prismaObject("Application", {
   include: APPLICATION_INCLUDE,
   fields: (t) => ({
     id: t.exposeID("id"),
+    cursor: t.string({ resolve: (application) => encodeCursor(application.id) }),
     status: t.expose("status", { type: ApplicationStatusEnum }),
     message: t.exposeString("message", { nullable: true }),
     issueId: t.exposeString("issueId"),
@@ -45,7 +47,7 @@ const ApplySchema = z.object({
 builder.queryFields((t) => ({
   applications: t.prismaField({
     type: [ApplicationRef],
-    args: { issueId: t.arg.string({ required: true }) },
+    args: { issueId: t.arg.string({ required: true }), first: t.arg.int(), after: t.arg.string() },
     resolve: async (query, _root, args, ctx) => {
       const user = requireAuth(ctx);
       const issue = await ctx.db.issue.findUnique({
@@ -55,12 +57,13 @@ builder.queryFields((t) => ({
       if (!issue) throw gqlError("Bài toán không tồn tại", "NOT_FOUND");
       if (issue.clientId !== user.id)
         throw gqlError("Chỉ chủ bài toán mới được xem danh sách ứng viên", "FORBIDDEN");
-      return ctx.db.application.findMany({
-        ...query,
-        where: { issueId: args.issueId },
-        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-        include: APPLICATION_INCLUDE,
-      });
+      const page = parseOrThrow(z.object({ first: z.number().int().min(1).max(MAX_PAGE_SIZE).nullish(), after: z.string().max(256).nullish() }), args);
+      const cursor = page.after ? decodeCursor(page.after) : null;
+      if (cursor && !await ctx.db.application.findFirst({ where: { id: cursor, issueId: args.issueId }, select: { id: true } }))
+        throw gqlError("Cursor không thuộc danh sách ứng viên", "INVALID_CURSOR");
+      return ctx.db.application.findMany({ ...query, where: { issueId: args.issueId },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }], take: page.first ?? DEFAULT_PAGE_SIZE,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}), include: APPLICATION_INCLUDE });
     },
   }),
   myApplications: t.prismaField({

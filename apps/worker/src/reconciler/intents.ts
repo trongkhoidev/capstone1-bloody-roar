@@ -1,7 +1,60 @@
 import type { IntentStatus, PrismaClient } from "@bloody-roar/database";
 import { decodeErrorResult } from "@bloody-roar/shared";
-import { ESCROW_ABI, type Hex } from "@bloody-roar/shared/escrow";
+import { decodeEscrowLog, ESCROW_ABI, type Hex } from "@bloody-roar/shared/escrow";
 import { getReceipt, type RpcClient, type RpcReceipt } from "../chain/client";
+import { checkpointKey, lockCheckpoint, type IndexerConfig } from "../indexer/checkpoint";
+
+const eventForMethod: Record<string, string> = {
+  deposit: "Deposited", submitWork: "WorkSubmitted", proposeSettlement: "SettlementProposed",
+  revokeSettlement: "SettlementRevoked", claim: "Claimed", releaseFunds: "EscrowResolved",
+  claimMissedDeliveryRefund: "EscrowResolved", claimReviewTimeout: "EscrowResolved",
+  acceptSettlement: "EscrowResolved", finalizeRuling: "EscrowResolved", finalizeArbiterTimeoutSplit: "EscrowResolved",
+};
+const resolutionForMethod: Record<string, string> = {
+  releaseFunds: "RELEASE", claimMissedDeliveryRefund: "MISSED_DELIVERY_REFUND", claimReviewTimeout: "REVIEW_TIMEOUT",
+  acceptSettlement: "SETTLEMENT", finalizeRuling: "RULING", finalizeArbiterTimeoutSplit: "ARBITER_TIMEOUT_SPLIT",
+};
+
+// Serialize with scanning and reorg so confirmation only references an applied canonical event.
+export async function reconcileIndexedIntents(db: PrismaClient, config: IndexerConfig): Promise<void> {
+  const checkpoint = await db.projectionCheckpoint.findUnique({ where: checkpointKey(config) });
+  if (!checkpoint) return;
+  await db.$transaction(async (tx) => {
+    await lockCheckpoint(tx, config);
+    const intents = await tx.transactionIntent.findMany({ where: {
+      chainId: config.chainId, contractAddress: { equals: config.escrowAddress, mode: "insensitive" },
+      status: { in: ["SUBMITTED", "PENDING_SAFE_HEAD"] }, txHash: { not: null }, method: { in: Object.keys(eventForMethod) },
+    }, take: 200, orderBy: { submittedAt: "asc" } });
+    const events = await tx.chainEvent.findMany({ where: { chainId: config.chainId,
+      contractAddress: { equals: config.escrowAddress, mode: "insensitive" },
+      txHash: { in: intents.map((intent) => intent.txHash!) }, canonical: true,
+      eventName: { in: Object.values(eventForMethod) },
+    } });
+    for (const intent of intents) {
+      const expectedEvent = eventForMethod[intent.method];
+      if (!expectedEvent) continue;
+      for (const row of events) {
+        if (row.txHash !== intent.txHash || row.eventName !== expectedEvent) continue;
+        const args = row.args as { topics?: Hex[]; data?: Hex };
+        if (!args.topics || !args.data) continue;
+        const event = decodeEscrowLog({ address: config.escrowAddress as Hex, topics: args.topics, data: args.data }, row.decoderVersion);
+        if (event.name !== expectedEvent) continue;
+        if (event.name === "Claimed") {
+          const user = await tx.user.findUnique({ where: { id: intent.userId }, select: { walletAddress: true } });
+          if (!user || user.walletAddress.toLowerCase() !== event.recipient.toLowerCase()) continue;
+        } else {
+          if (!("escrowIdHash" in event) || !intent.escrowKey) continue;
+          const projection = await tx.escrowProjection.findUnique({ where: { escrowIdHash: event.escrowIdHash.toLowerCase() } });
+          if (!projection || projection.escrowKey !== intent.escrowKey || projection.issueId !== intent.issueId) continue;
+          if (event.name === "EscrowResolved" && event.resolution !== resolutionForMethod[intent.method]) continue;
+        }
+        await tx.transactionIntent.updateMany({ where: { id: intent.id, txHash: intent.txHash, status: { in: ["SUBMITTED", "PENDING_SAFE_HEAD"] } },
+          data: { status: "CONFIRMED", confirmedByEventId: row.id } });
+        break;
+      }
+    }
+  }, { timeout: 30_000 });
+}
 
 // A submitted tx with no receipt after this long is DROPPED. The plan says "N blocks";
 // TransactionIntent has no block column, so the rule uses wall-clock time (INTENT_MINUTES = 30).

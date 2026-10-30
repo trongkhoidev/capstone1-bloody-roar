@@ -69,6 +69,8 @@ export async function handleReorg({ db, rpc, config }: ScanDeps): Promise<{ rewo
     const reversible = stale.filter((event) => event.eventName === "Claimed" || (event.eventName === "Deposited" || event.eventName === "WorkSubmitted" || event.eventName === "EscrowResolved" || event.eventName === "SettlementProposed" || event.eventName === "SettlementRevoked") && event.escrowIdHash)
       .sort((a, b) => a.blockNumber === b.blockNumber ? b.txIndex - a.txIndex || b.logIndex - a.logIndex : a.blockNumber > b.blockNumber ? -1 : 1);
     for (const event of reversible) {
+      // A hash may have been recorded after the event's undo snapshot was captured.
+      await tx.transactionIntent.updateMany({ where: { confirmedByEventId: event.id }, data: { status: "SUBMITTED", confirmedByEventId: null } });
       if (event.eventName === "Claimed") {
         const args = event.args as unknown as { undo?: ClaimedUndo };
         if (!args.undo) throw new Error("Cannot safely undo claim without its recorded snapshot");

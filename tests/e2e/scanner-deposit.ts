@@ -25,6 +25,7 @@ await loadSchema();
 const { scanOnce } = await import("../../apps/worker/src/indexer/scanner");
 const { handleReorg } = await import("../../apps/worker/src/indexer/reorg");
 const { reconcileProjections } = await import("../../apps/worker/src/reconciler/projections");
+const { reconcileIndexedIntents } = await import("../../apps/worker/src/reconciler/intents");
 const config = { chainId: 31337, escrowAddress: manifest.address.toLowerCase(), escrowDeployBlock: BigInt(manifest.deployBlock), rangeSize: 2000, reorgWindow: 64, finality: "latest" as const };
 const suffix = randomBytes(8).toString("hex"), escrowKey = `br_e5_${suffix}`, escrowIdHash = keccakUtf8(escrowKey);
 const termsHash = `0x${randomBytes(32).toString("hex")}` as Hex;
@@ -270,8 +271,10 @@ try {
   fixtureIntentIds.push(claim.intentId);
   const claimSnapshot = await rpc.call<string>("evm_snapshot", []);
   const claimHash = await send(developer, claim.contractAddress, claim.data);
-  await devGraphql(`mutation($id: ID!, $hash: String!) { recordTransactionSubmitted(intentId: $id, txHash: $hash) { status } }`, { id: claim.intentId, hash: claimHash });
   while (await scanOnce({ db: prisma, rpc, config })) { /* scan claim */ }
+  assert.equal((await prisma.transactionIntent.findUniqueOrThrow({ where: { id: claim.intentId } })).status, "AWAITING_SIGNATURE");
+  await devGraphql(`mutation($id: ID!, $hash: String!) { recordTransactionSubmitted(intentId: $id, txHash: $hash) { status } }`, { id: claim.intentId, hash: claimHash });
+  await reconcileIndexedIntents(prisma, config);
   assert.equal(await claimable(developer), "0");
   assert.equal((await prisma.transactionIntent.findUniqueOrThrow({ where: { id: claim.intentId } })).status, "CONFIRMED");
   const afterClaim = decodeFunctionResult({ abi: balanceAbi, functionName: "balanceOf", data: await rpc.call<Hex>("eth_call", [{ to: manifest.token, data: devBalanceData }, "latest"]) });

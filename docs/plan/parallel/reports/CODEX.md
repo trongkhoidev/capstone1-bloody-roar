@@ -1,4 +1,19 @@
-ĐANG DỞ: BE-35 / race intent. Bước tiếp theo: xử lý recordTransactionSubmitted đến sau khi event đã fold; xác nhận chỉ khi event canonical khớp, đồng bộ reorg và bổ sung test race trước khi tiếp tục gate phase C.
+ĐANG DỞ: Z-2. Bước tiếp theo: sửa lệnh khởi động Hardhat trong scanner và chạy check-env trước E2E.
+
+| Mã | Trạng thái |
+| --- | --- |
+| Z-1 / BE-35 | Xong test DB, typecheck, lint; E2E Hardhat chờ Z-2 |
+| Z-2–Z-7; D–I | Chưa làm |
+
+## Z-1 — đối chiếu intent
+
+- Tra tối đa 200 intent theo submittedAt, lấy event trong một truy vấn không phân biệt hoa thường; test hai intent và reorg pass. `bun run typecheck` và `bun run lint` pass (4 cảnh báo any cũ). E2E Hardhat và gate phase 0 chưa chạy.
+
+## BE-35 — đối chiếu intent đến muộn (chưa hoàn tất gate)
+
+- Job worker đối chiếu txHash, chain, contract, loại event, escrow/issue hoặc ví nhận; xác nhận dưới khóa checkpoint sau khi event canonical đã fold. Reorg trả intent về SUBMITTED trước khi hoàn tác event.
+- Test PostgreSQL `intent-race.test.ts` pass: claim được index trước khi ghi hash, xác nhận, reorg, và không xác nhận event orphan; toàn bộ worker 68/68 pass. `bun run typecheck`, `bun run lint` pass (4 cảnh báo any cũ).
+- Đã sửa fixture `scanner-deposit.ts` để kiểm tra race claim qua GraphQL/Hardhat nhưng chưa chạy được: Hardhat node thoát với EMFILE khi tạo file watcher. Gate phase C và gate cuối chưa hoàn tất. Chưa kiểm tra tải khi số intent chờ lớn. `bun run build` trong bản sao /private/tmp thất bại với RangeError: Division by zero trong Next.js @vercel/nft; chưa xác định nguyên nhân.
 
 ## BE-45/BE-46 — E12/E13
 

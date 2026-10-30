@@ -1,11 +1,16 @@
-ĐANG DỞ: Z-4. Bước tiếp theo: xác nhận intent approve bằng receipt đạt safe head, với test receipt giả.
+ĐANG DỞ: Z-5. Bước tiếp theo: đối chiếu và chuyển bảng trạng thái thật lên đầu CODEX.md.
 
 | Mã | Trạng thái |
 | --- | --- |
 | Z-1 / BE-35 | Xong test DB, typecheck, lint; E2E Hardhat chờ Z-2 |
 | Z-2 | Xong: scanner tự khởi động Hardhat, deploy, chạy và dọn PID |
 | Z-3 | Xong: ba merge và gate trước harness pass |
-| Z-4–Z-7; D–I | Chưa làm |
+| Z-4 | Xong: approve xác nhận bằng receipt và finality |
+| Z-5–Z-7; D–I | Chưa làm |
+
+## Z-4 — receipt approve
+
+- Reconciler xét intent đúng chain, cả approve đang chờ safe head; chỉ xác nhận receipt thành công gửi tới token và không vượt safe/latest head. Test receipt giả và RPC pass 14/14; typecheck và lint pass (4 cảnh báo cũ).
 
 ## Z-3 — merge ba nhánh
 

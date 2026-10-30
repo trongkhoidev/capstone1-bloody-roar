@@ -66,7 +66,7 @@ test("reconcileIntents applies the rules to stored intents", async () => {
   chain.receipts.set("0xreverted", { status: "0x0", blockNumber: 10n });
   chain.traces.set("0xreverted", encodeErrorResult({ abi: ESCROW_ABI, errorName: "DeadlineNotReached", args: [123n] }));
   chain.receipts.set("0xmined", { status: "0x1", blockNumber: 10n });
-  const changed = await reconcileIntents({ db: prisma, rpc: fakeRpc(chain), now: () => now });
+  const changed = await reconcileIntents({ db: prisma, rpc: fakeRpc(chain), now: () => now, config: { chainId: 84532, finality: "safe" } });
 
   expect(changed).toBeGreaterThanOrEqual(4); // leftover open rows from other runs may also change
   const statusOf = async (id: string) => (await prisma.transactionIntent.findUniqueOrThrow({ where: { id } })).status;
@@ -87,6 +87,41 @@ test("a concurrent chain confirmation is not overwritten by receipt reconciliati
     if (method === "eth_getTransactionReceipt" && params[0] === "0xrace") await prisma.transactionIntent.update({ where: { id: intent.id }, data: { status: "CONFIRMED" } });
     return fake.call<T>(method, params);
   } };
-  await reconcileIntents({ db: prisma, rpc, now: () => now });
+  await reconcileIntents({ db: prisma, rpc, now: () => now, config: { chainId: 84532, finality: "safe" } });
   expect((await prisma.transactionIntent.findUniqueOrThrow({ where: { id: intent.id } })).status).toBe("CONFIRMED");
+});
+
+test("approval confirms only a successful receipt addressed to its token at or below finality", async () => {
+  const token = "0x0000000000000000000000000000000000000abc";
+  const base = { userId, chainId: 84532, contractAddress: token, method: "approve", args: {}, expiresAt: new Date("2027-01-01T13:00:00Z"), submittedAt: minutesAgo(1) };
+  const create = (txHash: string, status: "SUBMITTED" | "PENDING_SAFE_HEAD" = "SUBMITTED") => prisma.transactionIntent.create({ data: { ...base, txHash, status } });
+  const [safe, later, wrong, reverted, pending] = await Promise.all([
+    create("0xapproval-safe"), create("0xapproval-later", "PENDING_SAFE_HEAD"), create("0xapproval-wrong"), create("0xapproval-reverted"), create("0xapproval-pending", "PENDING_SAFE_HEAD"),
+  ]);
+  const chain = newChain();
+  chain.safe = 10n;
+  chain.blockHash.set(10n, "0xsafe");
+  chain.receipts.set(safe.txHash!, { status: "0x1", blockNumber: 10n, to: token.toUpperCase().replace("0X", "0x") });
+  chain.receipts.set(later.txHash!, { status: "0x1", blockNumber: 11n, to: token });
+  chain.receipts.set(wrong.txHash!, { status: "0x1", blockNumber: 10n, to: "0x0000000000000000000000000000000000000def" });
+  chain.receipts.set(reverted.txHash!, { status: "0x0", blockNumber: 10n, to: token });
+  const deps = { db: prisma, rpc: fakeRpc(chain), now: () => now, config: { chainId: 84532, finality: "safe" as const } };
+  await reconcileIntents(deps);
+  const status = async (id: string) => (await prisma.transactionIntent.findUniqueOrThrow({ where: { id } })).status;
+  expect(await status(safe.id)).toBe("CONFIRMED");
+  expect(await status(later.id)).toBe("PENDING_SAFE_HEAD");
+  expect(await status(wrong.id)).toBe("PENDING_SAFE_HEAD");
+  expect(await status(reverted.id)).toBe("FAILED");
+  expect(await status(pending.id)).toBe("PENDING_SAFE_HEAD");
+  chain.safe = 11n;
+  chain.blockHash.set(11n, "0xlatest");
+  const tags: string[] = [];
+  const fake = fakeRpc(chain);
+  const rpc = { ...fake, async call<T>(method: string, params: unknown[]): Promise<T> {
+    if (method === "eth_getBlockByNumber") tags.push(String(params[0]));
+    return fake.call<T>(method, params);
+  } };
+  await reconcileIntents({ ...deps, rpc, config: { chainId: 84532, finality: "latest" } });
+  expect(await status(later.id)).toBe("CONFIRMED");
+  expect(tags).toEqual(["latest"]);
 });

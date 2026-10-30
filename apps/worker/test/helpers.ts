@@ -13,7 +13,7 @@ export type FakeChain = {
   logs: RawLog[];
   safe: bigint;
   maxSpan: number;
-  receipts: Map<string, { status: "0x0" | "0x1"; blockNumber: bigint }>;
+  receipts: Map<string, { status: "0x0" | "0x1"; blockNumber: bigint; to?: string | null }>;
   traces: Map<string, string>;
 };
 
@@ -48,7 +48,7 @@ export function fakeRpc(chain: FakeChain): RpcClient {
       if (method === "eth_getTransactionReceipt") {
         const [txHash] = params as [string];
         const receipt = chain.receipts.get(txHash);
-        return (receipt ? { status: receipt.status, blockNumber: hex(receipt.blockNumber), transactionHash: txHash } : null) as T;
+        return (receipt ? { status: receipt.status, blockNumber: hex(receipt.blockNumber), transactionHash: txHash, ...(receipt.to !== undefined ? { to: receipt.to } : {}) } : null) as T;
       }
       throw new Error(`fake rpc: unexpected ${method}`);
     },

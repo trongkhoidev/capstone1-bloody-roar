@@ -1,7 +1,7 @@
 import type { IntentStatus, PrismaClient } from "@bloody-roar/database";
 import { decodeErrorResult } from "@bloody-roar/shared";
 import { decodeEscrowLog, ESCROW_ABI, type Hex } from "@bloody-roar/shared/escrow";
-import { getReceipt, type RpcClient, type RpcReceipt } from "../chain/client";
+import { getReceipt, getSafeBlock, type RpcClient, type RpcReceipt } from "../chain/client";
 import { checkpointKey, lockCheckpoint, type IndexerConfig } from "../indexer/checkpoint";
 
 const eventForMethod: Record<string, string> = {
@@ -68,7 +68,7 @@ export type IntentView = {
 
 export type IntentChange = { status: IntentStatus; failureReason?: string };
 
-// Receipts never set CONFIRMED. Only the applier does, once the matching event is folded.
+// Escrow receipts wait for the applier; approval receipts are handled separately below.
 export function nextIntentState(intent: IntentView, receipt: RpcReceipt | null, now: Date): IntentChange | null {
   if (intent.status === "AWAITING_SIGNATURE") {
     return now >= intent.expiresAt ? { status: "EXPIRED" } : null;
@@ -95,15 +95,20 @@ export async function failedTransactionReason(rpc: RpcClient, txHash: string): P
   }
 }
 
-export async function reconcileIntents(deps: { db: PrismaClient; rpc: RpcClient; now: () => Date }): Promise<number> {
+export async function reconcileIntents(deps: { db: PrismaClient; rpc: RpcClient; now: () => Date; config: Pick<IndexerConfig, "chainId" | "finality"> }): Promise<number> {
   const intents = await deps.db.transactionIntent.findMany({
-    where: { status: { in: ["AWAITING_SIGNATURE", "SUBMITTED"] } },
+    where: { chainId: deps.config.chainId, OR: [{ status: { in: ["AWAITING_SIGNATURE", "SUBMITTED"] } }, { status: "PENDING_SAFE_HEAD", method: "approve" }] },
     take: 200,
   });
   let changed = 0;
+  let safeHead: Awaited<ReturnType<typeof getSafeBlock>> | undefined;
   for (const intent of intents) {
     const receipt = intent.txHash ? await getReceipt(deps.rpc, intent.txHash) : null;
-    const next = nextIntentState(intent, receipt, deps.now());
+    let next = nextIntentState(intent, receipt, deps.now());
+    if (intent.method === "approve" && receipt?.status === 1 && receipt.to?.toLowerCase() === intent.contractAddress.toLowerCase()) {
+      if (safeHead === undefined) safeHead = await getSafeBlock(deps.rpc, deps.config.finality);
+      if (safeHead && receipt.blockNumber <= safeHead.number) next = { status: "CONFIRMED" };
+    }
     if (!next) continue;
     if (receipt?.status === 0 && intent.txHash) next.failureReason = await failedTransactionReason(deps.rpc, intent.txHash);
     const updated = await deps.db.transactionIntent.updateMany({

@@ -12,7 +12,7 @@ export type RawLog = {
 };
 
 export type RpcBlock = { number: bigint; hash: string };
-export type RpcReceipt = { status: 0 | 1; blockNumber: bigint; transactionHash: string };
+export type RpcReceipt = { status: 0 | 1; blockNumber: bigint; transactionHash: string; to?: string | null };
 
 // The RPC refused the block range. The caller halves the range and retries.
 export class RpcRangeError extends Error {}
@@ -78,12 +78,12 @@ export async function getLogs(
 }
 
 export async function getReceipt(rpc: RpcClient, txHash: string): Promise<RpcReceipt | null> {
-  const raw = await rpc.call<{ status: string; blockNumber: string; transactionHash: string } | null>(
+  const raw = await rpc.call<{ status: string; blockNumber: string; transactionHash: string; to?: string | null } | null>(
     "eth_getTransactionReceipt",
     [txHash],
   );
   if (!raw) return null;
-  return { status: raw.status === "0x1" ? 1 : 0, blockNumber: BigInt(raw.blockNumber), transactionHash: raw.transactionHash };
+  return { status: raw.status === "0x1" ? 1 : 0, blockNumber: BigInt(raw.blockNumber), transactionHash: raw.transactionHash, ...(raw.to !== undefined ? { to: raw.to } : {}) };
 }
 
 export const hexToNumber = (hex: string): number => Number(BigInt(hex));

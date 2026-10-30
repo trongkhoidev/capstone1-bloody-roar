@@ -1,10 +1,14 @@
-ĐANG DỞ: Z-2. Bước tiếp theo: sửa lệnh khởi động Hardhat trong scanner và chạy check-env trước E2E.
+ĐANG DỞ: Z-3. Bước tiếp theo: merge be/a1-platform, be/a5-dispute-chat-ai và feat/ledger-palette-copy theo thứ tự đã định.
 
 | Mã | Trạng thái |
 | --- | --- |
 | Z-1 / BE-35 | Xong test DB, typecheck, lint; E2E Hardhat chờ Z-2 |
-| Z-2 | Dở: Hardhat và scanner chạy thủ công thành công; chưa nối khởi động vào scanner/harness |
+| Z-2 | Xong: scanner tự khởi động Hardhat, deploy, chạy và dọn PID |
 | Z-3–Z-7; D–I | Chưa làm |
+
+## Z-2 — Hardhat cho scanner
+
+- Scanner chạy `check-env`, từ chối khi port 8545 bận, khởi động Hardhat với ulimit 65536, deploy hợp đồng và tự dừng PID đã ghi. Chạy scanner qua chain thật pass; `bun run typecheck` và `bun run lint` pass (4 cảnh báo cũ). Harness G1 sẽ dùng cùng lệnh khởi động.
 
 ## Z-2 — kiểm tra Hardhat ban đầu
 

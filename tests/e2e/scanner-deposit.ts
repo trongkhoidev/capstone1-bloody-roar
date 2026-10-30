@@ -4,6 +4,48 @@ import { assertTestDatabase } from "@bloody-roar/database/test-guard";
 import { decodeFunctionResult, encodeFunctionData } from "@bloody-roar/shared";
 import { fundingIntentTypedData, keccakUtf8, type Hex } from "@bloody-roar/shared/escrow";
 import { createRpcClient } from "../../apps/worker/src/chain/client";
+import { closeSync, openSync } from "node:fs";
+import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { createServer } from "node:net";
+import "./check-env";
+
+// Run against a fresh chain owned by this fixture; never reuse or stop another node.
+if (process.env.SCANNER_MANAGED !== "1") {
+  const probe = createServer();
+  await new Promise<void>((resolve, reject) => {
+    probe.once("error", reject);
+    probe.listen(8545, "127.0.0.1", () => probe.close(() => resolve()));
+  });
+  const runDir = "tests/e2e/.run";
+  const pidPath = `${runDir}/scanner-hardhat.pid`;
+  await mkdir(runDir, { recursive: true });
+  const log = openSync(`${runDir}/scanner-hardhat.log`, "w");
+  const node = Bun.spawn(["sh", "-c", "ulimit -n 65536; exec bun run --cwd apps/contracts node"], { stdout: log, stderr: log });
+  await writeFile(pidPath, String(node.pid));
+  try {
+    const deadline = Date.now() + 30_000;
+    let ready = false;
+    while (Date.now() < deadline && node.exitCode === null) {
+      try {
+        const response = await fetch("http://127.0.0.1:8545", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_chainId", params: [] }) });
+        const body = await response.json() as { result?: string };
+        if (body.result === "0x7a69") { ready = true; break; }
+      } catch { /* node is starting */ }
+      await Bun.sleep(250);
+    }
+    if (!ready) throw new Error("Hardhat failed to start; see tests/e2e/.run/scanner-hardhat.log");
+    const deploy = Bun.spawn(["bun", "run", "--cwd", "apps/contracts", "deploy:local"], { stdout: "inherit", stderr: "inherit" });
+    if (await deploy.exited !== 0) throw new Error("Hardhat deployment failed");
+    const scanner = Bun.spawn(["bun", "run", "tests/e2e/scanner-deposit.ts"], { env: { ...process.env, SCANNER_MANAGED: "1" }, stdout: "inherit", stderr: "inherit" });
+    process.exitCode = await scanner.exited;
+  } finally {
+    if ((await readFile(pidPath, "utf8")).trim() === String(node.pid) && node.exitCode === null) node.kill();
+    await node.exited;
+    await unlink(pidPath);
+    closeSync(log);
+  }
+  process.exit(process.exitCode);
+}
 
 assertTestDatabase(process.env.TEST_DATABASE_URL);
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;

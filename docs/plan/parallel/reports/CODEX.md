@@ -1,21 +1,37 @@
-HOÀN TẤT 2026-10-31 00:26 (điều kiện Phần E đạt; một số mục FE/S còn một phần, xem bảng)
+HOÀN TẤT 2026-10-31 01:12 (gate B0.2 exit 0; điều kiện Phần E đạt; một số mục FE và S có phạm vi hẹp hơn đặc tả, xem Ghi chú kiểm toán)
 
 ## Báo cáo cuối (C7)
 
-- Gate B0.2 exit 0: typecheck, lint (không lỗi), web 582 pass, worker 72 pass, database 3 pass, contracts 35 pass, `test:e2e:local` 39 pass và in `E2E scenarios passed`.
-- Các lệnh grep Phần E rỗng: `proposeDisputeResolution|challengeDisputeResolution|assignDeveloper|reviewSubmission|depositToEscrow` (apps/web/src), `GOOGLE_GENERATIVE_AI_API_KEY` (apps/web/src và .env.example), `createHash("sha256")` (apps/web/src/ai và socket), `TODO(P1-22)` (apps).
-- `fe-operations.test.ts`: pass.
-- Bị chặn: Z-6 (`next build`, @vercel/nft Division by zero, không đụng nữa theo A3).
-- Đã hoàn tất sau lần rà đầu: FE-3 (hành động theo availableActions, hiện reasonDisabled), FE-7 (tệp giao việc, bằng chứng, ảnh issue, avatar), S-1 (gom các helper giống nhau), S-5 (bỏ PLATFORM_FEE_PERCENT và re-export thừa).
-- Chưa có kiểm tự động riêng cho FE-2 (refresh sau giao dịch); đặc tả không yêu cầu test cho mục này, kiểm bằng tay theo docs/LOCAL_DEV.md.
+- Gate B0.2 exit 0, chạy trên `4b5a0f7`: `typecheck` pass; `lint` không lỗi (4 cảnh báo `any` có sẵn); web 584 pass (85 file); worker 72 pass (22 file); database 3 pass; contracts 35 pass; `test:e2e:local` 40 pass, 0 fail, 31 file, in `E2E scenarios passed`. Số 40 gồm 3 test của E28.
+- Các lệnh grep Phần E đều rỗng (chạy đúng như trong file): `proposeDisputeResolution|challengeDisputeResolution|assignDeveloper|reviewSubmission|depositToEscrow` (apps/web/src); `GOOGLE_GENERATIVE_AI_API_KEY` (apps/web/src và .env.example); `createHash("sha256")` (apps/web/src/ai và apps/web/src/socket); `TODO(P1-22)` (apps).
+- `fe-operations.test.ts` pass.
+- Hoàn tất trong lượt cuối: C1 (`a744553`: đổi tên `arbiterPost`, `restoreChain(snapshot, f)`); C2 (`26bb06e`: E28 phủ mọi dòng AUTHZ_MATRIX; `8c2b3c8`: sửa ma trận theo code và QĐ-21, ghi BỔ SUNG E19/E20/C2); FE-1b/1c (`dffc189`: ethers cho gửi giao dịch và ký funding intent); FE-3/FE-4 (`0260227`: thẻ escrow theo quyền từng người xem, nút hủy giữ chỗ, ô mã commit); FE-6 (`46f3074`: aiStatus và tóm tắt AI); S-2 (`e2d29e4`: DAY/HOUR dùng hằng số chung); BỔ SUNG FE-2, S-2, S-3 (`4b5a0f7`).
+- Bị chặn: Z-6 (`next build`, @vercel/nft Division by zero; không đụng nữa theo A3). Gate không gồm build.
+- Ghi chú kiểm toán (những điểm không khớp hoàn toàn đặc tả):
+  - B0.4: không kiểm port trước mỗi lần chạy harness; harness tự kiểm port lúc khởi động.
+  - Một số lần chạy gate được chạy nền, trong khi B0.2 ghi chạy foreground.
+  - B3 "test trước" không áp dụng tuyệt đối cho mọi mục; nhiều mục gộp chung commit (FE-1b với FE-1c, FE-3 với FE-4).
+  - Layout: thẻ "Escrow actions" nay hiện cho bất kỳ người xem nào có hành động (trước đây chỉ bên tham gia và trạng thái IN_PROGRESS); thêm nút "Hủy giữ chỗ" và ô "Mã commit (không bắt buộc)". Đặc tả cấm đổi layout ngoài nhãn nút mới.
+  - FE-2: trang chi tiết issue không dùng react-query, giữ `load()` và socket riêng (xem BỔ SUNG FE-2).
+  - E28 chưa kiểm `FORBIDDEN` ở trạng thái đã có escrow (issue chưa có escrow thì trả `NOT_FOUND`). 13 mutation trong schema chưa có dòng ma trận và chưa có case E28 (xem BỔ SUNG C2).
+  - Phát hiện cần quyết định: `createIssue` và `applyToIssue` đã bỏ chặn role theo QĐ-21, nhưng `create-issue-form.tsx` vẫn chặn người có `role !== "CLIENT"`. Chưa sửa vì nằm ngoài phạm vi đặc tả C5.
+  - Log E2E có dòng "write conflict or deadlock" khi tạo FundingReservation ở e04; test vẫn pass.
+- BỔ SUNG đã thêm vào DECISIONS.md: 38 mục (danh sách đầy đủ trong file đó).
 - Việc người dùng tự làm (Phần F): kiểm thử bằng MetaMask theo docs/LOCAL_DEV.md; xóa worktree cũ; sửa Z-6; deploy; GitGuardian; mở PR.
 
-Bảng trạng thái gốc bên dưới giữ nguyên để tra cứu; các dòng FE/S mới nằm trong LOCAL_TEST_MATRIX.md.
+Bảng trạng thái gốc bên dưới giữ nguyên để tra cứu; các dòng mới ở đầu bảng là kết quả C1–C6 của lượt cuối.
 
 ---
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
+| C1 / G1 | xong | `a744553`: `arbiterPost`, `restoreChain(snapshot, f)`; scanner-deposit và apps/worker/e2e đã xóa |
+| E28 | xong | `26bb06e`, `8c2b3c8`: 3/3 pass; mọi dòng AUTHZ_MATRIX có case khách và người ngoài |
+| FE-1b / FE-1c | xong | `dffc189`: ethers Web3Provider, tx.wait(1), `_signTypedData` |
+| FE-3 / FE-4 | xong | `0260227`: thẻ escrow theo viewerCapabilities, hủy giữ chỗ, commitSha |
+| FE-6 | xong | `46f3074`: aiStatus trên DisputeRef, tóm tắt AI trong admin |
+| S-2 | xong | `e2d29e4`: DAY_SECONDS, HOUR_SECONDS trong constants |
+| S-3 | xong (giữ nguyên) | BỔ SUNG S-3 trong DECISIONS.md |
 | Z-1 / BE-35 | xong | `42d62ae`; DB test và scanner Hardhat pass |
 | Z-2 | xong | `4cc84ee`; scanner Hardhat pass |
 | Z-3 | xong | `79b8010`, `87bb280`, `2f27bc2`, `704cd2e`; gate trước harness pass |
@@ -54,7 +70,7 @@ Bảng trạng thái gốc bên dưới giữ nguyên để tra cứu; các dòn
 | E31 | xong | `e31-flow.test.ts` (test:e2e:local) |
 | FE-1b | xong | `lib/web3/send-prepared.ts` |
 | FE-1c | xong | `lib/web3/funding-intent.ts` |
-| FE-2 | xong (không test tự động) | refresh theo escrow:invalidate và poll 30 lần |
+| FE-2 | xong (BỔ SUNG FE-2) | refresh theo escrow:invalidate và poll 30 lần; không dùng react-query |
 | FE-3 | xong | availableActions và viewerCapabilities; reasonDisabled hiển thị |
 | FE-4 | xong | `issue-detail-view.tsx`: luồng prepare-và-gửi, bằng chứng, thỏa thuận, đánh giá |
 | FE-5 | xong | `dashboard-view.tsx`: myClaimable và Rút tiền |

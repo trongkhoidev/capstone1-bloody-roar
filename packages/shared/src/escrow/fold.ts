@@ -2,6 +2,7 @@
 // Hàm thuần: không I/O, không đọc env. Quy tắc suy ra từ BloodyRoarEscrow.sol. Mỗi quy tắc có test trong BE-82.
 // Fold chỉ kiểm để phát hiện chuỗi event không thể có on-chain (lỗi indexer, reorg, decoder lệch). Không thay thế việc contract kiểm.
 import { ESCROW_CONSTANTS } from "./constants";
+import { DAY_SECONDS, HOUR_SECONDS } from "../constants/index";
 import { splitPayout } from "../money";
 import type {
   DecodedEscrowEvent,
@@ -24,8 +25,8 @@ type EscrowScopedEvent = Exclude<
   Extract<DecodedEscrowEvent, { name: "Deposited" | "Claimed" }> | GovernanceEvent | PauseEvent
 >;
 
-const DAY = 86_400n;
-const HOUR = 3_600n;
+const DAY = BigInt(DAY_SECONDS);
+const HOUR = BigInt(HOUR_SECONDS);
 const MAX_BPS = 10_000;
 const ZERO_HASH: Hex = `0x${"00".repeat(32)}`;
 

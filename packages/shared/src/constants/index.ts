@@ -150,4 +150,7 @@ export const TECH_SKILLS = [
 export const MINUTE_MS = 60_000;
 export const HOUR_MS = 3_600_000;
 export const DAY_MS = 86_400_000;
+// Same spans in seconds, for contract deadlines and fold arithmetic.
+export const HOUR_SECONDS = 3_600;
+export const DAY_SECONDS = 86_400;
 export const MAX_BPS = 10_000;

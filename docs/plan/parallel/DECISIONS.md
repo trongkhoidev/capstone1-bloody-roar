@@ -167,3 +167,7 @@ Thêm `Dispute.aiStartedAt` để timeout và chống lượt AI cũ ghi đè v�
 ## BỔ SUNG N-14 — chặn mọi provider thật trong E2E
 
 `check-env` chặn cả khóa GROQ/OPENAI, credential S3 và webhook; AI mock chỉ dùng loopback port 4019 để không fallback sang dịch vụ thật.
+
+## BỔ SUNG N-8 — lưu báo cáo sau teardown
+
+Giữ `tests/e2e/.run/last-run.txt` và log đã ignore sau khi dừng PID để có thể chẩn đoán, vì yêu cầu xóa cả thư mục mâu thuẫn với việc ghi báo cáo trong đó.

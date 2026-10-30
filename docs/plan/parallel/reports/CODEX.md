@@ -1,4 +1,4 @@
-ĐANG DỞ: N-8 / G1. Bước tiếp theo: xây harness local theo N-8, N-9, N-12, N-13; N-6 thực hiện cùng P1-30a.
+ĐANG DỞ: N-8 / G1. Bước tiếp theo: thêm các kịch bản E2–E17, E22–E24, E31 và hoàn thiện N-12/N-13; N-6 làm cùng P1-30a.
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -11,7 +11,10 @@
 | Z-7 | xong | Script cũ gọi mutation đã xóa được gỡ; root chuyển sang harness ở N-8 |
 | D4 / D5 | xong | `dde1bc7`; test theo ma trận |
 | AI-11 | xong | Timeout, bps và một AILog mỗi lượt được kiểm bằng test DB |
-| N-6, N-8–N-13 | chưa làm | N-6 cùng P1-30a; N-8–N-13 tại G1/G2 |
+| N-8 | dở | Harness khởi động/reset/seed/teardown pass E1, còn thiếu kịch bản G1 |
+| N-9 | xong | Seed token theo manifest, guard DB test |
+| N-12, N-13 | chưa làm | G1 |
+| N-6, N-10, N-11 | chưa làm | N-6 cùng P1-30a; N-10/N-11 tại G2 |
 | FE-1–FE-8 | chưa làm | Phase FE |
 | P0-1 | dở | 3118318 (xóa template; E2E chờ) |
 | P0-2 | xong | fe78f0e |
@@ -69,6 +72,10 @@
 ## Bị chặn
 
 - Z-6: `bun run build` lỗi `RangeError: Division by zero` trong `@vercel/nft`. Đã thử build trong worktree, thêm outputFileTracingRoot, rồi loại `.uploads` và `tests` khỏi tracing; cả ba vẫn lỗi. Typecheck và lint pass. Theo FINISH_PLAN, không chặn gate và tiếp tục phase khác.
+
+## N-8/N-9 và E1 — harness ban đầu
+
+- Harness kiểm môi trường và port, chạy Hardhat, deploy, reset bloody_codex_test, seed token, khởi động worker/web/mock, chạy E1 và dọn PID; các cổng đã giải phóng. E1 pass 8 assertion: SIWE admin/client, me, logout, ban và chain 31337. Sửa nonce/login dùng ACTIVE_CHAIN_ID. `test:e2e:local` vẫn fail có chủ đích vì thiếu E2–E17, E22–E24, E31; chưa coi N-8 hoàn tất. Seed test 1/1, typecheck và lint pass.
 
 ## N-14 — kiểm tra môi trường bổ sung
 

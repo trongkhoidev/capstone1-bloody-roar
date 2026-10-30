@@ -12,7 +12,7 @@
     "start": "bun run --cwd apps/web start",
     "lint": "bun run --cwd apps/web lint",
     "typecheck": "bun run --cwd apps/web typecheck && bun run --cwd apps/worker typecheck && bun x tsc --noEmit -p tsconfig.json",
-    "test:e2e:backend": "bun run --cwd apps/web test:e2e:backend",
+    "test:e2e:backend": "bun run test:e2e:local",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "db:generate": "bun run --cwd packages/database db:generate",
     "db:migrate": "bun run --cwd packages/database db:migrate",
@@ -23,7 +23,8 @@
     "contracts:test": "bun run --cwd apps/contracts test",
     "contracts:deploy": "bun run --cwd apps/contracts deploy:local",
     "worker:start": "bun run --cwd apps/worker start",
-    "worker:replay": "bun run --cwd apps/worker replay"
+    "worker:replay": "bun run --cwd apps/worker replay",
+    "test:e2e:local": "bun run tests/e2e/run-local.ts"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

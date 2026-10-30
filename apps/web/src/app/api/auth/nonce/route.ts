@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ACTIVE_CHAIN_ID } from "@bloody-roar/shared";
 import { thirdwebAuth } from "../../../../lib/auth";
 import { tryChecksumAddress } from "../../../../lib/auth/address";
 import { prisma } from "@bloody-roar/database";
@@ -28,7 +29,7 @@ export async function GET(req: Request) {
     }
     const auth = thirdwebAuth();
     const uri = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:4000";
-    const chainId = "84532";
+    const chainId = String(ACTIVE_CHAIN_ID);
     const expirationTime = new Date(Date.now() + 10 * 60 * 1000);
     const payload = await auth.payload({
       address,

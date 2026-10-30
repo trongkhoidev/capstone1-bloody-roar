@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ACTIVE_CHAIN_ID } from "@bloody-roar/shared";
 import { AUTH_COOKIE_NAME, thirdwebAuth } from "../../../../lib/auth";
 import { authDomain, issueAuthToken } from "../../../../lib/auth/siwe";
 import { validateSiwePayload } from "../../../../lib/auth/siwe-validation";
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
     const auth = thirdwebAuth();
     const rawPayload: unknown = await req.json();
     const uri = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:4000";
-    const chainId = "84532";
+    const chainId = String(ACTIVE_CHAIN_ID);
     const payload = validateSiwePayload(rawPayload, {
       domain: authDomain(),
       uri,

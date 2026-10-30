@@ -1,4 +1,11 @@
-ĐANG DỞ: BE-48 / E10. Bước tiếp theo: triển khai effect CLAIMED và hoàn tác khi reorg, xác nhận intent và PAYMENT_RECEIVED; test claim thật và E10/E31.
+ĐANG DỞ: BE-45/BE-46 / E12-E13. Bước tiếp theo: sửa pre-check refund/review timeout theo timestamp block, kiểm permissionless và chạy test Hardhat bằng evm_increaseTime.
+
+## BE-48 — claim và reorg
+
+- `3c872b3`: event CLAIMED trừ đúng số dư đã index, xác nhận intent theo txHash và thông báo PAYMENT_RECEIVED; reorg hoàn tác balance/intent/notification. Tra cứu contract claimable không phân biệt checksum. Phát hiện và xử lý reorg thứ hai trước khi scanner bắt kịp.
+- `bun run --cwd apps/worker test -- test/effects-claimed.test.ts test/reorg.test.ts`: pass 5/5; `NODE_ENV=test bun run tests/e2e/scanner-deposit.ts` trên bloody_codex_test và Hardhat: E10 claim thật tăng ví 97,5 USDC, số dư 0, notification và reorg; E11 từ chối rút ví khác/số dư 0; E9/E14/E22/E23/E24 cũng pass. Fixture bắt đầu từ reservation, harness toàn luồng E1–E31 chưa có.
+- Gate typecheck/lint/web/worker/database/contracts pass 487/67/3/35; lint bốn cảnh báo any cũ. Gate phase C và gate cuối chưa hoàn tất. Race recordTransactionSubmitted đến sau event vẫn cần xử lý.
+
 
 ## P1-37, D5 và D4
 

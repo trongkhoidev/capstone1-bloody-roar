@@ -50,3 +50,4 @@
 | P1-36 | packages/shared/src/escrow/abi.ts; apps/contracts/contracts/BloodyRoarEscrow.sol | bun -e kiểm số event ABI/contract | Pass 19 = 15 + 4; `bd198a6` |
 | P1-37 / D5 | apps/web/src/test/issue-pagination-files.db.test.ts; apps/web/src/test/graphql-schema.test.ts | bun run --cwd apps/web test -- src/test/issue-pagination-files.db.test.ts | Pass DB và schema; `dde1bc7` |
 | D4 | apps/web/src/test/profile-input.test.ts | bun run --cwd apps/web test -- src/test/profile-input.test.ts | Pass 4/4; đã có validation/unique |
+| BE-48 / E10 / E11 | apps/worker/test/effects-claimed.test.ts; apps/worker/test/reorg.test.ts; tests/e2e/scanner-deposit.ts | bun run --cwd apps/worker test -- test/effects-claimed.test.ts test/reorg.test.ts; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass claim/reorg Hardhat; fixture reservation; `3c872b3` |

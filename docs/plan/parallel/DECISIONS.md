@@ -283,3 +283,17 @@ GitHub không gửi header thời gian, nên webhook không kiểm lệch đồn
 ## BỔ SUNG C3 — kịch bản E25–E29 và runner
 
 `run-local.ts` bắt buộc E1–E31 và in `E2E scenarios passed` (theo C3). Biến `GITHUB_WEBHOOK_SECRET` được đặt trong env của harness để E26 ký payload. E29 đọc cả stdout và stderr vì logger ghi ra stdout. E28 coi `createIssueComment` của người ngoài là hợp lệ với bài công khai (đúng AUTHZ_MATRIX), nên kiểm riêng thay vì trong bảng từ chối. AUTHZ_MATRIX đã gỡ các mutation không còn tồn tại và thêm các mutation Phase D–F.
+
+## BỔ SUNG E19 — invalidate kích hoạt bằng submitWork
+
+E19 kiểm `escrow:invalidate` sau `submitWork`, không sau deposit. Quyền join room `issue:<id>` yêu cầu người gọi là developer được giao hoặc người đọc được issue, nên sự kiện chỉ tới đúng người khi developer được giao gửi bài. `submitWork` là lệnh gửi từ developer này, nên dùng nó để kiểm đường `escrow-bridge` → socket.
+
+## BỔ SUNG E20 — tên truy vấn đếm thông báo chưa đọc
+
+Đặc tả ghi `unreadCount`, nhưng schema đã có `unreadNotificationCount` (`notification.module.ts`). E20 dùng tên có sẵn trong schema, không đổi tên để khỏi ảnh hưởng client đang gọi tên cũ.
+
+## BỔ SUNG C2 — ma trận theo QĐ-21 và trạng thái chưa có escrow
+
+- `createIssue` và `applyToIssue`: ma trận cũ ghi `CLIENT_ROLE_REQUIRED` và `DEVELOPER_ROLE_REQUIRED`. Code đã bỏ chặn theo role (QĐ-21, BE-09), chỉ chặn ADMIN (`ADMIN_NOT_ALLOWED`). Đã sửa ma trận theo code. Chủ bài không ứng tuyển bài của mình (`SELF_APPLICATION`).
+- Mutation escrow (`prepareProposeSettlement`, `prepareAcceptSettlement`, `prepareRevokeSettlement`, `prepareChallengeRuling`, `prepareSubmitCounterpartyEvidence`, `prepareReleaseFunds`): resolver tải projection trước, không có escrow thì trả `NOT_FOUND` trước khi kiểm quyền. Ma trận ghi `FORBIDDEN` là đúng khi đã có escrow. E28 chạy trên issue chưa có escrow nên kiểm `NOT_FOUND`. Chưa có test nào kiểm `FORBIDDEN` ở trạng thái có escrow; ghi là khoảng trống.
+- E28 phủ mọi dòng trong `AUTHZ_MATRIX.md` và kiểm 10 mutation đã gỡ đều vắng mặt khỏi schema. Mười ba mutation trong schema chưa có dòng ma trận và chưa có case trong E28: `attachIssueFile`, `cancelReservation`, `createTestCase`, `deleteMessage`, `deleteTestCase`, `editMessage`, `prepareEscrowDeposit`, `prepareSubmitWork`, `recordIssueView`, `recordTransactionSubmitted`, `requestChanges`, `setUserRole`, `submitFundingIntent`. Thêm dòng ma trận và case cho chúng là việc của lần sau.

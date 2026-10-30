@@ -24,7 +24,7 @@
 | N-11 | docs/LOCAL_DEV.md | các lệnh trong tài liệu, theo thứ tự | Viết xong: chạy tay theo các bước (DB, Hardhat, deploy, seed, worker, web) |
 | N-6 | apps/web/src/app/api/uploads/route.ts; apps/web/src/app/api/uploads/complete/route.ts | bun run --cwd apps/web test -- src/test/upload-two-step.test.ts; e25-files | Xong cùng P1-30a: upload hai bước, sha256 khớp |
 | E29 | tests/e2e/e29-config-guard.test.ts | bun run test:e2e:local | Pass: worker thoát khi ESCROW_ADDRESS là EOA hoặc CHAIN_ID sai |
-| E28 | tests/e2e/e28-authz.test.ts; docs/AUTHZ_MATRIX.md | bun run test:e2e:local | Pass 2/2: khách bị UNAUTHORIZED ở mọi mutation trong bảng; người ngoài nhận mã đúng bảng |
+| E28 | tests/e2e/e28-authz.test.ts; docs/AUTHZ_MATRIX.md | bun run test:e2e:local | Pass 3/3: khách bị UNAUTHORIZED ở mọi dòng trong bảng; người ngoài nhận mã đúng bảng (hoặc qua được kiểm quyền với dòng ✅); 10 mutation đã gỡ vắng mặt khỏi schema |
 | E27 | tests/e2e/e27-rate-limit.test.ts | bun run test:e2e:local | Pass 2/2: nonce lần 11 trả 429 kèm Retry-After; GraphQL vượt điểm trả 429 |
 | E26 | tests/e2e/e26-webhook.test.ts | bun run test:e2e:local | Pass: webhook có chữ ký tạo đúng một PR_MERGED; gửi lại cùng delivery không tạo thêm |
 | E25 | tests/e2e/e25-files.test.ts | bun run test:e2e:local | Pass: tệp DELIVERY đúng người tham gia; EVIDENCE cho admin khi có tranh chấp kèm view_evidence; sha256 khớp |

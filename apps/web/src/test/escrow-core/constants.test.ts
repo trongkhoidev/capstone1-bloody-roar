@@ -46,7 +46,7 @@ describe("escrow constants match BloodyRoarEscrow.sol", () => {
     expect(shared.DISPUTE_FINAL_NOTICE_HOURS).toBe(ESCROW_CONSTANTS.FINAL_NOTICE_HOURS);
     expect(shared.ARBITER_STALL_DAYS).toBe(ESCROW_CONSTANTS.ARBITER_STALL_DAYS);
     expect(shared.PLATFORM_FEE_BPS).toBe(ESCROW_CONSTANTS.FEE_BPS);
-    expect(shared.PLATFORM_FEE_PERCENT * 100).toBe(ESCROW_CONSTANTS.FEE_BPS);
+    expect(shared.PLATFORM_FEE_BPS).toBe(ESCROW_CONSTANTS.FEE_BPS);
   });
 
   it("finds all seven expected constants, so the regex is not matching nothing", () => {

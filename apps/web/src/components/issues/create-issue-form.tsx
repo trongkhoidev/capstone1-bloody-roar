@@ -1,5 +1,6 @@
 "use client";
 
+import { uploadFile } from "@/lib/upload";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus } from "lucide-react";
@@ -18,6 +19,8 @@ const CREATE_ISSUE = `mutation CreateIssue($input: CreateIssueInput!) {
 
 type Token = { id: string; symbol: string; name: string; decimals: number; chainId: number };
 type TokenResponse = { tokens: Token[] };
+const ATTACH_ISSUE_FILE = `mutation AttachIssueFile($issue: ID!, $attachment: ID!) { attachIssueFile(issueId: $issue, attachmentId: $attachment) { id } }`;
+
 type CreateResponse = { createIssue: { id: string; title: string; status: string } };
 
 const CATEGORY_NAMES: Record<(typeof ISSUE_CATEGORIES)[number], string> = {
@@ -67,6 +70,7 @@ export function CreateIssueForm() {
   const [editorTab, setEditorTab] = useState<"write" | "preview">("write");
   const [loadingTokens, setLoadingTokens] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -119,6 +123,11 @@ export function CreateIssueForm() {
         ...(githubRepo.trim() ? { githubRepo: githubRepo.trim() } : {}),
       };
       const result = await graphqlRequest<CreateResponse>(CREATE_ISSUE, { input });
+      // The preview image is attached after the task exists: the upload is announced without an issue, then linked to it.
+      if (imageFile) {
+        const { attachmentId } = await uploadFile(imageFile, "ISSUE_IMAGE");
+        await graphqlRequest(ATTACH_ISSUE_FILE, { issue: result.createIssue.id, attachment: attachmentId });
+      }
       window.location.assign(`/issues/${result.createIssue.id}`);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Không thể tạo bài toán.");
@@ -518,6 +527,13 @@ export function CreateIssueForm() {
             />
           </div>
         </section>
+
+        <div>
+          <label style={{ fontSize: 13 }}>
+            Preview image (optional)
+            <input type="file" accept="image/*" style={{ display: "block", marginTop: 6 }} onChange={(e) => setImageFile(e.target.files?.[0] ?? null)} />
+          </label>
+        </div>
 
         {/* Action Buttons */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8 }}>

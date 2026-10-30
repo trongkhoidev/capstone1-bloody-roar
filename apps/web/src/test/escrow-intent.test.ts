@@ -5,12 +5,12 @@ import { ethers } from "ethers";
 import { Prisma } from "@bloody-roar/database";
 import type { FundingIntentInput } from "@bloody-roar/shared/escrow";
 import { execute, loadSchema } from "./graphql-execute";
+import { CONTRACT } from "./helpers/contract";
 
 beforeAll(loadSchema, 60_000);
 
 const MINUTE_MS = 60_000;
 const DAY_MS = 86_400_000;
-const CONTRACT = "0x1111111111111111111111111111111111111111";
 const TOKEN = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
 const DEVELOPER_ADDRESS = "0x3333333333333333333333333333333333333333" as const;
 const TERMS = `0x${"11".repeat(32)}` as const;

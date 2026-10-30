@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { callQuery } from "./helpers/call-query";
+import { client } from "./helpers/users";
 
 const admin = { id: "admin-1", role: "ADMIN", walletAddress: "0xadmin" };
-const client = { id: "client-1", role: "CLIENT", walletAddress: "0xclient" };
 const checkpoint = { chainId: 31337, contractAddress: "0xescrow", lastScannedBlock: 12n, lastCanonicalBlockHash: "0xhash", updatedAt: new Date() };
 const finding = { id: "finding-1", escrowIdHash: "0xkey", kind: "chain:31337:0xescrow:amount", expected: {}, actual: {}, blockNumber: 12n, resolvedAt: null, createdAt: new Date() };
 const intent = { id: "intent-1", status: "SUBMITTED", submittedAt: new Date(Date.now() - 3_600_000) };

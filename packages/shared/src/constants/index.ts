@@ -7,8 +7,6 @@
 
 export const PLATFORM_NAME = "Bloody-Roar";
 export const PLATFORM_FEE_BPS = 250; // 2.5% trên phần Developer, khớp contract
-/** @deprecated Dùng PLATFORM_FEE_BPS. Số float không dùng để tính tiền. */
-export const PLATFORM_FEE_PERCENT = PLATFORM_FEE_BPS / 100;
 
 // =============================================================================
 // ESCROW

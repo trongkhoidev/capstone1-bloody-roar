@@ -5,16 +5,16 @@
 | FE-8 | apps/web/src/test/fe-operations.test.ts | bun run --cwd apps/web test -- src/test/fe-operations.test.ts | Pass: mọi GraphQL trong components/app/lib parse và validate với schema |
 | FE-1 / FE-1b / FE-1c | apps/web/src/lib/web3/client.ts; send-prepared.ts; funding-intent.ts | bun run typecheck; bun run lint; e2e qua harness | Xong: ACTIVE_CHAIN theo NEXT_PUBLIC_CHAIN_ID, ensureChain, gửi giao dịch đã chuẩn bị, ký funding intent; kiểm bằng tay với MetaMask theo docs/LOCAL_DEV.md |
 | FE-2 | apps/web/src/components/marketplace/issue-detail-view.tsx | bun run typecheck; lint | Một phần: lắng nghe escrow:invalidate và poll tối đa 30 lần sau giao dịch; chưa có kiểm tự động |
-| FE-3 | apps/web/src/components/marketplace/issue-detail-view.tsx | bun run typecheck; lint | Một phần: nút theo viewerCapabilities của server, hiển thị reasonDisabled cho các hành động escrow chính |
+| FE-3 | apps/web/src/components/marketplace/issue-detail-view.tsx | bun run typecheck; lint | Xong: hành động chỉ hiện khi có trong availableActions và viewerCapabilities cho phép; nút bị tắt hiện reasonDisabled (title và dòng chữ) |
 | FE-4 | apps/web/src/components/marketplace/issue-detail-view.tsx | fe-operations; typecheck; lint | Xong: chọn developer, nạp tiền, giao việc, release/yêu cầu sửa, tranh chấp, bằng chứng đối phương, đề xuất/thu hồi/chấp nhận thỏa thuận, kháng cáo, finalize, claim timeout, đánh giá |
 | FE-5 | apps/web/src/components/dashboard/dashboard-view.tsx | fe-operations; typecheck | Xong: myClaimable và nút Rút tiền gọi prepareClaim |
 | FE-6 | apps/web/src/components/admin/admin-view.tsx | fe-operations; typecheck; lint | Xong: draftRuling (copy, tải ruling-<issue>.json), bằng chứng, tab Vận hành, ẩn/bỏ ẩn issue; đã bỏ form đề xuất cũ |
-| FE-7 | apps/web/src/lib/upload.ts | typecheck | Một phần: helper hai bước có sẵn; chưa gắn vào form giao việc, bằng chứng và avatar |
-| S-1 | apps/web/src/test/helpers/call-query.ts | admin-queries, admin-ops | Một phần: gom callQuery giống nhau; fakeDb/callMutation/CREATE_ISSUE còn khác nhau giữa các file |
+| FE-7 | apps/web/src/lib/upload.ts; issue-detail-view.tsx; create-issue-form.tsx; profile-view.tsx | bun run typecheck; lint; fe-operations | Xong: tệp giao việc, bằng chứng, ảnh issue (attachIssueFile sau khi tạo), avatar dùng uploadFile hai bước |
+| S-1 | apps/web/src/test/helpers/call-query.ts; call-mutation.ts; contract.ts; users.ts | admin, ai, escrow test suites (242 pass) | Xong theo quy tắc chỉ gom bản giống nhau: callQuery, callMutation, CONTRACT, client; các fakeDb và developer khác nhau giữ nguyên |
 | S-2 | packages/shared/src/constants/index.ts | typecheck web/worker/shared | Xong: MINUTE_MS, HOUR_MS, DAY_MS, MAX_BPS dùng chung; DAY/HOUR bigint giây trong fold.ts giữ nguyên |
 | S-3 | packages/database/src/notifications.ts | — | Không cần đổi: file đã import kiểu từ @prisma/client |
 | S-4 | apps/web/src/graphql/modules/escrow/select.module.ts | escrow-reservation, escrow-deposit tests (199 pass) | Xong: selectDeveloper và cancelReservation tách sang select.module.ts |
-| S-5 | apps/web/src/test/escrow-core/constants.test.ts | — | Giữ PLATFORM_FEE_PERCENT vì test còn đọc; các re-export khác chưa rà |
+| S-5 | packages/shared/src/constants/index.ts; escrow-abi.ts | typecheck web/worker/shared; constants.test | Xong: xóa PLATFORM_FEE_PERCENT và re-export ESCROW_RESOLUTION_KINDS không ai dùng; test đọc PLATFORM_FEE_BPS |
 | N-11 | docs/LOCAL_DEV.md | các lệnh trong tài liệu, theo thứ tự | Viết xong: chạy tay theo các bước (DB, Hardhat, deploy, seed, worker, web) |
 | N-6 | apps/web/src/app/api/uploads/route.ts; apps/web/src/app/api/uploads/complete/route.ts | bun run --cwd apps/web test -- src/test/upload-two-step.test.ts; e25-files | Xong cùng P1-30a: upload hai bước, sha256 khớp |
 | E29 | tests/e2e/e29-config-guard.test.ts | bun run test:e2e:local | Pass: worker thoát khi ESCROW_ADDRESS là EOA hoặc CHAIN_ID sai |

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { schema } from "../graphql/schema";
+import { client } from "./helpers/users";
 
 const { completeAI } = vi.hoisted(() => ({ completeAI: vi.fn() }));
 vi.mock("../ai/model-router", async () => ({
@@ -7,7 +8,6 @@ vi.mock("../ai/model-router", async () => ({
   completeAI,
 }));
 
-const client = { id: "client-1", role: "CLIENT", walletAddress: "0xclient" };
 const repo = "https://github.com/acme/checkout";
 const draft = (title: string) => ({
   title,

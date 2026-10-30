@@ -1,15 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { schema } from "../graphql/schema";
+import { callMutation } from "./helpers/call-mutation";
+import { client } from "./helpers/users";
 
 const admin = { id: "admin-1", role: "ADMIN", walletAddress: "0xadmin" };
-const client = { id: "client-1", role: "CLIENT", walletAddress: "0xclient" };
 
 // Calls a mutation resolver directly; the GraphQL engine instance differs between test and schema modules.
-function callMutation(name: string, args: Record<string, unknown>, user: unknown, db: unknown) {
-  const field = schema.getMutationType()?.getFields()[name];
-  if (!field?.resolve) throw new Error(`no resolver for ${name}`);
-  return field.resolve({} as never, args, { db, user } as never, {} as never);
-}
 
 function fakeDb(target: { id: string; role: string }) {
   const tx = {

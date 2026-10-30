@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PrismaClient } from "@bloody-roar/database";
 import { encodeEscrowCall } from "@bloody-roar/shared/escrow";
 import { createPreparedCall } from "../lib/escrow/prepare";
+import { CONTRACT } from "./helpers/contract";
 
-const CONTRACT = "0x1111111111111111111111111111111111111111";
 // Tên tham số khớp ABI của deposit(string escrowId, address developer, uint256 amount, ...)
 const ARGS = {
   escrowId: "br_issue-1_1",

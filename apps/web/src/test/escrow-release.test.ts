@@ -1,6 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { encodeEscrowCall } from "@bloody-roar/shared/escrow";
 import { execute, loadSchema } from "./graphql-execute";
+import { CONTRACT } from "./helpers/contract";
 
 const clock = vi.hoisted(() => ({ readChainTime: vi.fn(async (_chainId: number) => new Date()) }));
 vi.mock("../lib/escrow/chain-time", () => clock);
@@ -8,7 +9,6 @@ beforeAll(loadSchema, 60_000);
 
 const HOUR_MS = 3_600_000;
 const DAY_MS = 86_400_000;
-const CONTRACT = "0x1111111111111111111111111111111111111111";
 const CLIENT_WALLET = "0x2222222222222222222222222222222222222222";
 const DEVELOPER_WALLET = "0x3333333333333333333333333333333333333333";
 const DELIVERY_HASH = `0x${"ab".repeat(32)}`;

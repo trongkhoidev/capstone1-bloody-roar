@@ -18,6 +18,7 @@ import { MOCK_ISSUES } from "./mock-issues";
 import type { IssueItem } from "./issue-card";
 import { sendPreparedCalls } from "@/lib/web3/send-prepared";
 import { signFundingIntent } from "@/lib/web3/funding-intent";
+import { uploadFile } from "@/lib/upload";
 
 // Date input value (YYYY-MM-DD) seven days out; the contract deadline is the end of that day in UTC.
 const defaultDeliveryDeadline = () => new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
@@ -52,23 +53,23 @@ const RESERVATION_QUERY = `query Reservation($issueId: ID!) { reservation(issueI
 const SUBMIT_FUNDING_INTENT = `mutation FundingIntent($id: ID!, $signature: String!, $nonce: String!, $expiry: String!) { submitFundingIntent(reservationId: $id, signature: $signature, nonce: $nonce, intentExpiry: $expiry) { id } }`;
 const PREPARE_DEPOSIT = `mutation PrepareDeposit($id: ID!) { prepareEscrowDeposit(reservationId: $id) { steps { intentId method contractAddress data value } } }`;
 const RECORD_TX = `mutation RecordTx($id: ID!, $hash: String!) { recordTransactionSubmitted(intentId: $id, txHash: $hash) { id } }`;
-const CREATE_DRAFT = `mutation CreateDraft($issue: ID!, $description: String!, $pullRequestUrl: String) { createSubmissionDraft(issueId: $issue, description: $description, pullRequestUrl: $pullRequestUrl) { id } }`;
+const CREATE_DRAFT = `mutation CreateDraft($issue: ID!, $description: String!, $pullRequestUrl: String, $files: [ID!]) { createSubmissionDraft(issueId: $issue, description: $description, pullRequestUrl: $pullRequestUrl, attachmentIds: $files) { id } }`;
 const PREPARE_SUBMIT = `mutation PrepareSubmit($id: ID!) { prepareSubmitWork(submissionId: $id) { intentId method contractAddress data value } }`;
 const PREPARE_RELEASE = `mutation PrepareRelease($id: ID!) { prepareReleaseFunds(issueId: $id) { intentId method contractAddress data value } }`;
 const REQUEST_CHANGES = `mutation RequestChanges($id: ID!, $notes: String!) { requestChanges(submissionId: $id, notes: $notes) { changesRequested } }`;
-const CREATE_EVIDENCE = `mutation CreateEvidence($issue: ID!, $statement: String!) { createEvidenceManifest(issueId: $issue, statement: $statement) { id } }`;
+const CREATE_EVIDENCE = `mutation CreateEvidence($issue: ID!, $statement: String!, $files: [ID!]) { createEvidenceManifest(issueId: $issue, statement: $statement, attachmentIds: $files) { id } }`;
 const SUBMIT_COUNTERPARTY = `mutation PrepareCounterparty($issue: ID!, $manifest: ID!) { prepareSubmitCounterpartyEvidence(issueId: $issue, manifestId: $manifest) { intentId method contractAddress data value } }`;
 const SUBMIT_REVIEW = `mutation SubmitReview($issue: ID!, $rating: Int!, $comment: String) { submitReview(issueId: $issue, rating: $rating, comment: $comment) { id } }`;
 // Escrow actions the server allows for this viewer. Each row names the capability flag, the prepare mutation, and its arguments.
-const ESCROW_ACTIONS: Array<{ flag: keyof ViewerCapabilities; label: string; mutation: string; field: string; needsPercent?: boolean }> = [
-  { flag: "canRevokeSettlement", label: "Revoke settlement", mutation: "mutation($issue: ID!) { prepareRevokeSettlement(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareRevokeSettlement" },
-  { flag: "canAcceptSettlement", label: "Accept settlement", mutation: "mutation($issue: ID!) { prepareAcceptSettlement(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareAcceptSettlement" },
-  { flag: "canChallengeRuling", label: "Challenge ruling", mutation: "mutation($issue: ID!) { prepareChallengeRuling(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareChallengeRuling" },
-  { flag: "canFinalizeRuling", label: "Finalize ruling", mutation: "mutation($issue: ID!) { prepareFinalizeRuling(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareFinalizeRuling" },
-  { flag: "canFinalizeArbiterTimeoutSplit", label: "Split after arbiter timeout", mutation: "mutation($issue: ID!) { prepareFinalizeArbiterTimeoutSplit(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareFinalizeArbiterTimeoutSplit" },
-  { flag: "canClaimMissedDeliveryRefund", label: "Claim missed-delivery refund", mutation: "mutation($issue: ID!) { prepareClaimMissedDeliveryRefund(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareClaimMissedDeliveryRefund" },
-  { flag: "canClaimReviewTimeout", label: "Claim review timeout", mutation: "mutation($issue: ID!) { prepareClaimReviewTimeout(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareClaimReviewTimeout" },
-  { flag: "canProposeSettlement", label: "Propose settlement", mutation: "mutation($issue: ID!, $bps: Int!) { prepareProposeSettlement(issueId: $issue, clientBps: $bps) { intentId method contractAddress data value } }", field: "prepareProposeSettlement", needsPercent: true },
+const ESCROW_ACTIONS: Array<{ action: string; flag: keyof ViewerCapabilities; label: string; mutation: string; field: string; needsPercent?: boolean }> = [
+  { action: "revokeSettlement", flag: "canRevokeSettlement", label: "Revoke settlement", mutation: "mutation($issue: ID!) { prepareRevokeSettlement(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareRevokeSettlement" },
+  { action: "acceptSettlement", flag: "canAcceptSettlement", label: "Accept settlement", mutation: "mutation($issue: ID!) { prepareAcceptSettlement(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareAcceptSettlement" },
+  { action: "challengeRuling", flag: "canChallengeRuling", label: "Challenge ruling", mutation: "mutation($issue: ID!) { prepareChallengeRuling(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareChallengeRuling" },
+  { action: "finalizeRuling", flag: "canFinalizeRuling", label: "Finalize ruling", mutation: "mutation($issue: ID!) { prepareFinalizeRuling(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareFinalizeRuling" },
+  { action: "finalizeArbiterTimeoutSplit", flag: "canFinalizeArbiterTimeoutSplit", label: "Split after arbiter timeout", mutation: "mutation($issue: ID!) { prepareFinalizeArbiterTimeoutSplit(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareFinalizeArbiterTimeoutSplit" },
+  { action: "claimMissedDeliveryRefund", flag: "canClaimMissedDeliveryRefund", label: "Claim missed-delivery refund", mutation: "mutation($issue: ID!) { prepareClaimMissedDeliveryRefund(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareClaimMissedDeliveryRefund" },
+  { action: "claimReviewTimeout", flag: "canClaimReviewTimeout", label: "Claim review timeout", mutation: "mutation($issue: ID!) { prepareClaimReviewTimeout(issueId: $issue) { intentId method contractAddress data value } }", field: "prepareClaimReviewTimeout" },
+  { action: "proposeSettlement", flag: "canProposeSettlement", label: "Propose settlement", mutation: "mutation($issue: ID!, $bps: Int!) { prepareProposeSettlement(issueId: $issue, clientBps: $bps) { intentId method contractAddress data value } }", field: "prepareProposeSettlement", needsPercent: true },
 ];
 const PREPARE_RAISE_DISPUTE = `mutation PrepareRaise($issue: ID!, $manifest: ID!) { prepareRaiseDispute(issueId: $issue, manifestId: $manifest) { intentId method contractAddress data value } }`;
 const CANCEL_MUTATION = `mutation Cancel($id: ID!) { cancelIssue(id: $id) { id status } }`;
@@ -80,8 +81,6 @@ type ReservationRow = { id: string; status: string; chainId: number; contractAdd
 
 type ViewerCapabilities = { canSelect: boolean; canFund: boolean; canSubmit: boolean; canRelease: boolean; canRequestChanges: boolean; canDispute: boolean; canProposeSettlement: boolean; canRevokeSettlement: boolean; canAcceptSettlement: boolean; canSubmitEvidence: boolean; canChallengeRuling: boolean; canFinalizeRuling: boolean; canFinalizeArbiterTimeoutSplit: boolean; canClaimMissedDeliveryRefund: boolean; canClaimReviewTimeout: boolean };
 type IssueDetail = IssueItem & { clientId: string; developerId?: string | null; developer?: IssueItem["client"] | null; viewerCapabilities?: ViewerCapabilities | null; escrow?: { availableActions: Array<{ action: string; reasonDisabled: string | null }> } | null };
-// Availability action names whose refusal reason is shown to the viewer (same names the server uses).
-const REASON_ACTIONS = new Set(["proposeSettlement", "acceptSettlement", "revokeSettlement", "challengeRuling", "finalizeRuling", "finalizeArbiterTimeoutSplit", "claimMissedDeliveryRefund", "claimReviewTimeout"]);
 type Application = { id: string; status: string; message?: string | null; createdAt: string; developer: IssueItem["client"] & { skills?: string[] } };
 
 type DetailResponse = { issue: (Omit<IssueDetail, "bountyAmount"> & { bountyAmount: { formatted: string } }) | null };
@@ -105,6 +104,9 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const [reservationId, setReservationId] = useState<string | null>(null);
   const [settlementPercent, setSettlementPercent] = useState("50");
   const [counterStatement, setCounterStatement] = useState("");
+  const [deliveryFiles, setDeliveryFiles] = useState<string[]>([]);
+  const [evidenceFiles, setEvidenceFiles] = useState<string[]>([]);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [deliveryDeadline, setDeliveryDeadline] = useState(defaultDeliveryDeadline);
@@ -164,6 +166,10 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   }, [load]);
 
   const isClient = Boolean(user && issue?.clientId === user.id);
+  // The server's availability entry for an action; absent means the action does not apply to this task right now.
+  const actionOf = (name: string) => issue?.escrow?.availableActions.find((item) => item.action === name) ?? null;
+  const actionEnabled = (name: string) => { const entry = actionOf(name); return Boolean(entry && !entry.reasonDisabled); };
+  const reasonLine = (name: string) => { const reason = actionOf(name)?.reasonDisabled; return reason ? <p className="mut" style={{ fontSize: 12 }}>{reason}</p> : null; };
 
   useEffect(() => {
     if (!isClient) return;
@@ -200,6 +206,19 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     await graphqlRequest(RECORD_TX, { id: intentId, hash: txHash });
   };
 
+  // Uploads one file for this task and returns its attachment id; the server checks the uploader's role in the task.
+  const attachFile = async (file: File, purpose: "DELIVERY" | "EVIDENCE") => {
+    setUploadStatus(`Uploading ${file.name}…`);
+    try {
+      const { attachmentId } = await uploadFile(file, purpose, issueId);
+      setUploadStatus(`${file.name} uploaded.`);
+      return attachmentId;
+    } catch (reason) {
+      setUploadStatus(null);
+      throw reason;
+    }
+  };
+
   const submitDelivery = async (event: React.FormEvent) => {
     event.preventDefault(); setIsWorking(true); setError(null); setNotice(null);
     try {
@@ -207,10 +226,11 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
         issue: issueId,
         description: deliveryDescription.trim(),
         pullRequestUrl: pullRequestUrl.trim() || null,
+        files: deliveryFiles,
       });
       const prepared = await graphqlRequest<{ prepareSubmitWork: PreparedStep }>(PREPARE_SUBMIT, { id: draft.createSubmissionDraft.id });
       await sendPreparedCalls([prepared.prepareSubmitWork], recordTx);
-      setDeliveryDescription(""); setPullRequestUrl("");
+      setDeliveryDescription(""); setPullRequestUrl(""); setDeliveryFiles([]); setUploadStatus(null);
       const refreshed = await graphqlRequest<SubmissionResponse>(SUBMISSIONS_QUERY, { issueId });
       setSubmissions(refreshed.submissions);
       setNotice("Work submitted on-chain. The client can review it now.");
@@ -256,7 +276,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const submitCounterpartyEvidence = async (event: React.FormEvent) => {
     event.preventDefault(); setIsWorking(true); setError(null); setNotice(null);
     try {
-      const evidence = await graphqlRequest<{ createEvidenceManifest: { id: string } }>(CREATE_EVIDENCE, { issue: issueId, statement: counterStatement.trim() });
+      const evidence = await graphqlRequest<{ createEvidenceManifest: { id: string } }>(CREATE_EVIDENCE, { issue: issueId, statement: counterStatement.trim(), files: [] });
       const prepared = await graphqlRequest<{ prepareSubmitCounterpartyEvidence: PreparedStep }>(SUBMIT_COUNTERPARTY, { issue: issueId, manifest: evidence.createEvidenceManifest.id });
       await sendPreparedCalls([prepared.prepareSubmitCounterpartyEvidence], recordTx);
       setCounterStatement(""); setNotice("Counterparty evidence sent on-chain."); awaitChain();
@@ -331,11 +351,11 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const raiseDispute = async (event: React.FormEvent) => {
     event.preventDefault(); setIsWorking(true); setError(null); setNotice(null);
     try {
-      const evidence = await graphqlRequest<{ createEvidenceManifest: { id: string } }>(CREATE_EVIDENCE, { issue: issueId, statement: disputeReason.trim() });
+      const evidence = await graphqlRequest<{ createEvidenceManifest: { id: string } }>(CREATE_EVIDENCE, { issue: issueId, statement: disputeReason.trim(), files: evidenceFiles });
       const prepared = await graphqlRequest<{ prepareRaiseDispute: PreparedStep }>(PREPARE_RAISE_DISPUTE, { issue: issueId, manifest: evidence.createEvidenceManifest.id });
       await sendPreparedCalls([prepared.prepareRaiseDispute], recordTx);
       setNotice("Dispute opened on-chain. The arbiter will review the evidence.");
-      setShowDisputeForm(false); setDisputeReason(""); awaitChain();
+      setShowDisputeForm(false); setDisputeReason(""); setEvidenceFiles([]); setUploadStatus(null); awaitChain();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not open dispute."); }
     finally { setIsWorking(false); }
   };
@@ -599,7 +619,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
               {activeTab === "delivery" && (
                 <>
                   {/* Developer: Submit work */}
-                  {isDeveloper && issue.status === "IN_PROGRESS" && issue.viewerCapabilities?.canSubmit && (
+                  {isDeveloper && issue.status === "IN_PROGRESS" && issue.viewerCapabilities?.canSubmit && actionOf("submitWork") && (
                     <section className="card">
                       <div className="card-h">
                         <h2>Submit your delivery</h2>
@@ -624,14 +644,35 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                             onChange={(e) => setPullRequestUrl(e.target.value)}
                             placeholder="https://github.com/org/repo/pull/123"
                           />
+                          <label style={{ fontSize: 12 }}>
+                            Attach files (optional)
+                            <input
+                              type="file"
+                              multiple
+                              style={{ display: "block", marginTop: 6, fontSize: 12 }}
+                              disabled={isWorking || demoMode}
+                              onChange={async (e) => {
+                                const picked = Array.from(e.target.files ?? []);
+                                try {
+                                  const ids = await Promise.all(picked.map((file) => attachFile(file, "DELIVERY")));
+                                  setDeliveryFiles((current) => [...current, ...ids]);
+                                } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not upload the file."); }
+                                e.target.value = "";
+                              }}
+                            />
+                            {deliveryFiles.length > 0 && <span className="mut"> {deliveryFiles.length} file(s) attached</span>}
+                          </label>
+                          {uploadStatus && <p className="mut" style={{ fontSize: 12 }}>{uploadStatus}</p>}
                           <button
                             type="submit"
                             className="btn btn-p"
                             style={{ alignSelf: "flex-start" }}
-                            disabled={isWorking || demoMode || (!deliveryDescription.trim() && !pullRequestUrl.trim())}
+                            disabled={isWorking || demoMode || !actionEnabled("submitWork") || (!deliveryDescription.trim() && !pullRequestUrl.trim() && deliveryFiles.length === 0)}
+                            title={actionOf("submitWork")?.reasonDisabled ?? undefined}
                           >
                             Submit for review
                           </button>
+                          {reasonLine("submitWork")}
                         </form>
                       </div>
                     </section>
@@ -687,7 +728,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                               </div>
                             )}
 
-                            {isClient && issue.status === "IN_PROGRESS" && issue.viewerCapabilities?.canRelease && (sub.status === "SUBMITTED" || sub.status === "UNDER_REVIEW") && (
+                            {isClient && issue.status === "IN_PROGRESS" && issue.viewerCapabilities?.canRelease && actionOf("releaseFunds") && (sub.status === "SUBMITTED" || sub.status === "UNDER_REVIEW") && (
                               <div style={{ borderTop: "1px solid var(--line)", paddingTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
                                 <textarea
                                   className="inp"
@@ -708,11 +749,13 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                                   <button
                                     type="button"
                                     className="btn btn-ok btn-sm"
-                                    disabled={isWorking || demoMode}
+                                    disabled={isWorking || demoMode || !actionEnabled("releaseFunds")}
+                                    title={actionOf("releaseFunds")?.reasonDisabled ?? undefined}
                                     onClick={() => void reviewDelivery(sub.id, true)}
                                   >
                                     Approve delivery
                                   </button>
+                                  {reasonLine("releaseFunds")}
                                 </div>
                               </div>
                             )}
@@ -729,21 +772,28 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                 <section className="card">
                   <div className="card-h"><h2>Escrow actions</h2></div>
                   <div className="card-b" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                    {ESCROW_ACTIONS.filter((action) => issue.viewerCapabilities?.[action.flag]).map((action) => action.needsPercent ? (
-                      <div key={action.flag} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <input className="inp" type="number" min={0} max={100} step="0.01" style={{ height: 32, width: 90, fontSize: 12 }} value={settlementPercent} onChange={(e) => setSettlementPercent(e.target.value)} aria-label="Client share (%)" />
-                        <button type="button" className="btn btn-o btn-sm" disabled={isWorking || demoMode} onClick={() => void runEscrowAction(action, settlementPercent)}>{action.label}</button>
-                      </div>
-                    ) : (
-                      <button key={action.flag} type="button" className="btn btn-o btn-sm" disabled={isWorking || demoMode} onClick={() => void runEscrowAction(action)}>{action.label}</button>
-                    ))}
+                    {ESCROW_ACTIONS.filter((action) => issue.viewerCapabilities?.[action.flag] && actionOf(action.action)).map((action) => {
+                      const disabled = isWorking || demoMode || !actionEnabled(action.action);
+                      const reason = actionOf(action.action)?.reasonDisabled;
+                      return action.needsPercent ? (
+                        <div key={action.flag} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                          <input className="inp" type="number" min={0} max={100} step="0.01" style={{ height: 32, width: 90, fontSize: 12 }} value={settlementPercent} onChange={(e) => setSettlementPercent(e.target.value)} aria-label="Client share (%)" />
+                          <button type="button" className="btn btn-o btn-sm" disabled={disabled} title={reason ?? undefined} onClick={() => void runEscrowAction(action, settlementPercent)}>{action.label}</button>
+                          {reason && <span className="mut" style={{ fontSize: 12 }}>{reason}</span>}
+                        </div>
+                      ) : (
+                        <div key={action.flag} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                          <button type="button" className="btn btn-o btn-sm" disabled={disabled} title={reason ?? undefined} onClick={() => void runEscrowAction(action)}>{action.label}</button>
+                          {reason && <span className="mut" style={{ fontSize: 12 }}>{reason}</span>}
+                        </div>
+                      );
+                    })}
                     {issue.viewerCapabilities?.canSubmitEvidence && (
                       <form onSubmit={submitCounterpartyEvidence} style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%" }}>
                         <textarea className="inp" rows={3} minLength={10} maxLength={5000} required value={counterStatement} onChange={(e) => setCounterStatement(e.target.value)} placeholder="Counterparty evidence statement (at least 10 characters)" />
                         <button type="submit" className="btn btn-o btn-sm" disabled={isWorking || demoMode || counterStatement.trim().length < 10}>Submit counterparty evidence</button>
                       </form>
                     )}
-                    {(issue.escrow?.availableActions ?? []).filter((item) => item.reasonDisabled && REASON_ACTIONS.has(item.action)).map((item) => <p key={item.action} className="mut" style={{ fontSize: 12 }}>{item.action}: {item.reasonDisabled}</p>)}
                   </div>
                 </section>
               )}
@@ -880,7 +930,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                     )
                   )}
 
-                  {canChat && issue.status === "IN_PROGRESS" && issue.viewerCapabilities?.canDispute && (
+                  {canChat && issue.status === "IN_PROGRESS" && issue.viewerCapabilities?.canDispute && actionOf("raiseDispute") && (
                     <button
                       type="button"
                       className="btn btn-o btn-sm"
@@ -901,6 +951,24 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                         minLength={20}
                         placeholder="State dispute reason clearly..."
                       />
+                      <label style={{ fontSize: 12 }}>
+                        Evidence files (optional)
+                        <input
+                          type="file"
+                          multiple
+                          style={{ display: "block", marginTop: 6, fontSize: 12 }}
+                          disabled={isWorking || demoMode}
+                          onChange={async (e) => {
+                            const picked = Array.from(e.target.files ?? []);
+                            try {
+                              const ids = await Promise.all(picked.map((file) => attachFile(file, "EVIDENCE")));
+                              setEvidenceFiles((current) => [...current, ...ids]);
+                            } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not upload the file."); }
+                            e.target.value = "";
+                          }}
+                        />
+                        {evidenceFiles.length > 0 && <span className="mut"> {evidenceFiles.length} file(s) attached</span>}
+                      </label>
                       <button type="submit" className="btn btn-bad btn-sm" disabled={isWorking}>
                         Confirm dispute
                       </button>

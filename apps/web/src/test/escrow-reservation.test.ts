@@ -3,6 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { Prisma } from "@bloody-roar/database";
 import { computeTermsHash, keccakUtf8 } from "@bloody-roar/shared/escrow";
 import { execute, loadSchema } from "./graphql-execute";
+import { CONTRACT } from "./helpers/contract";
 
 const tokenReader = vi.hoisted(() => ({ read: vi.fn() }));
 vi.mock("../lib/escrow/token", () => ({ readEscrowToken: tokenReader.read }));
@@ -11,7 +12,6 @@ beforeAll(loadSchema, 60_000);
 
 const HOUR_MS = 3_600_000;
 const DAY_MS = 86_400_000;
-const CONTRACT = "0x1111111111111111111111111111111111111111";
 const TOKEN_ADDRESS = "0x2222222222222222222222222222222222222222";
 const client = { id: "client-1", role: "CLIENT", name: null, isBanned: false };
 const developer = { id: "dev-1", role: "DEVELOPER", name: null, isBanned: false };

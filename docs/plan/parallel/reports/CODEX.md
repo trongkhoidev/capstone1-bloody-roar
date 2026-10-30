@@ -6,12 +6,8 @@ HOÀN TẤT 2026-10-31 00:26 (điều kiện Phần E đạt; một số mục F
 - Các lệnh grep Phần E rỗng: `proposeDisputeResolution|challengeDisputeResolution|assignDeveloper|reviewSubmission|depositToEscrow` (apps/web/src), `GOOGLE_GENERATIVE_AI_API_KEY` (apps/web/src và .env.example), `createHash("sha256")` (apps/web/src/ai và socket), `TODO(P1-22)` (apps).
 - `fe-operations.test.ts`: pass.
 - Bị chặn: Z-6 (`next build`, @vercel/nft Division by zero, không đụng nữa theo A3).
-- Chưa đầy đủ (có thể làm tiếp):
-  - FE-2: lắng nghe escrow:invalidate và poll 30 lần có; chưa có kiểm tự động.
-  - FE-3: nút theo viewerCapabilities có; reasonDisabled chỉ hiện cho các hành động escrow chính.
-  - FE-7: helper uploadFile có; chưa gắn vào form giao việc, bằng chứng, avatar.
-  - S-1: chỉ gom callQuery giống nhau; fakeDb/callMutation/CREATE_ISSUE còn trùng khác nhau.
-  - S-5: giữ PLATFORM_FEE_PERCENT vì test còn đọc.
+- Đã hoàn tất sau lần rà đầu: FE-3 (hành động theo availableActions, hiện reasonDisabled), FE-7 (tệp giao việc, bằng chứng, ảnh issue, avatar), S-1 (gom các helper giống nhau), S-5 (bỏ PLATFORM_FEE_PERCENT và re-export thừa).
+- Chưa có kiểm tự động riêng cho FE-2 (refresh sau giao dịch); đặc tả không yêu cầu test cho mục này, kiểm bằng tay theo docs/LOCAL_DEV.md.
 - Việc người dùng tự làm (Phần F): kiểm thử bằng MetaMask theo docs/LOCAL_DEV.md; xóa worktree cũ; sửa Z-6; deploy; GitGuardian; mở PR.
 
 Bảng trạng thái gốc bên dưới giữ nguyên để tra cứu; các dòng FE/S mới nằm trong LOCAL_TEST_MATRIX.md.

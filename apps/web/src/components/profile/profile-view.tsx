@@ -1,5 +1,6 @@
 "use client";
 
+import { uploadFile } from "@/lib/upload";
 import { useEffect, useState } from "react";
 import { GitBranch, MapPin, Save, ShieldCheck } from "lucide-react";
 import { graphqlRequest } from "@/lib/graphql-client";
@@ -29,6 +30,18 @@ export function ProfileView() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  // The server stores the avatar when the upload completes; the view then reloads the stored URL.
+  const uploadAvatar = async (file: File) => {
+    setSaving(true); setError(null); setNotice(null);
+    try {
+      await uploadFile(file, "AVATAR");
+      const { me } = await graphqlRequest<{ me: Profile | null }>(ME_QUERY);
+      setAvatar(me?.avatar ?? "");
+      setNotice("Avatar uploaded.");
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not upload the avatar."); }
+    finally { setSaving(false); }
+  };
 
   useEffect(() => {
     if (!authUser) { setLoading(false); return; }
@@ -87,7 +100,8 @@ export function ProfileView() {
         <form onSubmit={save} className="space-y-5 glass rounded-xl p-5 sm:p-7 animate-fade-in">
           {loading ? <div className="h-64 animate-pulse rounded-xl bg-[hsl(var(--muted))]" /> : <>
             <Field label={t("displayName")}><Input maxLength={50} value={name} onChange={(event) => setName(event.target.value)} placeholder={t("namePlaceholder")} /></Field>
-            <Field label={t("avatarUrl")}><Input type="url" maxLength={500} value={avatar} onChange={(event) => setAvatar(event.target.value)} placeholder="https://…" /></Field>
+            <Field label={t("avatarUrl")}><Input type="url" maxLength={500} value={avatar} onChange={(event) => setAvatar(event.target.value)} placeholder="https://…" />
+              <input type="file" accept="image/*" style={{ display: "block", marginTop: 6, fontSize: 12 }} disabled={saving} onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadAvatar(file); event.target.value = ""; }} /></Field>
             <Field label={t("aboutYou")}><textarea className="min-h-32 w-full rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--background-secondary))] px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]" maxLength={200} value={bio} onChange={(event) => setBio(event.target.value)} placeholder={t("bioPlaceholder")} /></Field>
             <Field label={t("skillsComma")}><Input value={skillsText} onChange={(event) => setSkillsText(event.target.value)} placeholder="TypeScript, Solidity, UI design" /></Field>
             <Field label={t("locationLabel")}><Input maxLength={80} value={location} onChange={(event) => setLocation(event.target.value)} placeholder={t("locationPlaceholder")} /></Field>

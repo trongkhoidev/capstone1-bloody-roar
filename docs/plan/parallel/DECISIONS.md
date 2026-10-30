@@ -171,3 +171,7 @@ Thêm `Dispute.aiStartedAt` để timeout và chống lượt AI cũ ghi đè v�
 ## BỔ SUNG N-8 — lưu báo cáo sau teardown
 
 Giữ `tests/e2e/.run/last-run.txt` và log đã ignore sau khi dừng PID để có thể chẩn đoán, vì yêu cầu xóa cả thư mục mâu thuẫn với việc ghi báo cáo trong đó.
+
+## BỔ SUNG E2 — ghi lượt xem theo tài khoản
+
+`recordIssueView` yêu cầu đăng nhập và tăng tối đa một lần mỗi giờ cho mỗi user; query chi tiết không tự tăng vì bảng IssueView gắn với user.

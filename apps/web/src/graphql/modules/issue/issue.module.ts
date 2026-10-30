@@ -504,7 +504,7 @@ builder.queryField("myIssues", (t) =>
 
 builder.queryField("issue", (t) =>
   t.field({
-    description: "Chi tiết 1 bounty theo id (tự tăng viewCount)",
+    description: "Chi tiết 1 bounty theo id",
     type: IssueRef,
     nullable: true,
     args: {
@@ -520,18 +520,26 @@ builder.queryField("issue", (t) =>
       // Draft chỉ hiển thị với chủ task
       if (issue.isDraft && ctx.user?.id !== issue.clientId) return null;
 
-      // Tăng viewCount (analytics — không để lỗi phụ ảnh hưởng query chính)
-      await ctx.db.issue
-        .update({
-          where: { id: issue.id },
-          data: { viewCount: { increment: 1 } },
-        })
-        .catch(() => null);
-
-      return { ...issue, viewCount: issue.viewCount + 1 };
+      return issue;
     },
   }),
 );
+
+builder.mutationField("recordIssueView", (t) => t.boolean({
+  args: { issueId: t.arg.id({ required: true }) },
+  resolve: async (_root, args, ctx) => {
+    const user = requireAuth(ctx), issueId = String(args.issueId), now = new Date();
+    return ctx.db.$transaction(async (tx) => {
+      const issue = await tx.issue.findUnique({ where: { id: issueId }, select: { id: true, clientId: true, isDraft: true } });
+      if (!issue || (issue.isDraft && issue.clientId !== user.id)) throw gqlError("Không tìm thấy bài toán", "NOT_FOUND");
+      const inserted = await tx.issueView.createMany({ data: [{ issueId, userId: user.id, viewedAt: now }], skipDuplicates: true });
+      const updated = inserted.count ? null : await tx.issueView.updateMany({ where: { issueId, userId: user.id, viewedAt: { lte: new Date(now.getTime() - 3_600_000) } }, data: { viewedAt: now } });
+      if (!inserted.count && !updated?.count) return false;
+      await tx.issue.update({ where: { id: issueId }, data: { viewCount: { increment: 1 } } });
+      return true;
+    });
+  },
+}));
 
 // ---------------------------------------------------------------------------
 // B-3 — createIssue: đăng bounty mới (auth required)

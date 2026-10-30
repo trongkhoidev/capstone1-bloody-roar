@@ -1,4 +1,4 @@
-ĐANG DỞ: N-8 / G1. Bước tiếp theo: thêm các kịch bản E2–E17, E22–E24, E31 và hoàn thiện N-12/N-13; N-6 làm cùng P1-30a.
+ĐANG DỞ: N-8 / G1. Bước tiếp theo: thêm các kịch bản E3–E17, E22–E24, E31 và hoàn thiện N-12/N-13; N-6 làm cùng P1-30a.
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -11,7 +11,7 @@
 | Z-7 | xong | Script cũ gọi mutation đã xóa được gỡ; root chuyển sang harness ở N-8 |
 | D4 / D5 | xong | `dde1bc7`; test theo ma trận |
 | AI-11 | xong | Timeout, bps và một AILog mỗi lượt được kiểm bằng test DB |
-| N-8 | dở | Harness khởi động/reset/seed/teardown pass E1, còn thiếu kịch bản G1 |
+| N-8 | dở | Harness pass E1–E2, còn thiếu kịch bản G1 |
 | N-9 | xong | Seed token theo manifest, guard DB test |
 | N-12, N-13 | chưa làm | G1 |
 | N-6, N-10, N-11 | chưa làm | N-6 cùng P1-30a; N-10/N-11 tại G2 |
@@ -72,6 +72,10 @@
 ## Bị chặn
 
 - Z-6: `bun run build` lỗi `RangeError: Division by zero` trong `@vercel/nft`. Đã thử build trong worktree, thêm outputFileTracingRoot, rồi loại `.uploads` và `tests` khỏi tracing; cả ba vẫn lỗi. Typecheck và lint pass. Theo FINISH_PLAN, không chặn gate và tiếp tục phase khác.
+
+## E2 — marketplace và lượt xem
+
+- E2 qua HTTP thật: tạo issue, tìm marketplace, hai lượt ghi song song chỉ tăng một lần, sau một giờ được tăng lại. Bổ sung recordIssueView theo user và ngừng tăng tự động từ query; ghi lựa chọn trong DECISIONS. E1/E2 pass; harness còn fail do thiếu các kịch bản G1 khác. Typecheck và lint pass.
 
 ## N-8/N-9 và E1 — harness ban đầu
 

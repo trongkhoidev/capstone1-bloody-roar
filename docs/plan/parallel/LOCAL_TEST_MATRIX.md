@@ -48,3 +48,5 @@
 | P1-14 | apps/web/src/test/analytics-projection.test.ts; apps/web/src/test/analytics-projection.db.test.ts | bun run --cwd apps/web test -- src/test/analytics-projection.test.ts src/test/analytics-projection.db.test.ts | Pass unit và PostgreSQL test; `1fce246` |
 | P1-15 | apps/web/src/test/submission.db.test.ts; apps/web/src/test/escrow-reservation.db.test.ts | bun run --cwd apps/web test -- src/test/submission.db.test.ts src/test/escrow-reservation.db.test.ts | Pass 3/3 trên test DB; `9c0da1e` |
 | P1-36 | packages/shared/src/escrow/abi.ts; apps/contracts/contracts/BloodyRoarEscrow.sol | bun -e kiểm số event ABI/contract | Pass 19 = 15 + 4; `bd198a6` |
+| P1-37 / D5 | apps/web/src/test/issue-pagination-files.db.test.ts; apps/web/src/test/graphql-schema.test.ts | bun run --cwd apps/web test -- src/test/issue-pagination-files.db.test.ts | Pass DB và schema; `dde1bc7` |
+| D4 | apps/web/src/test/profile-input.test.ts | bun run --cwd apps/web test -- src/test/profile-input.test.ts | Pass 4/4; đã có validation/unique |

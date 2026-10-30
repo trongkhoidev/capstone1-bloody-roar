@@ -1,4 +1,12 @@
-ĐANG DỞ: P1-37. Bước tiếp theo: bỏ isDraft khỏi API theo D5, thêm attachIssueFile và cursor pagination cho issues/myIssues/applications; kiểm tra test và gate.
+ĐANG DỞ: BE-48 / E10. Bước tiếp theo: triển khai effect CLAIMED và hoàn tác khi reorg, xác nhận intent và PAYMENT_RECEIVED; test claim thật và E10/E31.
+
+## P1-37, D5 và D4
+
+- `dde1bc7`: bỏ trường isDraft khỏi Issue API theo D5; issues đã có cursor, thêm first/after và cursor cho myIssues/applications, kiểm cursor đúng phạm vi. attachIssueFile yêu cầu chủ issue, file của chính họ, ATTACHED/ISSUE_IMAGE và image MIME; ảnh issue chỉ lấy file đã xác minh.
+- `bun run --cwd apps/web test -- src/test/issue-pagination-files.db.test.ts` với TEST_DATABASE_URL trỏ bloody_codex_test pass 2/2; kiểm phân trang, cursor sai phạm vi, quyền và file sai trạng thái/mục đích. Gate typecheck/lint/web/worker/database/contracts pass 487/64/3/35, lint bốn cảnh báo any cũ. API tạo attachment hoàn chỉnh còn theo N-6.
+- D4 đã có: updateProfile dùng normalizeProfileInput kiểm/chuẩn hóa email, Prisma User.email @unique, map P2002 thành CONFLICT. `bun run --cwd apps/web test -- src/test/profile-input.test.ts` pass 4/4; không cần sửa code.
+- Gate phase C E3–E14/E31 và gate cuối chưa hoàn tất; CLAIMED và harness còn thiếu.
+
 
 ## P1-36 — số event
 

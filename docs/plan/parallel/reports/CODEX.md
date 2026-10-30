@@ -1,4 +1,4 @@
-ĐANG DỞ: phase 0 gate. Bước tiếp theo: chạy gate đầy đủ có thể chạy trước harness với bloody_codex_test.
+ĐANG DỞ: P1-16. Bước tiếp theo: đọc schema, mutation và effect liên quan; viết test rồi triển khai evidence và tranh chấp on-chain.
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -68,6 +68,10 @@
 ## Bị chặn
 
 - Z-6: `bun run build` lỗi `RangeError: Division by zero` trong `@vercel/nft`. Đã thử build trong worktree, thêm outputFileTracingRoot, rồi loại `.uploads` và `tests` khỏi tracing; cả ba vẫn lỗi. Typecheck và lint pass. Theo FINISH_PLAN, không chặn gate và tiếp tục phase khác.
+
+## Gate phase 0
+
+- Trên bloody_codex_test: `bun run typecheck` pass; `bun run lint` pass với 4 cảnh báo any cũ; web 489/489, worker 69/69, database 3/3, contracts 35/35 pass. `test:e2e:local` chưa có ở phase này. Z-6 build vẫn bị chặn như trên.
 
 ## Z-7 — script E2E cũ
 

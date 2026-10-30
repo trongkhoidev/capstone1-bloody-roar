@@ -37,7 +37,7 @@ export async function draftRuling(f: Fixture, kind: "INITIAL" | "FINAL", clientB
 }
 
 // Arbiter (ví #5) gửi giao dịch lấy từ bản Safe; trả về calldata để test so khớp.
-export async function postRuling(f: Fixture, safeTransactionJson: string) {
+export async function arbiterPost(f: Fixture, safeTransactionJson: string) {
   const tx = (JSON.parse(safeTransactionJson) as { transactions: Array<{ to: Hex; data: Hex }> }).transactions[0]!;
   await rpc<string>("eth_sendTransaction", [{ from: f.arbiter, to: tx.to, data: tx.data, gas: "0x500000" }]);
   return tx;

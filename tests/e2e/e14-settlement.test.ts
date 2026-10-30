@@ -34,7 +34,7 @@ test("E14: the other party accepts a proposed split and payouts follow it", asyn
     expect((await claimable(f.prisma, f.developer.walletAddress)) - before.developer).toBe(68_250_000n);
     expect((await claimable(f.prisma, f.feeRecipient)) - before.fee).toBe(1_750_000n);
   } finally {
-    await restoreChain(snapshot, f.prisma);
+    await restoreChain(snapshot, f);
   }
 }, 180_000);
 
@@ -53,6 +53,6 @@ test("E14: the proposer cannot accept its own proposal and can revoke it", async
     expect(await f.prisma.settlementProposal.count({ where: { escrowIdHash: projection.escrowIdHash, status: "PENDING" } })).toBe(0);
     expect(projection.settlementProposer).toBeNull();
   } finally {
-    await restoreChain(snapshot, f.prisma);
+    await restoreChain(snapshot, f);
   }
 }, 180_000);

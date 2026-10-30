@@ -2,7 +2,7 @@ import { beforeAll, expect, test } from "bun:test";
 import { assertTestDatabase } from "@bloody-roar/database/test-guard";
 import { encodeEscrowCall } from "@bloody-roar/shared/escrow";
 import { advanceTime, restoreChain, snapshotChain } from "./harness/chain";
-import { createEvidence, draftRuling, postRuling, raiseDispute, submitCounterpartyEvidence, waitForPhase } from "./harness/dispute";
+import { createEvidence, draftRuling, arbiterPost, raiseDispute, submitCounterpartyEvidence, waitForPhase } from "./harness/dispute";
 import { fixture } from "./harness/fixture";
 import { fund, prepareAndSend } from "./harness/funding";
 import { gqlAs } from "./harness/gql";
@@ -27,7 +27,7 @@ test("E15: evidence, an initial ruling and finalization pay the split", async ()
     await advanceTime(72 * 3600);
     const draft = await draftRuling(f, "INITIAL", 5000);
     const reservation = await f.prisma.fundingReservation.findFirstOrThrow({ where: { issueId: f.issueId } });
-    const tx = await postRuling(f, draft.safeTransactionJson);
+    const tx = await arbiterPost(f, draft.safeTransactionJson);
     expect(tx.data).toBe(encodeEscrowCall("postInitialRuling", { escrowId: reservation.escrowKey, clientBps: "5000", decisionHash: draft.decisionHash }));
     await waitForPhase(f, "INITIAL_RULING");
     await waitFor(async () => (await f.prisma.notification.count({ where: { type: "RULING_POSTED", data: { path: ["issueId"], equals: f.issueId } } })) > 0);
@@ -43,6 +43,6 @@ test("E15: evidence, an initial ruling and finalization pay the split", async ()
     expect(await f.prisma.notification.count({ where: { type: "DISPUTE_RESOLVED", data: { path: ["issueId"], equals: f.issueId } } })).toBe(2);
     expect(await f.prisma.notification.count({ where: { type: "ESCROW_RESOLVED", data: { path: ["issueId"], equals: f.issueId } } })).toBe(0);
   } finally {
-    await restoreChain(snapshot, f.prisma);
+    await restoreChain(snapshot, f);
   }
 }, 240_000);

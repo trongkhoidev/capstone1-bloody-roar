@@ -1,7 +1,7 @@
 import { beforeAll, expect, test } from "bun:test";
 import { assertTestDatabase } from "@bloody-roar/database/test-guard";
 import { advanceTime, restoreChain, snapshotChain } from "./harness/chain";
-import { createEvidence, draftRuling, postRuling, raiseDispute, waitForPhase } from "./harness/dispute";
+import { createEvidence, draftRuling, arbiterPost, raiseDispute, waitForPhase } from "./harness/dispute";
 import { fixture } from "./harness/fixture";
 import { fund, prepareAndSend } from "./harness/funding";
 import { gqlAs } from "./harness/gql";
@@ -20,14 +20,14 @@ test("E16: a client challenge replaces the initial ruling with a final ruling", 
     await raiseDispute(f, f.client, (await createEvidence(f, f.client, "The result is incomplete and misses the criterion.")).id);
     await waitForPhase(f, "DISPUTED");
     await advanceTime(72 * 3600);
-    await postRuling(f, (await draftRuling(f, "INITIAL", 3000)).safeTransactionJson);
+    await arbiterPost(f, (await draftRuling(f, "INITIAL", 3000)).safeTransactionJson);
     await waitForPhase(f, "INITIAL_RULING");
     await prepareAndSend(f, f.client, "prepareChallengeRuling");
     await waitFor(async () => (await f.prisma.dispute.findUniqueOrThrow({ where: { issueId: f.issueId } })).status === "CHALLENGED");
     await waitFor(async () => (await f.prisma.notification.count({ where: { type: "RULING_CHALLENGED", userId: f.developer.id, data: { path: ["issueId"], equals: f.issueId } } })) === 1);
     const counterChallenge = await gqlAs(f.developer, `mutation($issue: ID!) { prepareChallengeRuling(issueId: $issue) { intentId } }`, { issue: f.issueId });
     expect(counterChallenge.errors?.[0]?.extensions?.code).toBe("INVALID_PHASE");
-    await postRuling(f, (await draftRuling(f, "FINAL", 7000)).safeTransactionJson);
+    await arbiterPost(f, (await draftRuling(f, "FINAL", 7000)).safeTransactionJson);
     await waitForPhase(f, "FINAL_RULING");
     await advanceTime(24 * 3600);
     const before = { client: await claimable(f.prisma, f.client.walletAddress), developer: await claimable(f.prisma, f.developer.walletAddress), fee: await claimable(f.prisma, f.feeRecipient) };
@@ -37,7 +37,7 @@ test("E16: a client challenge replaces the initial ruling with a final ruling", 
     expect((await claimable(f.prisma, f.developer.walletAddress)) - before.developer).toBe(29_250_000n);
     expect((await claimable(f.prisma, f.feeRecipient)) - before.fee).toBe(750_000n);
   } finally {
-    await restoreChain(snapshot, f.prisma);
+    await restoreChain(snapshot, f);
   }
 }, 240_000);
 
@@ -50,12 +50,12 @@ test("E16: a challenge after the seven-day window is refused", async () => {
     await raiseDispute(f, f.client, (await createEvidence(f, f.client, "The result is incomplete and misses the criterion.")).id);
     await waitForPhase(f, "DISPUTED");
     await advanceTime(72 * 3600);
-    await postRuling(f, (await draftRuling(f, "INITIAL", 3000)).safeTransactionJson);
+    await arbiterPost(f, (await draftRuling(f, "INITIAL", 3000)).safeTransactionJson);
     await waitForPhase(f, "INITIAL_RULING");
     await advanceTime(7 * 86400);
     const late = await gqlAs(f.client, `mutation($issue: ID!) { prepareChallengeRuling(issueId: $issue) { intentId } }`, { issue: f.issueId });
     expect(late.errors?.[0]?.extensions?.code).toBe("DEADLINE_NOT_REACHED");
   } finally {
-    await restoreChain(snapshot, f.prisma);
+    await restoreChain(snapshot, f);
   }
 }, 240_000);

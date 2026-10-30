@@ -26,6 +26,6 @@ test("E13: a review timeout waits for the review window, then pays the developer
     expect((await claimable(f.prisma, f.feeRecipient)) - feeBefore).toBe(2_500_000n);
     expect((await f.prisma.issue.findUniqueOrThrow({ where: { id: f.issueId } })).outcome).toBe("REVIEW_TIMEOUT");
   } finally {
-    await restoreChain(snapshot, f.prisma);
+    await restoreChain(snapshot, f);
   }
 }, 180_000);

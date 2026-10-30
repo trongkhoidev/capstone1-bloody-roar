@@ -1,7 +1,7 @@
 import { beforeAll, expect, test } from "bun:test";
 import { assertTestDatabase } from "@bloody-roar/database/test-guard";
 import { advanceTime, restoreChain, snapshotChain } from "./harness/chain";
-import { createEvidence, draftRuling, postRuling, raiseDispute, waitForPhase } from "./harness/dispute";
+import { createEvidence, draftRuling, arbiterPost, raiseDispute, waitForPhase } from "./harness/dispute";
 import { fixture } from "./harness/fixture";
 import { fund, prepareAndSend } from "./harness/funding";
 import { gqlAs } from "./harness/gql";
@@ -32,7 +32,7 @@ test("E17: an arbiter timeout is open to anyone after 30 days from the raise", a
     expect((await claimable(f.prisma, f.feeRecipient)) - before.fee).toBe(1_250_000n);
     expect(await f.prisma.notification.count({ where: { type: "DISPUTE_RESOLVED", data: { path: ["issueId"], equals: f.issueId } } })).toBe(2);
   } finally {
-    await restoreChain(snapshot, f.prisma);
+    await restoreChain(snapshot, f);
   }
 }, 240_000);
 
@@ -45,7 +45,7 @@ test("E17: a challenged ruling counts the 30 days from the challenge", async () 
     await raiseDispute(f, f.client, (await createEvidence(f, f.client, "The result is incomplete and misses the criterion.")).id);
     await waitForPhase(f, "DISPUTED");
     await advanceTime(72 * 3600);
-    await postRuling(f, (await draftRuling(f, "INITIAL", 5000)).safeTransactionJson);
+    await arbiterPost(f, (await draftRuling(f, "INITIAL", 5000)).safeTransactionJson);
     await waitForPhase(f, "INITIAL_RULING");
     await prepareAndSend(f, f.client, "prepareChallengeRuling");
     await waitFor(async () => (await f.prisma.dispute.findUniqueOrThrow({ where: { issueId: f.issueId } })).status === "CHALLENGED");
@@ -57,6 +57,6 @@ test("E17: a challenged ruling counts the 30 days from the challenge", async () 
     await waitFor(async () => (await f.prisma.dispute.findUniqueOrThrow({ where: { issueId: f.issueId } })).status === "RESOLVED");
     expect((await f.prisma.dispute.findUniqueOrThrow({ where: { issueId: f.issueId } })).finalClientBps).toBe(5000);
   } finally {
-    await restoreChain(snapshot, f.prisma);
+    await restoreChain(snapshot, f);
   }
 }, 240_000);

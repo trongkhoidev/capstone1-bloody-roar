@@ -24,6 +24,6 @@ test("E12: a missed delivery refund opens after the deadline and pays the client
     await claimFunds(f, f.client);
     expect(await tokenBalance(f, f.client.walletAddress) - walletBefore).toBe(100_000_000n);
   } finally {
-    await restoreChain(snapshot, f.prisma);
+    await restoreChain(snapshot, f);
   }
 }, 180_000);

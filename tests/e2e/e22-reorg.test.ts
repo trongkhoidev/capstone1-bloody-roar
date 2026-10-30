@@ -19,7 +19,7 @@ test("E22: a reorged deposit is marked non-canonical and the projection follows 
     const chainEvent = (txHash: string) => f.prisma.chainEvent.findFirst({ where: { txHash, escrowIdHash: reservation.escrowIdHash } });
     const depositA = (await externalDeposit(f, reservation)).toLowerCase();
     await waitFor(async () => (await chainEvent(depositA))?.canonical === true);
-    await restoreChain(snapshot, f.prisma);
+    await restoreChain(snapshot, f);
     clean = await snapshotChain();
     const depositB = (await externalDeposit(f, reservation)).toLowerCase();
     expect(depositB).not.toBe(depositA);
@@ -28,6 +28,6 @@ test("E22: a reorged deposit is marked non-canonical and the projection follows 
     await waitFor(async () => (await f.prisma.escrowProjection.findUnique({ where: { escrowIdHash: reservation.escrowIdHash } }))?.phase === "FUNDED");
     expect((await f.prisma.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash: reservation.escrowIdHash } })).amountRaw.toFixed()).toBe(reservation.amountRaw.toFixed());
   } finally {
-    await restoreChain(clean, f.prisma);
+    await restoreChain(clean, f);
   }
 }, 240_000);

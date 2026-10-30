@@ -17,7 +17,7 @@ export async function advanceTime(seconds: number) {
 }
 
 // Reverts the chain, then waits until the worker has reconciled its checkpoint with the reverted chain.
-export async function restoreChain(snapshot: string, prisma: PrismaClient) {
+export async function restoreChain(snapshot: string, { prisma }: { prisma: PrismaClient }) {
   if (!(await rpc<boolean>("evm_revert", [snapshot]))) throw new Error("evm_revert failed");
   const where = { chainId: 31337, contractAddress: process.env.ESCROW_ADDRESS!.toLowerCase() };
   const checkpoint = await prisma.projectionCheckpoint.findFirstOrThrow({ where });

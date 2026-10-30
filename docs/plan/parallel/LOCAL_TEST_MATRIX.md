@@ -3,6 +3,7 @@
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
 | E15–E17 / gate D | tests/e2e/scanner-deposit.ts | check-env; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts; typecheck; lint; web/worker/database/contracts test | Pass scanner và 499/70/3/35; upload hai bước chờ P1-30a; commit `test(phase-d): exercise dispute chain flows` |
+| E8 | tests/e2e/e08-cancel-reservation.test.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | E8 pass, harness còn thiếu kịch bản; commit `test(e8): cover reservation cancellation` |
 | E7 | tests/e2e/e07-reservation-expiry.test.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | E7 pass 3 nhánh, harness còn thiếu kịch bản; commit `test(e7): cover expired reservations` |
 | E6 | tests/e2e/e06-mismatched.test.ts; tests/e2e/harness/funding.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | E1–E6 pass, harness còn thiếu kịch bản; commit `test(e6): verify mismatched deposits` |
 | E5 | tests/e2e/e05-funding.test.ts; tests/e2e/harness/funding.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | E1–E5 pass, harness còn thiếu kịch bản; commit `test(e5): exercise signed escrow funding` |

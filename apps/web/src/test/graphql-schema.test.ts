@@ -19,6 +19,19 @@ describe("GraphQL schema", () => {
     expect(mutations?.prepareSubmitWork).toBeDefined();
     expect(mutations?.requestChanges).toBeDefined();
     expect(mutations?.attachIssueFile).toBeDefined();
+    const dispute = schema.getType("Dispute");
+    const disputeFields = dispute && "getFields" in dispute ? dispute.getFields() : {};
+    expect(disputeFields.suggestedClientBps?.type.toString()).toBe("Int");
+    expect(disputeFields.proposedClientBps?.type.toString()).toBe("Int");
+    expect(disputeFields.finalClientBps?.type.toString()).toBe("Int");
+    expect(disputeFields.suggestedRatio).toBeUndefined();
+    expect(disputeFields.proposedClientRatio).toBeUndefined();
+    const escrow = schema.getType("Escrow");
+    const escrowFields = escrow && "getFields" in escrow ? escrow.getFields() : {};
+    for (const name of ["bountyAmount", "platformFeeAmount", "developerPayout", "clientRefund"]) {
+      expect(escrowFields[name]).toBeUndefined();
+      expect(escrowFields[`${name}Raw`]?.type.toString()).toBe("String");
+    }
     const issue = schema.getType("Issue");
     expect(issue && "getFields" in issue ? issue.getFields().isDraft : undefined).toBeUndefined();
   }, 60_000);

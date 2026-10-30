@@ -41,14 +41,9 @@ export const DisputeRef = builder.prismaObject("Dispute", {
         ctx.user?.role !== "ADMIN" || dispute.aiReport == null ? null : JSON.stringify(dispute.aiReport),
     }),
     aiConfidenceScore: t.exposeFloat("aiConfidenceScore", { nullable: true }),
-    suggestedRatio: t.float({
-      nullable: true,
-      resolve: (dispute) => dispute.suggestedRatio?.toNumber() ?? null,
-    }),
-    proposedClientRatio: t.float({
-      nullable: true,
-      resolve: (dispute) => dispute.proposedClientRatio?.toNumber() ?? null,
-    }),
+    suggestedClientBps: t.exposeInt("suggestedClientBps", { nullable: true }),
+    proposedClientBps: t.exposeInt("proposedClientBps", { nullable: true }),
+    finalClientBps: t.exposeInt("finalClientBps", { nullable: true }),
     proposedAt: t.string({
       nullable: true,
       resolve: (dispute) => dispute.proposedAt?.toISOString() ?? null,

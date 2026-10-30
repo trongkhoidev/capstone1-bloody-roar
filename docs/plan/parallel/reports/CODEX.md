@@ -1,4 +1,4 @@
-ĐANG DỞ: P1-28. Bước tiếp theo: thay GraphQL dispute ratio bằng bps và loại field tiền float khỏi escrow cũ.
+ĐANG DỞ: AI-11. Bước tiếp theo: test và sửa analyzeDispute timeout, bps và audit; N-6 thực hiện cùng P1-30a theo kế hoạch.
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -48,7 +48,7 @@
 | P1-25 | chưa làm | Chưa triển khai |
 | P1-26 | chưa làm | Chưa triển khai |
 | P1-27 | chưa làm | Chưa triển khai |
-| P1-28 | chưa làm | Chưa triển khai |
+| P1-28 | xong | GraphQL bps và chuỗi tiền raw; schema test pass |
 | P1-29 | chưa làm | Chưa triển khai |
 | P1-30 | chưa làm | Chưa triển khai |
 | P1-31 | chưa làm | Chưa triển khai |
@@ -68,6 +68,10 @@
 ## Bị chặn
 
 - Z-6: `bun run build` lỗi `RangeError: Division by zero` trong `@vercel/nft`. Đã thử build trong worktree, thêm outputFileTracingRoot, rồi loại `.uploads` và `tests` khỏi tracing; cả ba vẫn lỗi. Typecheck và lint pass. Theo FINISH_PLAN, không chặn gate và tiếp tục phase khác.
+
+## P1-28 — GraphQL bps và tiền raw
+
+- Thay trường ratio của dispute bằng ba trường Int bps; bốn trường tiền của Escrow cũ trả chuỗi raw. Schema test, typecheck và lint pass; logic AI đổi sang bps ở AI-11.
 
 ## P1-18 — admin xem evidence
 

@@ -155,3 +155,7 @@ Không có việc nào chặn Codex. Khi deploy, người dùng cần:
 ## ĐỔI QUYẾT ĐỊNH — reputation sau escrow resolution
 
 P1-10 tạm để TODO(P1-22) gọi `recalcReputation` trong transaction của effect. Hàm chưa tồn tại; P1-22 sẽ triển khai và nối lại trước gate cuối.
+
+## BỔ SUNG P1-18 — audit tải evidence
+
+Dùng action `download_evidence` cho lượt admin tải file, phân biệt với `view_evidence` khi xem danh sách.

@@ -18,7 +18,7 @@ const CREATE = `mutation($issue: ID!, $statement: String!, $files: [ID!], $chat:
 const PREPARE = (name: string) => `mutation($issue: ID!, $manifest: ID!) { ${name}(issueId: $issue, manifestId: $manifest) { intentId method data } }`;
 
 describe.skipIf(!process.env.TEST_DATABASE_URL)("dispute evidence on test database", () => {
-  let client: Awaited<ReturnType<typeof prisma.user.create>>, developer: typeof client, outsider: typeof client;
+  let client: Awaited<ReturnType<typeof prisma.user.create>>, developer: typeof client, outsider: typeof client, admin: typeof client;
   let issueId = "", tokenId = "", escrowIdHash = "", attachmentId = "", invalidId = "", message1 = "", message2 = "";
   const keys: string[] = [];
   beforeAll(async () => {
@@ -27,6 +27,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("dispute evidence on test databa
     client = await prisma.user.create({ data: { walletAddress: hex(20), role: "CLIENT" } });
     developer = await prisma.user.create({ data: { walletAddress: hex(20), role: "DEVELOPER" } });
     outsider = await prisma.user.create({ data: { walletAddress: hex(20), role: "DEVELOPER" } });
+    admin = await prisma.user.create({ data: { walletAddress: hex(20), role: "ADMIN" } });
     tokenId = (await prisma.token.create({ data: { name: "Evidence", symbol: "EVD", address: hex(20), decimals: 6, chainId: 31337 } })).id;
     issueId = (await prisma.issue.create({ data: { title: "Evidence issue", description: "Dispute evidence test", category: "BUG_FIX", status: "IN_PROGRESS", clientId: client.id, developerId: developer.id, tokenId, bountyAmount: "100", requiredSkills: [] } })).id;
     escrowIdHash = hex(32);
@@ -39,6 +40,8 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("dispute evidence on test databa
   afterAll(async () => {
     for (const key of keys) { const file = localUploadPath(key); if (file) await unlink(file.destination).catch(() => {}); }
     if (issueId) {
+      await prisma.adminLog.deleteMany({ where: { targetId: issueId } });
+      await prisma.dispute.deleteMany({ where: { issueId } });
       await prisma.transactionIntent.deleteMany({ where: { issueId } });
       await prisma.evidenceManifest.deleteMany({ where: { issueId } });
       await prisma.escrowProjection.deleteMany({ where: { escrowIdHash } });
@@ -47,7 +50,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("dispute evidence on test databa
       await prisma.issue.deleteMany({ where: { id: issueId } });
     }
     if (tokenId) await prisma.token.deleteMany({ where: { id: tokenId } });
-    await prisma.user.deleteMany({ where: { id: { in: [client?.id, developer?.id, outsider?.id].filter(Boolean) } } });
+    await prisma.user.deleteMany({ where: { id: { in: [client?.id, developer?.id, outsider?.id, admin?.id].filter(Boolean) } } });
     await prisma.$disconnect();
   }, 60_000);
   const call = (user: typeof client, statement: string, files: string[] = [], chat?: { fromMessageId: string; toMessageId: string }) =>
@@ -75,6 +78,21 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("dispute evidence on test databa
     expect(prep.errors).toBeUndefined();
     expect((prep.data?.prepareRaiseDispute as { method: string }).method).toBe("raiseDispute");
     expect((await execute(PREPARE("prepareRaiseDispute"), { user: developer, db: prisma }, { issue: issueId, manifest: output.id })).errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
+  }, 60_000);
+  it("lets only admins inspect evidence for an existing dispute and audits each view", async () => {
+    const query = `query($issue: ID!) { evidenceFiles(issueId: $issue) { id side manifestHash files { key sha256 mime size name downloadUrl } } }`;
+    const run = (user: typeof client) => execute(query, { user, db: prisma }, { issue: issueId });
+    expect((await run(client)).errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
+    expect((await run(admin)).errors?.[0]?.extensions?.code).toBe("NOT_FOUND");
+    await prisma.dispute.create({ data: { issueId, raisedById: client.id, reason: "A dispute for evidence" } });
+    const result = await run(admin);
+    expect(result.errors).toBeUndefined();
+    const rows = result.data?.evidenceFiles as Array<{ files: Array<{ key: string; downloadUrl: string }> }>;
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.files[0]!.downloadUrl).toContain("/api/uploads?key=");
+    expect(await prisma.adminLog.count({ where: { targetId: issueId, action: "view_evidence", adminId: admin.id } })).toBe(1);
+    await run(admin);
+    expect(await prisma.adminLog.count({ where: { targetId: issueId, action: "view_evidence", adminId: admin.id } })).toBe(2);
   }, 60_000);
   it("rejects outsiders, bad files, invalid ranges and late counter evidence", async () => {
     expect((await call(outsider, "valid statement")).errors?.[0]?.extensions?.code).toBe("FORBIDDEN");

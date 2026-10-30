@@ -2,12 +2,12 @@ import { createHash } from "node:crypto";
 import { type Prisma, type EscrowProjection } from "@bloody-roar/database";
 import { canonicalJson, computeEvidenceManifestHash, type EvidenceManifest } from "@bloody-roar/shared/escrow";
 import { builder } from "../../builder";
-import { requireAuth, type GraphQLContext } from "../../context";
+import { requireAdmin, requireAuth, type GraphQLContext } from "../../context";
 import { gqlError } from "../../errors";
 import { guardMessage } from "../../../ai/guard/service";
 import { readChainTime } from "../../../lib/escrow/chain-time";
 import { createPreparedCall, escrowTarget } from "../../../lib/escrow/prepare";
-import { putObject } from "../../../lib/storage";
+import { getDownloadUrl, putObject } from "../../../lib/storage";
 import { PreparedCallRef } from "../escrow/release.module";
 
 const sha256 = (value: string) => createHash("sha256").update(value, "utf8").digest("hex");
@@ -93,3 +93,35 @@ for (const [field, method] of [["prepareRaiseDispute", "raiseDispute"], ["prepar
     },
   }));
 }
+
+
+type EvidenceFile = EvidenceManifest["files"][number] & { downloadUrl: string };
+const EvidenceFileRef = builder.objectRef<EvidenceFile>("EvidenceFile").implement({ fields: (t) => ({
+  key: t.exposeString("key"), sha256: t.exposeString("sha256"), mime: t.exposeString("mime"), size: t.exposeInt("size"), name: t.exposeString("name"), downloadUrl: t.exposeString("downloadUrl"),
+}) });
+const EvidenceViewRef = builder.objectRef<{ id: string; side: string; manifestHash: string; submittedById: string; files: EvidenceFile[] }>("EvidenceView").implement({ fields: (t) => ({
+  id: t.exposeID("id"), side: t.exposeString("side"), manifestHash: t.exposeString("manifestHash"), submittedById: t.exposeString("submittedById"),
+  files: t.field({ type: [EvidenceFileRef], resolve: (view) => view.files }),
+}) });
+
+builder.queryField("evidenceFiles", (t) => t.field({
+  type: [EvidenceViewRef], args: { issueId: t.arg.id({ required: true }) },
+  resolve: async (_root, args, ctx) => {
+    const admin = requireAdmin(ctx), issueId = String(args.issueId);
+    const dispute = await ctx.db.dispute.findUnique({ where: { issueId }, select: { id: true } });
+    if (!dispute) throw gqlError("Không tìm thấy tranh chấp", "NOT_FOUND");
+    const manifests = await ctx.db.evidenceManifest.findMany({ where: { issueId }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] });
+    const views = await Promise.all(manifests.map(async (row) => {
+      const manifest = row.manifest as unknown as EvidenceManifest;
+      const files = await Promise.all((manifest.files ?? []).map(async (file) => {
+        const parsed = new URL(file.key, "http://localhost");
+        const key = parsed.pathname === "/api/uploads" ? parsed.searchParams.get("key") : file.key;
+        if (!key) throw new Error("Evidence file has no storage key");
+        return { ...file, downloadUrl: await getDownloadUrl(key, 120) };
+      }));
+      return { id: row.id, side: row.side, manifestHash: row.manifestHash, submittedById: row.submittedById, files };
+    }));
+    await ctx.db.adminLog.create({ data: { adminId: admin.id, action: "view_evidence", target: "issue", targetId: issueId } });
+    return views;
+  },
+}));

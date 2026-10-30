@@ -164,13 +164,15 @@ export async function GET(request: Request) {
   const issue = attachment.message?.issue ?? attachment.issue;
   if (!issue) return NextResponse.json({ error: "File not found" }, { status: 404 });
   const publicIssueImage =
-    !attachment.messageId && !issue.isDraft && attachment.fileMime.startsWith("image/");
+    !attachment.messageId && attachment.purpose !== "EVIDENCE" && attachment.purpose !== "DELIVERY" && !issue.isDraft && attachment.fileMime.startsWith("image/");
+  const adminEvidence = user?.role === "ADMIN" && attachment.purpose === "EVIDENCE";
+  const evidenceDispute = adminEvidence ? await prisma.dispute.findUnique({ where: { issueId: issue.id }, select: { id: true } }) : null;
   const canReadPrivateAttachment = Boolean(
     user &&
     (attachment.messageId
       ? canReadIssueChat(issue, user)
       : user.role === "ADMIN"
-        ? issue.status === "DISPUTED"
+        ? (adminEvidence ? !!evidenceDispute : issue.status === "DISPUTED")
         : issue.clientId === user.id || issue.developerId === user.id),
   );
   if (!publicIssueImage && !canReadPrivateAttachment) {
@@ -178,6 +180,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "You cannot access this attachment" }, { status: 403 });
   }
 
+  const auditEvidenceDownload = async () => {
+    if (adminEvidence && user) await prisma.adminLog.create({ data: { adminId: user.id, action: "download_evidence", target: "issue", targetId: issue.id, details: { attachmentId: attachment.id } } });
+  };
   const s3 = getS3Storage();
   const safeName = safeFileName(attachment.fileName).replace(/["\\]/g, "_");
   if (s3) {
@@ -192,6 +197,7 @@ export async function GET(request: Request) {
       }),
       { expiresIn: 120 },
     );
+    await auditEvidenceDownload();
     return NextResponse.redirect(downloadUrl, {
       headers: { "Cache-Control": "private, no-store" },
     });
@@ -204,6 +210,7 @@ export async function GET(request: Request) {
   const { destination } = localPath;
   try {
     const bytes = await readFile(destination);
+    await auditEvidenceDownload();
     return new Response(bytes, {
       headers: {
         "Content-Type": "application/octet-stream",

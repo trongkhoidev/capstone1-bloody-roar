@@ -1,6 +1,7 @@
 import path from "node:path";
 import { mkdir, writeFile } from "node:fs/promises";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export interface S3Storage {
   bucket: string;
@@ -52,4 +53,10 @@ export async function putObject(key: string, bytes: Uint8Array, mime: string): P
   if (!local) throw new Error("Invalid storage key");
   await mkdir(path.dirname(local.destination), { recursive: true });
   await writeFile(local.destination, bytes);
+}
+
+export async function getDownloadUrl(key: string, ttlSeconds: number): Promise<string> {
+  const storage = getS3Storage();
+  if (storage) return getSignedUrl(storage.client, new GetObjectCommand({ Bucket: storage.bucket, Key: key }), { expiresIn: ttlSeconds });
+  return `/api/uploads?key=${encodeURIComponent(key)}`;
 }

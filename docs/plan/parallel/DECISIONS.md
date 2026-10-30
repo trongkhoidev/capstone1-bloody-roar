@@ -175,3 +175,31 @@ Giữ `tests/e2e/.run/last-run.txt` và log đã ignore sau khi dừng PID để
 ## BỔ SUNG E2 — ghi lượt xem theo tài khoản
 
 `recordIssueView` yêu cầu đăng nhập và tăng tối đa một lần mỗi giờ cho mỗi user; query chi tiết không tự tăng vì bảng IssueView gắn với user.
+
+## BỔ SUNG G1-DELTA — so hiệu số claimable thay vì số tuyệt đối
+
+`ClaimableBalance` cộng dồn giữa các file (ví phí còn số dư từ E10, E13), nên các test đo chênh lệch trước và sau bước của mình. Giá trị trong đặc tả (97.5, 2.5, 100 USDC) vẫn là hiệu số đúng.
+
+## BỔ SUNG E14 — tách thành hai test và thông báo thu hồi
+
+Nhánh bên kia chấp nhận và nhánh đề xuất rồi thu hồi chạy trên hai fixture riêng. `SETTLEMENT_REVOKED` gửi cho bên còn lại, không gửi cho người thu hồi, đúng với scanner cũ.
+
+## BỔ SUNG E15 — so calldata bằng encodeEscrowCall
+
+`encodeEscrowCall("postInitialRuling", ...)` đóng gói cùng hàm và tham số với `encodeFunctionData(ESCROW_ABI)`, dùng `escrowKey` như scanner cũ. Không thêm đường mã hóa thứ hai.
+
+## BỔ SUNG E16 — kháng cáo thứ hai trả INVALID_PHASE
+
+Sau khi client kháng cáo, phase là CHALLENGED. `prepareChallengeRuling` của developer bị chặn ở bước kiểm phase trước khi kiểm quyền kháng cáo, nên mã lỗi là `INVALID_PHASE`.
+
+## BỔ SUNG E23 — chờ indexer đuổi kịp trước khi đo
+
+`reconcileProjections` trả `null` khi chưa đến chain head. Test gọi lại cho tới khi có kết quả, nên không đo khi chưa có block để so.
+
+## BỔ SUNG E24 — đợi worker hoàn tất replay
+
+`worker:replay` chỉ ghi `REPLAY_REQUESTED`; worker thực hiện replay và đưa checkpoint về `IDLE`. Test đợi `IDLE` rồi mới so projection.
+
+## BỔ SUNG E31 — xóa số dư còn lại trước khi đo
+
+Trước khi fund, test claim số dư còn lại của developer và ví phí. Nhờ vậy chênh lệch số dư escrow đúng 100 USDC của issue này.

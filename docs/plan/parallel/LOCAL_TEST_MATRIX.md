@@ -2,7 +2,19 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
-| E15–E17 / gate D | tests/e2e/scanner-deposit.ts | check-env; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts; typecheck; lint; web/worker/database/contracts test | Pass scanner và 499/70/3/35; upload hai bước chờ P1-30a; commit `test(phase-d): exercise dispute chain flows` |
+| N-13 | apps/web, apps/worker (dependency) | `grep -n '"socket.io-client@\|"pino@' bun.lock` | Xong: socket.io-client 4.8.4, pino 9.14.0 trong bun.lock |
+| E31 | tests/e2e/e31-flow.test.ts | bun run test:e2e:local | Pass: escrow giảm đúng 100 USDC, developer nhận 97.5 USDC, issue COMPLETED |
+| E24 | tests/e2e/e24-replay.test.ts | bun run test:e2e:local | Pass: replay xong, checkpoint IDLE, phase và số tiền giữ nguyên |
+| E23 | tests/e2e/e23-reconciler.test.ts | bun run test:e2e:local | Pass: finding mở khi amountRaw lệch, đóng khi sửa lại |
+| E22 / N-12 | tests/e2e/e22-reorg.test.ts | bun run test:e2e:local | Pass: deposit A non-canonical, deposit B canonical, projection theo B |
+| E17 | tests/e2e/e17-arbiter-timeout.test.ts | bun run test:e2e:local | Pass 2/2: timeout 30 ngày từ raise; nhánh CHALLENGED tính từ challengedAt |
+| E16 | tests/e2e/e16-challenge.test.ts | bun run test:e2e:local | Pass 2/2: kháng cáo ra final ruling; kháng cáo sau 7 ngày bị từ chối |
+| E15 | tests/e2e/e15-dispute-ruling.test.ts | bun run test:e2e:local | Pass: evidence, initial ruling, finalize, 50/48.75/1.25 |
+| E14 | tests/e2e/e14-settlement.test.ts | bun run test:e2e:local | Pass 2/2: bên kia chấp nhận đề xuất; người đề xuất không tự chấp nhận và thu hồi được |
+| E13 | tests/e2e/e13-review-timeout.test.ts | bun run test:e2e:local | Pass: review timeout sau mốc, developer 97.5 USDC, fee 2.5 USDC |
+| E12 | tests/e2e/e12-missed-delivery.test.ts | bun run test:e2e:local | Pass: refund sau deadline, người ngoài gửi tx, client rút 100 USDC |
+| E11 | tests/e2e/e11-claim-auth.test.ts | bun run test:e2e:local | Pass: ví khác bị FORBIDDEN, số dư 0 bị NOTHING_TO_CLAIM |
+| E15–E17 / gate D | tests/e2e/scanner-deposit.ts (đã xóa ở G1, thay bằng e15–e17) | check-env; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts; typecheck; lint; web/worker/database/contracts test | Pass scanner và 499/70/3/35; upload hai bước chờ P1-30a; commit `test(phase-d): exercise dispute chain flows` |
 | E8 | tests/e2e/e08-cancel-reservation.test.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | E8 pass, harness còn thiếu kịch bản; commit `test(e8): cover reservation cancellation` |
 | E7 | tests/e2e/e07-reservation-expiry.test.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | E7 pass 3 nhánh, harness còn thiếu kịch bản; commit `test(e7): cover expired reservations` |
 | E6 | tests/e2e/e06-mismatched.test.ts; tests/e2e/harness/funding.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | E1–E6 pass, harness còn thiếu kịch bản; commit `test(e6): verify mismatched deposits` |

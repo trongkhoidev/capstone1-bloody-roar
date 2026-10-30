@@ -7,7 +7,7 @@ import { fixture } from "./fixture";
 import { waitFor } from "./waitFor";
 
 type Fixture = Awaited<ReturnType<typeof fixture>>;
-type Prepared = { intentId: string; method: string; contractAddress: Hex; data: Hex; value: string };
+export type Prepared = { intentId: string; method: string; contractAddress: Hex; data: Hex; value: string };
 const mintAbi = [{ type: "function", name: "mint", stateMutability: "nonpayable", inputs: [{ name: "to", type: "address" }, { name: "amount", type: "uint256" }], outputs: [] }] as const;
 export async function sendPrepared(user: Fixture["client"], wallet: string, call: Prepared) {
   const hash = await rpc<string>("eth_sendTransaction", [{ from: wallet, to: call.contractAddress, data: call.data, value: `0x${BigInt(call.value).toString(16)}`, gas: "0x500000" }]);
@@ -16,6 +16,16 @@ export async function sendPrepared(user: Fixture["client"], wallet: string, call
   const receipt = await waitFor(() => rpc<{ status: string } | null>("eth_getTransactionReceipt", [hash]));
   if (receipt.status !== "0x1") throw new Error("Prepared transaction reverted");
   return hash;
+}
+// Ví Hardhat của user (chuỗi checksum từ eth_accounts, để gửi giao dịch).
+export const walletOf = (f: Fixture, user: Fixture["client"]) => f.accounts.find((a) => a.toLowerCase() === user.walletAddress.toLowerCase())!;
+// Gọi một mutation prepare* chỉ cần issueId, rồi gửi giao dịch bằng ví của user.
+export async function prepareAndSend(f: Fixture, user: Fixture["client"], field: string) {
+  const result = await gqlAs(user, `mutation($issue: ID!) { ${field}(issueId: $issue) { intentId method contractAddress data value } }`, { issue: f.issueId });
+  if (result.errors?.length) throw new Error(`${field}: ${result.errors[0]?.message}`);
+  const step = result.data?.[field] as Prepared;
+  await sendPrepared(user, walletOf(f, user), step);
+  return step;
 }
 export async function fund(f: Fixture) {
   const selection = await f.select(f.applicationId);

@@ -30,5 +30,6 @@ export async function fixture() {
   const applicationId = (a.data?.applyToIssue as { id: string }).id, rivalApplicationId = (b.data?.applyToIssue as { id: string }).id;
   const deadline = new Date(Date.now() + 5 * 86_400_000).toISOString();
   const select = (id: string) => gqlAs(client, `mutation($issue: ID!, $application: ID!, $deadline: String!) { selectDeveloper(issueId: $issue, applicationId: $application, deliveryDeadline: $deadline) { id status escrowKey termsHash amountRaw deliveryDeadline } }`, { issue: issueId, application: id, deadline });
-  return { prisma, accounts, client, developer, rival, admin, outsider, token, issueId, applicationId, rivalApplicationId, deadline, select, apply };
+  const arbiter = accounts[5]!, feeRecipient = accounts[6]!;
+  return { prisma, accounts, client, developer, rival, admin, outsider, token, issueId, applicationId, rivalApplicationId, deadline, select, apply, arbiter, feeRecipient };
 }

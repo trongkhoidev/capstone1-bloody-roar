@@ -1,4 +1,4 @@
-ĐANG DỞ: N-8 / G1. Bước tiếp theo: thêm E9–E17, E22–E24, E31 và N-12/N-13.
+ĐANG DỞ: C2 (P1-19). Bước tiếp theo: rate limit cho socket message:send.
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -13,7 +13,9 @@
 | AI-11 | xong | Timeout, bps và một AILog mỗi lượt được kiểm bằng test DB |
 | N-8 | dở | Harness pass E1–E8, còn thiếu kịch bản G1 |
 | N-9 | xong | Seed token theo manifest, guard DB test |
-| N-12, N-13 | chưa làm | G1 |
+| N-12 | xong | E22 trong `tests/e2e/e22-reorg.test.ts`, thay `apps/worker/e2e/reorg.e2e.ts` |
+| N-13 | xong | `socket.io-client` 4.8.4, `pino` 9.14.0 (xem mục N-13) |
+| G1 (E11–E17, E22–E24, E31) | xong | `test:e2e:local`: 25 pass, 0 fail, `G1 E2E scenarios passed` |
 | N-6, N-10, N-11 | chưa làm | N-6 cùng P1-30a; N-10/N-11 tại G2 |
 | FE-1–FE-8 | chưa làm | Phase FE |
 | P0-1 | dở | 3118318 (xóa template; E2E chờ) |
@@ -72,6 +74,16 @@
 ## Bị chặn
 
 - Z-6: `bun run build` lỗi `RangeError: Division by zero` trong `@vercel/nft`. Đã thử build trong worktree, thêm outputFileTracingRoot, rồi loại `.uploads` và `tests` khỏi tracing; cả ba vẫn lỗi. Typecheck và lint pass. Theo FINISH_PLAN, không chặn gate và tiếp tục phase khác.
+
+## N-13 dependency
+
+- `socket.io-client` 4.8.4 và `pino` 9.14.0 là phiên bản ở cấp gốc trong `bun.lock` (`grep -n '"socket.io-client@\|"pino@' bun.lock`).
+
+## G1 — kịch bản E11–E17, E22–E24, E31
+
+- `bun run test:e2e:local`: 25 pass, 0 fail, exit 0, log `G1 E2E scenarios passed`. Chạy trên Hardhat local và `bloody_codex_test`, sau `migrate reset --force` của harness.
+- Đã xóa `tests/e2e/scanner-deposit.ts`, `apps/worker/e2e/` và script `test:e2e` của worker. Helper mới: `harness/chain.ts` (`restoreChain`, `advanceTime`), `harness/dispute.ts`, `harness/payout.ts`.
+- Các quyết định bổ sung nằm trong DECISIONS.md (mục BỔ SUNG G1-DELTA, E14, E15, E16, E23, E24, E31).
 
 ## E8 — hủy reservation
 

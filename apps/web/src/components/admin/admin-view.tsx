@@ -13,7 +13,7 @@ import { useUiPreferences } from "@/lib/ui-preferences";
 
 const ADMIN_STATS = `query AdminStats { adminStats { users openTasks activeTasks completedTasks openDisputes completedBounties { symbol formatted } } }`;
 const ADMIN_USERS = `query AdminUsers($search: String, $first: Int) { adminUsers(search: $search, first: $first) { id name walletAddress role isGithubVerified githubUsername isBanned bannedReason createdAt } }`;
-const ADMIN_DISPUTES = `query AdminDisputes { adminDisputes { id issueId status reason aiReport aiConfidenceScore suggestedClientBps proposedClientBps finalClientBps challengeDeadline createdAt } }`;
+const ADMIN_DISPUTES = `query AdminDisputes { adminDisputes { id issueId status reason aiReport aiConfidenceScore aiStatus suggestedClientBps proposedClientBps finalClientBps challengeDeadline createdAt } }`;
 const ADMIN_ISSUES = `query AdminIssues { adminIssues(first: 50) { id title status clientId developerId createdAt } }`;
 const OPS_QUERY = `query AdminOps { indexerStatus { chainId contractAddress lastScannedBlock lagSeconds updatedAt } reconciliationFindings(status: "OPEN", first: 20) { id kind blockNumber createdAt } stuckIntents(first: 20) { id method status createdAt } }`;
 const EVIDENCE_QUERY = `query AdminEvidence($issueId: ID!) { evidenceFiles(issueId: $issueId) { id side manifestHash files { name downloadUrl sha256 size } } }`;
@@ -26,7 +26,13 @@ const UNHIDE_ISSUE = `mutation UnhideIssue($issue: ID!) { adminUnhideIssue(issue
 
 type AdminStats = { users: number; openTasks: number; activeTasks: number; completedTasks: number; openDisputes: number; completedBounties: Array<{ symbol: string; amount: number }> };
 type AdminUser = { id: string; name?: string | null; walletAddress: string; role: string; isGithubVerified: boolean; githubUsername?: string | null; isBanned: boolean; bannedReason?: string | null; createdAt: string };
-type AdminDispute = { id: string; issueId: string; status: string; reason: string; aiReport?: string | null; aiConfidenceScore?: number | null; suggestedClientBps?: number | null; proposedClientBps?: number | null; finalClientBps?: number | null; challengeDeadline?: string | null; createdAt: string };
+// Short AI summary from the stored report; the full report stays behind the details toggle.
+function aiSummary(raw?: string | null): string | null {
+  if (!raw) return null;
+  try { const summary = (JSON.parse(raw) as { summary?: unknown }).summary; return typeof summary === "string" ? summary : null; } catch { return null; }
+}
+
+type AdminDispute = { id: string; issueId: string; status: string; reason: string; aiReport?: string | null; aiConfidenceScore?: number | null; aiStatus?: string | null; suggestedClientBps?: number | null; proposedClientBps?: number | null; finalClientBps?: number | null; challengeDeadline?: string | null; createdAt: string };
 type AdminIssue = { id: string; title: string; status: string; clientId: string; developerId?: string | null; createdAt: string };
 type OpsData = {
   indexerStatus: Array<{ chainId: number; contractAddress: string; lastScannedBlock: string; lagSeconds: number; updatedAt: string }>;
@@ -210,6 +216,8 @@ export function AdminView() {
             const canDraft = ["DISPUTED", "CHALLENGED", "INITIAL_RULING"].includes(dispute.status);
             return <article key={dispute.id} className="space-y-3 p-4 sm:p-5"><div className="flex items-start justify-between gap-3"><div><p className="font-medium">Dispute · {dispute.status.replaceAll("_", " ")}</p><p className="mt-1 text-xs text-[hsl(var(--foreground-muted))]">{dispute.reason}</p></div><Link href={`/issues/${dispute.issueId}`} className="inline-flex shrink-0 items-center gap-1 text-xs text-[hsl(var(--ring))]">Task <ExternalLink className="h-3 w-3" /></Link></div>
               {dispute.suggestedClientBps != null && <p className="rounded-md bg-[hsl(var(--background-secondary))] p-2.5 text-xs">AI suggestion (reference only): <strong>{(dispute.suggestedClientBps / 100).toFixed(2)}% client</strong>{dispute.aiConfidenceScore != null && <span className="text-[hsl(var(--foreground-muted))]"> · {Math.round(dispute.aiConfidenceScore * 100)}% confidence</span>}</p>}
+              {aiSummary(dispute.aiReport) && <p className="text-xs text-[hsl(var(--foreground-muted))]">AI summary: {aiSummary(dispute.aiReport)}</p>}
+              {dispute.aiStatus && <p className="text-xs text-[hsl(var(--foreground-muted))]">AI status: {dispute.aiStatus}</p>}
               {dispute.aiReport && <details className="rounded-md border border-[hsl(var(--border))] p-3"><summary className="cursor-pointer text-xs font-medium">Review AI evidence report</summary><pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words text-[10px] leading-4 text-[hsl(var(--foreground-muted))]">{(() => { try { return JSON.stringify(JSON.parse(dispute.aiReport), null, 2); } catch { return dispute.aiReport; } })()}</pre></details>}
               <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" disabled={working === dispute.id} onClick={() => void analyzeDispute(dispute)}>{dispute.aiReport ? "Reanalyze evidence" : "Analyze evidence with AI"}</Button><Button size="sm" variant="outline" disabled={working === dispute.issueId} onClick={() => void loadEvidence(dispute.issueId)}>Evidence files</Button></div>
               {(evidence[dispute.issueId] ?? []).map((view) => <div key={view.id} className="rounded-md border border-[hsl(var(--border))] p-2.5 text-xs"><p className="font-medium">{view.side} · {view.manifestHash.slice(0, 12)}…</p><ul className="mt-1 space-y-1">{view.files.map((file) => <li key={file.downloadUrl}><a className="text-[hsl(var(--ring))] underline" href={file.downloadUrl}>{file.name}</a> <span className="font-mono text-[10px]">{file.sha256.slice(0, 12)}…</span></li>)}{view.files.length === 0 && <li>No files</li>}</ul></div>)}

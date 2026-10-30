@@ -42,6 +42,7 @@ export const DisputeRef = builder.prismaObject("Dispute", {
         ctx.user?.role !== "ADMIN" || dispute.aiReport == null ? null : JSON.stringify(dispute.aiReport),
     }),
     aiConfidenceScore: t.exposeFloat("aiConfidenceScore", { nullable: true }),
+    aiStatus: t.exposeString("aiStatus", { nullable: true }),
     suggestedClientBps: t.exposeInt("suggestedClientBps", { nullable: true }),
     proposedClientBps: t.exposeInt("proposedClientBps", { nullable: true }),
     finalClientBps: t.exposeInt("finalClientBps", { nullable: true }),

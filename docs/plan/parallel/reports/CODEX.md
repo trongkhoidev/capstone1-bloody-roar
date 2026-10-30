@@ -76,7 +76,7 @@
 
 ## AI-11 — phân tích tham khảo
 
-- Admin chạy phân tích mà không đổi trạng thái chain; lưu bps và một AILog mỗi lượt, nhận lại khóa sau 5 phút và chặn kết quả lượt cũ ghi đè. Migration aiStartedAt đã deploy test/local; unit/DB test 4/4, typecheck và lint pass.
+- Mock AI local đã đồng bộ với trường bps, test mock 2/2 pass. Admin chạy phân tích mà không đổi trạng thái chain; lưu bps và một AILog mỗi lượt, nhận lại khóa sau 5 phút và chặn kết quả lượt cũ ghi đè. Migration aiStartedAt đã deploy test/local; unit/DB test 4/4, typecheck và lint pass.
 
 ## P1-28 — GraphQL bps và tiền raw
 

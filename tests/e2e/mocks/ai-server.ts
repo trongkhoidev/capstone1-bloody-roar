@@ -19,13 +19,13 @@ export function startAiMock() {
           given: "the task is ready", when: `the user exercises ${name}`,
           then: "the expected result is returned", priority: "NORMAL", isEdgeCase: name === "edge case",
         })) };
-      } else if (system.includes("suggestedClientRatio")) {
+      } else if (system.includes("suggestedClientBps")) {
         let evidence: { task?: { id?: string } };
         try { evidence = JSON.parse(user); } catch { return new Response("Invalid evidence", { status: 400 }); }
         if (!evidence.task?.id) return new Response("Missing task id", { status: 400 });
         result = {
           summary: "The available task evidence was reviewed for this dispute.",
-          suggestedClientRatio: 50, confidenceScore: 0.5,
+          suggestedClientBps: 5000, confidenceScore: 0.5,
           findings: [{ evidenceType: "TASK", evidenceId: evidence.task.id, side: "NEUTRAL", finding: "The task description states the requested work." }],
           missingEvidence: [], reasoning: "The available evidence supports an advisory assessment and requires a human decision.",
         };

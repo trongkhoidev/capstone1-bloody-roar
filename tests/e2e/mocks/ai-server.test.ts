@@ -17,7 +17,7 @@ async function complete(system: string, user = "") {
 test("mock responds to each supported AI workload and counts requests", async () => {
   expect((await complete("sensitiveValues")).sensitiveValues).toEqual([]);
   expect((await complete("testCases")).testCases).toHaveLength(3);
-  const report = await complete("suggestedClientRatio", JSON.stringify({ task: { id: "issue-1" } }));
+  const report = await complete("suggestedClientBps", JSON.stringify({ task: { id: "issue-1" } }));
   expect(report.findings[0].evidenceId).toBe("issue-1");
   expect(mock.calls).toBe(3);
 });

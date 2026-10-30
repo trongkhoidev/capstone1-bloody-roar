@@ -1,4 +1,4 @@
-ĐANG DỞ: Z-6. Bước tiếp theo: chạy next build trong worktree và xử lý lỗi tracing theo thứ tự kế hoạch.
+ĐANG DỞ: Z-7. Bước tiếp theo: xóa các script E2E cũ gọi mutation đã xóa theo kế hoạch.
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -7,7 +7,8 @@
 | Z-3 | xong | `79b8010`, `87bb280`, `2f27bc2`, `704cd2e`; gate trước harness pass |
 | Z-4 | xong | `6142dc4`; receipt và finality pass |
 | Z-5 | xong | Bảng đối chiếu với ma trận test |
-| Z-6–Z-7 | chưa làm | Phase 0 |
+| Z-6 | bị chặn | next build: @vercel/nft Division by zero; ba cách thử thất bại |
+| Z-7 | chưa làm | Phase 0 |
 | D4 / D5 | xong | `dde1bc7`; test theo ma trận |
 | N-6, N-8–N-13, AI-11 | chưa làm | Phase D–G |
 | FE-1–FE-8 | chưa làm | Phase FE |
@@ -66,7 +67,7 @@
 
 ## Bị chặn
 
-Chưa có.
+- Z-6: `bun run build` lỗi `RangeError: Division by zero` trong `@vercel/nft`. Đã thử build trong worktree, thêm outputFileTracingRoot, rồi loại `.uploads` và `tests` khỏi tracing; cả ba vẫn lỗi. Typecheck và lint pass. Theo FINISH_PLAN, không chặn gate và tiếp tục phase khác.
 
 ## Z-4 — receipt approve
 

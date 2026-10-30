@@ -2,6 +2,7 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
+| Z-6 | — | bun run build (worktree, tracing root, tracing exclusions); bun run typecheck; bun run lint | Bị chặn: build Division by zero cả ba cách; commit `docs(z-6): record build tracing failure` |
 | Z-5 | docs/plan/parallel/reports/CODEX.md | bun run typecheck; bun run lint; đối chiếu LOCAL_TEST_MATRIX.md | Pass; commit `docs(z-5): correct task status table` |
 | Z-4 | apps/worker/test/intents.test.ts; apps/worker/test/rpc.test.ts | bun run --cwd apps/worker test -- test/intents.test.ts test/rpc.test.ts; bun run typecheck; bun run lint | Pass 14/14; commit `fix(z-4): confirm approvals at finality` |
 | Z-3 / ui | apps/web/src/test/ui-preferences.test.tsx | bun run typecheck; bun run lint; web/worker/database/contracts test | Pass; merge `2f27bc2`, sửa kỳ vọng `fix(z-3): align merged ui checks` |

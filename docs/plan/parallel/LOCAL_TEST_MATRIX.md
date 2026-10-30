@@ -3,6 +3,7 @@
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
 | E15–E17 / gate D | tests/e2e/scanner-deposit.ts | check-env; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts; typecheck; lint; web/worker/database/contracts test | Pass scanner và 499/70/3/35; upload hai bước chờ P1-30a; commit `test(phase-d): exercise dispute chain flows` |
+| E4 | tests/e2e/e04-selection.test.ts; tests/e2e/harness/fixture.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | E1–E4 pass, harness còn thiếu kịch bản; commit `test(e4): exercise developer selection` |
 | E3 | tests/e2e/e03-criteria.test.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | E1–E3 pass, harness còn thiếu kịch bản; commit `test(e3): exercise acceptance criteria flow` |
 | E2 / BUG-7 | tests/e2e/e02-marketplace.test.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | E1/E2 pass, harness còn thiếu kịch bản; commit `fix(e2): deduplicate marketplace views` |
 | N-8 / E1 / N-3 | tests/e2e/e01-auth.test.ts; tests/e2e/run-local.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | Dở: E1 pass, harness fail vì còn thiếu E2–E17/E22–E24/E31; commit `feat(n-8): start guarded local e2e harness` |

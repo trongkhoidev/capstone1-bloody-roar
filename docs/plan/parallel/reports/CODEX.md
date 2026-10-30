@@ -1,4 +1,4 @@
-ĐANG DỞ: N-8 / G1. Bước tiếp theo: thêm E4–E17, E22–E24, E31 và hoàn thiện N-12/N-13; N-6 làm cùng P1-30a.
+ĐANG DỞ: N-8 / G1. Bước tiếp theo: thêm E5–E17, E22–E24, E31 và hoàn thiện N-12/N-13; N-6 làm cùng P1-30a.
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -11,7 +11,7 @@
 | Z-7 | xong | Script cũ gọi mutation đã xóa được gỡ; root chuyển sang harness ở N-8 |
 | D4 / D5 | xong | `dde1bc7`; test theo ma trận |
 | AI-11 | xong | Timeout, bps và một AILog mỗi lượt được kiểm bằng test DB |
-| N-8 | dở | Harness pass E1–E3, còn thiếu kịch bản G1 |
+| N-8 | dở | Harness pass E1–E4, còn thiếu kịch bản G1 |
 | N-9 | xong | Seed token theo manifest, guard DB test |
 | N-12, N-13 | chưa làm | G1 |
 | N-6, N-10, N-11 | chưa làm | N-6 cùng P1-30a; N-10/N-11 tại G2 |
@@ -72,6 +72,10 @@
 ## Bị chặn
 
 - Z-6: `bun run build` lỗi `RangeError: Division by zero` trong `@vercel/nft`. Đã thử build trong worktree, thêm outputFileTracingRoot, rồi loại `.uploads` và `tests` khỏi tracing; cả ba vẫn lỗi. Typecheck và lint pass. Theo FINISH_PLAN, không chặn gate và tiếp tục phase khác.
+
+## E4 — chọn developer
+
+- Harness Yoga tạo issue/tiêu chí, hai ứng viên, kiểm self-application, thông báo, reservation và race hai lựa chọn: chỉ một thành công. E1–E4 pass; harness còn thiếu kịch bản. Typecheck và lint pass.
 
 ## E3 — tiêu chí
 

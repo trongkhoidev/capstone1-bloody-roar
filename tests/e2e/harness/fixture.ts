@@ -9,7 +9,11 @@ export async function fixture() {
   const { prisma } = await import("@bloody-roar/database");
   const accounts = await rpc<string[]>("eth_accounts");
   const makeUser = (index: number, role: "CLIENT" | "DEVELOPER" | "ADMIN") => prisma.user.upsert({ where: { walletAddress: accounts[index]!.toLowerCase() }, create: { walletAddress: accounts[index]!.toLowerCase(), role }, update: { role } });
-  const [client, developer, rival, admin, outsider] = await Promise.all([makeUser(2, "CLIENT"), makeUser(3, "DEVELOPER"), makeUser(4, "DEVELOPER"), makeUser(1, "ADMIN"), makeUser(7, "DEVELOPER")]);
+  const client = await makeUser(2, "CLIENT");
+  const developer = await makeUser(3, "DEVELOPER");
+  const rival = await makeUser(4, "DEVELOPER");
+  const admin = await makeUser(1, "ADMIN");
+  const outsider = await makeUser(7, "DEVELOPER");
   const token = await prisma.token.findFirstOrThrow({ where: { chainId: 31337, symbol: "USDC", isActive: true } });
   const issueResult = await gqlAs(client, `mutation($input: CreateIssueInput!) { createIssue(input: $input) { id } }`, { input: { title: `Fixture ${crypto.randomUUID()}`, description: "An isolated bounty for local escrow integration tests.", category: "BUG_FIX", bountyAmount: "100", tokenId: token.id } });
   if (issueResult.errors?.length) throw new Error(`Create issue: ${issueResult.errors[0]?.message}`);

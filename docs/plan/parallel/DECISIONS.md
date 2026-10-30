@@ -271,3 +271,7 @@ Thêm `apps/web/.gitignore` với `.uploads/`. Thư mục gốc đã có `apps/w
 ## BỔ SUNG P1-31 — không kiểm lệch thời gian webhook
 
 GitHub không gửi header thời gian, nên webhook không kiểm lệch đồng hồ; chống lặp chỉ dựa vào `x-github-delivery`. Migration `20261031090000_pr_merged_notification` thêm `PR_MERGED` và đã được áp dụng trên `bloody_codex_test` và `bloody_codex_local`.
+
+## BỔ SUNG P1-32 — guard nằm ở subpath export
+
+`assertChainConfig` đọc file manifest bằng `node:fs`, nên không đưa vào barrel `packages/shared/src/index.ts` (barrel dùng cho cả trình duyệt). Thay vào đó thêm export `@bloody-roar/shared/chain-guard`. Hàm nhận thêm đối số thứ hai là reader RPC (mặc định là viem client) để test không cần node. Trường địa chỉ escrow trong manifest là `address` (đúng như `run-local.ts` đọc); `seed.ts` chỉ đọc `token` và `chainId`.

@@ -14,6 +14,7 @@ import { Server as SocketIOServer } from "socket.io";
 import { registerSocketHandlers } from "./src/socket/handlers";
 import { startEscrowBridge } from "./src/lib/realtime/escrow-bridge";
 import { logger } from "./src/lib/logger";
+import { assertChainConfig, defaultLocalManifestPath } from "@bloody-roar/shared/chain-guard";
 
 const dev = process.env.NODE_ENV !== "production";
 // Containers (Railway/Docker) set HOSTNAME to the container id, so never use it to bind.
@@ -29,7 +30,7 @@ const handle = app.getRequestHandler();
 
 // GraphQL is now handled by Next.js App Router API routes (/api/graphql/route.ts)
 
-app.prepare().then(() => {
+app.prepare().then(async () => {
   const httpServer = createServer(async (req, res) => {
     const parsedUrl = parse(req.url!, true);
     const { pathname } = parsedUrl;
@@ -84,6 +85,25 @@ app.prepare().then(() => {
   };
   process.on("SIGTERM", () => shutdown("SIGTERM"));
   process.on("SIGINT", () => shutdown("SIGINT"));
+
+  // Check the configured chain before serving: a wrong RPC, chain ID, or escrow address would mislabel every action.
+  const escrowAddress = process.env.ESCROW_ADDRESS;
+  if (escrowAddress) {
+    await assertChainConfig({
+      rpcUrl: process.env.RPC_URL ?? "",
+      chainId: Number(process.env.CHAIN_ID),
+      escrowAddress,
+      manifestPath: defaultLocalManifestPath(),
+    }).catch((error: unknown) => {
+      logger.fatal({ error: error instanceof Error ? error.message : String(error) }, "chain configuration check failed");
+      process.exit(1);
+    });
+  } else if (!dev) {
+    logger.fatal({}, "ESCROW_ADDRESS is required in production");
+    process.exit(1);
+  } else {
+    logger.warn({}, "ESCROW_ADDRESS is not set; escrow actions are disabled");
+  }
 
   httpServer.listen(port, hostname, () => {
     logger.info(

@@ -2,6 +2,7 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
+| P1-32 | apps/web/src/test/chain-guard.test.ts | bun run --cwd apps/web test -- src/test/chain-guard.test.ts; bun run typecheck; bun run lint | Pass 5/5: sai chain, không có code, manifest lệch, hợp lệ; web server và worker gọi guard khi khởi động |
 | P1-31 | apps/web/src/test/github-webhook.test.ts | bun run --cwd apps/web test -- src/test/github-webhook.test.ts; bun run typecheck; bun run lint | Pass 4/4: cùng delivery id chỉ xử lý một lần; PR merged tạo đúng một PR_MERGED; thiếu delivery id 400; chữ ký sai không ghi delivery |
 | P1-30a/b | apps/web/src/test/upload-two-step.test.ts; apps/web/src/test/upload-access.test.ts | bun run --cwd apps/web test -- src/test/upload-two-step.test.ts src/test/upload-access.test.ts; bun run typecheck; bun run lint | Pass 15/15 cùng evidence-download: upload hai bước, sha256, sai kích thước giữ PENDING, người khác 403, 503 production; quyền tải theo purpose cho 4 vai trò |
 | E30 | tests/e2e/e30-deadline-notice.test.ts | bun run test:e2e:local | Pass: job deadline gửi đúng một DEADLINE_APPROACHING cho mỗi bên khi mốc đã qua |

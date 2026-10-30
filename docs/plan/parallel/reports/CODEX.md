@@ -1,4 +1,4 @@
-ĐANG DỞ: C3 (P1-32 guard cấu hình khi khởi động). Bước tiếp theo: assertChainConfig trong packages/shared/src/chain-guard.ts.
+ĐANG DỞ: C3 (P1-35 session và dọn dẹp). Bước tiếp theo: mySessions, revokeSession, revokeOtherSessions và job cleanup.
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -21,6 +21,7 @@
 | P1-22 | xong | `review.db.test.ts`, `effects-resolved.test.ts`: review, uy tín, undo |
 | P1-23 | xong | `audit-hash.test.ts`: HMAC cho hash audit AI |
 | P1-29 | xong | `notification-types.test.ts`: 22 giá trị đều có nơi tạo, không cần xóa |
+| P1-32 | xong | `chain-guard.test.ts`: chain sai, không có code, manifest lệch; gọi khi khởi động web và worker |
 | P1-31 | xong | `github-webhook.test.ts`: dedupe theo delivery id, PR_MERGED; migration PR_MERGED đã deploy local và test |
 | P1-30a/b | xong | `upload-two-step.test.ts`, `upload-access.test.ts`: hai bước, sha256, quyền tải theo purpose |
 | E18–E21, E30 | xong | `test:e2e:local`: 31 pass, 0 fail; gate B0.2 exit 0 (web 553, worker 71, db 3, contracts 35) |

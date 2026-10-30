@@ -8,7 +8,8 @@
     "./constants": "./src/constants/index.ts",
     "./utils": "./src/utils/index.ts",
     "./escrow": "./src/escrow/index.ts",
-    "./money": "./src/money.ts"
+    "./money": "./src/money.ts",
+    "./chain-guard": "./src/chain-guard.ts"
   },
   "devDependencies": {
     "typescript": "^5.5.2"

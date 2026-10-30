@@ -1,5 +1,6 @@
 // Worker entrypoint: one instance per database (advisory lock), health on WORKER_PORT, jobs on a scheduler.
 import { prisma } from "@bloody-roar/database";
+import { assertChainConfig, defaultLocalManifestPath } from "@bloody-roar/shared/chain-guard";
 import { createRpcClient } from "./chain/client";
 import { loadConfig } from "./config";
 import { logger as log, errorMessage } from "./log";
@@ -11,6 +12,8 @@ import { registerJob, startScheduler } from "./runtime/scheduler";
 
 async function main(): Promise<void> {
   const config = loadConfig();
+  // Refuse to index a different chain or a contract that is not deployed here.
+  await assertChainConfig({ rpcUrl: config.rpcUrl, chainId: config.chainId, escrowAddress: config.escrowAddress, manifestPath: defaultLocalManifestPath() });
   const lock = await tryAcquireWorkerLock(config.lockUrl);
   if (!lock) {
     log.info({}, "another worker holds the lock; exiting");

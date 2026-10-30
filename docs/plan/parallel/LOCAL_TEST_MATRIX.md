@@ -2,6 +2,11 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
+| E30 | tests/e2e/e30-deadline-notice.test.ts | bun run test:e2e:local | Pass: job deadline gửi đúng một DEADLINE_APPROACHING cho mỗi bên khi mốc đã qua |
+| E21 | tests/e2e/e21-admin.test.ts | bun run test:e2e:local | Pass: adminStats khớp projection; ban hủy việc mở và từ chối ứng tuyển; không tự hạ quyền; ops query; review và uy tín |
+| E20 | tests/e2e/e20-notifications.test.ts | bun run test:e2e:local | Pass: phân trang có cursor, unreadNotificationCount, đánh dấu một và tất cả |
+| E19 | tests/e2e/e19-realtime.test.ts | bun run test:e2e:local | Pass: escrow:invalidate, notification:new, ban ngắt socket qua HTTP, đăng xuất ngắt phiên |
+| E18 | tests/e2e/e18-chat.test.ts | bun run test:e2e:local | Pass 2/2: chat khi IN_PROGRESS, người ngoài bị chặn, che key, chỉ đọc sau COMPLETED; afterDispute và admin chỉ đọc khi DISPUTED |
 | P1-29 | apps/web/src/test/notification-types.test.ts | bun run --cwd apps/web test -- src/test/notification-types.test.ts; bun run typecheck; bun run lint | Pass 22/22: mọi NotificationType có nơi tạo trong apps/web/src và apps/worker/src; không loại giá trị nào |
 | P1-27 | apps/web/src/test/eval/dispute-eval.test.ts; apps/web/src/test/eval/dispute/*.json (10 file) | bun run --cwd apps/web test -- src/test/eval; bun run typecheck; bun run lint | Pass 10/10: qua analyzeDispute với model mock; có citation giả ở missing-criteria và bad-file-hash bị loại đúng số lượng; có AILog |
 | P1-26 | .env.example | grep -rn GOOGLE_GENERATIVE apps/web/src .env.example (rỗng) | Xong: xóa biến và comment Gemini khỏi .env.example; check-env.ts vẫn chặn biến này |

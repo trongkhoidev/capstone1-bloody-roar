@@ -1,4 +1,4 @@
-ĐANG DỞ: C2 (E18–E21, E30). Bước tiếp theo: P1-30a/N-6 hai bước upload (route uploads + complete) trước khi viết kịch bản E25.
+ĐANG DỞ: C3 (P1-30a + N-6). Bước tiếp theo: route /api/uploads (purpose, issueId) và /api/uploads/complete.
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -21,6 +21,7 @@
 | P1-22 | xong | `review.db.test.ts`, `effects-resolved.test.ts`: review, uy tín, undo |
 | P1-23 | xong | `audit-hash.test.ts`: HMAC cho hash audit AI |
 | P1-29 | xong | `notification-types.test.ts`: 22 giá trị đều có nơi tạo, không cần xóa |
+| E18–E21, E30 | xong | `test:e2e:local`: 31 pass, 0 fail; gate B0.2 exit 0 (web 553, worker 71, db 3, contracts 35) |
 | P1-27 | xong | `eval/dispute-eval.test.ts`: 10 fixture, qua analyzeDispute với model mock |
 | P1-26 | xong | `.env.example`: bỏ GOOGLE_GENERATIVE_AI_API_KEY; grep rỗng |
 | P1-25 | xong | `ai-rate-limit.test.ts`: 10 lượt/giờ (admin 30) |

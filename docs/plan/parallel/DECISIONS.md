@@ -235,3 +235,19 @@ Trước khi fund, test claim số dư còn lại của developer và ví phí. 
 ## BỔ SUNG P1-25 — vị trí gọi rate limit AI
 
 `generateTestCases` nằm ở `graphql/modules/ai/ai.module.ts` (đặc tả ghi `ai/ai.module.ts`); giới hạn gọi sau kiểm tra vai trò CLIENT để không tính lượt của người không được phép. Hai mutation duy nhất gọi `completeAI` từ GraphQL là `generateTestCases` và `analyzeDispute`.
+
+## BỔ SUNG E18 — kiểm cờ afterDispute theo quy tắc lưu trữ
+
+`afterDispute` so `Dispute.raisedAt` (thời gian block) với đồng hồ máy chủ. Đồng hồ Hardhat có thể chạy nhanh hơn đồng hồ thật sau các kịch bản đổi thời gian, nên E18 kiểm đúng quy tắc `raisedAt <= createdAt` thay vì giả định luôn là `true`. Admin chỉ được join phòng khi issue ở `DISPUTED`.
+
+## BỔ SUNG E19 — tài khoản #10 và ban qua HTTP
+
+`accounts[8]` bị e01 khóa có chủ đích để kiểm 403, nên E19/E21 dùng `accounts[10]`. Ban chạy qua HTTP trên máy chủ web vì chỉ tiến trình đó giữ Socket.IO server để ngắt phiên. Đăng xuất đã ngắt socket phía server, nên E19 kiểm `connected = false` thay vì nghe sự kiện.
+
+## BỔ SUNG E30 — deadline đã qua
+
+Job deadline chỉ thông báo khi mốc đã qua (`at <= now`), nên E30 đưa `deliveryDeadline` về quá khứ thay vì gần tương lai.
+
+## BỔ SUNG E-harness — socket và thư viện
+
+`socket.io-client` chưa được hoist ở root; harness import bản trong `apps/web/node_modules` để không thêm dependency. `ack` có timeout 10 giây vì máy chủ không gọi callback khi đã ngắt socket. Eval `dispute-eval` đọc fixture theo `process.cwd()` vì `import.meta.glob` không có kiểu trong tsconfig của web.

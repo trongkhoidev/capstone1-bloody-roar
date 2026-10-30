@@ -1,3 +1,5 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { completeAI } from "../../ai/model-router";
 import { execute, loadSchema } from "../graphql-execute";
@@ -7,7 +9,11 @@ vi.mock("../../ai/model-router", () => ({ completeAI: vi.fn() }));
 
 const ANALYZE = `mutation($issueId: String!) { analyzeDispute(issueId: $issueId) { id } }`;
 const admin = { id: "admin-eval", role: "ADMIN", name: null, isBanned: false };
-const fixtures = import.meta.glob<Fixture>("./dispute/*.json", { eager: true, import: "default" });
+// Vitest runs from apps/web, so the fixture folder resolves from there.
+const dir = join(process.cwd(), "src/test/eval/dispute");
+const fixtures: Record<string, Fixture> = Object.fromEntries(
+  readdirSync(dir).filter((file) => file.endsWith(".json")).map((file) => [file, JSON.parse(readFileSync(join(dir, file), "utf8")) as Fixture]),
+);
 
 type Fixture = {
   name: string;

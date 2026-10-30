@@ -6,7 +6,7 @@ import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE_BYTES } from "@bloody-roar/shared";
 import { tokenFromRequest, verifyJWT } from "@/lib/auth";
-import { prisma } from "@bloody-roar/database";
+import { prisma, type AttachmentPurpose } from "@bloody-roar/database";
 import { canReadIssueChat } from "@/lib/chat-access";
 import { getS3Storage, localUploadPath } from "@/lib/storage";
 import { rateLimit, tooManyRequests } from "@/lib/rate-limit";
@@ -15,6 +15,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const FILE_NAME_LIMIT = 160;
+const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
+// CHAT is deliberately absent: chat attachments travel through the socket message flow.
+const UPLOAD_PURPOSES = ["ISSUE_IMAGE", "DELIVERY", "EVIDENCE", "AVATAR"] as const;
+type UploadPurpose = (typeof UPLOAD_PURPOSES)[number];
+
+const ISSUE_SELECT = { id: true, clientId: true, developerId: true, status: true, hiddenAt: true } as const;
 
 function safeFileName(value: string) {
   const base = path
@@ -36,6 +42,8 @@ export async function POST(request: Request) {
     fileName?: string;
     fileType?: string;
     fileSize?: number;
+    purpose?: string;
+    issueId?: string;
   } | null;
   const fileName = typeof body?.fileName === "string" ? safeFileName(body.fileName) : "";
   const fileType = body?.fileType;
@@ -50,9 +58,49 @@ export async function POST(request: Request) {
   if (!Number.isInteger(fileSize) || !fileSize || fileSize <= 0 || fileSize > MAX_FILE_SIZE_BYTES) {
     return NextResponse.json({ error: "File must be smaller than 50 MB" }, { status: 400 });
   }
+  const purpose = body?.purpose;
+  if (typeof purpose !== "string" || !UPLOAD_PURPOSES.includes(purpose as UploadPurpose)) {
+    return NextResponse.json({ error: "Upload purpose is not supported" }, { status: 400 });
+  }
+  if (purpose === "AVATAR" && (!fileType.startsWith("image/") || fileSize > AVATAR_MAX_BYTES)) {
+    return NextResponse.json({ error: "Avatars must be images up to 5 MB" }, { status: 400 });
+  }
+
+  // Delivery and evidence belong to one task; only its client or developer may attach them.
+  let issueId: string | null = null;
+  if (purpose === "DELIVERY" || purpose === "EVIDENCE") {
+    if (typeof body?.issueId !== "string" || !body.issueId)
+      return NextResponse.json({ error: "issueId is required for this upload" }, { status: 400 });
+    const issue = await prisma.issue.findUnique({
+      where: { id: body.issueId },
+      select: { clientId: true, developerId: true },
+    });
+    if (!issue || (issue.clientId !== user.id && issue.developerId !== user.id))
+      return NextResponse.json({ error: "You cannot upload to this task" }, { status: 403 });
+    issueId = body.issueId;
+  }
 
   const key = `${user.id}/${randomUUID()}-${fileName}`;
   const s3 = getS3Storage();
+  if (!s3 && process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "S3 storage is not configured" }, { status: 503 });
+  }
+
+  const origin = new URL(request.url).origin;
+  const fileUrl = `${origin}/api/uploads?key=${encodeURIComponent(key)}`;
+  const attachment = await prisma.attachment.create({
+    data: {
+      issueId,
+      uploaderId: user.id,
+      fileName,
+      fileUrl,
+      fileSize,
+      fileMime: fileType,
+      purpose: purpose as AttachmentPurpose,
+      status: "PENDING",
+    },
+  });
+
   if (s3) {
     const command = new PutObjectCommand({
       Bucket: s3.bucket,
@@ -64,26 +112,11 @@ export async function POST(request: Request) {
     const uploadUrl = await getSignedUrl(s3.client, command, {
       expiresIn: 300,
     });
-    return NextResponse.json({
-      uploadUrl,
-      fileUrl: `${new URL(request.url).origin}/api/uploads?key=${encodeURIComponent(key)}`,
-      key,
-      expiresIn: 300,
-    });
-  }
-
-  if (process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "S3 storage is not configured" }, { status: 503 });
+    return NextResponse.json({ attachmentId: attachment.id, uploadUrl, fileUrl, key, expiresIn: 300 });
   }
 
   // Local development fallback keeps the app usable without cloud credentials.
-  const origin = new URL(request.url).origin;
-  return NextResponse.json({
-    uploadUrl: `${origin}/api/uploads?key=${encodeURIComponent(key)}`,
-    fileUrl: `${origin}/api/uploads?key=${encodeURIComponent(key)}`,
-    key,
-    expiresIn: 300,
-  });
+  return NextResponse.json({ attachmentId: attachment.id, uploadUrl: fileUrl, fileUrl, key, expiresIn: 300 });
 }
 
 export async function PUT(request: Request) {
@@ -122,6 +155,34 @@ export async function PUT(request: Request) {
   return NextResponse.json({ uploaded: true });
 }
 
+// Who may download an attachment, by purpose (P1-30b). Guests can only see avatars and public issue images.
+async function canDownload(
+  attachment: { purpose: AttachmentPurpose | null; issueId: string | null; uploaderId: string },
+  issue: { id: string; clientId: string; developerId: string | null; status: string; hiddenAt: Date | null } | null,
+  user: { id: string; role: string } | null,
+): Promise<boolean> {
+  switch (attachment.purpose) {
+    case "AVATAR":
+      return true;
+    case "ISSUE_IMAGE":
+      if (!attachment.issueId) return Boolean(user && user.id === attachment.uploaderId);
+      if (!issue) return false;
+      // A hidden task keeps its images for the people who can still open the task.
+      if (!issue.hiddenAt) return true;
+      return Boolean(user && (user.role === "ADMIN" || issue.clientId === user.id || issue.developerId === user.id));
+    case "DELIVERY":
+      return Boolean(user && issue && (issue.clientId === user.id || issue.developerId === user.id));
+    case "EVIDENCE": {
+      if (!user || !issue) return false;
+      if (issue.clientId === user.id || issue.developerId === user.id) return true;
+      if (user.role !== "ADMIN") return false;
+      return Boolean(await prisma.dispute.findUnique({ where: { issueId: issue.id }, select: { id: true } }));
+    }
+    default:
+      return Boolean(user && issue && canReadIssueChat(issue, user as never));
+  }
+}
+
 export async function GET(request: Request) {
   const token = tokenFromRequest(request);
   const user = token ? await verifyJWT(token) : null;
@@ -133,28 +194,8 @@ export async function GET(request: Request) {
   const attachment = await prisma.attachment.findFirst({
     where: { fileUrl: { endsWith: storedPath } },
     include: {
-      issue: {
-        select: {
-          id: true,
-          clientId: true,
-          developerId: true,
-          status: true,
-          isDraft: true,
-        },
-      },
-      message: {
-        select: {
-          issue: {
-            select: {
-              id: true,
-              clientId: true,
-              developerId: true,
-              status: true,
-              isDraft: true,
-            },
-          },
-        },
-      },
+      issue: { select: ISSUE_SELECT },
+      message: { select: { issue: { select: ISSUE_SELECT } } },
     },
   });
   if (!attachment || !key.startsWith(`${attachment.uploaderId}/`)) {
@@ -162,26 +203,14 @@ export async function GET(request: Request) {
   }
 
   const issue = attachment.message?.issue ?? attachment.issue;
-  if (!issue) return NextResponse.json({ error: "File not found" }, { status: 404 });
-  const publicIssueImage =
-    !attachment.messageId && attachment.purpose !== "EVIDENCE" && attachment.purpose !== "DELIVERY" && !issue.isDraft && attachment.fileMime.startsWith("image/");
-  const adminEvidence = user?.role === "ADMIN" && attachment.purpose === "EVIDENCE";
-  const evidenceDispute = adminEvidence ? await prisma.dispute.findUnique({ where: { issueId: issue.id }, select: { id: true } }) : null;
-  const canReadPrivateAttachment = Boolean(
-    user &&
-    (attachment.messageId
-      ? canReadIssueChat(issue, user)
-      : user.role === "ADMIN"
-        ? (adminEvidence ? !!evidenceDispute : issue.status === "DISPUTED")
-        : issue.clientId === user.id || issue.developerId === user.id),
-  );
-  if (!publicIssueImage && !canReadPrivateAttachment) {
+  if (!(await canDownload(attachment, issue, user))) {
     if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     return NextResponse.json({ error: "You cannot access this attachment" }, { status: 403 });
   }
 
-  const auditEvidenceDownload = async () => {
-    if (adminEvidence && user) await prisma.adminLog.create({ data: { adminId: user.id, action: "download_evidence", target: "issue", targetId: issue.id, details: { attachmentId: attachment.id } } });
+  const auditEvidenceView = async () => {
+    if (attachment.purpose === "EVIDENCE" && user?.role === "ADMIN" && issue)
+      await prisma.adminLog.create({ data: { adminId: user.id, action: "view_evidence", target: "issue", targetId: issue.id, details: { attachmentId: attachment.id } } });
   };
   const s3 = getS3Storage();
   const safeName = safeFileName(attachment.fileName).replace(/["\\]/g, "_");
@@ -197,7 +226,7 @@ export async function GET(request: Request) {
       }),
       { expiresIn: 120 },
     );
-    await auditEvidenceDownload();
+    await auditEvidenceView();
     return NextResponse.redirect(downloadUrl, {
       headers: { "Cache-Control": "private, no-store" },
     });
@@ -210,7 +239,7 @@ export async function GET(request: Request) {
   const { destination } = localPath;
   try {
     const bytes = await readFile(destination);
-    await auditEvidenceDownload();
+    await auditEvidenceView();
     return new Response(bytes, {
       headers: {
         "Content-Type": "application/octet-stream",

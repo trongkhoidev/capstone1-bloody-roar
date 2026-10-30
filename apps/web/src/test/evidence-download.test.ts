@@ -18,7 +18,7 @@ describe("admin evidence download", () => {
     mocks.findDispute.mockResolvedValue({ id: "dispute" });
     const response = await GET(new Request("http://localhost/api/uploads?key=client%2Ffile.png"));
     expect(response.status).toBe(200);
-    expect(mocks.log).toHaveBeenCalledWith({ data: { adminId: "admin", action: "download_evidence", target: "issue", targetId: "issue", details: { attachmentId: "file" } } });
+    expect(mocks.log).toHaveBeenCalledWith({ data: { adminId: "admin", action: "view_evidence", target: "issue", targetId: "issue", details: { attachmentId: "file" } } });
   });
   it("does not make evidence images public or allow admin without a dispute", async () => {
     mocks.findDispute.mockResolvedValue(null);

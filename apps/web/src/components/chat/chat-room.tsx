@@ -79,7 +79,7 @@ function toDisplayMessage(node: HistoryMessage): DisplayMessage {
   };
 }
 
-async function uploadFile(file: File) {
+async function uploadFile(file: File, issueId: string) {
   if (file.size <= 0 || file.size > MAX_FILE_SIZE_BYTES) {
     throw new Error("Choose a non-empty file smaller than 50 MB.");
   }
@@ -87,10 +87,13 @@ async function uploadFile(file: File) {
     throw new Error("This file type is not supported.");
   }
 
+  // Chat files are stored as task-scoped DELIVERY uploads so only the task's client and developer can read them.
   const { data: upload } = await apiClient.post<{ uploadUrl: string; fileUrl: string }>("/api/uploads", {
     fileName: file.name,
     fileType: file.type,
     fileSize: file.size,
+    purpose: "DELIVERY",
+    issueId,
   });
   const isSameOrigin = new URL(upload.uploadUrl, window.location.href).origin === window.location.origin;
   try {
@@ -234,7 +237,7 @@ export function ChatRoom({
     setIsSending(true);
     setError(null);
     try {
-      const file = pendingFile ? await uploadFile(pendingFile) : null;
+      const file = pendingFile ? await uploadFile(pendingFile, issueId) : null;
       const messageContent = file ? `Shared a file: ${file.fileName}` : content.trim();
       await new Promise<void>((resolve, reject) => {
         const timeout = window.setTimeout(() => reject(new Error("Chat server did not confirm the message. Try again.")), 15000);

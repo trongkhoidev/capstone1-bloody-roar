@@ -251,3 +251,19 @@ Job deadline chỉ thông báo khi mốc đã qua (`at <= now`), nên E30 đưa 
 ## BỔ SUNG E-harness — socket và thư viện
 
 `socket.io-client` chưa được hoist ở root; harness import bản trong `apps/web/node_modules` để không thêm dependency. `ack` có timeout 10 giây vì máy chủ không gọi callback khi đã ngắt socket. Eval `dispute-eval` đọc fixture theo `process.cwd()` vì `import.meta.glob` không có kiểu trong tsconfig của web.
+
+## BỔ SUNG P1-30 — file chat đi theo DELIVERY của issue
+
+Đặc tả từ chối `CHAT` ở `POST /api/uploads`, nhưng composer chat vẫn cần tải file. Composer nay gửi `purpose: "DELIVERY"` kèm `issueId`, nên file chat chỉ người trong task đọc được. Hệ quả: admin không còn đọc được file chat trong lúc tranh chấp qua đường này; nếu cần lại, phải thêm quyền riêng.
+
+## BỔ SUNG P1-30 — nhật ký xem bằng chứng
+
+Tải bằng chứng của admin ghi `view_evidence` (theo đặc tả và P1-18), thay cho `download_evidence`. Test `evidence-download.test.ts` được cập nhật theo.
+
+## BỔ SUNG P1-30 — ảnh issue đã ẩn
+
+Ảnh của issue đã ẩn vẫn hiện với client, developer và admin; người ngoài nhận 401/403. Lý do: P1-21 chỉ ẩn khỏi người ngoài, không xóa quyền của người đang làm việc.
+
+## BỔ SUNG P1-30 — gitignore
+
+Thêm `apps/web/.gitignore` với `.uploads/`. Thư mục gốc đã có `apps/web/.uploads/` nên đây là bản lặp có chủ đích, theo đặc tả.

@@ -2,6 +2,7 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
+| P1-30a/b | apps/web/src/test/upload-two-step.test.ts; apps/web/src/test/upload-access.test.ts | bun run --cwd apps/web test -- src/test/upload-two-step.test.ts src/test/upload-access.test.ts; bun run typecheck; bun run lint | Pass 15/15 cùng evidence-download: upload hai bước, sha256, sai kích thước giữ PENDING, người khác 403, 503 production; quyền tải theo purpose cho 4 vai trò |
 | E30 | tests/e2e/e30-deadline-notice.test.ts | bun run test:e2e:local | Pass: job deadline gửi đúng một DEADLINE_APPROACHING cho mỗi bên khi mốc đã qua |
 | E21 | tests/e2e/e21-admin.test.ts | bun run test:e2e:local | Pass: adminStats khớp projection; ban hủy việc mở và từ chối ứng tuyển; không tự hạ quyền; ops query; review và uy tín |
 | E20 | tests/e2e/e20-notifications.test.ts | bun run test:e2e:local | Pass: phân trang có cursor, unreadNotificationCount, đánh dấu một và tất cả |

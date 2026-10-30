@@ -1,4 +1,4 @@
-ĐANG DỞ: P1-16e. Bước tiếp theo: test và triển khai challenge, finalize, timeout cùng availability theo mốc chain.
+ĐANG DỞ: P1-16f. Bước tiếp theo: viết test effect dispute, snapshot/undo và reorg; triển khai worker theo event chain.
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -68,6 +68,10 @@
 ## Bị chặn
 
 - Z-6: `bun run build` lỗi `RangeError: Division by zero` trong `@vercel/nft`. Đã thử build trong worktree, thêm outputFileTracingRoot, rồi loại `.uploads` và `tests` khỏi tracing; cả ba vẫn lỗi. Typecheck và lint pass. Theo FINISH_PLAN, không chặn gate và tiếp tục phase khác.
+
+## P1-16e — challenge và finalize
+
+- Prepare challenge kiểm vai trò, bps và cửa sổ 7 ngày; finalize permissionless kiểm 7 ngày/24 giờ hoặc timeout 30 ngày theo chain. Test DB và bảng availability 8/8, typecheck và lint pass. Availability hiện có đã bao phủ các phase/mốc tương ứng.
 
 ## P1-16d — bản nháp phán quyết
 

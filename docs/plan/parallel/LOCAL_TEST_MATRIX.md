@@ -2,6 +2,7 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
+| P1-16e | apps/web/src/test/dispute-ruling.db.test.ts; apps/web/src/test/escrow-availability.test.ts | bun run --cwd apps/web test -- src/test/dispute-ruling.db.test.ts src/test/escrow-availability.test.ts; bun run typecheck; bun run lint | Pass 8/8; commit `feat(p1-16e): prepare ruling actions` |
 | P1-16d | apps/web/src/test/dispute-ruling.db.test.ts | bun run --cwd apps/web test -- src/test/dispute-ruling.db.test.ts; bun run typecheck; bun run lint | Pass 2/2; commit `feat(p1-16d): draft safe rulings` |
 | P1-16a–c | apps/web/src/test/dispute-evidence.db.test.ts | bun run --cwd apps/web test -- src/test/dispute-evidence.db.test.ts; bun run typecheck; bun run lint | Pass 2/2; commit `feat(p1-16): prepare dispute evidence` |
 | D-DSP-2 | packages/database/test/ | prisma migrate dev --create-only; migrate deploy test/local; db:generate; bun run typecheck; bun run lint; database test | Pass; commit `feat(d-dsp-2): add on-chain dispute records` |

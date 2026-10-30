@@ -1,10 +1,12 @@
 import { encodeFunctionData } from "@bloody-roar/shared";
 import { computeDecisionHash, ESCROW_ABI } from "@bloody-roar/shared/escrow";
 import { builder } from "../../builder";
-import { requireAdmin } from "../../context";
+import type { GraphQLContext } from "../../context";
+import { requireAdmin, requireAuth } from "../../context";
 import { gqlError } from "../../errors";
+import { PreparedCallRef } from "../escrow/release.module";
 import { readChainTime } from "../../../lib/escrow/chain-time";
-import { escrowTarget } from "../../../lib/escrow/prepare";
+import { createPreparedCall, escrowTarget } from "../../../lib/escrow/prepare";
 
 const RulingKind = builder.enumType("RulingDraftKind", { values: ["INITIAL", "FINAL"] as const });
 const RulingDraftResult = builder.objectRef<{ draftId: string; decisionHash: string; safeTransactionJson: string }>("RulingDraftResult").implement({ fields: (t) => ({
@@ -44,3 +46,45 @@ builder.mutationField("draftRuling", (t) => t.field({
     return { draftId: draft.id, decisionHash, safeTransactionJson };
   },
 }));
+
+
+async function rulingProjection(ctx: GraphQLContext, issueId: string) {
+  const projection = await ctx.db.escrowProjection.findUnique({ where: { issueId } });
+  if (!projection?.escrowKey) throw gqlError("Bài toán chưa có ký quỹ", "NOT_FOUND");
+  const target = escrowTarget();
+  if (projection.chainId !== target.chainId || projection.contractAddress.toLowerCase() !== target.contractAddress.toLowerCase())
+    throw gqlError("Ký quỹ không khớp cấu hình", "ESCROW_CHAIN_MISMATCH");
+  return { ...projection, escrowKey: projection.escrowKey };
+}
+
+for (const [field, method] of [["prepareChallengeRuling", "challengeRuling"], ["prepareFinalizeRuling", "finalizeRuling"], ["prepareFinalizeArbiterTimeoutSplit", "finalizeArbiterTimeoutSplit"]] as const) {
+  builder.mutationField(field, (t) => t.field({
+    type: PreparedCallRef, args: { issueId: t.arg.id({ required: true }) },
+    resolve: async (_root, args, ctx) => {
+      const user = requireAuth(ctx);
+      const projection = await rulingProjection(ctx, String(args.issueId));
+      let deadline: Date;
+      if (method === "finalizeArbiterTimeoutSplit") {
+        const start = projection.phase === "DISPUTED" ? projection.disputeRaisedAt : projection.phase === "CHALLENGED" ? projection.challengedAt : null;
+        if (!start) throw gqlError("Trạng thái tranh chấp không hợp lệ", "INVALID_PHASE");
+        deadline = new Date(start.getTime() + 30 * 86_400_000);
+      } else {
+        const kind = projection.phase === "INITIAL_RULING" ? "INITIAL" : projection.phase === "FINAL_RULING" && method === "finalizeRuling" ? "FINAL" : null;
+        if (!kind) throw gqlError("Trạng thái phán quyết không hợp lệ", "INVALID_PHASE");
+        const ruling = await ctx.db.rulingRecord.findFirst({ where: { escrowIdHash: projection.escrowIdHash, kind }, orderBy: { postedAt: "desc" } });
+        if (!ruling) throw gqlError("Không tìm thấy phán quyết on-chain", "NOT_FOUND");
+        if (method === "challengeRuling") {
+          const wallet = user.walletAddress.toLowerCase();
+          const client = wallet === projection.client.toLowerCase(), developer = wallet === projection.developer.toLowerCase();
+          if ((!client && !developer) || (client && ruling.clientBps >= 10_000) || (developer && ruling.clientBps <= 0))
+            throw gqlError("Không được kháng cáo phán quyết này", "FORBIDDEN");
+        }
+        deadline = new Date(ruling.postedAt.getTime() + (kind === "INITIAL" ? 7 : 1) * 86_400_000);
+      }
+      const now = await readChainTime(projection.chainId);
+      if (method === "challengeRuling" ? now >= deadline : now < deadline)
+        throw gqlError("Ngoài thời hạn thực hiện", "DEADLINE_NOT_REACHED");
+      return createPreparedCall(ctx.db, { userId: user.id, issueId: projection.issueId, escrowKey: projection.escrowKey, method, args: { escrowId: projection.escrowKey } });
+    },
+  }));
+}

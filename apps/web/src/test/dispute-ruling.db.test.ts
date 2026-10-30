@@ -26,6 +26,8 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("ruling drafts on test database"
     await prisma.escrowProjection.create({ data: { issueId, escrowKey, escrowIdHash: escrowHash, chainId: 31337, contractAddress: contract, client: client.walletAddress, developer: developer.walletAddress, arbiter, feeRecipient: hex(20), amountRaw: "100000000", depositedAt: clock.now, deliveryDeadline: clock.now, reviewDeadline: clock.now, termsHash: hex(32), phase: "DISPUTED", disputeRaisedBy: client.walletAddress, disputeRaisedAt: clock.now, lastProjectedBlock: 1n } });
   }, 60_000);
   afterAll(async () => {
+    await prisma.transactionIntent.deleteMany({ where: { issueId } });
+    await prisma.rulingRecord.deleteMany({ where: { escrowIdHash: escrowHash } });
     await prisma.adminLog.deleteMany({ where: { targetId: issueId } });
     await prisma.rulingDraft.deleteMany({ where: { issueId } });
     await prisma.escrowProjection.deleteMany({ where: { escrowIdHash: escrowHash } });
@@ -66,4 +68,37 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("ruling drafts on test database"
     clock.now = new Date(challengedAt.getTime() + 30 * 86400_000);
     expect((await run(admin, "FINAL", 7000)).errors).toBeDefined();
   }, 60_000);
+  it("prepares challenge and permissionless finalization at chain boundaries", async () => {
+    const postedAt = new Date("2030-03-01T00:00:00Z"); clock.now = postedAt;
+    await prisma.escrowProjection.update({ where: { escrowIdHash: escrowHash }, data: { phase: "INITIAL_RULING" } });
+    const ruling = await prisma.rulingRecord.create({ data: { escrowIdHash: escrowHash, kind: "INITIAL", clientBps: 5000, decisionHash: hex(32), arbiter, postedAt, noticeEndsAt: new Date(postedAt.getTime() + 7 * 86400_000), chainEventId: hex(32) } });
+    const prepare = (method: string, user: typeof admin) => execute(`mutation($issue: ID!) { ${method}(issueId: $issue) { method data } }`, { user, db: prisma }, { issue: issueId });
+    expect((await prepare("prepareChallengeRuling", admin)).errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
+    expect((await prepare("prepareChallengeRuling", client)).errors).toBeUndefined();
+    expect((await prepare("prepareChallengeRuling", developer)).errors).toBeUndefined();
+    await prisma.rulingRecord.update({ where: { id: ruling.id }, data: { clientBps: 10000 } });
+    expect((await prepare("prepareChallengeRuling", client)).errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
+    await prisma.rulingRecord.update({ where: { id: ruling.id }, data: { clientBps: 0 } });
+    expect((await prepare("prepareChallengeRuling", developer)).errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
+    expect((await prepare("prepareFinalizeRuling", admin)).errors).toBeDefined();
+    clock.now = new Date(postedAt.getTime() + 7 * 86400_000);
+    expect((await prepare("prepareChallengeRuling", client)).errors).toBeDefined();
+    const final = await prepare("prepareFinalizeRuling", admin);
+    expect(final.errors).toBeUndefined();
+    expect((final.data?.prepareFinalizeRuling as { data: string }).data).toBe(encodeEscrowCall("finalizeRuling", { escrowId: escrowKey }));
+    await prisma.escrowProjection.update({ where: { escrowIdHash: escrowHash }, data: { phase: "FINAL_RULING" } });
+    await prisma.rulingRecord.create({ data: { escrowIdHash: escrowHash, kind: "FINAL", clientBps: 5000, decisionHash: hex(32), arbiter, postedAt, noticeEndsAt: new Date(postedAt.getTime() + 86400_000), chainEventId: hex(32) } });
+    clock.now = new Date(postedAt.getTime() + 86400_000 - 1);
+    expect((await prepare("prepareFinalizeRuling", admin)).errors).toBeDefined();
+    clock.now = new Date(postedAt.getTime() + 86400_000);
+    expect((await prepare("prepareFinalizeRuling", admin)).errors).toBeUndefined();
+    for (const phase of ["DISPUTED", "CHALLENGED"] as const) {
+      await prisma.escrowProjection.update({ where: { escrowIdHash: escrowHash }, data: { phase, disputeRaisedAt: postedAt, challengedAt: postedAt } });
+      clock.now = new Date(postedAt.getTime() + 30 * 86400_000 - 1);
+      expect((await prepare("prepareFinalizeArbiterTimeoutSplit", admin)).errors).toBeDefined();
+      clock.now = new Date(postedAt.getTime() + 30 * 86400_000);
+      expect((await prepare("prepareFinalizeArbiterTimeoutSplit", admin)).errors).toBeUndefined();
+    }
+  }, 60_000);
+
 });

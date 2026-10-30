@@ -1,0 +1,73 @@
+{
+  "name": "late-delivery",
+  "dispute": {
+    "id": "dispute-1",
+    "reason": "Delivery arrived after the deadline.",
+    "createdAt": "2030-03-05T09:00:00.000Z",
+    "issue": {
+      "id": "issue-1",
+      "title": "Export report as CSV",
+      "description": "Add a CSV export to the reports page with a download button.",
+      "category": "FEATURE",
+      "requiredSkills": [
+        "react"
+      ],
+      "clientId": "client-1",
+      "developerId": "developer-1",
+      "messages": [
+        {
+          "id": "msg-1",
+          "senderId": "developer-1",
+          "content": "The export is ready, sorry it is a little late.",
+          "type": "TEXT",
+          "createdAt": "2030-03-04T18:00:00.000Z"
+        }
+      ],
+      "submissions": [
+        {
+          "id": "sub-1",
+          "description": "CSV export with download button",
+          "pullRequestUrl": "https://github.com/acme/app/pull/12",
+          "status": "SUBMITTED",
+          "submittedAt": "2030-03-04T18:00:00.000Z",
+          "reviewNotes": null
+        }
+      ],
+      "testCases": [
+        {
+          "id": "tc-1",
+          "title": "CSV download",
+          "description": "Check CSV download",
+          "given": "a report",
+          "when": "exported",
+          "then": "the CSV downloads",
+          "priority": "HIGH",
+          "isApproved": true
+        }
+      ]
+    }
+  },
+  "mockResponse": {
+    "summary": "The submission arrived after the agreed deadline. The developer acknowledges the delay in chat but delivered the requested feature.",
+    "suggestedClientBps": 3000,
+    "confidenceScore": 0.7,
+    "findings": [
+      {
+        "evidenceType": "SUBMISSION",
+        "evidenceId": "sub-1",
+        "side": "DEVELOPER",
+        "finding": "The developer delivered the export feature, late but complete."
+      }
+    ],
+    "missingEvidence": [
+      "The exact delay in days from the contract record."
+    ],
+    "reasoning": "The feature exists in the submission and the developer acknowledged the delay. The late delivery reduces the developer's share but does not erase the completed work."
+  },
+  "expect": {
+    "minClientBps": 2000,
+    "maxClientBps": 4000,
+    "validCitations": 1,
+    "droppedCitations": 0
+  }
+}

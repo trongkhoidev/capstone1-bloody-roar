@@ -2,6 +2,7 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
+| P1-27 | apps/web/src/test/eval/dispute-eval.test.ts; apps/web/src/test/eval/dispute/*.json (10 file) | bun run --cwd apps/web test -- src/test/eval; bun run typecheck; bun run lint | Pass 10/10: qua analyzeDispute với model mock; có citation giả ở missing-criteria và bad-file-hash bị loại đúng số lượng; có AILog |
 | P1-26 | .env.example | grep -rn GOOGLE_GENERATIVE apps/web/src .env.example (rỗng) | Xong: xóa biến và comment Gemini khỏi .env.example; check-env.ts vẫn chặn biến này |
 | P1-25 | apps/web/src/test/ai-rate-limit.test.ts | bun run --cwd apps/web test -- src/test/ai-rate-limit.test.ts; bun run typecheck; bun run lint | Pass 2/2: user thường bị RATE_LIMITED ở lượt thứ 11, admin ở lượt thứ 31 |
 | P1-24 | apps/web/src/test/content-guard.test.ts | bun run --cwd apps/web test -- src/test/content-guard.test.ts; bun run typecheck; bun run lint | Pass 4/4: key giả bị che trong createIssue, comment, cover letter và hàm guard; draft/updateIssue chưa có case tự động (xem DECISIONS) |

@@ -1,0 +1,68 @@
+{
+  "name": "missing-criteria",
+  "dispute": {
+    "id": "dispute-1",
+    "reason": "The acceptance criteria were never defined.",
+    "createdAt": "2030-03-05T09:00:00.000Z",
+    "issue": {
+      "id": "issue-1",
+      "title": "Export report as CSV",
+      "description": "Add a CSV export to the reports page with a download button.",
+      "category": "FEATURE",
+      "requiredSkills": [
+        "react"
+      ],
+      "clientId": "client-1",
+      "developerId": "developer-1",
+      "messages": [
+        {
+          "id": "msg-1",
+          "senderId": "client-1",
+          "content": "The criteria never listed the file format.",
+          "type": "TEXT",
+          "createdAt": "2030-03-02T11:00:00.000Z"
+        }
+      ],
+      "submissions": [
+        {
+          "id": "sub-1",
+          "description": "CSV export",
+          "pullRequestUrl": "https://github.com/acme/app/pull/12",
+          "status": "SUBMITTED",
+          "submittedAt": "2030-03-03T11:00:00.000Z",
+          "reviewNotes": null
+        }
+      ],
+      "testCases": []
+    }
+  },
+  "mockResponse": {
+    "summary": "Without approved acceptance criteria, neither side can show the delivery met the agreed scope, so the split stays near even.",
+    "suggestedClientBps": 5000,
+    "confidenceScore": 0.7,
+    "findings": [
+      {
+        "evidenceType": "MESSAGE",
+        "evidenceId": "msg-1",
+        "side": "CLIENT",
+        "finding": "The client says the file format was never specified in the criteria."
+      },
+      {
+        "evidenceType": "TEST_CASE",
+        "evidenceId": "tc-99",
+        "side": "NEUTRAL",
+        "finding": "This citation points at a criterion that does not exist in the record."
+      }
+    ],
+    "missingEvidence": [
+      "Approved acceptance criteria for the export format."
+    ],
+    "reasoning": "Both parties are missing a shared acceptance test. The one citation to a criterion is not in the record and must be dropped before the report is used."
+  },
+  "expect": {
+    "minClientBps": 4000,
+    "maxClientBps": 6000,
+    "validCitations": 1,
+    "droppedCitations": 1
+  }
+}

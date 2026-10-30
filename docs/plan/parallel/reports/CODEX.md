@@ -1,4 +1,9 @@
-ĐANG DỞ: P1-36. Bước tiếp theo: sửa số event trong tài liệu theo ABI 19 event, sau đó tiếp tục P1-37.
+ĐANG DỞ: P1-37. Bước tiếp theo: bỏ isDraft khỏi API theo D5, thêm attachIssueFile và cursor pagination cho issues/myIssues/applications; kiểm tra test và gate.
+
+## P1-36 — số event
+
+- `bd198a6`: sửa tài liệu thành 19 event (15 khai báo và 4 kế thừa). Bun script kiểm ABI và Solidity pass; thay đổi chỉ tài liệu, gate P1-15 ngay trước đó pass 485/64/3/35.
+
 
 ## P1-15 — test Submission
 

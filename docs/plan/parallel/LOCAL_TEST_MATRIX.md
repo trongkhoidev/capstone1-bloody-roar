@@ -47,3 +47,4 @@
 | P1-9 deadline | apps/web/src/test/submission-draft.test.ts; tests/e2e/scanner-deposit.ts | bun run --cwd apps/web test -- src/test/submission-draft.test.ts; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass 11/11 và evm_increaseTime; `321d55b` |
 | P1-14 | apps/web/src/test/analytics-projection.test.ts; apps/web/src/test/analytics-projection.db.test.ts | bun run --cwd apps/web test -- src/test/analytics-projection.test.ts src/test/analytics-projection.db.test.ts | Pass unit và PostgreSQL test; `1fce246` |
 | P1-15 | apps/web/src/test/submission.db.test.ts; apps/web/src/test/escrow-reservation.db.test.ts | bun run --cwd apps/web test -- src/test/submission.db.test.ts src/test/escrow-reservation.db.test.ts | Pass 3/3 trên test DB; `9c0da1e` |
+| P1-36 | packages/shared/src/escrow/abi.ts; apps/contracts/contracts/BloodyRoarEscrow.sol | bun -e kiểm số event ABI/contract | Pass 19 = 15 + 4; `bd198a6` |

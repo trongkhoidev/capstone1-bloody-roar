@@ -52,8 +52,9 @@ const SELECT_DEVELOPER = `mutation SelectDeveloper($issue: ID!, $application: ID
 const RESERVATION_QUERY = `query Reservation($issueId: ID!) { reservation(issueId: $issueId) { id status chainId contractAddress tokenAddress escrowKey termsHash amountRaw deliveryDeadline } }`;
 const SUBMIT_FUNDING_INTENT = `mutation FundingIntent($id: ID!, $signature: String!, $nonce: String!, $expiry: String!) { submitFundingIntent(reservationId: $id, signature: $signature, nonce: $nonce, intentExpiry: $expiry) { id } }`;
 const PREPARE_DEPOSIT = `mutation PrepareDeposit($id: ID!) { prepareEscrowDeposit(reservationId: $id) { steps { intentId method contractAddress data value } } }`;
+const CANCEL_RESERVATION = `mutation CancelReservation($id: ID!) { cancelReservation(reservationId: $id) { id status } }`;
 const RECORD_TX = `mutation RecordTx($id: ID!, $hash: String!) { recordTransactionSubmitted(intentId: $id, txHash: $hash) { id } }`;
-const CREATE_DRAFT = `mutation CreateDraft($issue: ID!, $description: String!, $pullRequestUrl: String, $files: [ID!]) { createSubmissionDraft(issueId: $issue, description: $description, pullRequestUrl: $pullRequestUrl, attachmentIds: $files) { id } }`;
+const CREATE_DRAFT = `mutation CreateDraft($issue: ID!, $description: String!, $pullRequestUrl: String, $commitSha: String, $files: [ID!]) { createSubmissionDraft(issueId: $issue, description: $description, pullRequestUrl: $pullRequestUrl, commitSha: $commitSha, attachmentIds: $files) { id } }`;
 const PREPARE_SUBMIT = `mutation PrepareSubmit($id: ID!) { prepareSubmitWork(submissionId: $id) { intentId method contractAddress data value } }`;
 const PREPARE_RELEASE = `mutation PrepareRelease($id: ID!) { prepareReleaseFunds(issueId: $id) { intentId method contractAddress data value } }`;
 const REQUEST_CHANGES = `mutation RequestChanges($id: ID!, $notes: String!) { requestChanges(submissionId: $id, notes: $notes) { changesRequested } }`;
@@ -114,6 +115,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [deliveryDescription, setDeliveryDescription] = useState("");
   const [pullRequestUrl, setPullRequestUrl] = useState("");
+  const [commitSha, setCommitSha] = useState("");
   const [reviewNotes, setReviewNotes] = useState("");
   const [activeTab, setActiveTab] = useState<"overview" | "delivery" | "chat" | "escrow">("overview");
   const [isLoading, setIsLoading] = useState(true);
@@ -170,6 +172,8 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const actionOf = (name: string) => issue?.escrow?.availableActions.find((item) => item.action === name) ?? null;
   const actionEnabled = (name: string) => { const entry = actionOf(name); return Boolean(entry && !entry.reasonDisabled); };
   const reasonLine = (name: string) => { const reason = actionOf(name)?.reasonDisabled; return reason ? <p className="mut" style={{ fontSize: 12 }}>{reason}</p> : null; };
+  // The card shows only when the server lists an action or evidence step for this viewer; the status check lives there.
+  const escrowCardVisible = Boolean(issue?.viewerCapabilities?.canSubmitEvidence || ESCROW_ACTIONS.some((action) => issue?.viewerCapabilities?.[action.flag] && actionOf(action.action)));
 
   useEffect(() => {
     if (!isClient) return;
@@ -226,11 +230,12 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
         issue: issueId,
         description: deliveryDescription.trim(),
         pullRequestUrl: pullRequestUrl.trim() || null,
+        commitSha: commitSha.trim() || null,
         files: deliveryFiles,
       });
       const prepared = await graphqlRequest<{ prepareSubmitWork: PreparedStep }>(PREPARE_SUBMIT, { id: draft.createSubmissionDraft.id });
       await sendPreparedCalls([prepared.prepareSubmitWork], recordTx);
-      setDeliveryDescription(""); setPullRequestUrl(""); setDeliveryFiles([]); setUploadStatus(null);
+      setDeliveryDescription(""); setPullRequestUrl(""); setCommitSha(""); setDeliveryFiles([]); setUploadStatus(null);
       const refreshed = await graphqlRequest<SubmissionResponse>(SUBMISSIONS_QUERY, { issueId });
       setSubmissions(refreshed.submissions);
       setNotice("Work submitted on-chain. The client can review it now.");
@@ -337,6 +342,19 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
       setNotice("Escrow funded. The developer can start the work.");
       awaitChain();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not fund the escrow."); }
+    finally { setIsWorking(false); }
+  };
+
+  // Client drops a reservation that is still waiting for funding.
+  const cancelFunding = async () => {
+    if (!reservationId) return;
+    setIsWorking(true); setError(null); setNotice(null);
+    try {
+      await graphqlRequest(CANCEL_RESERVATION, { id: reservationId });
+      setReservationId(null);
+      setNotice("Reservation cancelled.");
+      void load();
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not cancel the reservation."); }
     finally { setIsWorking(false); }
   };
 
@@ -567,6 +585,11 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                             Fund escrow
                           </button>
                         )}
+                        {reservationId && issue.viewerCapabilities?.canFund && (
+                          <button type="button" className="btn btn-o btn-sm" style={{ marginBottom: 12 }} disabled={isWorking || demoMode} onClick={() => void cancelFunding()}>
+                            Hủy giữ chỗ
+                          </button>
+                        )}
                         {applications.map((app) => (
                           <div
                             key={app.id}
@@ -643,6 +666,12 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                             value={pullRequestUrl}
                             onChange={(e) => setPullRequestUrl(e.target.value)}
                             placeholder="https://github.com/org/repo/pull/123"
+                          />
+                          <input
+                            className="inp"
+                            value={commitSha}
+                            onChange={(e) => setCommitSha(e.target.value)}
+                            placeholder="Mã commit (không bắt buộc)"
                           />
                           <label style={{ fontSize: 12 }}>
                             Attach files (optional)
@@ -768,7 +797,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
               )}
 
               {/* TAB 3: CHAT */}
-              {(isClient || isDeveloper) && issue.status === "IN_PROGRESS" && (
+              {escrowCardVisible && (
                 <section className="card">
                   <div className="card-h"><h2>Escrow actions</h2></div>
                   <div className="card-b" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>

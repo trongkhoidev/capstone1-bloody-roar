@@ -1,4 +1,10 @@
-ĐANG DỞ: P1-15. Bước tiếp theo: bổ sung test Submission có ý nghĩa trên DB thật, giữ test race selectDeveloper; chạy gate rồi tiếp tục P1-36/P1-37.
+ĐANG DỞ: P1-36. Bước tiếp theo: sửa số event trong tài liệu theo ABI 19 event, sau đó tiếp tục P1-37.
+
+## P1-15 — test Submission
+
+- `9c0da1e`: test PostgreSQL thật kiểm manifest bất biến sau prepare, quyền xem/yêu cầu sửa, notification và race prepare/edit; giữ test race selectDeveloper.
+- `bun run --cwd apps/web test -- src/test/submission.db.test.ts src/test/escrow-reservation.db.test.ts` với TEST_DATABASE_URL trỏ bloody_codex_test: pass 3/3; gate typecheck, lint, web/worker/database/contracts pass 485/64/3/35, lint bốn cảnh báo any cũ. Gate phase C và `test:e2e:local` chưa hoàn tất.
+
 
 ## P1-14 — thống kê projection
 

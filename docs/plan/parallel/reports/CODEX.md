@@ -44,6 +44,23 @@ Bảng trạng thái gốc bên dưới giữ nguyên để tra cứu; các dòn
 | P1-30a/b | xong | `upload-two-step.test.ts`, `upload-access.test.ts`: hai bước, sha256, quyền tải theo purpose |
 | E18–E21, E30 | xong | `test:e2e:local`: 31 pass, 0 fail; gate B0.2 exit 0 (web 553, worker 71, db 3, contracts 35) |
 | P1-27 | xong | `eval/dispute-eval.test.ts`: 10 fixture, qua analyzeDispute với model mock |
+| E1 | xong | `e01-auth.test.ts` (test:e2e:local) |
+| E18 | xong | `e18-chat.test.ts` (test:e2e:local) |
+| FE-1 | xong | `lib/web3/client.ts`: ACTIVE_CHAIN, ensureChain, NEXT_PUBLIC_CHAIN_ID |
+| E11 | xong | `e11-claim-auth.test.ts` (test:e2e:local) |
+| E17 | xong | `e17-arbiter-timeout.test.ts` (test:e2e:local) |
+| E21 | xong | `e21-admin.test.ts` (test:e2e:local) |
+| E24 | xong | `e24-replay.test.ts` (test:e2e:local) |
+| E31 | xong | `e31-flow.test.ts` (test:e2e:local) |
+| FE-1b | xong | `lib/web3/send-prepared.ts` |
+| FE-1c | xong | `lib/web3/funding-intent.ts` |
+| FE-2 | xong (không test tự động) | refresh theo escrow:invalidate và poll 30 lần |
+| FE-3 | xong | availableActions và viewerCapabilities; reasonDisabled hiển thị |
+| FE-4 | xong | `issue-detail-view.tsx`: luồng prepare-và-gửi, bằng chứng, thỏa thuận, đánh giá |
+| FE-5 | xong | `dashboard-view.tsx`: myClaimable và Rút tiền |
+| FE-6 | xong | `admin-view.tsx`: draftRuling, bằng chứng, Vận hành, ẩn issue |
+| FE-7 | xong | `lib/upload.ts` và các form giao việc, bằng chứng, ảnh issue, avatar |
+| N-10 | xong | LOCAL_TEST_MATRIX có dòng cho mọi mã Phần C |
 | P1-26 | xong | `.env.example`: bỏ GOOGLE_GENERATIVE_AI_API_KEY; grep rỗng |
 | P1-25 | xong | `ai-rate-limit.test.ts`: 10 lượt/giờ (admin 30) |
 | P1-24 | xong | `content-guard.test.ts`: che key ở createIssue, comment, cover letter; draft/updateIssue chưa có case tự động |
@@ -431,3 +448,38 @@ Lần gate đầu web test fail vì bloody_codex chưa tồn tại; đã tạo b
 ## Quyết định và việc còn lại
 
 Xem DECISIONS.md. BE-88 và GitGuardian bị chặn như FIX_LIST mục 4. Các mục chưa làm do phiên dừng sớm; tiếp tục P0-2, P0-3 rồi hoàn tất P0-1, sau đó theo FIX_LIST. Quy tắc chỉ dùng bloody_codex mâu thuẫn với yêu cầu tên DB test chứa test; cần xử lý theo quyết định ghi trong DECISIONS.md trước P0-9. Không push hoặc tạo PR.
+
+## Danh sách BỔ SUNG đã thêm vào DECISIONS (C7 mục 5)
+
+- BỔ SUNG P1-18 — audit tải evidence
+- BỔ SUNG AI-11 — mốc bắt đầu phân tích
+- BỔ SUNG N-14 — chặn mọi provider thật trong E2E
+- BỔ SUNG N-8 — lưu báo cáo sau teardown
+- BỔ SUNG E2 — ghi lượt xem theo tài khoản
+- BỔ SUNG G1-DELTA — so hiệu số claimable thay vì số tuyệt đối
+- BỔ SUNG E14 — tách thành hai test và thông báo thu hồi
+- BỔ SUNG E15 — so calldata bằng encodeEscrowCall
+- BỔ SUNG E16 — kháng cáo thứ hai trả INVALID_PHASE
+- BỔ SUNG E23 — chờ indexer đuổi kịp trước khi đo
+- BỔ SUNG E24 — đợi worker hoàn tất replay
+- BỔ SUNG E31 — xóa số dư còn lại trước khi đo
+- BỔ SUNG P1-19 — lỗi socket dạng chuỗi
+- BỔ SUNG P1-19 — mock dispute trong socket-session
+- BỔ SUNG P1-20 — trạng thái phát hiện mặc định OPEN
+- BỔ SUNG P1-21 — lọc ẩn cho cả thống kê marketplace
+- BỔ SUNG P1-22 — mã lỗi và phạm vi điểm uy tín
+- BỔ SUNG P1-23 — hash audit dùng HMAC và giữ nguyên hash nội dung
+- BỔ SUNG P1-24 — phạm vi test của guard
+- BỔ SUNG P1-25 — vị trí gọi rate limit AI
+- BỔ SUNG E18 — kiểm cờ afterDispute theo quy tắc lưu trữ
+- BỔ SUNG E19 — tài khoản #10 và ban qua HTTP
+- BỔ SUNG E30 — deadline đã qua
+- BỔ SUNG E-harness — socket và thư viện
+- BỔ SUNG P1-30 — file chat đi theo DELIVERY của issue
+- BỔ SUNG P1-30 — nhật ký xem bằng chứng
+- BỔ SUNG P1-30 — ảnh issue đã ẩn
+- BỔ SUNG P1-30 — gitignore
+- BỔ SUNG P1-31 — không kiểm lệch thời gian webhook
+- BỔ SUNG P1-32 — guard nằm ở subpath export
+- BỔ SUNG P1-35 — không xoay refresh token
+- BỔ SUNG C3 — kịch bản E25–E29 và runner

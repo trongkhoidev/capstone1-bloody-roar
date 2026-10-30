@@ -2,6 +2,12 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
+| FE-1b | apps/web/src/lib/web3/send-prepared.ts | bun run typecheck; lint; e2e qua harness | Xong: gửi từng giao dịch đã chuẩn bị, ghi recordTransactionSubmitted trước khi chờ receipt |
+| E1 | tests/e2e/e01-auth.test.ts | bun run test:e2e:local | Xong (từ G1 trước đó): xác thực SIWE và chặn người bị khóa |
+| N-10 | docs/plan/parallel/LOCAL_TEST_MATRIX.md | kiểm từng mã Phần C có dòng (script trong báo cáo CODEX) | Xong: mọi mã Phần C có dòng trong ma trận |
+| N-12 | tests/e2e/e22-reorg.test.ts | bun run test:e2e:local | Xong: reorg thật trên Hardhat, deposit A non-canonical, B canonical (thay reorg.e2e.ts đã xóa) |
+| P1-30b | apps/web/src/test/upload-access.test.ts | bun run --cwd apps/web test -- src/test/upload-access.test.ts | Xong: quyền tải theo purpose cho khách, người ngoài, người tham gia, admin |
+| FE-1c | apps/web/src/lib/web3/funding-intent.ts | bun run typecheck; lint; e2e funding qua harness | Xong: ký EIP-712 funding intent, nonce 16 byte, submitFundingIntent |
 | FE-8 | apps/web/src/test/fe-operations.test.ts | bun run --cwd apps/web test -- src/test/fe-operations.test.ts | Pass: mọi GraphQL trong components/app/lib parse và validate với schema |
 | FE-1 / FE-1b / FE-1c | apps/web/src/lib/web3/client.ts; send-prepared.ts; funding-intent.ts | bun run typecheck; bun run lint; e2e qua harness | Xong: ACTIVE_CHAIN theo NEXT_PUBLIC_CHAIN_ID, ensureChain, gửi giao dịch đã chuẩn bị, ký funding intent; kiểm bằng tay với MetaMask theo docs/LOCAL_DEV.md |
 | FE-2 | apps/web/src/components/marketplace/issue-detail-view.tsx | bun run typecheck; lint | Một phần: lắng nghe escrow:invalidate và poll tối đa 30 lần sau giao dịch; chưa có kiểm tự động |

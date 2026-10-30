@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { prisma } from "@bloody-roar/database";
 import { assertTestDatabase } from "@bloody-roar/database/test-guard";
@@ -74,4 +74,16 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("Submission on the test database
       expect(computeDeliveryHash(saved!.manifest as DeliveryManifest)).toBe(deliveryHash);
     }
   }, 60_000);
+
+  it("masks a leaked key in the delivery description before hashing and saving it", async () => {
+    const key = randomBytes(32).toString("hex");
+    const draft = await execute(CREATE, { user: developer, db: prisma }, { issue: issueId, text: `delivery notes PRIVATE_KEY=0x${key}` });
+    expect(draft.errors).toBeUndefined();
+    const id = (draft.data?.createSubmissionDraft as { id: string }).id;
+    const row = await prisma.submission.findUniqueOrThrow({ where: { id } });
+    expect(row.description).toContain("[REDACTED]");
+    expect(row.description).not.toContain(key);
+    const manifest = row.manifest as { descriptionSha256: string };
+    expect(manifest.descriptionSha256).toBe(createHash("sha256").update(row.description ?? "", "utf8").digest("hex"));
+  });
 });

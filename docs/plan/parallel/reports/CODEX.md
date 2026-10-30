@@ -63,7 +63,7 @@ Bảng trạng thái gốc bên dưới giữ nguyên để tra cứu; các dòn
 | N-10 | xong | LOCAL_TEST_MATRIX có dòng cho mọi mã Phần C |
 | P1-26 | xong | `.env.example`: bỏ GOOGLE_GENERATIVE_AI_API_KEY; grep rỗng |
 | P1-25 | xong | `ai-rate-limit.test.ts`: 10 lượt/giờ (admin 30) |
-| P1-24 | xong | `content-guard.test.ts`: che key ở createIssue, comment, cover letter; draft/updateIssue chưa có case tự động |
+| P1-24 | xong | `content-guard.test.ts` (createIssue, updateIssue, comment, cover letter) và `submission.db.test.ts` (delivery description) |
 | G1 (E11–E17, E22–E24, E31) | xong | `test:e2e:local`: 25 pass, 0 fail, `G1 E2E scenarios passed` |
 | N-6, N-10, N-11 | chưa làm | N-6 cùng P1-30a; N-10/N-11 tại G2 |
 | FE-1–FE-8 | chưa làm | Phase FE |

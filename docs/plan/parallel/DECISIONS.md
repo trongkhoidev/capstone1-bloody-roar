@@ -230,7 +230,7 @@ Trước khi fund, test claim số dư còn lại của developer và ví phí. 
 
 ## BỔ SUNG P1-24 — phạm vi test của guard
 
-`content-guard.test.ts` kiểm bốn chỗ bằng fake DB: `createIssue` (không kèm `issueId`), `createIssueComment`, `applyToIssue`, và hàm guard mà mọi chỗ dùng. `createSubmissionDraft` và `updateIssue` cũng đã gọi `guardMessage`, nhưng chưa có case tự động vì cần projection escrow và thời gian chain; sẽ kiểm bằng tay trong G1/E2E ở phase sau.
+`content-guard.test.ts` kiểm createIssue, updateIssue, createIssueComment, applyToIssue và hàm guard bằng fake DB. `createSubmissionDraft` được kiểm trên DB thật trong `submission.db.test.ts`, vì luồng này cần projection escrow và đồng hồ chain.
 
 ## BỔ SUNG P1-25 — vị trí gọi rate limit AI
 

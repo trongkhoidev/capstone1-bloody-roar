@@ -85,6 +85,29 @@ describe("content guard on stored user text", () => {
     expect(saved).not.toContain(key);
   });
 
+  it("masks a key in an edited bounty description before saving it", async () => {
+    const key = leakedKey();
+    const current = {
+      id: "issue-1", clientId: "client-1", status: "OPEN", title: "Fix the escrow release button", description: "Original description long enough",
+      category: "BUG_FIX", bountyAmount: { toFixed: () => "100" }, tokenId: "token-1", token: { id: "token-1", symbol: "USDC", decimals: 6, isActive: true, chainId: ACTIVE_CHAIN_ID },
+      requiredSkills: [], deliveryDeadline: null, expiresAt: null, githubRepo: null, termsVersion: 1, isDraft: false,
+    };
+    const db = {
+      ...fakeDb(current),
+      issue: { ...fakeDb(current).issue, update: vi.fn().mockResolvedValue(current), updateMany: vi.fn().mockResolvedValue({ count: 1 }), findUniqueOrThrow: vi.fn().mockResolvedValue(current) },
+    };
+    const result = await execute(
+      `mutation($input: UpdateIssueInput!) { updateIssue(input: $input) { id } }`,
+      { user: userWithRole("CLIENT"), db },
+      { input: { id: "issue-1", description: `Updated text that is long enough. ${key}` } },
+    );
+
+    expect(result.errors).toBeUndefined();
+    const written = JSON.stringify(db.issue.update.mock.calls[0]?.[0] ?? db.issue.updateMany.mock.calls[0]?.[0]);
+    expect(written).toContain("[REDACTED]");
+    expect(written).not.toContain(key);
+  });
+
   it("masks a key in a cover letter before saving the application", async () => {
     const key = leakedKey();
     const db = fakeDb();

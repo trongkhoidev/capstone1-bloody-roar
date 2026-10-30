@@ -1,9 +1,20 @@
-import { ApplicationStatus, IssueStatus, UserRole, type AdminLog, type Issue, type User } from "@bloody-roar/database";
+import {
+  ApplicationStatus,
+  IssueStatus,
+  UserRole,
+  type AdminLog,
+  type ContractConfig,
+  type Issue,
+  type ProjectionCheckpoint,
+  type ReconciliationFinding,
+  type User,
+} from "@bloody-roar/database";
 import { z } from "zod";
 import { builder } from "../../builder";
 import { requireAdmin } from "../../context";
 import { gqlError, parseOrThrow } from "../../errors";
 import { disconnectUserSockets } from "../../../socket/handlers";
+import { TransactionIntentRef } from "../escrow/intent.module";
 
 const AdminUserRef = builder.objectRef<User>("AdminUser").implement({
   fields: (t) => ({
@@ -122,6 +133,115 @@ builder.queryField("adminIssues", (t) =>
         orderBy: [{ createdAt: "desc" }, { id: "asc" }],
         take: Math.min(Math.max(args.first ?? 50, 1), 100),
       });
+    },
+  }),
+);
+
+const IndexerStatusRef = builder.objectRef<ProjectionCheckpoint>("IndexerStatus").implement({
+  fields: (t) => ({
+    chainId: t.int({ resolve: (row) => row.chainId }),
+    contractAddress: t.string({ resolve: (row) => row.contractAddress }),
+    lastScannedBlock: t.string({ resolve: (row) => row.lastScannedBlock.toString() }),
+    lastCanonicalBlockHash: t.string({ resolve: (row) => row.lastCanonicalBlockHash }),
+    updatedAt: t.string({ resolve: (row) => row.updatedAt.toISOString() }),
+    lagSeconds: t.int({ resolve: (row) => Math.floor((Date.now() - row.updatedAt.getTime()) / 1000) }),
+  }),
+});
+
+const ReconciliationFindingRef = builder.objectRef<ReconciliationFinding>("ReconciliationFinding").implement({
+  fields: (t) => ({
+    id: t.id({ resolve: (row) => row.id }),
+    escrowIdHash: t.string({ nullable: true, resolve: (row) => row.escrowIdHash }),
+    kind: t.string({ resolve: (row) => row.kind }),
+    expected: t.string({ resolve: (row) => JSON.stringify(row.expected) }),
+    actual: t.string({ resolve: (row) => JSON.stringify(row.actual) }),
+    blockNumber: t.string({ resolve: (row) => row.blockNumber.toString() }),
+    resolvedAt: t.string({ nullable: true, resolve: (row) => row.resolvedAt?.toISOString() ?? null }),
+    createdAt: t.string({ resolve: (row) => row.createdAt.toISOString() }),
+  }),
+});
+
+const ContractConfigRef = builder.objectRef<ContractConfig>("ContractConfig").implement({
+  fields: (t) => ({
+    chainId: t.int({ resolve: (row) => row.chainId }),
+    contractAddress: t.string({ resolve: (row) => row.contractAddress }),
+    paused: t.boolean({ resolve: (row) => row.paused }),
+    owner: t.string({ resolve: (row) => row.owner }),
+    pendingOwner: t.string({ nullable: true, resolve: (row) => row.pendingOwner }),
+    arbiter: t.string({ resolve: (row) => row.arbiter }),
+    pendingArbiter: t.string({ nullable: true, resolve: (row) => row.pendingArbiter }),
+    feeRecipient: t.string({ resolve: (row) => row.feeRecipient }),
+    pendingFeeRecipient: t.string({ nullable: true, resolve: (row) => row.pendingFeeRecipient }),
+    updatedAt: t.string({ resolve: (row) => row.updatedAt.toISOString() }),
+  }),
+});
+
+// Ops views for the admin console: indexer lag, reconciliation findings, stuck transactions, contract config.
+const STUCK_INTENT_AGE_MS = 30 * 60_000;
+const pageSize = (first?: number | null) => Math.min(Math.max(first ?? 20, 1), 100);
+const pageCursor = (after?: string | null): { cursor?: { id: string }; skip?: number } => (after ? { cursor: { id: String(after) }, skip: 1 } : {});
+
+builder.queryField("indexerStatus", (t) =>
+  t.field({
+    type: [IndexerStatusRef],
+    resolve: (_root, _args, ctx) => {
+      requireAdmin(ctx);
+      return ctx.db.projectionCheckpoint.findMany({ orderBy: [{ chainId: "asc" }, { contractAddress: "asc" }] });
+    },
+  }),
+);
+
+builder.queryField("reconciliationFindings", (t) =>
+  t.field({
+    type: [ReconciliationFindingRef],
+    args: {
+      status: t.arg.string({ required: false, defaultValue: "OPEN" }),
+      first: t.arg.int({ required: false, defaultValue: 20 }),
+      after: t.arg.id({ required: false }),
+    },
+    resolve: (_root, args, ctx) => {
+      requireAdmin(ctx);
+      const status = args.status ?? "OPEN";
+      const resolvedAt = status === "OPEN" ? null : status === "RESOLVED" ? { not: null } : undefined;
+      if (resolvedAt === undefined) throw gqlError("Trạng thái không hợp lệ", "BAD_USER_INPUT");
+      return ctx.db.reconciliationFinding.findMany({
+        where: { resolvedAt },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        take: pageSize(args.first),
+        ...pageCursor(args.after),
+      });
+    },
+  }),
+);
+
+builder.queryField("stuckIntents", (t) =>
+  t.field({
+    type: [TransactionIntentRef],
+    args: {
+      first: t.arg.int({ required: false, defaultValue: 20 }),
+      after: t.arg.id({ required: false }),
+    },
+    resolve: (_root, args, ctx) => {
+      requireAdmin(ctx);
+      return ctx.db.transactionIntent.findMany({
+        where: {
+          status: { in: ["SUBMITTED", "PENDING_SAFE_HEAD"] },
+          submittedAt: { lt: new Date(Date.now() - STUCK_INTENT_AGE_MS) },
+        },
+        orderBy: [{ submittedAt: "asc" }, { id: "asc" }],
+        take: pageSize(args.first),
+        ...pageCursor(args.after),
+      });
+    },
+  }),
+);
+
+builder.queryField("contractConfig", (t) =>
+  t.field({
+    type: [ContractConfigRef],
+    resolve: (_root, _args, ctx) => {
+      requireAdmin(ctx);
+      return ctx.db.contractConfig.findMany({ orderBy: [{ chainId: "asc" }, { contractAddress: "asc" }] });
     },
   }),
 );

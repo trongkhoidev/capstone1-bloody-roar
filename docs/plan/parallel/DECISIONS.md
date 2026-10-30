@@ -211,3 +211,7 @@ Trước khi fund, test claim số dư còn lại của developer và ví phí. 
 ## BỔ SUNG P1-19 — mock dispute trong socket-session
 
 `socket-session.test.ts` thêm `dispute.findUnique` vào mock transaction, vì handler giờ tra `Dispute.raisedAt` khi tạo tin.
+
+## BỔ SUNG P1-20 — trạng thái phát hiện mặc định OPEN
+
+`reconciliationFindings` nhận `status` là `OPEN` (mặc định), `RESOLVED`; giá trị khác trả `BAD_USER_INPUT`. Resolver cũng tự mặc định `OPEN` vì khi gọi trực tiếp (test) mặc định của schema không được áp dụng.

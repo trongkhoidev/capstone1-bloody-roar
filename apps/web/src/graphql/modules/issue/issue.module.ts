@@ -268,7 +268,7 @@ builder.queryField("marketplaceStats", (t) =>
   t.field({
     type: MarketplaceStatsRef,
     resolve: async (_root, _args, ctx) => {
-      const where = { status: IssueStatus.OPEN, isDraft: false };
+      const where = { status: IssueStatus.OPEN, isDraft: false, hiddenAt: null };
       const [openBounties, bountyByToken, hunters] = await Promise.all([
         ctx.db.issue.count({ where }),
         ctx.db.issue.groupBy({
@@ -277,7 +277,7 @@ builder.queryField("marketplaceStats", (t) =>
           _sum: { bountyAmount: true },
         }),
         ctx.db.application.findMany({
-          where: { issue: { status: IssueStatus.OPEN, isDraft: false } },
+          where: { issue: { status: IssueStatus.OPEN, isDraft: false, hiddenAt: null } },
           distinct: ["developerId"],
           select: { developerId: true },
         }),
@@ -386,6 +386,7 @@ builder.queryField("issues", (t) =>
       // Build where clause (homepage chỉ hiển thị task đã publish)
       const where: Prisma.IssueWhereInput = {
         isDraft: false,
+        hiddenAt: null,
         ...(q.category ? { category: q.category } : {}),
         ...(q.status ? { status: q.status } : {}),
         ...(q.bountyMin != null || q.bountyMax != null
@@ -519,6 +520,11 @@ builder.queryField("issue", (t) =>
 
       // Draft chỉ hiển thị với chủ task
       if (issue.isDraft && ctx.user?.id !== issue.clientId) return null;
+
+      // Issue bị ẩn chỉ hiển thị với client, developer và admin
+      const viewer = ctx.user;
+      const canSeeHidden = viewer && (viewer.role === "ADMIN" || viewer.id === issue.clientId || viewer.id === issue.developerId);
+      if (issue.hiddenAt && !canSeeHidden) return null;
 
       return issue;
     },

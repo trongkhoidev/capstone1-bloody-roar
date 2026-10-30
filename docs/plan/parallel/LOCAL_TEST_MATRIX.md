@@ -2,6 +2,7 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
+| P1-21 | apps/web/src/test/issue-hide.db.test.ts | bun run --cwd apps/web test -- src/test/issue-hide.db.test.ts; bun run typecheck; bun run lint | Pass 2/2: issue ẩn không có trong issues, người ngoài nhận null, client/dev/admin vẫn thấy, có AdminLog |
 | P1-20 | apps/web/src/test/admin-ops.test.ts | bun run --cwd apps/web test -- src/test/admin-ops.test.ts; bun run typecheck; bun run lint | Pass 5/5: indexerStatus, reconciliationFindings, stuckIntents, contractConfig chỉ cho ADMIN |
 | P1-19 | apps/web/src/test/socket-rate-limit.test.ts; apps/web/src/test/socket-session.test.ts | bun run --cwd apps/web test -- src/test/socket-rate-limit.test.ts src/test/socket-session.test.ts; bun run typecheck; bun run lint | Pass 5/5: tin thứ 11 trong 10 giây bị từ chối; tin sau raisedAt có afterDispute = true |
 | N-13 | apps/web, apps/worker (dependency) | `grep -n '"socket.io-client@\|"pino@' bun.lock` | Xong: socket.io-client 4.8.4, pino 9.14.0 trong bun.lock |

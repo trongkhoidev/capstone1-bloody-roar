@@ -215,3 +215,7 @@ Trước khi fund, test claim số dư còn lại của developer và ví phí. 
 ## BỔ SUNG P1-20 — trạng thái phát hiện mặc định OPEN
 
 `reconciliationFindings` nhận `status` là `OPEN` (mặc định), `RESOLVED`; giá trị khác trả `BAD_USER_INPUT`. Resolver cũng tự mặc định `OPEN` vì khi gọi trực tiếp (test) mặc định của schema không được áp dụng.
+
+## BỔ SUNG P1-21 — lọc ẩn cho cả thống kê marketplace
+
+`marketplaceStats` lọc `hiddenAt: null` ở cả số bounty mở và số developer đã ứng tuyển, để thống kê khớp danh sách. `adminUnhideIssue` ghi `AdminLog` với `details: {}` vì không có lý do.

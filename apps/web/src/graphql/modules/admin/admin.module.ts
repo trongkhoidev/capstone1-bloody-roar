@@ -246,6 +246,49 @@ builder.queryField("contractConfig", (t) =>
   }),
 );
 
+// Ẩn issue khỏi marketplace; không đụng escrow.
+builder.mutationField("adminHideIssue", (t) =>
+  t.boolean({
+    args: {
+      issueId: t.arg.id({ required: true }),
+      reason: t.arg.string({ required: true }),
+    },
+    resolve: async (_root, args, ctx) => {
+      const admin = requireAdmin(ctx);
+      const issueId = String(args.issueId);
+      const { reason } = parseOrThrow(z.object({ reason: z.string().trim().min(3).max(500) }), { reason: args.reason });
+      await ctx.db.$transaction(async (tx) => {
+        const issue = await tx.issue.findUnique({ where: { id: issueId }, select: { id: true } });
+        if (!issue) throw gqlError("Bài toán không tồn tại", "NOT_FOUND");
+        await tx.issue.update({ where: { id: issueId }, data: { hiddenAt: new Date() } });
+        await tx.adminLog.create({
+          data: { adminId: admin.id, action: "hide_issue", target: "issue", targetId: issueId, details: { reason } },
+        });
+      });
+      return true;
+    },
+  }),
+);
+
+builder.mutationField("adminUnhideIssue", (t) =>
+  t.boolean({
+    args: { issueId: t.arg.id({ required: true }) },
+    resolve: async (_root, args, ctx) => {
+      const admin = requireAdmin(ctx);
+      const issueId = String(args.issueId);
+      await ctx.db.$transaction(async (tx) => {
+        const issue = await tx.issue.findUnique({ where: { id: issueId }, select: { id: true } });
+        if (!issue) throw gqlError("Bài toán không tồn tại", "NOT_FOUND");
+        await tx.issue.update({ where: { id: issueId }, data: { hiddenAt: null } });
+        await tx.adminLog.create({
+          data: { adminId: admin.id, action: "unhide_issue", target: "issue", targetId: issueId, details: {} },
+        });
+      });
+      return true;
+    },
+  }),
+);
+
 builder.mutationField("banUser", (t) =>
   t.fieldWithInput({
     type: AdminUserRef,

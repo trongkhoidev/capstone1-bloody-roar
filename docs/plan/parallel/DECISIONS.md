@@ -227,3 +227,7 @@ Trước khi fund, test claim số dư còn lại của developer và ví phí. 
 ## BỔ SUNG P1-23 — hash audit dùng HMAC và giữ nguyên hash nội dung
 
 `auditHash` dùng HMAC-SHA256 với `AI_HASH_KEY`. Hash `originalHash` của tin nhắn trong `socket/handlers.ts` và `chat.module.ts` cũng đổi sang `auditHash` theo đặc tả, còn hash token/nội dung ở `app/api/auth/*`, `lib/auth.ts`, `submission/draft.module.ts` giữ nguyên.
+
+## BỔ SUNG P1-24 — phạm vi test của guard
+
+`content-guard.test.ts` kiểm bốn chỗ bằng fake DB: `createIssue` (không kèm `issueId`), `createIssueComment`, `applyToIssue`, và hàm guard mà mọi chỗ dùng. `createSubmissionDraft` và `updateIssue` cũng đã gọi `guardMessage`, nhưng chưa có case tự động vì cần projection escrow và thời gian chain; sẽ kiểm bằng tay trong G1/E2E ở phase sau.

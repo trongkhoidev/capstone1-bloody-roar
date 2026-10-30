@@ -5,6 +5,7 @@ import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "@bloody-roar/shared";
 import { requireAuth } from "../../context";
 import { gqlError, parseOrThrow } from "../../errors";
 import { createNotificationSafely } from "../../../lib/services/notifications";
+import { guardMessage } from "../../../ai/guard/service";
 import { UserRef } from "../user/user.module";
 import { ISSUE_INCLUDE, IssueRef, encodeCursor, decodeCursor } from "../issue/issue.module";
 
@@ -96,6 +97,7 @@ builder.mutationField("applyToIssue", (t) =>
         issueId: String(args.input.issueId),
         ...(args.input.message != null ? { message: args.input.message } : {}),
       });
+      const message = input.message?.trim() ? (await guardMessage(input.message.trim(), { issueId: input.issueId })).content : null;
       let result: {
         application: Prisma.ApplicationGetPayload<{
           include: typeof APPLICATION_INCLUDE;
@@ -135,7 +137,7 @@ builder.mutationField("applyToIssue", (t) =>
                   where: { id: previous.id },
                   data: {
                     status: ApplicationStatus.PENDING,
-                    message: input.message?.trim() || null,
+                    message,
                   },
                   include: APPLICATION_INCLUDE,
                 })
@@ -143,7 +145,7 @@ builder.mutationField("applyToIssue", (t) =>
                   data: {
                     issueId: input.issueId,
                     developerId: user.id,
-                    message: input.message?.trim() || null,
+                    message,
                   },
                   include: APPLICATION_INCLUDE,
                 });

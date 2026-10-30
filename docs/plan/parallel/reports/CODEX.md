@@ -1,4 +1,4 @@
-ĐANG DỞ: C2 (P1-24). Bước tiếp theo: guardMessage cho createIssue/updateIssue/comment/applyToIssue/submission draft.
+ĐANG DỞ: C2 (P1-25). Bước tiếp theo: rate limit AI (aiRateLimit trong lib/rate-limit.ts, gọi ở generateTestCases, analyzeDispute và mọi mutation model-router).
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -20,6 +20,7 @@
 | P1-21 | xong | `apps/web/src/test/issue-hide.db.test.ts`: ẩn/bỏ ẩn, AdminLog |
 | P1-22 | xong | `review.db.test.ts`, `effects-resolved.test.ts`: review, uy tín, undo |
 | P1-23 | xong | `audit-hash.test.ts`: HMAC cho hash audit AI |
+| P1-24 | xong | `content-guard.test.ts`: che key ở createIssue, comment, cover letter; draft/updateIssue chưa có case tự động |
 | G1 (E11–E17, E22–E24, E31) | xong | `test:e2e:local`: 25 pass, 0 fail, `G1 E2E scenarios passed` |
 | N-6, N-10, N-11 | chưa làm | N-6 cùng P1-30a; N-10/N-11 tại G2 |
 | FE-1–FE-8 | chưa làm | Phase FE |

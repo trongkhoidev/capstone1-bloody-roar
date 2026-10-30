@@ -2,6 +2,7 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
+| P1-24 | apps/web/src/test/content-guard.test.ts | bun run --cwd apps/web test -- src/test/content-guard.test.ts; bun run typecheck; bun run lint | Pass 4/4: key giả bị che trong createIssue, comment, cover letter và hàm guard; draft/updateIssue chưa có case tự động (xem DECISIONS) |
 | P1-23 | apps/web/src/test/audit-hash.test.ts | bun run --cwd apps/web test -- src/test/audit-hash.test.ts; bun run typecheck; bun run lint | Pass 4/4: cùng khóa cùng hash, khác khóa khác hash, không phải SHA-256 thuần, production thiếu khóa thì throw |
 | P1-22 | apps/web/src/test/review.db.test.ts; apps/worker/test/effects-resolved.test.ts | bun run --cwd apps/web test -- src/test/review.db.test.ts; bun run --cwd apps/worker test -- test/effects-resolved.test.ts; bun run typecheck; bun run lint | Pass: review trước COMPLETED và người khác bị từ chối, trùng CONFLICT, điểm trung bình và completedTaskCount đúng, release/undo cập nhật số bài |
 | P1-21 | apps/web/src/test/issue-hide.db.test.ts | bun run --cwd apps/web test -- src/test/issue-hide.db.test.ts; bun run typecheck; bun run lint | Pass 2/2: issue ẩn không có trong issues, người ngoài nhận null, client/dev/admin vẫn thấy, có AdminLog |

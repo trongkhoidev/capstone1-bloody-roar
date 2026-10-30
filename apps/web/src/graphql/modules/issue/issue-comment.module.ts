@@ -2,6 +2,7 @@ import { z } from "zod";
 import { builder } from "../../builder";
 import { requireAuth } from "../../context";
 import { gqlError, parseOrThrow } from "../../errors";
+import { guardMessage } from "../../../ai/guard/service";
 import { UserRef } from "../user/user.module";
 
 const ISSUE_COMMENT_INCLUDE = { user: true };
@@ -65,7 +66,7 @@ builder.mutationField("createIssueComment", (t) =>
       if (issue.status === "CANCELLED") throw gqlError("This bounty is closed to comments", "ISSUE_CLOSED");
 
       return ctx.db.issueComment.create({
-        data: { issueId: issue.id, userId: user.id, body: input.body },
+        data: { issueId: issue.id, userId: user.id, body: (await guardMessage(input.body, { issueId: issue.id })).content },
         include: ISSUE_COMMENT_INCLUDE,
       });
     },

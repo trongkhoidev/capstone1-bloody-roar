@@ -4,6 +4,7 @@
 // - issue(id): detail (client + token + applicationCount)
 // - createIssue(input): post a new bounty (auth required)
 
+import { guardMessage } from "../../../ai/guard/service";
 import {
   builder,
   parseTokenAmountInput,
@@ -593,7 +594,7 @@ builder.mutationField("createIssue", (t) =>
       return ctx.db.issue.create({
         data: {
           title: input.title,
-          description: input.description,
+          description: (await guardMessage(input.description)).content,
           category: input.category,
           bountyAmount: formatTokenAmount(bountyRaw, token.decimals),
           tokenId: input.tokenId,
@@ -687,7 +688,7 @@ builder.mutationField("updateIssue", (t) =>
 
       const updateData: Prisma.IssueUncheckedUpdateManyInput = {};
       if (input.title !== undefined) updateData.title = input.title;
-      if (input.description !== undefined) updateData.description = input.description;
+      if (input.description !== undefined) updateData.description = (await guardMessage(input.description, { issueId: current.id })).content;
       if (input.category !== undefined) updateData.category = input.category;
       if (input.bountyAmount !== undefined)
         updateData.bountyAmount = formatTokenAmount(bountyRaw, token.decimals);

@@ -9,6 +9,7 @@ import { gqlError, parseOrThrow } from "../../errors";
 import { SubmissionRef, SUBMISSION_INCLUDE } from "./submission.module";
 import { PreparedCallRef } from "../escrow/release.module";
 import { createPreparedCall, escrowTarget } from "../../../lib/escrow/prepare";
+import { guardMessage } from "../../../ai/guard/service";
 
 const draftSchema = z.object({
   issueId: z.string().min(1),
@@ -81,12 +82,13 @@ builder.mutationField("createSubmissionDraft", (t) => t.field({
         throw gqlError("Tệp giao hàng không hợp lệ", "INVALID_ATTACHMENT");
       const id = existing && !prepared ? existing.id : randomUUID();
       const byId = new Map(attachments.map((file) => [file.id, file]));
+      const description = input.description ? (await guardMessage(input.description, { issueId: issue.id })).content : "";
       const manifest = { issueId: issue.id, submissionId: id,
-        descriptionSha256: createHash("sha256").update(input.description, "utf8").digest("hex"),
+        descriptionSha256: createHash("sha256").update(description, "utf8").digest("hex"),
         prUrl: input.pullRequestUrl, commitSha: input.commitSha,
         attachments: input.attachmentIds.map((fileId) => { const file = byId.get(fileId)!; return { key: file.fileUrl, sha256: file.sha256!, mime: file.fileMime, size: file.fileSize }; }),
       };
-      const data = { description: input.description || null, pullRequestUrl: input.pullRequestUrl || null, commitSha: input.commitSha || null,
+      const data = { description: description || null, pullRequestUrl: input.pullRequestUrl || null, commitSha: input.commitSha || null,
         manifest, deliveryHash: computeDeliveryHash(manifest), status: SubmissionStatus.DRAFT };
       const include = SUBMISSION_INCLUDE;
       if (existing && !prepared) return tx.submission.update({ where: { id }, data, include });

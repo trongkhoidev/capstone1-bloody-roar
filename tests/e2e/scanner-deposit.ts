@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { assertTestDatabase } from "@bloody-roar/database/test-guard";
 import { decodeFunctionResult, encodeFunctionData } from "@bloody-roar/shared";
 import { fundingIntentTypedData, keccakUtf8, type Hex } from "@bloody-roar/shared/escrow";
@@ -76,7 +78,8 @@ let createdToken = false;
 let ownsIndexerFixture = false;
 const createdUsers: string[] = [];
 const fixtureIntentIds: string[] = [];
-async function user(walletAddress: Hex, role: "CLIENT" | "DEVELOPER") {
+const fixturePaths: string[] = [];
+async function user(walletAddress: Hex, role: "CLIENT" | "DEVELOPER" | "ADMIN") {
   const address = walletAddress.toLowerCase();
   const found = await prisma.user.findUnique({ where: { walletAddress: address } });
   if (found) return found;
@@ -388,6 +391,105 @@ try {
 
   const outsiderAccount = accounts[7]!;
   const outsiderUser = await user(outsiderAccount, "DEVELOPER");
+  const adminUser = await user(accounts[1]!, "ADMIN");
+  if (adminUser.role !== "ADMIN") throw new Error("Hardhat account #1 must be an admin in the test database");
+  const { localUploadPath } = await import("../../apps/web/src/lib/storage");
+  const evidenceKey = `${clientUser.id}/scanner-evidence-${suffix}.txt`;
+  const evidencePath = localUploadPath(evidenceKey);
+  if (!evidencePath) throw new Error("Invalid evidence fixture path");
+  await mkdir(path.dirname(evidencePath.destination), { recursive: true });
+  await writeFile(evidencePath.destination, "scanner evidence", { flag: "wx" });
+  fixturePaths.push(evidencePath.destination);
+  const attachment = await prisma.attachment.create({ data: { issueId, uploaderId: clientUser.id, purpose: "EVIDENCE", status: "ATTACHED", fileName: "evidence.txt", fileUrl: `/api/uploads?key=${encodeURIComponent(evidenceKey)}`, fileMime: "text/plain", fileSize: 16, sha256: createHash("sha256").update("scanner evidence").digest("hex") } });
+  const disputeGql = async (actor: typeof clientUser, source: string, variables: Record<string, unknown>) => {
+    const result = await execute(source, { user: actor, db: prisma }, variables);
+    if (result.errors?.length || !result.data) throw new Error(result.errors?.[0]?.message ?? "Dispute GraphQL failed");
+    return result.data;
+  };
+  const evidenceMutation = `mutation($issue: ID!, $statement: String!, $files: [ID!]) { createEvidenceManifest(issueId: $issue, statement: $statement, attachmentIds: $files) { id manifestHash } }`;
+  const callMutation = (name: string) => `mutation($issue: ID!, $manifest: ID!) { ${name}(issueId: $issue, manifestId: $manifest) { intentId contractAddress data } }`;
+  const actionMutation = (name: string) => `mutation($issue: ID!) { ${name}(issueId: $issue) { intentId contractAddress data } }`;
+  const sendPrepared = async (actor: typeof clientUser, wallet: Hex, step: { intentId: string; contractAddress: Hex; data: Hex }) => {
+    const txHash = await send(wallet, step.contractAddress, step.data);
+    await disputeGql(actor, `mutation($id: ID!, $hash: String!) { recordTransactionSubmitted(intentId: $id, txHash: $hash) { status } }`, { id: step.intentId, hash: txHash });
+    while (await scanOnce({ db: prisma, rpc, config })) { /* scan dispute transaction */ }
+  };
+  const advance = async (seconds: number) => { await rpc.call("evm_increaseTime", [seconds]); await rpc.call("evm_mine", []); };
+  const beginDispute = async (label: string) => {
+    const created = await disputeGql(clientUser, evidenceMutation, { issue: issueId, statement: `Client evidence statement ${label}`, files: [attachment.id] });
+    const evidence = created.createEvidenceManifest as { id: string; manifestHash: string };
+    const prepared = await disputeGql(clientUser, callMutation("prepareRaiseDispute"), { issue: issueId, manifest: evidence.id });
+    await sendPrepared(clientUser, client, prepared.prepareRaiseDispute as { intentId: string; contractAddress: Hex; data: Hex });
+    assert.equal((await prisma.dispute.findUniqueOrThrow({ where: { issueId } })).evidenceManifestHash, evidence.manifestHash);
+    return evidence;
+  };
+  const draftRuling = async (kind: "INITIAL" | "FINAL", bps: number) => {
+    const result = await disputeGql(adminUser, `mutation($issue: ID!, $kind: RulingDraftKind!, $bps: Int!) { draftRuling(issueId: $issue, kind: $kind, clientBps: $bps, rationale: "Evidence supports this decision.") { decisionHash safeTransactionJson } }`, { issue: issueId, kind, bps });
+    const draft = result.draftRuling as { decisionHash: string; safeTransactionJson: string };
+    const safe = JSON.parse(draft.safeTransactionJson) as { transactions: Array<{ to: Hex; data: Hex }> };
+    const tx = safe.transactions[0]!;
+    assert.equal(tx.data, encodeEscrowCall(kind === "INITIAL" ? "postInitialRuling" : "postFinalRuling", { escrowId: escrowKey, clientBps: String(bps), decisionHash: draft.decisionHash }));
+    await send(accounts[5]!, tx.to, tx.data);
+    while (await scanOnce({ db: prisma, rpc, config })) { /* scan arbiter ruling */ }
+  };
+  const finishDispute = async (name: "prepareFinalizeRuling" | "prepareFinalizeArbiterTimeoutSplit") => {
+    const result = await disputeGql(outsiderUser, actionMutation(name), { issue: issueId });
+    await sendPrepared(outsiderUser, outsiderAccount, result[name] as { intentId: string; contractAddress: Hex; data: Hex });
+    assert.equal((await prisma.dispute.findUniqueOrThrow({ where: { issueId } })).status, "RESOLVED");
+    assert.equal(await prisma.notification.count({ where: { type: "DISPUTE_RESOLVED", data: { path: ["issueId"], equals: issueId } } }), 2);
+    assert.equal(await prisma.notification.count({ where: { type: "ESCROW_RESOLVED", data: { path: ["issueId"], equals: issueId } } }), 0);
+  };
+  const rollbackDispute = async (snapshotId: string) => {
+    assert.equal(await rpc.call<boolean>("evm_revert", [snapshotId]), true);
+    await mineToCheckpoint();
+    assert.ok(await handleReorg({ db: prisma, rpc, config }));
+    assert.equal(await prisma.dispute.findUnique({ where: { issueId } }), null);
+    assert.equal((await prisma.issue.findUniqueOrThrow({ where: { id: issueId } })).status, "IN_PROGRESS");
+    while (await scanOnce({ db: prisma, rpc, config })) { /* catch up after dispute reorg */ }
+  };
+  const e15Snapshot = await rpc.call<string>("evm_snapshot", []);
+  await beginDispute("E15");
+  assert.ok(await prisma.notification.findFirst({ where: { userId: adminUser.id, type: "DISPUTE_RAISED", data: { path: ["issueId"], equals: issueId } } }));
+  const counter = (await disputeGql(developerUser, evidenceMutation, { issue: issueId, statement: "Developer counter evidence statement", files: [] })).createEvidenceManifest as { id: string };
+  const counterStep = await disputeGql(developerUser, callMutation("prepareSubmitCounterpartyEvidence"), { issue: issueId, manifest: counter.id });
+  await sendPrepared(developerUser, developer, counterStep.prepareSubmitCounterpartyEvidence as { intentId: string; contractAddress: Hex; data: Hex });
+  assert.ok(await prisma.notification.findFirst({ where: { userId: clientUser.id, type: "EVIDENCE_SUBMITTED", data: { path: ["issueId"], equals: issueId } } }));
+  await advance(72 * 3600); await draftRuling("INITIAL", 5000); await advance(7 * 86400);
+  assert.ok((await execute(actionMutation("prepareChallengeRuling"), { user: clientUser, db: prisma }, { issue: issueId })).errors?.length);
+  await finishDispute("prepareFinalizeRuling");
+  assert.equal(await claimable(client), "50000000"); assert.equal(await claimable(developer), "48750000"); assert.equal(await claimable(accounts[6]!), "1250000");
+  await rollbackDispute(e15Snapshot);
+  console.log("E15: evidence, Safe initial ruling, finalization and dispute reorg verified");
+
+  const e16Snapshot = await rpc.call<string>("evm_snapshot", []);
+  await beginDispute("E16"); await advance(72 * 3600); await draftRuling("INITIAL", 3000);
+  const challenge = await disputeGql(clientUser, actionMutation("prepareChallengeRuling"), { issue: issueId });
+  await sendPrepared(clientUser, client, challenge.prepareChallengeRuling as { intentId: string; contractAddress: Hex; data: Hex });
+  assert.equal((await prisma.dispute.findUniqueOrThrow({ where: { issueId } })).status, "CHALLENGED");
+  assert.ok(await prisma.notification.findFirst({ where: { type: "RULING_CHALLENGED", userId: developerUser.id, data: { path: ["issueId"], equals: issueId } } }));
+  const challengedTimeoutSnapshot = await rpc.call<string>("evm_snapshot", []);
+  const earlyChallengeTimeout = await execute(actionMutation("prepareFinalizeArbiterTimeoutSplit"), { user: outsiderUser, db: prisma }, { issue: issueId });
+  assert.equal(earlyChallengeTimeout.errors?.[0]?.extensions?.code, "DEADLINE_NOT_REACHED");
+  await advance(30 * 86400); await finishDispute("prepareFinalizeArbiterTimeoutSplit");
+  assert.equal((await prisma.dispute.findUniqueOrThrow({ where: { issueId } })).finalClientBps, 5000);
+  assert.equal(await rpc.call<boolean>("evm_revert", [challengedTimeoutSnapshot]), true);
+  await mineToCheckpoint(); assert.ok(await handleReorg({ db: prisma, rpc, config }));
+  assert.equal((await prisma.dispute.findUniqueOrThrow({ where: { issueId } })).status, "CHALLENGED");
+  while (await scanOnce({ db: prisma, rpc, config })) { /* catch up after challenged timeout reorg */ }
+  await draftRuling("FINAL", 7000); await advance(86400); await finishDispute("prepareFinalizeRuling");
+  assert.equal(await claimable(client), "70000000"); assert.equal(await claimable(developer), "29250000"); assert.equal(await claimable(accounts[6]!), "750000");
+  await rollbackDispute(e16Snapshot);
+  console.log("E16: challenge and Safe final ruling verified");
+
+  const e17Snapshot = await rpc.call<string>("evm_snapshot", []);
+  await beginDispute("E17");
+  const earlyTimeout = await execute(actionMutation("prepareFinalizeArbiterTimeoutSplit"), { user: outsiderUser, db: prisma }, { issue: issueId });
+  assert.equal(earlyTimeout.errors?.[0]?.extensions?.code, "DEADLINE_NOT_REACHED");
+  await advance(30 * 86400); await finishDispute("prepareFinalizeArbiterTimeoutSplit");
+  assert.equal(await claimable(client), "50000000"); assert.equal((await prisma.dispute.findUniqueOrThrow({ where: { issueId } })).finalClientBps, 5000);
+  await rollbackDispute(e17Snapshot);
+  console.log("E17: permissionless arbiter timeout verified");
+
   const secondIssue = await prisma.issue.create({ data: { title: "Missed delivery E12", description: "Permissionless refund after deadline.", category: "BUG_FIX", status: "AWAITING_FUNDING", bountyAmount: "100", tokenId, clientId: clientUser.id, requiredSkills: [] } });
   issue2Id = secondIssue.id;
   const secondApplication = await prisma.application.create({ data: { issueId: issue2Id, developerId: developerUser.id, status: "PENDING" } });
@@ -454,6 +556,13 @@ try {
 
 } finally {
   if (issueId) {
+    const { localUploadPath } = await import("../../apps/web/src/lib/storage");
+    for (const item of await prisma.evidenceManifest.findMany({ where: { issueId }, select: { storageKey: true } })) { const file = localUploadPath(item.storageKey); if (file) await unlink(file.destination).catch(() => {}); }
+    await prisma.adminLog.deleteMany({ where: { targetId: issueId } });
+    await prisma.rulingDraft.deleteMany({ where: { issueId } });
+    await prisma.rulingRecord.deleteMany({ where: { escrowIdHash } });
+    await prisma.evidenceManifest.deleteMany({ where: { issueId } });
+    await prisma.dispute.deleteMany({ where: { issueId } });
     await prisma.notification.deleteMany({ where: { data: { path: ["issueId"], equals: issueId } } });
     await prisma.transactionIntent.deleteMany({ where: { issueId } });
     await prisma.settlementProposal.deleteMany({ where: { escrowIdHash } });
@@ -479,6 +588,7 @@ try {
     await prisma.chainEvent.deleteMany({ where: { chainId: config.chainId, contractAddress: config.escrowAddress } });
     await prisma.projectionCheckpoint.deleteMany({ where: { chainId: config.chainId, contractAddress: config.escrowAddress } });
   }
+  for (const file of fixturePaths) await unlink(file).catch(() => {});
   if (createdUsers.length) await prisma.user.deleteMany({ where: { id: { in: createdUsers } } });
   await prisma.$disconnect();
 }

@@ -1,4 +1,4 @@
-ĐANG DỞ: phase D gate. Bước tiếp theo: kiểm thử E15–E17 qua scanner/harness và chạy gate; N-6 thực hiện cùng P1-30a theo kế hoạch.
+ĐANG DỞ: N-8 / G1. Bước tiếp theo: xây harness local theo N-8, N-9, N-12, N-13; N-6 thực hiện cùng P1-30a.
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -37,7 +37,7 @@
 | P1-13 | xong | `07397ca`; test theo LOCAL_TEST_MATRIX.md |
 | P1-14 | xong | `1fce246`; test theo LOCAL_TEST_MATRIX.md |
 | P1-15 | xong | `9c0da1e`; test theo LOCAL_TEST_MATRIX.md |
-| P1-16 | dở | API và worker test pass; E15–E17 chờ harness |
+| P1-16 | xong | API/worker test và E15–E17 scanner Hardhat pass; upload hai bước chờ P1-30a |
 | P1-17 | dở | BUG-2 không còn; AI-11 và frontend chờ |
 | P1-18 | xong | Evidence admin query, download URL và audit đã test |
 | P1-19 | chưa làm | Chưa triển khai |
@@ -69,6 +69,10 @@
 ## Bị chặn
 
 - Z-6: `bun run build` lỗi `RangeError: Division by zero` trong `@vercel/nft`. Đã thử build trong worktree, thêm outputFileTracingRoot, rồi loại `.uploads` và `tests` khỏi tracing; cả ba vẫn lỗi. Typecheck và lint pass. Theo FINISH_PLAN, không chặn gate và tiếp tục phase khác.
+
+## Gate phase D
+
+- `check-env` pass; scanner Hardhat pass E15–E17, cả timeout sau challenge và reorg; attachment được tạo fixture trực tiếp, upload hai bước chờ P1-30a. Gate trên bloody_codex_test: typecheck, lint (4 cảnh báo cũ), web 499/499, worker 70/70, database 3/3, contracts 35/35 pass. `test:e2e:local` chờ G1; N-6 hoãn sang P1-30a theo FINISH_PLAN.
 
 ## AI-11 — phân tích tham khảo
 

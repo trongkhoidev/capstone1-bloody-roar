@@ -1,4 +1,4 @@
-ĐANG DỞ: P1-16d. Bước tiếp theo: viết test draftRuling và Safe calldata, rồi triển khai theo thời gian chain.
+ĐANG DỞ: P1-16e. Bước tiếp theo: test và triển khai challenge, finalize, timeout cùng availability theo mốc chain.
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -68,6 +68,10 @@
 ## Bị chặn
 
 - Z-6: `bun run build` lỗi `RangeError: Division by zero` trong `@vercel/nft`. Đã thử build trong worktree, thêm outputFileTracingRoot, rồi loại `.uploads` và `tests` khỏi tracing; cả ba vẫn lỗi. Typecheck và lint pass. Theo FINISH_PLAN, không chặn gate và tiếp tục phase khác.
+
+## P1-16d — bản nháp phán quyết
+
+- Admin tạo draft idempotent trong đúng phase và thời gian chain, ghi AdminLog, xuất Safe transaction JSON với calldata initial/final. DB test 2/2, typecheck và lint pass; không đổi trạng thái on-chain.
 
 ## P1-16a–c — evidence
 

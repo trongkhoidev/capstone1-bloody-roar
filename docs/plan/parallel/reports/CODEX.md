@@ -70,6 +70,10 @@
 
 - Z-6: `bun run build` lỗi `RangeError: Division by zero` trong `@vercel/nft`. Đã thử build trong worktree, thêm outputFileTracingRoot, rồi loại `.uploads` và `tests` khỏi tracing; cả ba vẫn lỗi. Typecheck và lint pass. Theo FINISH_PLAN, không chặn gate và tiếp tục phase khác.
 
+## N-14 — kiểm tra môi trường bổ sung
+
+- Chặn cả GROQ/OPENAI, credential S3 và alert webhook; AI_BASE_URL chỉ được trỏ loopback 4019. Test guard 17/17, typecheck và lint pass.
+
 ## Gate phase D
 
 - `check-env` pass; scanner Hardhat pass E15–E17, cả timeout sau challenge và reorg; attachment được tạo fixture trực tiếp, upload hai bước chờ P1-30a. Gate trên bloody_codex_test: typecheck, lint (4 cảnh báo cũ), web 499/499, worker 70/70, database 3/3, contracts 35/35 pass. `test:e2e:local` chờ G1; N-6 hoãn sang P1-30a theo FINISH_PLAN.

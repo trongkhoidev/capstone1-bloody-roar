@@ -163,3 +163,7 @@ Dùng action `download_evidence` cho lượt admin tải file, phân biệt vớ
 ## BỔ SUNG AI-11 — mốc bắt đầu phân tích
 
 Thêm `Dispute.aiStartedAt` để timeout và chống lượt AI cũ ghi đè vẫn chính xác khi worker cập nhật dispute.
+
+## BỔ SUNG N-14 — chặn mọi provider thật trong E2E
+
+`check-env` chặn cả khóa GROQ/OPENAI, credential S3 và webhook; AI mock chỉ dùng loopback port 4019 để không fallback sang dịch vụ thật.

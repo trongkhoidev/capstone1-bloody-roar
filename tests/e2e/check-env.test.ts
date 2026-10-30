@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 const safeEnv = {
   ...process.env,
   AWS_S3_BUCKET: "",
+  AWS_ACCESS_KEY_ID: "", AWS_SECRET_ACCESS_KEY: "", GROQ_API_KEY: "", OPENAI_API_KEY: "", ALERT_WEBHOOK_URL: "",
   AI_API_KEY: "",
   GOOGLE_GENERATIVE_AI_API_KEY: "",
   AI_BASE_URL: "",
@@ -24,7 +25,7 @@ describe("local environment guard", () => {
     }
   });
 
-  for (const name of ["AWS_S3_BUCKET", "AI_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY"]) {
+  for (const name of ["AWS_S3_BUCKET", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AI_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY", "GROQ_API_KEY", "OPENAI_API_KEY", "ALERT_WEBHOOK_URL"]) {
     test(`rejects ${name}`, () => {
       const result = check({ [name]: "configured" });
       expect(result.exitCode).not.toBe(0);
@@ -32,7 +33,7 @@ describe("local environment guard", () => {
     });
   }
 
-  for (const AI_BASE_URL of ["https://localhost:4019", "http://localhost.example.com", "invalid"]) {
+  for (const AI_BASE_URL of ["https://localhost:4019", "http://localhost.example.com", "http://localhost:4000", "invalid"]) {
     test(`rejects AI_BASE_URL ${AI_BASE_URL}`, () => {
       const result = check({ AI_BASE_URL });
       expect(result.exitCode).not.toBe(0);

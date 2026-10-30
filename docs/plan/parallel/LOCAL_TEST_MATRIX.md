@@ -3,6 +3,7 @@
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
 | E15–E17 / gate D | tests/e2e/scanner-deposit.ts | check-env; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts; typecheck; lint; web/worker/database/contracts test | Pass scanner và 499/70/3/35; upload hai bước chờ P1-30a; commit `test(phase-d): exercise dispute chain flows` |
+| N-14 / provider guard | tests/e2e/check-env.test.ts | check-env; bun test tests/e2e/check-env.test.ts; bun run typecheck; bun run lint | Pass 17/17; commit `fix(n-14): block real providers during e2e` |
 | AI-11 / mock | tests/e2e/mocks/ai-server.test.ts | check-env; bun test tests/e2e/mocks/ai-server.test.ts; bun run typecheck; bun run lint | Pass 2/2; commit `fix(ai-11): update local dispute mock` |
 | AI-11 | apps/web/src/test/dispute-analysis.test.ts; apps/web/src/test/dispute-analysis.db.test.ts | migrate deploy test/local; bun run --cwd apps/web test -- hai file trên; bun run typecheck; bun run lint | Pass 4/4; commit `fix(ai-11): recover and audit dispute analysis` |
 | P1-28 | apps/web/src/test/graphql-schema.test.ts | bun run --cwd apps/web test -- src/test/graphql-schema.test.ts; bun run typecheck; bun run lint | Pass; commit `fix(p1-28): expose dispute bps and raw amounts` |

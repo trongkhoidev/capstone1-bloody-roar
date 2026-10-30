@@ -12,6 +12,7 @@ const log = createLogger("graphql-context");
 export interface GraphQLContext {
   db: typeof prisma;
   user: User | null; // null = unauthenticated
+  sessionToken?: string | null; // the request's JWT, to mark the current session
 }
 
 /**
@@ -35,6 +36,7 @@ export async function createContext(
   return {
     db: prisma,
     user,
+    sessionToken: token,
   };
 }
 

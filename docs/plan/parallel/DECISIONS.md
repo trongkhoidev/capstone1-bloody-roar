@@ -275,3 +275,7 @@ GitHub không gửi header thời gian, nên webhook không kiểm lệch đồn
 ## BỔ SUNG P1-32 — guard nằm ở subpath export
 
 `assertChainConfig` đọc file manifest bằng `node:fs`, nên không đưa vào barrel `packages/shared/src/index.ts` (barrel dùng cho cả trình duyệt). Thay vào đó thêm export `@bloody-roar/shared/chain-guard`. Hàm nhận thêm đối số thứ hai là reader RPC (mặc định là viem client) để test không cần node. Trường địa chỉ escrow trong manifest là `address` (đúng như `run-local.ts` đọc); `seed.ts` chỉ đọc `token` và `chainId`.
+
+## BỔ SUNG P1-35 — không xoay refresh token
+
+Đặc tả nói không làm refresh token xoay vòng; phiên dùng JWT và bản ghi `Session` như hiện tại. `current` trong `mySessions` so sánh SHA-256 của JWT trong request với `refreshHash`. Context GraphQL nay mang `sessionToken` (tùy chọn); các test dùng `execute` không truyền thì `current` là false.

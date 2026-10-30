@@ -17,7 +17,7 @@ export async function loadSchema() {
 // nên Yoga không nhận ra GraphQLError từ gqlError và che lỗi thành INTERNAL_SERVER_ERROR.
 export async function execute(
   query: string,
-  contextValue: { user: unknown; db: unknown },
+  contextValue: { user: unknown; db: unknown; sessionToken?: string | null },
   variables?: Record<string, unknown>,
 ): Promise<GraphQLResult> {
   if (!schema) throw new Error("gọi loadSchema() trong beforeAll trước");

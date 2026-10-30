@@ -84,3 +84,7 @@ User thường mở `/admin` sẽ bị chuyển về `/dashboard`. API vẫn ki�
 6. Marketplace phải hiện bài thật vừa đăng. Nếu thấy dữ liệu mẫu nghĩa là API đang lỗi: xem Deploy Logs trên Railway.
 
 **Giới hạn đã biết của bản này:** chưa có escrow on-chain (chọn developer xong là chuyển "In progress"); dispute vẫn theo luồng admin cũ. Xem `docs/plan/BACKEND_EXECUTION_PLAN.md` cho phần còn lại.
+
+## Dọn file tải lên không gắn
+
+Worker xóa tệp PENDING quá 24 giờ. Với S3, cũng đặt lifecycle rule xóa object không gắn sau 1 ngày, vì job chỉ dọn bản ghi và tệp cục bộ (`UPLOADS_DIR`).

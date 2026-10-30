@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { builder } from "../../builder";
 import { requireAuth } from "../../context";
 import { gqlError, parseOrThrow } from "../../errors";
@@ -136,3 +137,67 @@ builder.mutationField("updateProfile", (t) =>
     },
   })
 );
+
+// Sessions (P1-35). The refresh hash is the SHA-256 of the JWT that the request carried; it is never exposed.
+const sessionHash = (token: string) => createHash("sha256").update(token).digest("hex");
+
+type SessionView = { id: string; userAgent: string | null; ip: string | null; createdAt: Date; expiresAt: Date; current: boolean };
+const SessionRef = builder.objectRef<SessionView>("Session").implement({
+  fields: (t) => ({
+    id: t.id({ resolve: (session) => session.id }),
+    userAgent: t.string({ nullable: true, resolve: (session) => session.userAgent }),
+    ip: t.string({ nullable: true, resolve: (session) => session.ip }),
+    createdAt: t.string({ resolve: (session) => session.createdAt.toISOString() }),
+    expiresAt: t.string({ resolve: (session) => session.expiresAt.toISOString() }),
+    current: t.boolean({ resolve: (session) => session.current }),
+  }),
+});
+
+builder.queryField("mySessions", (t) =>
+  t.field({
+    type: [SessionRef],
+    resolve: async (_root, _args, ctx) => {
+      const user = requireAuth(ctx);
+      const currentHash = ctx.sessionToken ? sessionHash(ctx.sessionToken) : null;
+      const rows = await ctx.db.session.findMany({
+        where: { userId: user.id, revokedAt: null, expiresAt: { gt: new Date() } },
+        orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+      });
+      return rows.map((row) => ({
+        id: row.id,
+        userAgent: row.userAgent,
+        ip: row.ip,
+        createdAt: row.createdAt,
+        expiresAt: row.expiresAt,
+        current: row.refreshHash === currentHash,
+      }));
+    },
+  }),
+);
+
+builder.mutationFields((t) => ({
+  revokeSession: t.boolean({
+    args: { id: t.arg.id({ required: true }) },
+    resolve: async (_root, args, ctx) => {
+      const user = requireAuth(ctx);
+      // Only the caller's own sessions can be revoked; anything else looks like a missing session.
+      const result = await ctx.db.session.updateMany({
+        where: { id: String(args.id), userId: user.id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      if (result.count === 0) throw gqlError("Phiên không tồn tại", "NOT_FOUND");
+      return true;
+    },
+  }),
+  revokeOtherSessions: t.int({
+    resolve: async (_root, _args, ctx) => {
+      const user = requireAuth(ctx);
+      const currentHash = ctx.sessionToken ? sessionHash(ctx.sessionToken) : null;
+      const result = await ctx.db.session.updateMany({
+        where: { userId: user.id, revokedAt: null, ...(currentHash ? { refreshHash: { not: currentHash } } : {}) },
+        data: { revokedAt: new Date() },
+      });
+      return result.count;
+    },
+  }),
+}));

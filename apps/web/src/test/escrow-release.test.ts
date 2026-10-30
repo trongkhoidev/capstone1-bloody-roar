@@ -234,7 +234,7 @@ describe("prepareClaim and myClaimable (BE-48)", () => {
 
     expect(db.claimableBalance.findMany).toHaveBeenCalledWith({
       where: expect.objectContaining({
-        contractAddress: CONTRACT,
+        contractAddress: { equals: CONTRACT, mode: "insensitive" },
         address: { equals: DEVELOPER_WALLET, mode: "insensitive" },
         amountRaw: { gt: 0 },
       }),

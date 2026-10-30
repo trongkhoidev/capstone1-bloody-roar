@@ -8,6 +8,7 @@ import { applyFunded, type EffectMeta } from "./escrow";
 import { applyWorkSubmitted } from "./work";
 import { applyResolved } from "./resolved";
 import { applySettlement } from "./settlement";
+import { applyClaimed } from "./claimed";
 
 export async function applyFoldEffects(
   tx: Prisma.TransactionClient,
@@ -29,7 +30,9 @@ export async function applyFoldEffects(
       case "SETTLEMENT_REVOKED":
         await applySettlement(tx, effect, meta);
         break;
-      // TODO(A4): CLAIMED (BE-48)
+      case "CLAIMED":
+        await applyClaimed(tx, effect, meta);
+        break;
       default:
         break;
     }

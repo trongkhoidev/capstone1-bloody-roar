@@ -145,7 +145,7 @@ builder.mutationField("prepareClaim", (t) =>
       const balance = await ctx.db.claimableBalance.findFirst({
         where: {
           chainId: target.chainId,
-          contractAddress: target.contractAddress,
+          contractAddress: { equals: target.contractAddress, mode: "insensitive" },
           address: { equals: recipient, mode: "insensitive" },
         },
       });
@@ -166,7 +166,7 @@ builder.queryField("myClaimable", (t) =>
       return ctx.db.claimableBalance.findMany({
         where: {
           chainId: target.chainId,
-          contractAddress: target.contractAddress,
+          contractAddress: { equals: target.contractAddress, mode: "insensitive" },
           address: { equals: user.walletAddress, mode: "insensitive" },
           amountRaw: { gt: 0 },
         },

@@ -32,6 +32,7 @@ let issueId = "", tokenId = "";
 let createdToken = false;
 let ownsIndexerFixture = false;
 const createdUsers: string[] = [];
+const fixtureIntentIds: string[] = [];
 async function user(walletAddress: Hex, role: "CLIENT" | "DEVELOPER") {
   const address = walletAddress.toLowerCase();
   const found = await prisma.user.findUnique({ where: { walletAddress: address } });
@@ -261,6 +262,33 @@ try {
   assert.equal(await claimable(accounts[6]!), "2500000");
   assert.equal(await prisma.notification.count({ where: { type: "ESCROW_RESOLVED", data: { path: ["issueId"], equals: issueId } } }), 2);
   assert.ok(await prisma.notification.findFirst({ where: { type: "FUNDS_CLAIMABLE", userId: feeUser.id, data: { path: ["issueId"], equals: issueId } } }));
+  const devBalanceData = encodeFunctionData({ abi: balanceAbi, functionName: "balanceOf", args: [developer] });
+  const beforeClaim = decodeFunctionResult({ abi: balanceAbi, functionName: "balanceOf", data: await rpc.call<Hex>("eth_call", [{ to: manifest.token, data: devBalanceData }, "latest"]) });
+  const forbiddenClaim = await execute(`mutation($recipient: String!) { prepareClaim(recipient: $recipient) { intentId } }`, { user: developerUser, db: prisma }, { recipient: client });
+  assert.equal(forbiddenClaim.errors?.[0]?.extensions?.code, "FORBIDDEN");
+  const claim = (await devGraphql(`mutation($recipient: String!) { prepareClaim(recipient: $recipient) { intentId contractAddress data } }`, { recipient: developer })).prepareClaim as { intentId: string; contractAddress: Hex; data: Hex };
+  fixtureIntentIds.push(claim.intentId);
+  const claimSnapshot = await rpc.call<string>("evm_snapshot", []);
+  const claimHash = await send(developer, claim.contractAddress, claim.data);
+  await devGraphql(`mutation($id: ID!, $hash: String!) { recordTransactionSubmitted(intentId: $id, txHash: $hash) { status } }`, { id: claim.intentId, hash: claimHash });
+  while (await scanOnce({ db: prisma, rpc, config })) { /* scan claim */ }
+  assert.equal(await claimable(developer), "0");
+  assert.equal((await prisma.transactionIntent.findUniqueOrThrow({ where: { id: claim.intentId } })).status, "CONFIRMED");
+  const afterClaim = decodeFunctionResult({ abi: balanceAbi, functionName: "balanceOf", data: await rpc.call<Hex>("eth_call", [{ to: manifest.token, data: devBalanceData }, "latest"]) });
+  assert.equal(afterClaim - beforeClaim, 97500000n);
+  const claimEvent = await prisma.chainEvent.findFirstOrThrow({ where: { chainId: config.chainId, contractAddress: config.escrowAddress, txHash: claimHash, eventName: "Claimed" } });
+  assert.ok(await prisma.notification.findFirst({ where: { userId: developerUser.id, type: "PAYMENT_RECEIVED", dedupeKey: { startsWith: `${claimEvent.id}:` } } }));
+  const emptyClaim = await execute(`mutation($recipient: String!) { prepareClaim(recipient: $recipient) { intentId } }`, { user: developerUser, db: prisma }, { recipient: developer });
+  assert.equal(emptyClaim.errors?.[0]?.extensions?.code, "NOTHING_TO_CLAIM");
+  assert.equal(await rpc.call<boolean>("evm_revert", [claimSnapshot]), true);
+  await rpc.call("evm_mine", []);
+  assert.ok(await handleReorg({ db: prisma, rpc, config }));
+  assert.equal(await claimable(developer), "97500000");
+  assert.equal((await prisma.transactionIntent.findUniqueOrThrow({ where: { id: claim.intentId } })).status, "SUBMITTED");
+  assert.equal((await prisma.chainEvent.findUniqueOrThrow({ where: { id: claimEvent.id } })).canonical, false);
+  assert.equal(await prisma.notification.count({ where: { dedupeKey: { startsWith: `${claimEvent.id}:` } } }), 0);
+  console.log("Real claim transferred funds, notified the recipient and was reversed by reorg");
+
   assert.equal(await rpc.call<boolean>("evm_revert", [releaseSnapshot]), true);
   await rpc.call("evm_mine", []);
   assert.ok(await handleReorg({ db: prisma, rpc, config }));
@@ -338,8 +366,11 @@ try {
     await prisma.application.deleteMany({ where: { issueId } });
     await prisma.issue.deleteMany({ where: { id: issueId } });
   }
+  if (fixtureIntentIds.length) await prisma.transactionIntent.deleteMany({ where: { id: { in: fixtureIntentIds } } });
   if (createdToken) await prisma.token.deleteMany({ where: { id: tokenId } });
   if (ownsIndexerFixture) {
+    const claimEvents = await prisma.chainEvent.findMany({ where: { chainId: config.chainId, contractAddress: config.escrowAddress, eventName: "Claimed" }, select: { id: true } });
+    for (const event of claimEvents) await prisma.notification.deleteMany({ where: { dedupeKey: { startsWith: `${event.id}:` } } });
     await prisma.reconciliationFinding.deleteMany({ where: { kind: { startsWith: `chain:${config.chainId}:${config.escrowAddress}:` } } });
     await prisma.claimableBalance.deleteMany({ where: { chainId: config.chainId, contractAddress: config.escrowAddress } });
     await prisma.chainEvent.deleteMany({ where: { chainId: config.chainId, contractAddress: config.escrowAddress } });

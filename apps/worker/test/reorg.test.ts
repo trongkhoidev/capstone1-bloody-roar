@@ -75,3 +75,18 @@ test("an unavailable RPC block does not orphan events or move the checkpoint", a
   await expect(handleReorg({ db: prisma, rpc: fakeRpc(chain), config })).rejects.toThrow("no block for 99");
   expect((await prisma.chainEvent.findFirstOrThrow({ where: { ...where, txHash: "0xmissing" } })).canonical).toBe(true);
 });
+
+test("a second reorg is detected before a rewound scanner catches up", async () => {
+  await cleanupChain(prisma, config);
+  const chain = newChain(); chain.safe = 102n;
+  for (const n of [99n, 100n, 101n, 102n]) chain.blockHash.set(n, `0xA${n}`);
+  chain.logs = [rawLog({ address, block: 101, blockHash: "0xA101", tx: "0xfirst" }), rawLog({ address, block: 102, blockHash: "0xA102", tx: "0xsecond" })];
+  await scanToHead({ db: prisma, rpc: fakeRpc(chain), config });
+  chain.blockHash.set(102n, "0xB102");
+  expect(await handleReorg({ db: prisma, rpc: fakeRpc(chain), config })).toEqual({ rewoundTo: 99n });
+  expect((await prisma.chainEvent.findFirstOrThrow({ where: { ...where, txHash: "0xsecond" } })).canonical).toBe(false);
+  expect((await prisma.chainEvent.findFirstOrThrow({ where: { ...where, txHash: "0xfirst" } })).canonical).toBe(true);
+  chain.blockHash.set(101n, "0xC101");
+  expect(await handleReorg({ db: prisma, rpc: fakeRpc(chain), config })).toEqual({ rewoundTo: 99n });
+  expect((await prisma.chainEvent.findFirstOrThrow({ where: { ...where, txHash: "0xfirst" } })).canonical).toBe(false);
+});

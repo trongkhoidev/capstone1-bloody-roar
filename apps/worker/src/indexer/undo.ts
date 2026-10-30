@@ -143,3 +143,19 @@ export async function undoSettlement(tx: Prisma.TransactionClient, eventId: stri
   for (const intent of snapshot.intents) await tx.transactionIntent.updateMany({ where: { id: intent.id, confirmedByEventId: eventId }, data: { status: intent.status, confirmedByEventId: intent.confirmedByEventId } });
   await tx.notification.deleteMany({ where: { dedupeKey: { startsWith: `${eventId}:` } } });
 }
+
+export type ClaimedUndo = {
+  address: string;
+  amount: string;
+  intents: Array<{ id: string; status: IntentStatus; confirmedByEventId: string | null }>;
+};
+export async function captureClaimedUndo(tx: Prisma.TransactionClient, chainId: number, contractAddress: string, txHash: string, recipient: string, amount: bigint): Promise<ClaimedUndo> {
+  const intents = await tx.transactionIntent.findMany({ where: { chainId, contractAddress: { equals: contractAddress, mode: "insensitive" }, method: "claim", txHash: txHash.toLowerCase() }, select: { id: true, status: true, confirmedByEventId: true } });
+  return { address: recipient.toLowerCase(), amount: amount.toString(), intents };
+}
+export async function undoClaimed(tx: Prisma.TransactionClient, eventId: string, snapshot: ClaimedUndo, chainId: number, contractAddress: string): Promise<void> {
+  const key = { chainId, contractAddress: contractAddress.toLowerCase(), address: snapshot.address };
+  await tx.claimableBalance.upsert({ where: { chainId_contractAddress_address: key }, create: { ...key, amountRaw: snapshot.amount }, update: { amountRaw: { increment: snapshot.amount } } });
+  for (const intent of snapshot.intents) await tx.transactionIntent.updateMany({ where: { id: intent.id, confirmedByEventId: eventId }, data: { status: intent.status, confirmedByEventId: intent.confirmedByEventId } });
+  await tx.notification.deleteMany({ where: { dedupeKey: { startsWith: `${eventId}:` } } });
+}

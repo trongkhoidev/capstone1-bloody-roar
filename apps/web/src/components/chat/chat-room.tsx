@@ -274,7 +274,7 @@ export function ChatRoom({
           <div className="min-w-0">
             <h2 className="truncate text-sm font-semibold">{issueTitle || "Task conversation"}</h2>
             <p className="mt-0.5 flex items-center gap-1.5 text-xs text-[hsl(var(--foreground-muted))]">
-              <span className={`h-1.5 w-1.5 rounded-full ${connection === "ready" ? "bg-emerald-500" : "bg-amber-500"}`} />
+              <span className={`h-1.5 w-1.5 rounded-full ${connection === "ready" ? "bg-[hsl(var(--success))]" : "bg-[hsl(var(--warning))]"}`} />
               {statusLabel} · private workroom
             </p>
           </div>
@@ -293,7 +293,7 @@ export function ChatRoom({
         aria-relevant="additions text"
       >
         {hasOlderMessages && <div className="text-center"><Button type="button" size="sm" variant="ghost" disabled={isLoadingHistory} onClick={() => void loadOlderMessages()}>{isLoadingHistory ? "Loading earlier messages…" : "Load earlier messages"}</Button></div>}
-        {messages.length === 0 && <div className="flex min-h-[230px] flex-col items-center justify-center text-center"><span className="flex h-10 w-10 items-center justify-center rounded-full bg-[hsl(var(--card))] text-[hsl(var(--foreground-muted))]"><CircleHelp className="h-5 w-5" /></span><p className="mt-3 text-sm font-medium">No messages yet</p><p className="mt-1 max-w-xs text-xs leading-5 text-[hsl(var(--foreground-muted))]">Use this private room to agree on scope, share progress, and deliver the work.</p></div>}
+        {messages.length === 0 && <div className="flex min-h-[230px] flex-col items-center justify-center text-center"><span className="flex h-10 w-10 items-center justify-center rounded-full bg-[hsl(var(--card))] text-[hsl(var(--foreground-muted))]"><CircleHelp className="h-5 w-5" /></span><p className="mt-3 text-sm font-medium">No messages yet</p><p className="mt-1 max-w-xs text-xs leading-5 text-[hsl(var(--foreground-muted))]">Agree on scope, share progress and hand over the work here.</p></div>}
         {messages.map((message) => {
           const own = message.senderId === user.id;
           return (
@@ -306,10 +306,10 @@ export function ChatRoom({
                   <span className="font-medium">{own ? "You" : message.senderName}</span>
                   <time dateTime={message.createdAt}>{formatMessageTime(message.createdAt)}</time>
                 </div>
-                <div className={`rounded-2xl px-3.5 py-2.5 ${own ? "rounded-br-md bg-slate-900 text-white" : "rounded-bl-md border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))]"}`}>
+                <div className={`rounded-2xl px-3.5 py-2.5 ${own ? "rounded-br-md bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]" : "rounded-bl-md border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))]"}`}>
                   <p className="whitespace-pre-wrap break-words text-sm leading-6">{message.content}</p>
-                  {message.fileUrl && <a className={`mt-2 flex items-center gap-2 rounded-lg border px-2.5 py-2 text-xs underline-offset-2 hover:underline ${own ? "border-white/20 bg-white/10 text-white" : "border-[hsl(var(--border))] text-[hsl(var(--foreground))]"}`} href={message.fileUrl} target="_blank" rel="noreferrer"><FileText className="h-4 w-4 shrink-0" /><span className="min-w-0 truncate">{message.fileName || "Open attachment"}</span></a>}
-                  {message.wasModified && <p className={`mt-2 flex items-center gap-1 text-[10px] ${own ? "text-white/75" : "text-amber-700"}`}><ShieldCheck className="h-3 w-3" />Sensitive information masked</p>}
+                  {message.fileUrl && <a className={`mt-2 flex items-center gap-2 rounded-lg border px-2.5 py-2 text-xs underline-offset-2 hover:underline ${own ? "border-current/25 bg-current/10" : "border-[hsl(var(--border))] text-[hsl(var(--foreground))]"}`} href={message.fileUrl} target="_blank" rel="noreferrer"><FileText className="h-4 w-4 shrink-0" /><span className="min-w-0 truncate">{message.fileName || "Open attachment"}</span></a>}
+                  {message.wasModified && <p className={`mt-2 flex items-center gap-1 text-[10px] ${own ? "opacity-75" : "text-[hsl(var(--warning))]"}`}><ShieldCheck className="h-3 w-3" />Sensitive details masked</p>}
                 </div>
                 {own && <p className="mt-1 flex items-center justify-end gap-1 px-1 text-[10px] text-[hsl(var(--foreground-subtle))]"><Check className="h-3 w-3" />Sent</p>}
               </div>
@@ -319,7 +319,7 @@ export function ChatRoom({
       </div>
 
       {error && <p role="status" className="border-t border-[hsl(var(--border))] px-4 py-2.5 text-xs text-[hsl(var(--destructive))]">{error}</p>}
-      {readOnly ? <p className="border-t border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] px-4 py-3 text-xs text-[hsl(var(--foreground-muted))]">This conversation is read-only after task completion or while a dispute is under review.</p> : <>
+      {readOnly ? <p className="border-t border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] px-4 py-3 text-xs text-[hsl(var(--foreground-muted))]">Read-only now. The bounty is complete, or a dispute is under review.</p> : <>
         {pendingFile && <div className="flex items-center justify-between gap-3 border-t border-[hsl(var(--border))] px-4 py-2 text-xs text-[hsl(var(--foreground-muted))]"><span className="truncate">Attached: {pendingFile.name}</span><button type="button" onClick={() => { setPendingFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }} className="rounded p-1 hover:bg-[hsl(var(--background-secondary))]" aria-label="Remove attachment"><X className="h-3.5 w-3.5" /></button></div>}
         <form onSubmit={send} className="flex items-end gap-2 border-t border-[hsl(var(--border))] bg-[hsl(var(--card))] p-3 sm:gap-3 sm:p-4">
           <input ref={fileInputRef} type="file" accept={ALLOWED_FILE_TYPES.join(",")} className="hidden" onChange={(event) => setPendingFile(event.target.files?.[0] ?? null)} aria-label="Attach file" />

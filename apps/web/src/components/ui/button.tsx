@@ -20,8 +20,8 @@ const buttonVariants = cva(
         secondary:
           "bg-[hsl(var(--secondary))] text-[hsl(var(--secondary-foreground))] hover:bg-[hsl(var(--secondary)/0.8)]",
         ghost: "hover:bg-[hsl(var(--card))] hover:text-[hsl(var(--foreground))]",
-        link: "text-[hsl(var(--primary))] underline-offset-4 hover:underline",
-        glow: "bg-[hsl(var(--primary))] text-white hover:bg-[hsl(var(--primary-hover))] shadow-[0_0_20px_rgba(220,38,38,0.45)] hover:shadow-[0_0_28px_rgba(220,38,38,0.65)]",
+        link: "text-[var(--link)] underline-offset-4 hover:underline",
+        glow: "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:bg-[hsl(var(--primary-hover))]",
       },
       size: {
         default: "h-10 px-4 py-2",

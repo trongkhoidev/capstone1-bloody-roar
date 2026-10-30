@@ -2,6 +2,7 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
+| Z-3 / ui | — | Gate phase 0 sau ba merge | Dở: merge UI; commit `merge(z-3): integrate ledger ui` |
 | Z-3 / a5 | — | Gate phase 0 sau ba merge | Dở: merge a5; commit `merge(z-3): integrate dispute chat ai` |
 | Z-3 / a1 | — | Gate phase 0 sau ba merge | Dở: merge a1; commit `merge(z-3): integrate platform` |
 | Z-2 | tests/e2e/check-env.ts; tests/e2e/scanner-deposit.ts | bun run tests/e2e/check-env.ts; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts; bun run typecheck; bun run lint | Pass với bloody_codex_test; commit `fix(z-2): run scanner with managed hardhat` |

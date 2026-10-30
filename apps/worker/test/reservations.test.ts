@@ -63,8 +63,11 @@ afterAll(async () => {
 });
 
 test("an unfunded reservation past its expiry is expired and its issue returns to OPEN", async () => {
+  // The job is global: leftover expired reservations from other fixtures are also due, so count against them.
+  const due = await prisma.fundingReservation.count({ where: { status: "AWAITING_FUNDING", expiresAt: { lte: now } } });
   const runs = await Promise.all([expireReservations({ db: prisma, log, now: () => now }), expireReservations({ db: prisma, log, now: () => now })]);
-  expect(runs.reduce((sum, count) => sum + count, 0)).toBe(1);
+  expect(runs.reduce((sum, count) => sum + count, 0)).toBe(due);
+  expect(due).toBeGreaterThanOrEqual(1);
 
   const statusOf = async (issueId: string) => (await prisma.fundingReservation.findFirstOrThrow({ where: { issueId } })).status;
   expect(await statusOf(expiredIssue.id)).toBe("EXPIRED");

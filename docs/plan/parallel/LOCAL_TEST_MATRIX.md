@@ -2,6 +2,8 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
+| N-11 | docs/LOCAL_DEV.md | các lệnh trong tài liệu, theo thứ tự | Viết xong: chạy tay theo các bước (DB, Hardhat, deploy, seed, worker, web) |
+| N-6 | apps/web/src/app/api/uploads/route.ts; apps/web/src/app/api/uploads/complete/route.ts | bun run --cwd apps/web test -- src/test/upload-two-step.test.ts; e25-files | Xong cùng P1-30a: upload hai bước, sha256 khớp |
 | E29 | tests/e2e/e29-config-guard.test.ts | bun run test:e2e:local | Pass: worker thoát khi ESCROW_ADDRESS là EOA hoặc CHAIN_ID sai |
 | E28 | tests/e2e/e28-authz.test.ts; docs/AUTHZ_MATRIX.md | bun run test:e2e:local | Pass 2/2: khách bị UNAUTHORIZED ở mọi mutation trong bảng; người ngoài nhận mã đúng bảng |
 | E27 | tests/e2e/e27-rate-limit.test.ts | bun run test:e2e:local | Pass 2/2: nonce lần 11 trả 429 kèm Retry-After; GraphQL vượt điểm trả 429 |

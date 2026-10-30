@@ -1,4 +1,4 @@
-ĐANG DỞ: C4 (N-10, N-11: docs/LOCAL_DEV.md). Bước tiếp theo: viết LOCAL_DEV.md và chạy lại các lệnh đã ghi.
+ĐANG DỞ: C5 (FE). Bước tiếp theo: FE-8 fe-operations.test.ts để liệt kê lỗi GraphQL trong frontend.
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -21,6 +21,8 @@
 | P1-22 | xong | `review.db.test.ts`, `effects-resolved.test.ts`: review, uy tín, undo |
 | P1-23 | xong | `audit-hash.test.ts`: HMAC cho hash audit AI |
 | P1-29 | xong | `notification-types.test.ts`: 22 giá trị đều có nơi tạo, không cần xóa |
+| N-11 | xong | `docs/LOCAL_DEV.md`: các lệnh đã đối chiếu với package.json và manifest |
+| N-6 | xong | cùng P1-30a (`upload-two-step.test.ts`, E25) |
 | E25–E29 | xong | `test:e2e:local`: 39 pass, 0 fail, `E2E scenarios passed` (E1–E31 bắt buộc) |
 | P1-35 | xong | `sessions.test.ts`, `cleanup.test.ts`: phiên của mình, job dọn quá hạn |
 | P1-32 | xong | `chain-guard.test.ts`: chain sai, không có code, manifest lệch; gọi khi khởi động web và worker |

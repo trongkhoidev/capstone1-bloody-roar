@@ -2,6 +2,7 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
+| D-DSP-2 | packages/database/test/ | prisma migrate dev --create-only; migrate deploy test/local; db:generate; bun run typecheck; bun run lint; database test | Pass; commit `feat(d-dsp-2): add on-chain dispute records` |
 | Gate phase 0 | web, worker, database, contracts | bun run typecheck; bun run lint; web/worker/database/contracts test | Pass 489/69/3/35; E2E local chờ G1; commit `docs(phase-0): record gate` |
 | Z-7 | apps/web/src/test/graphql-schema.test.ts | bun run typecheck; bun run lint; bun run --cwd apps/web test -- src/test/graphql-schema.test.ts | Pass; commit `chore(z-7): remove obsolete e2e scripts` |
 | Z-6 | — | bun run build (worktree, tracing root, tracing exclusions); bun run typecheck; bun run lint | Bị chặn: build Division by zero cả ba cách; commit `docs(z-6): record build tracing failure` |

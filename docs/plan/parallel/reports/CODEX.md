@@ -36,7 +36,7 @@
 | P1-13 | xong | `07397ca`; test theo LOCAL_TEST_MATRIX.md |
 | P1-14 | xong | `1fce246`; test theo LOCAL_TEST_MATRIX.md |
 | P1-15 | xong | `9c0da1e`; test theo LOCAL_TEST_MATRIX.md |
-| P1-16 | chưa làm | Chưa triển khai |
+| P1-16 | dở | Migration dispute_onchain đã deploy; API và effect còn lại |
 | P1-17 | dở | `2c0e108`: backend xong; frontend cũ còn tham chiếu |
 | P1-18 | chưa làm | Chưa triển khai |
 | P1-19 | chưa làm | Chưa triển khai |
@@ -68,6 +68,10 @@
 ## Bị chặn
 
 - Z-6: `bun run build` lỗi `RangeError: Division by zero` trong `@vercel/nft`. Đã thử build trong worktree, thêm outputFileTracingRoot, rồi loại `.uploads` và `tests` khỏi tracing; cả ba vẫn lỗi. Typecheck và lint pass. Theo FINISH_PLAN, không chặn gate và tiếp tục phase khác.
+
+## D-DSP-2 — migration dispute_onchain
+
+- Kiểm tra evidence manifests rỗng ở hai DB; tạo migration trên bloody_codex_test với shadow bloody_codex_shadow_test, xem SQL, migrate deploy test và bloody_codex_local, generate client. Typecheck, lint và database 3/3 pass. API và worker P1-16 chưa hoàn tất.
 
 ## Gate phase 0
 

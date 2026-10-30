@@ -1007,7 +1007,9 @@ model ContractConfig {
 // EvidenceManifest — evidence a party submitted for a dispute, hash-anchored on chain.
 model EvidenceManifest {
   id             String   @id @default(cuid())
-  disputeId      String
+  disputeId      String?
+  issueId        String
+  side           String
   submittedById  String
   manifest       Json
   manifestHash   String   @unique
@@ -1016,7 +1018,22 @@ model EvidenceManifest {
   createdAt      DateTime @default(now())
 
   @@index([disputeId])
+  @@index([issueId])
   @@map("evidence_manifests")
+}
+
+model RulingDraft {
+  id           String   @id @default(cuid())
+  issueId      String
+  kind         String
+  clientBps    Int
+  rationale    String
+  decisionHash String   @unique
+  draftedById  String
+  createdAt    DateTime @default(now())
+
+  @@index([issueId])
+  @@map("ruling_drafts")
 }
 
 // ReconciliationFinding — chain vs projection mismatch; closed when they match again.

@@ -23,7 +23,7 @@ jobs:
         image: postgres:16-alpine
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: ci-${{ github.run_id }}
           POSTGRES_DB: bloody_roar_ci
         ports:
           - 5432:5432
@@ -33,8 +33,8 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/bloody_roar_ci?schema=public
-      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/bloody_roar_ci?schema=public
+      DATABASE_URL: postgresql://postgres:ci-${{ github.run_id }}@localhost:5432/bloody_roar_ci?schema=public
+      DIRECT_URL: postgresql://postgres:ci-${{ github.run_id }}@localhost:5432/bloody_roar_ci?schema=public
       NEXT_PUBLIC_APP_URL: http://localhost:4000
       E2E_BASE_URL: http://localhost:4000
       AI_HASH_KEY: ci-only-not-a-secret
@@ -60,9 +60,13 @@ jobs:
         run: |
           bun run --cwd packages/database db:migrate:prod
           bun run db:seed
+      - name: Create a throwaway auth key for this run
+        run: |
+          KEY=$(openssl rand -hex 32)
+          echo "::add-mask::$KEY"
+          echo "AUTH_PRIVATE_KEY=0x$KEY" >> "$GITHUB_ENV"
       - name: Start server
         env:
-          AUTH_PRIVATE_KEY: ${{ secrets.AUTH_PRIVATE_KEY }}
           THIRDWEB_SECRET_KEY: ${{ secrets.THIRDWEB_SECRET_KEY }}
           THIRDWEB_CLIENT_ID: ${{ secrets.THIRDWEB_CLIENT_ID }}
         run: |
@@ -74,7 +78,8 @@ jobs:
           TEST_DEV1_KEY: ${{ secrets.TEST_DEV1_KEY }}
           TEST_DEV2_KEY: ${{ secrets.TEST_DEV2_KEY }}
         run: |
-          for script in e2e-login e2e-issue e2e-chat e2e-application e2e-workflow; do
+          # e2e-workflow is not run here: its upload step needs S3 storage, which CI does not have.
+          for script in e2e-login e2e-issue e2e-chat e2e-application; do
             bun run --cwd apps/web "scripts/$script.ts"
           done
       - name: Server log
@@ -89,7 +94,7 @@ jobs:
         image: postgres:16-alpine
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: ci-${{ github.run_id }}
           POSTGRES_DB: postgres
         ports:
           - 5432:5432
@@ -107,9 +112,9 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Schema matches migrations
         env:
-          SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/bloody_roar_shadow?schema=public
+          SHADOW_DATABASE_URL: postgresql://postgres:ci-${{ github.run_id }}@localhost:5432/bloody_roar_shadow?schema=public
         run: |
-          psql "postgresql://postgres:postgres@localhost:5432/postgres" -c "CREATE DATABASE bloody_roar_shadow;"
+          psql "postgresql://postgres:ci-${{ github.run_id }}@localhost:5432/postgres" -c "CREATE DATABASE bloody_roar_shadow;"
           cd packages/database
           bunx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamodel prisma/schema.prisma --shadow-database-url "$SHADOW_DATABASE_URL" --exit-code
 

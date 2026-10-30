@@ -2,6 +2,7 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
+| P1-29 | apps/web/src/test/notification-types.test.ts | bun run --cwd apps/web test -- src/test/notification-types.test.ts; bun run typecheck; bun run lint | Pass 22/22: mọi NotificationType có nơi tạo trong apps/web/src và apps/worker/src; không loại giá trị nào |
 | P1-27 | apps/web/src/test/eval/dispute-eval.test.ts; apps/web/src/test/eval/dispute/*.json (10 file) | bun run --cwd apps/web test -- src/test/eval; bun run typecheck; bun run lint | Pass 10/10: qua analyzeDispute với model mock; có citation giả ở missing-criteria và bad-file-hash bị loại đúng số lượng; có AILog |
 | P1-26 | .env.example | grep -rn GOOGLE_GENERATIVE apps/web/src .env.example (rỗng) | Xong: xóa biến và comment Gemini khỏi .env.example; check-env.ts vẫn chặn biến này |
 | P1-25 | apps/web/src/test/ai-rate-limit.test.ts | bun run --cwd apps/web test -- src/test/ai-rate-limit.test.ts; bun run typecheck; bun run lint | Pass 2/2: user thường bị RATE_LIMITED ở lượt thứ 11, admin ở lượt thứ 31 |

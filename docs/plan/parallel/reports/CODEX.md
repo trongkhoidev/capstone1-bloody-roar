@@ -1,4 +1,4 @@
-ĐANG DỞ: C2 (P1-29). Bước tiếp theo: test enum NotificationType (notification-types.test.ts). P1-28 đã xong ở phase D.
+ĐANG DỞ: C2 (E18–E21, E30). Bước tiếp theo: P1-30a/N-6 hai bước upload (route uploads + complete) trước khi viết kịch bản E25.
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -20,6 +20,7 @@
 | P1-21 | xong | `apps/web/src/test/issue-hide.db.test.ts`: ẩn/bỏ ẩn, AdminLog |
 | P1-22 | xong | `review.db.test.ts`, `effects-resolved.test.ts`: review, uy tín, undo |
 | P1-23 | xong | `audit-hash.test.ts`: HMAC cho hash audit AI |
+| P1-29 | xong | `notification-types.test.ts`: 22 giá trị đều có nơi tạo, không cần xóa |
 | P1-27 | xong | `eval/dispute-eval.test.ts`: 10 fixture, qua analyzeDispute với model mock |
 | P1-26 | xong | `.env.example`: bỏ GOOGLE_GENERATIVE_AI_API_KEY; grep rỗng |
 | P1-25 | xong | `ai-rate-limit.test.ts`: 10 lượt/giờ (admin 30) |

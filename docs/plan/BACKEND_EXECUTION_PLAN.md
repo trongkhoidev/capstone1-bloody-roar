@@ -151,7 +151,7 @@ Giả định: Kiên (contract, Safe, review các thay đổi liên quan tiền)
 | Việc | ID | Người |
 | --- | --- | --- |
 | Log scanner (safe head, range thích ứng, sort, insert idempotent, checkpoint) | BE-41a | Khôi |
-| Hàm fold thuần cho cả 20 event + unit test dạng bảng | BE-41b, BE-82 | Khôi + Kiên (review) |
+| Hàm fold thuần cho cả 19 event (15 event contract và 4 event kế thừa) + unit test dạng bảng | BE-41b, BE-82 | Khôi + Kiên (review) |
 | Phát hiện reorg + rebuild; CLI replay | BE-41c, BE-41d | Khôi |
 | Cầu `NOTIFY` → `escrow:invalidate` | BE-59b | Khôi |
 | `selectDeveloper` + reservation + hết hạn + hủy | BE-23, BE-31, BE-37, BE-38 | Hiếu |

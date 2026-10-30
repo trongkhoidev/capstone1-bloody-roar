@@ -212,7 +212,7 @@ sequenceDiagram
 | --- | --- | --- | --- | --- | --- |
 | BE-40 | Skeleton worker: entrypoint, config, graceful shutdown, HTTP `/health` (last safe head, checkpoint age, RPC latency, retry queue, projection lag), scheduler cho reservation/deadline/cleanup | P0 | M | BE-60 | S2-ESC-13 |
 | BE-41a | Log scanner (safe head, chia range theo giới hạn Alchemy, sort, insert idempotent, checkpoint) | P0 | M | BE-40, BE-41 | S2-ESC-13 |
-| BE-41b | Hàm fold thuần (không I/O) `fold(projection, event) → projection'` cho cả 20 event; số tiền `EscrowResolved` lấy từ event | P0 | L | BE-41 | FR-11 |
+| BE-41b | Hàm fold thuần (không I/O) `fold(projection, event) → projection'` cho cả 19 event (15 event contract và 4 event kế thừa); số tiền `EscrowResolved` lấy từ event | P0 | L | BE-41 | FR-11 |
 | BE-41c | Phát hiện reorg + rollback + rebuild projection | P0 | M | BE-41a | FR-11 |
 | BE-41d | CLI replay `indexer replay --from <block>` + decoder versioning | P1 | S | BE-41b | FR-11 |
 | BE-41e | Harness tích hợp: hardhat node + MockUSDC + deploy + chạy script lifecycle → assert projection; mô phỏng reorg (`evm_revert` / anvil) | P0 | L | BE-41a..c | S3-TST-08 |

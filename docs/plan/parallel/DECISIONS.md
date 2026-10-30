@@ -159,3 +159,7 @@ P1-10 tạm để TODO(P1-22) gọi `recalcReputation` trong transaction của e
 ## BỔ SUNG P1-18 — audit tải evidence
 
 Dùng action `download_evidence` cho lượt admin tải file, phân biệt với `view_evidence` khi xem danh sách.
+
+## BỔ SUNG AI-11 — mốc bắt đầu phân tích
+
+Thêm `Dispute.aiStartedAt` để timeout và chống lượt AI cũ ghi đè vẫn chính xác khi worker cập nhật dispute.

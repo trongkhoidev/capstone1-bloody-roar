@@ -2,6 +2,7 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
+| AI-11 | apps/web/src/test/dispute-analysis.test.ts; apps/web/src/test/dispute-analysis.db.test.ts | migrate deploy test/local; bun run --cwd apps/web test -- hai file trên; bun run typecheck; bun run lint | Pass 4/4; commit `fix(ai-11): recover and audit dispute analysis` |
 | P1-28 | apps/web/src/test/graphql-schema.test.ts | bun run --cwd apps/web test -- src/test/graphql-schema.test.ts; bun run typecheck; bun run lint | Pass; commit `fix(p1-28): expose dispute bps and raw amounts` |
 | P1-18 | apps/web/src/test/dispute-evidence.db.test.ts; apps/web/src/test/storage-config.test.ts; apps/web/src/test/evidence-download.test.ts | bun run --cwd apps/web test -- các file trên; bun run typecheck; bun run lint | Pass 9/9; commit `feat(p1-18): audit admin evidence access` |
 | P1-17 / còn lại | apps/web/src/test/dispute-analysis.test.ts | rg BUG-2; bun run --cwd apps/web test -- src/test/dispute-analysis.test.ts; bun run typecheck; bun run lint | Pass 2/2; AI-11 và frontend chờ; commit `docs(p1-17): record remaining review` |

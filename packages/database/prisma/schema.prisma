@@ -615,6 +615,7 @@ model Dispute {
   proposedClientBps  Int?
   finalClientBps     Int?
   aiStatus           String? // AI analysis state, kept apart from DisputeStatus
+  aiStartedAt        DateTime?
 
   issueId      String  @unique
   issue        Issue   @relation(fields: [issueId], references: [id], onDelete: Cascade)

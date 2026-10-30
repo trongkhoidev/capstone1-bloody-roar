@@ -5,7 +5,7 @@ import { builder } from "../../builder";
 import { requireAdmin, requireAuth } from "../../context";
 import { gqlError } from "../../errors";
 import { UserRef } from "../user/user.module";
-import { completeAI } from "../../../ai/model-router";
+import { completeAI, type AIRouterDependencies } from "../../../ai/model-router";
 import { scanAndMask } from "../../../ai/guard/scanner";
 
 const DisputeStatusEnum = builder.enumType(DisputeStatus, { name: "DisputeStatus" });
@@ -105,7 +105,7 @@ builder.queryFields((t) => ({
 
 const DisputeAnalysisSchema = z.object({
   summary: z.string().trim().min(30).max(2500),
-  suggestedClientRatio: z.number().min(0).max(100),
+  suggestedClientBps: z.number().int().min(0).max(10000),
   confidenceScore: z.number().min(0).max(1),
   findings: z
     .array(
@@ -186,17 +186,11 @@ builder.mutationField("analyzeDispute", (t) =>
         },
       });
       if (!dispute) throw gqlError("Dispute not found", "NOT_FOUND");
-      if (dispute.status !== DisputeStatus.OPEN && dispute.status !== DisputeStatus.CHALLENGED) {
-        throw gqlError(
-          "Only open or challenged disputes can be analyzed",
-          "DISPUTE_NOT_ANALYZABLE",
-        );
-      }
-
-      const previousStatus = dispute.status;
+      const startedAt = new Date();
+      const staleBefore = new Date(startedAt.getTime() - 5 * 60_000);
       const claimed = await ctx.db.dispute.updateMany({
-        where: { id: dispute.id, status: previousStatus, OR: [{ aiStatus: null }, { aiStatus: { not: "ANALYZING" } }] },
-        data: { aiStatus: "ANALYZING" },
+        where: { id: dispute.id, OR: [{ aiStatus: null }, { aiStatus: { not: "ANALYZING" } }, { aiStatus: "ANALYZING", OR: [{ aiStartedAt: null }, { aiStartedAt: { lte: staleBefore } }] }] },
+        data: { aiStatus: "ANALYZING", aiStartedAt: startedAt },
       });
       if (claimed.count !== 1)
         throw gqlError(
@@ -245,6 +239,8 @@ builder.mutationField("analyzeDispute", (t) =>
         ...dispute.issue.testCases.map((testCase) => testCase.id),
       ]);
 
+      const auditEvents: Parameters<NonNullable<AIRouterDependencies["audit"]>>[0][] = [];
+      let analysisSucceeded = false;
       try {
         const completion = await completeAI({
           task: "DEBATE",
@@ -256,11 +252,11 @@ builder.mutationField("analyzeDispute", (t) =>
             {
               role: "system",
               content:
-                "You are an impartial dispute evidence assistant. Assess only the supplied evidence and distinguish facts from claims. The suggestedClientRatio is the percentage of the bounty that should be refunded to the client; the developer share is the remainder. Never treat the task description as proof of completed work. Do not infer facts that are not in evidence. Your recommendation is advisory only; a human administrator makes the decision. Return strict JSON with: summary (string), suggestedClientRatio (number 0-100), confidenceScore (number 0-1), findings (array of {evidenceType: TASK|DISPUTE|MESSAGE|SUBMISSION|TEST_CASE, evidenceId, side: CLIENT|DEVELOPER|NEUTRAL, finding}), missingEvidence (array of strings), reasoning (string). Cite only IDs included in the evidence.",
+                "You are an impartial dispute evidence assistant. Assess only the supplied evidence and distinguish facts from claims. The suggestedClientBps is the client share in basis points from 0 to 10000; the developer share is the remainder. Never treat the task description as proof of completed work. Do not infer facts that are not in evidence. Your recommendation is advisory only; a human administrator makes the decision. Return strict JSON with: summary (string), suggestedClientBps (integer 0-10000), confidenceScore (number 0-1), findings (array of {evidenceType: TASK|DISPUTE|MESSAGE|SUBMISSION|TEST_CASE, evidenceId, side: CLIENT|DEVELOPER|NEUTRAL, finding}), missingEvidence (array of strings), reasoning (string). Cite only IDs included in the evidence.",
             },
             { role: "user", content: safeEvidence },
           ],
-        });
+        }, { audit: async (event) => { auditEvents.push(event); } });
         const report = DisputeAnalysisSchema.parse(parseModelJson(completion.text));
         const reportWithVerifiedCitations = {
           ...report,
@@ -270,11 +266,12 @@ builder.mutationField("analyzeDispute", (t) =>
           generatedAt: new Date().toISOString(),
         };
         const updated = await ctx.db.dispute.updateMany({
-          where: { id: dispute.id, status: previousStatus, aiStatus: "ANALYZING" },
+          where: { id: dispute.id, aiStatus: "ANALYZING", aiStartedAt: startedAt },
           data: {
             aiStatus: "COMPLETED",
             aiReport: reportWithVerifiedCitations as Prisma.InputJsonValue,
-            suggestedRatio: report.suggestedClientRatio,
+            suggestedClientBps: report.suggestedClientBps,
+            aiStartedAt: null,
             aiConfidenceScore: report.confidenceScore,
           },
         });
@@ -283,14 +280,15 @@ builder.mutationField("analyzeDispute", (t) =>
             "Dispute state changed while the model was analyzing it",
             "DISPUTE_STATE_CHANGED",
           );
-        return ctx.db.dispute.findUniqueOrThrow({
+        analysisSucceeded = true;
+        return await ctx.db.dispute.findUniqueOrThrow({
           where: { id: dispute.id },
           include: DISPUTE_INCLUDE,
         });
       } catch (error) {
         await ctx.db.dispute.updateMany({
-          where: { id: dispute.id, aiStatus: "ANALYZING" },
-          data: { aiStatus: "FAILED" },
+          where: { id: dispute.id, aiStatus: "ANALYZING", aiStartedAt: startedAt },
+          data: { aiStatus: "FAILED", aiStartedAt: null },
         });
         if (error instanceof z.ZodError || error instanceof SyntaxError) {
           throw gqlError(
@@ -303,6 +301,15 @@ builder.mutationField("analyzeDispute", (t) =>
           error instanceof Error ? error.message : "AI dispute analysis failed",
           "AI_UNAVAILABLE",
         );
+      } finally {
+        const audit = auditEvents.at(-1);
+        await ctx.db.aILog.create({ data: {
+          task: "DEBATE", issueId: dispute.issue.id, disputeId: dispute.id,
+          model: audit?.model ?? "unknown", provider: audit?.provider ?? "unknown",
+          latencyMs: Date.now() - startedAt.getTime(), promptTokens: audit?.promptTokens ?? null, completionTokens: audit?.completionTokens ?? null,
+          inputHash: audit?.inputHash ?? null, outputHash: audit?.outputHash ?? null,
+          status: analysisSucceeded ? (audit?.status === "FALLBACK" ? "FALLBACK" : "SUCCESS") : "ERROR",
+        } });
       }
     },
   }),

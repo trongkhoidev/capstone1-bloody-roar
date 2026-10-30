@@ -1,4 +1,4 @@
-ĐANG DỞ: AI-11. Bước tiếp theo: test và sửa analyzeDispute timeout, bps và audit; N-6 thực hiện cùng P1-30a theo kế hoạch.
+ĐANG DỞ: phase D gate. Bước tiếp theo: kiểm thử E15–E17 qua scanner/harness và chạy gate; N-6 thực hiện cùng P1-30a theo kế hoạch.
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -10,7 +10,8 @@
 | Z-6 | bị chặn | next build: @vercel/nft Division by zero; ba cách thử thất bại |
 | Z-7 | xong | Script cũ gọi mutation đã xóa được gỡ; root chuyển sang harness ở N-8 |
 | D4 / D5 | xong | `dde1bc7`; test theo ma trận |
-| N-6, N-8–N-13, AI-11 | chưa làm | Phase D–G |
+| AI-11 | xong | Timeout, bps và một AILog mỗi lượt được kiểm bằng test DB |
+| N-6, N-8–N-13 | chưa làm | N-6 cùng P1-30a; N-8–N-13 tại G1/G2 |
 | FE-1–FE-8 | chưa làm | Phase FE |
 | P0-1 | dở | 3118318 (xóa template; E2E chờ) |
 | P0-2 | xong | fe78f0e |
@@ -68,6 +69,10 @@
 ## Bị chặn
 
 - Z-6: `bun run build` lỗi `RangeError: Division by zero` trong `@vercel/nft`. Đã thử build trong worktree, thêm outputFileTracingRoot, rồi loại `.uploads` và `tests` khỏi tracing; cả ba vẫn lỗi. Typecheck và lint pass. Theo FINISH_PLAN, không chặn gate và tiếp tục phase khác.
+
+## AI-11 — phân tích tham khảo
+
+- Admin chạy phân tích mà không đổi trạng thái chain; lưu bps và một AILog mỗi lượt, nhận lại khóa sau 5 phút và chặn kết quả lượt cũ ghi đè. Migration aiStartedAt đã deploy test/local; unit/DB test 4/4, typecheck và lint pass.
 
 ## P1-28 — GraphQL bps và tiền raw
 

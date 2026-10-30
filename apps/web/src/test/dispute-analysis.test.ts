@@ -6,12 +6,12 @@ import { schema } from "../graphql/schema";
 
 const admin = { id: "admin-1", role: "ADMIN" };
 const dispute = {
-  id: "dispute-1", status: "OPEN", aiStatus: null, reason: "Work is disputed", createdAt: new Date(),
+  id: "dispute-1", status: "OPEN", aiStatus: null, aiStartedAt: null, reason: "Work is disputed", createdAt: new Date(),
   issue: { id: "issue-1", title: "Task title", description: "Task description", category: "BUG_FIX", requiredSkills: [], clientId: "client", developerId: "developer", messages: [], submissions: [], testCases: [] },
 };
 
 function callAnalysis() {
-  const db = { dispute: {
+  const db = { aILog: { create: vi.fn().mockResolvedValue({}) }, dispute: {
     findUnique: vi.fn().mockResolvedValue(dispute),
     updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     findUniqueOrThrow: vi.fn().mockResolvedValue(dispute),
@@ -24,7 +24,7 @@ function callAnalysis() {
 beforeEach(() => {
   mock.completeAI.mockReset();
   mock.completeAI.mockResolvedValue({ model: "mock", provider: "custom", text: JSON.stringify({
-    summary: "The supplied evidence was reviewed for this dispute.", suggestedClientRatio: 50, confidenceScore: 0.5,
+    summary: "The supplied evidence was reviewed for this dispute.", suggestedClientBps: 5000, confidenceScore: 0.5,
     findings: [{ evidenceType: "TASK", evidenceId: "issue-1", side: "NEUTRAL", finding: "The task states the requested work." }, { evidenceType: "TASK", evidenceId: "unknown", side: "NEUTRAL", finding: "This evidence should be discarded." }],
     missingEvidence: [], reasoning: "The evidence is incomplete and a human must make the final decision.",
   }) });
@@ -40,12 +40,15 @@ describe("advisory dispute analysis", () => {
     expect(updates[0].data.aiStatus).toBe("ANALYZING");
     expect(updates[1].data.aiStatus).toBe("COMPLETED");
     expect(updates[1].data.aiReport.findings).toHaveLength(1);
+    expect(updates[1].data.suggestedClientBps).toBe(5000);
+    expect(db.aILog.create).toHaveBeenCalledTimes(1);
   });
 
   it("clears the AI lock on failure without changing dispute status", async () => {
     mock.completeAI.mockRejectedValue(new Error("mock failed"));
     const { db, result } = callAnalysis();
     await expect(result).rejects.toThrow("mock failed");
-    expect(db.dispute.updateMany.mock.calls[1]![0].data).toEqual({ aiStatus: "FAILED" });
+    expect(db.dispute.updateMany.mock.calls[1]![0].data).toMatchObject({ aiStatus: "FAILED" });
+    expect(db.aILog.create).toHaveBeenCalledTimes(1);
   });
 });

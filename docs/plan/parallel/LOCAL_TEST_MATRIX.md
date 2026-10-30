@@ -2,6 +2,7 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
+| Z-2 | tests/e2e/check-env.ts; tests/e2e/scanner-deposit.ts | check-env; Hardhat với ulimit 65536; scanner-deposit | Dở: scanner pass với node khởi động thủ công, chưa nối vào harness |
 | Z-1 / BE-35 | apps/worker/test/intent-race.test.ts | bun run --cwd apps/worker test -- test/intent-race.test.ts; bun run typecheck; bun run lint | Pass; commit `fix(be-35): reconcile indexed intents in batches`; E2E chờ Z-2 |
 | 2.2 | — | — | Dở: chờ manifest và xác nhận tài khoản hardhat |
 | N-14 | tests/e2e/check-env.test.ts | bun test tests/e2e/check-env.test.ts | Pass 10/10; `79c14b4` |

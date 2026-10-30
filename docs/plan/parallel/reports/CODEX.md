@@ -3,7 +3,12 @@
 | Mã | Trạng thái |
 | --- | --- |
 | Z-1 / BE-35 | Xong test DB, typecheck, lint; E2E Hardhat chờ Z-2 |
-| Z-2–Z-7; D–I | Chưa làm |
+| Z-2 | Dở: Hardhat và scanner chạy thủ công thành công; chưa nối khởi động vào scanner/harness |
+| Z-3–Z-7; D–I | Chưa làm |
+
+## Z-2 — kiểm tra Hardhat ban đầu
+
+- `check-env` pass trên bloody_codex_test; Hardhat chạy với `ulimit -n 65536`, deploy local thành công; `NODE_ENV=test bun run tests/e2e/scanner-deposit.ts` pass các luồng fixture E9–E14, E22–E24 và race intent. Đã dừng PID Hardhat trong `tests/e2e/.run/`. Chưa tích hợp lệnh khởi động vào scanner/harness, chưa chạy gate phase 0.
 
 ## Z-1 — đối chiếu intent
 

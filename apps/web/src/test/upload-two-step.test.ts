@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { createHash } from "node:crypto";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
 const state = vi.hoisted(() => ({
   user: { id: "client-1", role: "CLIENT", isBanned: false } as { id: string; role: string; isBanned: boolean } | null,
@@ -8,9 +8,9 @@ const state = vi.hoisted(() => ({
   issue: { clientId: "client-1", developerId: "dev-1" } as { clientId: string; developerId: string } | null,
   stored: null as Uint8Array | null,
   db: {
-    attachmentCreate: null as null | ReturnType<typeof import("vitest").vi.fn>,
-    attachmentUpdate: null as null | ReturnType<typeof import("vitest").vi.fn>,
-    userUpdate: null as null | ReturnType<typeof import("vitest").vi.fn>,
+    attachmentCreate: null as null | Mock,
+    attachmentUpdate: null as null | Mock,
+    userUpdate: null as null | Mock,
   },
 }));
 

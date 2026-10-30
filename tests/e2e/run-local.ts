@@ -55,7 +55,8 @@ try {
   for (const port of [8545, 4011, 4012, 4019]) await assertPortFree(port);
   const env = { ...process.env, DATABASE_URL: databaseUrl, DIRECT_URL: databaseUrl, TEST_DATABASE_URL: databaseUrl,
     RPC_URL: "http://127.0.0.1:8545", CHAIN_ID: "31337", FINALITY: "latest", AI_BASE_URL: "http://127.0.0.1:4019",
-    AI_EXTERNAL_GUARD: "false", NEXT_PUBLIC_APP_URL: "http://localhost:4012", WORKER_PORT: "4011", PORT: "4012", NODE_ENV: "development" };
+    AI_EXTERNAL_GUARD: "false", NEXT_PUBLIC_APP_URL: "http://localhost:4012", WORKER_PORT: "4011", PORT: "4012", NODE_ENV: "development",
+    GITHUB_WEBHOOK_SECRET: "harness-webhook-secret" };
   const hardhat = await start("hardhat", ["sh", "-c", "ulimit -n 65536; exec bun run --cwd apps/contracts node"], env);
   await waitFor(async () => {
     if (hardhat.exitCode !== null) throw new Error("Hardhat exited before becoming ready");
@@ -82,10 +83,10 @@ try {
     const result = Bun.spawn(["bun", "test", ...files.map((file) => `tests/e2e/${file}`)], { env: { ...env, NODE_ENV: "test" }, stdout: "inherit", stderr: "inherit" });
     if (await result.exited !== 0) throw new Error("E2E tests failed");
   }
-  const required = [...Array.from({ length: 17 }, (_, i) => i + 1), 22, 23, 24, 31];
+  const required = Array.from({ length: 31 }, (_, i) => i + 1);
   const missing = required.filter((n) => !files.some((file) => file.startsWith(`e${String(n).padStart(2, "0")}-`)));
   if (missing.length) throw new Error(`Missing G1 scenarios: ${missing.map((n) => `E${n}`).join(", ")}`);
-  summary = "G1 E2E scenarios passed";
+  summary = "E2E scenarios passed";
 } catch (error) {
   summary = error instanceof Error ? error.message : "Harness failed";
   process.exitCode = 1;

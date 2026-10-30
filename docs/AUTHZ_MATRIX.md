@@ -34,18 +34,18 @@ Chưa có test tự động cho từng ô. Test integration (BE-80) sẽ kiểm 
 | `applyToIssue` | UNAUTHORIZED | ✅ (role DEVELOPER, không phải chủ bài) | DEVELOPER_ROLE_REQUIRED | ✅ | DEVELOPER_ROLE_REQUIRED | UNAUTHORIZED | Chỉ role `DEVELOPER` ứng tuyển. |
 | `withdrawApplication` | UNAUTHORIZED | FORBIDDEN | FORBIDDEN | ✅ (đơn của mình) | FORBIDDEN | UNAUTHORIZED | |
 | `rejectApplication` | UNAUTHORIZED | FORBIDDEN | ✅ (chủ bài) | FORBIDDEN | FORBIDDEN | UNAUTHORIZED | |
-| `assignDeveloper` | UNAUTHORIZED | FORBIDDEN | ✅ (chủ bài) | FORBIDDEN | FORBIDDEN | UNAUTHORIZED | |
+| `assignDeveloper` | đã gỡ (thay bằng `selectDeveloper`, BE-23) | | | | | | | |
 | `submitWork` | UNAUTHORIZED | FORBIDDEN | FORBIDDEN | ✅ (developer được giao) | FORBIDDEN | UNAUTHORIZED | |
-| `reviewSubmission` | UNAUTHORIZED | FORBIDDEN | ✅ (client của bài) | FORBIDDEN | FORBIDDEN | UNAUTHORIZED | Chỉ client được duyệt bài nộp. |
+| `reviewSubmission` | đã gỡ (thay bằng `requestChanges`) | | | | | | | |
 
 ## Tranh chấp
 
 | Mutation | Khách | Người ngoài | Client | Developer | Admin | Bị khóa | Ghi chú |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `raiseDispute` | UNAUTHORIZED | FORBIDDEN | ✅ (bên tham gia) | ✅ (bên tham gia) | FORBIDDEN | UNAUTHORIZED | Admin không tự mở tranh chấp. |
-| `challengeDisputeResolution` | UNAUTHORIZED | FORBIDDEN | ✅ (bên tham gia) | ✅ (bên tham gia) | FORBIDDEN | UNAUTHORIZED | |
+| `challengeDisputeResolution` | đã gỡ (thay bằng `prepareChallengeRuling`) | | | | | | | |
 | `analyzeDispute` | UNAUTHORIZED | FORBIDDEN | FORBIDDEN | FORBIDDEN | ✅ | UNAUTHORIZED | |
-| `proposeDisputeResolution` | UNAUTHORIZED | FORBIDDEN | FORBIDDEN | FORBIDDEN | ✅ | UNAUTHORIZED | Admin soạn đề xuất. |
+| `proposeDisputeResolution` | đã gỡ (phán quyết qua `draftRuling`, P1-16d) | | | | | | | |
 
 ## Quản trị
 
@@ -60,10 +60,35 @@ Quy tắc theo `lib/escrow/access.ts` và `lib/escrow/confirmation.ts`. Phần n
 
 | Mutation | Khách | Người ngoài | Client | Developer | Admin | Bị khóa | Ghi chú |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `depositToEscrow` | UNAUTHORIZED | FORBIDDEN | ✅ (client của escrow) | FORBIDDEN | FORBIDDEN | UNAUTHORIZED | `DEPOSIT` chỉ client. |
+| `depositToEscrow` | đã gỡ (nạp qua `prepareEscrowDeposit`) | | | | | | | |
 | `releaseFunds` | UNAUTHORIZED | FORBIDDEN | ✅ (client của escrow) | FORBIDDEN | FORBIDDEN | UNAUTHORIZED | `RELEASE` chỉ client. |
 | `confirmEscrowTransaction` | UNAUTHORIZED | FORBIDDEN | theo action | theo action | chỉ `INITIAL_RULING` và `FINAL_RULING` | UNAUTHORIZED | `WORK` chỉ developer. Settlement, dispute, evidence, challenge chỉ bên tham gia. |
 | `cancelEscrow` | UNAUTHORIZED | FORBIDDEN | ✅ | ✅ | ⚠️ đang được phép | UNAUTHORIZED | Xem ghi chú 2. |
+
+## Phase D–F (mới)
+
+Kiểm bằng `tests/e2e/e28-authz.test.ts` (khách: UNAUTHORIZED; người ngoài: mã trong bảng). Ô không ghi là chưa có test tự động.
+
+| Mutation | Khách | Người ngoài | Client | Developer | Admin | Bị khóa | Ghi chú |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `prepareRaiseDispute` | UNAUTHORIZED | FORBIDDEN / NOT_FOUND | ✅ (bên tham gia) | ✅ (bên tham gia) | FORBIDDEN | UNAUTHORIZED | Bằng chứng qua `createEvidenceManifest`. |
+| `prepareSubmitCounterpartyEvidence` | UNAUTHORIZED | FORBIDDEN | FORBIDDEN | ✅ (bên còn lại) | FORBIDDEN | UNAUTHORIZED | Trong 72 giờ. |
+| `prepareChallengeRuling` | UNAUTHORIZED | FORBIDDEN | ✅ (khi bên đó bị phán thua) | ✅ (khi bên đó bị phán thua) | FORBIDDEN | UNAUTHORIZED | `INVALID_PHASE` sau lần kháng cáo đầu. |
+| `prepareFinalizeRuling` | UNAUTHORIZED | ✅ (bất kỳ người đăng nhập) | ✅ | ✅ | ✅ | UNAUTHORIZED | Sau hạn kháng cáo. |
+| `prepareFinalizeArbiterTimeoutSplit` | UNAUTHORIZED | ✅ (bất kỳ người đăng nhập) | ✅ | ✅ | ✅ | UNAUTHORIZED | `DEADLINE_NOT_REACHED` trước 30 ngày. |
+| `prepareClaimMissedDeliveryRefund` | UNAUTHORIZED | ✅ (sau deadline) | ✅ | ✅ | ✅ | UNAUTHORIZED | Không liên quan quyền bên tham gia. |
+| `prepareClaimReviewTimeout` | UNAUTHORIZED | ✅ (sau cửa sổ review) | ✅ | ✅ | ✅ | UNAUTHORIZED | `REVIEW_WINDOW_NOT_REACHED` trước mốc. |
+| `prepareClaim` | UNAUTHORIZED | FORBIDDEN (ví khác) / NOTHING_TO_CLAIM | ✅ (ví mình) | ✅ (ví mình) | ✅ (ví mình) | UNAUTHORIZED | Chỉ rút về ví của người gọi. |
+| `prepareProposeSettlement` | UNAUTHORIZED | FORBIDDEN | ✅ | ✅ | FORBIDDEN | UNAUTHORIZED | `SETTLEMENT_PENDING` khi đã có đề xuất. |
+| `prepareAcceptSettlement` | UNAUTHORIZED | FORBIDDEN | ✅ (không phải người đề xuất) | ✅ (không phải người đề xuất) | FORBIDDEN | UNAUTHORIZED | Người đề xuất bị `FORBIDDEN`. |
+| `prepareRevokeSettlement` | UNAUTHORIZED | FORBIDDEN | ✅ (người đề xuất) | ✅ (người đề xuất) | FORBIDDEN | UNAUTHORIZED | `NO_PENDING_SETTLEMENT` khi không có đề xuất. |
+| `draftRuling` | UNAUTHORIZED | FORBIDDEN | FORBIDDEN | FORBIDDEN | ✅ | UNAUTHORIZED | Phán quyết nháp cho arbiter. |
+| `createEvidenceManifest` | UNAUTHORIZED | FORBIDDEN / NOT_FOUND | ✅ (bên tham gia) | ✅ (bên tham gia) | FORBIDDEN | UNAUTHORIZED | Tệp phải thuộc người gửi. |
+| `submitReview` | UNAUTHORIZED | FORBIDDEN / INVALID_STATE | ✅ (client, sau COMPLETED) | FORBIDDEN | FORBIDDEN | UNAUTHORIZED | Mỗi issue một lần (`CONFLICT`). |
+| `adminHideIssue` / `adminUnhideIssue` | UNAUTHORIZED | FORBIDDEN | FORBIDDEN | FORBIDDEN | ✅ | UNAUTHORIZED | Ghi `AdminLog`. |
+| `revokeSession` | UNAUTHORIZED | NOT_FOUND (phiên không thuộc mình) | ✅ (phiên mình) | ✅ (phiên mình) | ✅ (phiên mình) | UNAUTHORIZED | |
+| `revokeOtherSessions` | UNAUTHORIZED | ✅ (phiên của mình) | ✅ | ✅ | ✅ | UNAUTHORIZED | Trả số phiên đã thu hồi. |
+| `markAllNotificationsRead` | UNAUTHORIZED | ✅ (của mình) | ✅ | ✅ | ✅ | UNAUTHORIZED | |
 
 ## Ghi chú
 

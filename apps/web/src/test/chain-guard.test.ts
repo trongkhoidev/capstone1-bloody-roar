@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { resolve } from "node:path";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { assertChainConfig, defaultLocalManifestPath } from "@bloody-roar/shared/chain-guard";
 

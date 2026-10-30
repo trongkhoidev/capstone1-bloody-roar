@@ -2,6 +2,11 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
+| E29 | tests/e2e/e29-config-guard.test.ts | bun run test:e2e:local | Pass: worker thoát khi ESCROW_ADDRESS là EOA hoặc CHAIN_ID sai |
+| E28 | tests/e2e/e28-authz.test.ts; docs/AUTHZ_MATRIX.md | bun run test:e2e:local | Pass 2/2: khách bị UNAUTHORIZED ở mọi mutation trong bảng; người ngoài nhận mã đúng bảng |
+| E27 | tests/e2e/e27-rate-limit.test.ts | bun run test:e2e:local | Pass 2/2: nonce lần 11 trả 429 kèm Retry-After; GraphQL vượt điểm trả 429 |
+| E26 | tests/e2e/e26-webhook.test.ts | bun run test:e2e:local | Pass: webhook có chữ ký tạo đúng một PR_MERGED; gửi lại cùng delivery không tạo thêm |
+| E25 | tests/e2e/e25-files.test.ts | bun run test:e2e:local | Pass: tệp DELIVERY đúng người tham gia; EVIDENCE cho admin khi có tranh chấp kèm view_evidence; sha256 khớp |
 | P1-35 | apps/web/src/test/sessions.test.ts; apps/worker/test/cleanup.test.ts | bun run --cwd apps/web test -- src/test/sessions.test.ts; bun run --cwd apps/worker test -- test/cleanup.test.ts; bun run typecheck; bun run lint | Pass: danh sách phiên và cờ current; chỉ thu hồi phiên của mình; job dọn đúng bản ghi quá hạn |
 | P1-32 | apps/web/src/test/chain-guard.test.ts | bun run --cwd apps/web test -- src/test/chain-guard.test.ts; bun run typecheck; bun run lint | Pass 5/5: sai chain, không có code, manifest lệch, hợp lệ; web server và worker gọi guard khi khởi động |
 | P1-31 | apps/web/src/test/github-webhook.test.ts | bun run --cwd apps/web test -- src/test/github-webhook.test.ts; bun run typecheck; bun run lint | Pass 4/4: cùng delivery id chỉ xử lý một lần; PR merged tạo đúng một PR_MERGED; thiếu delivery id 400; chữ ký sai không ghi delivery |

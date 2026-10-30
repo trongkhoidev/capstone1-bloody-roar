@@ -279,3 +279,7 @@ GitHub không gửi header thời gian, nên webhook không kiểm lệch đồn
 ## BỔ SUNG P1-35 — không xoay refresh token
 
 Đặc tả nói không làm refresh token xoay vòng; phiên dùng JWT và bản ghi `Session` như hiện tại. `current` trong `mySessions` so sánh SHA-256 của JWT trong request với `refreshHash`. Context GraphQL nay mang `sessionToken` (tùy chọn); các test dùng `execute` không truyền thì `current` là false.
+
+## BỔ SUNG C3 — kịch bản E25–E29 và runner
+
+`run-local.ts` bắt buộc E1–E31 và in `E2E scenarios passed` (theo C3). Biến `GITHUB_WEBHOOK_SECRET` được đặt trong env của harness để E26 ký payload. E29 đọc cả stdout và stderr vì logger ghi ra stdout. E28 coi `createIssueComment` của người ngoài là hợp lệ với bài công khai (đúng AUTHZ_MATRIX), nên kiểm riêng thay vì trong bảng từ chối. AUTHZ_MATRIX đã gỡ các mutation không còn tồn tại và thêm các mutation Phase D–F.

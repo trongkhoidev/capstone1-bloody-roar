@@ -1,10 +1,15 @@
-ĐANG DỞ: Z-3. Bước tiếp theo: merge be/a1-platform, be/a5-dispute-chat-ai và feat/ledger-palette-copy theo thứ tự đã định.
+ĐANG DỞ: Z-4. Bước tiếp theo: xác nhận intent approve bằng receipt đạt safe head, với test receipt giả.
 
 | Mã | Trạng thái |
 | --- | --- |
 | Z-1 / BE-35 | Xong test DB, typecheck, lint; E2E Hardhat chờ Z-2 |
 | Z-2 | Xong: scanner tự khởi động Hardhat, deploy, chạy và dọn PID |
-| Z-3–Z-7; D–I | Chưa làm |
+| Z-3 | Xong: ba merge và gate trước harness pass |
+| Z-4–Z-7; D–I | Chưa làm |
+
+## Z-3 — merge ba nhánh
+
+- Merge A1, A5 và UI theo thứ tự; sửa kỳ vọng test theo copy mới và cảnh báo font ở root layout. Gate: typecheck, lint (4 cảnh báo any cũ), web 489/489, worker 68/68, database 3/3, contracts 35/35 pass. E2E local chưa có ở phase 0.
 
 ## Z-2 — Hardhat cho scanner
 

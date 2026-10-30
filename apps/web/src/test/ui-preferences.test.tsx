@@ -22,7 +22,7 @@ describe("UI preferences", () => {
 
     fireEvent.click(screen.getByTestId("language-toggle"));
 
-    expect(screen.getByText("vi|light|Chợ bounty")).toBeInTheDocument();
+    expect(screen.getByText("vi|light|Bounty")).toBeInTheDocument();
     expect(window.localStorage.getItem("bloody-roar-language")).toBe("vi");
     expect(document.documentElement.lang).toBe("vi");
   });
@@ -32,7 +32,7 @@ describe("UI preferences", () => {
 
     fireEvent.click(screen.getByTestId("theme-toggle"));
 
-    expect(screen.getByText("en|dark|Marketplace")).toBeInTheDocument();
+    expect(screen.getByText("en|dark|Bounties")).toBeInTheDocument();
     expect(window.localStorage.getItem("bloody-roar-theme")).toBe("dark");
     expect(document.documentElement).toHaveClass("dark");
   });

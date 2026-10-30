@@ -2,9 +2,9 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
-| Z-3 / ui | — | Gate phase 0 sau ba merge | Dở: merge UI; commit `merge(z-3): integrate ledger ui` |
-| Z-3 / a5 | — | Gate phase 0 sau ba merge | Dở: merge a5; commit `merge(z-3): integrate dispute chat ai` |
-| Z-3 / a1 | — | Gate phase 0 sau ba merge | Dở: merge a1; commit `merge(z-3): integrate platform` |
+| Z-3 / ui | apps/web/src/test/ui-preferences.test.tsx | bun run typecheck; bun run lint; web/worker/database/contracts test | Pass; merge `2f27bc2`, sửa kỳ vọng `fix(z-3): align merged ui checks` |
+| Z-3 / a5 | — | Gate phase 0 sau ba merge | Pass gate; commit `merge(z-3): integrate dispute chat ai` |
+| Z-3 / a1 | — | Gate phase 0 sau ba merge | Pass gate; commit `merge(z-3): integrate platform` |
 | Z-2 | tests/e2e/check-env.ts; tests/e2e/scanner-deposit.ts | bun run tests/e2e/check-env.ts; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts; bun run typecheck; bun run lint | Pass với bloody_codex_test; commit `fix(z-2): run scanner with managed hardhat` |
 | Z-1 / BE-35 | apps/worker/test/intent-race.test.ts | bun run --cwd apps/worker test -- test/intent-race.test.ts; bun run typecheck; bun run lint | Pass; commit `fix(be-35): reconcile indexed intents in batches`; E2E chờ Z-2 |
 | 2.2 | — | — | Dở: chờ manifest và xác nhận tài khoản hardhat |

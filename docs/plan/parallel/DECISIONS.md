@@ -223,3 +223,7 @@ Trước khi fund, test claim số dư còn lại của developer và ví phí. 
 ## BỔ SUNG P1-22 — mã lỗi và phạm vi điểm uy tín
 
 Đánh giá trước khi hoàn thành trả `INVALID_STATE` (mã mới, không có trong danh sách cũ); trùng đánh giá trả `CONFLICT` qua mã Prisma `P2002`. Điểm uy tín tính trên mọi đánh giá, kể cả issue hoàn tiền, còn số bài hoàn thành loại trừ `MISSED_DELIVERY_REFUND`. `reviews` là query công khai.
+
+## BỔ SUNG P1-23 — hash audit dùng HMAC và giữ nguyên hash nội dung
+
+`auditHash` dùng HMAC-SHA256 với `AI_HASH_KEY`. Hash `originalHash` của tin nhắn trong `socket/handlers.ts` và `chat.module.ts` cũng đổi sang `auditHash` theo đặc tả, còn hash token/nội dung ở `app/api/auth/*`, `lib/auth.ts`, `submission/draft.module.ts` giữ nguyên.

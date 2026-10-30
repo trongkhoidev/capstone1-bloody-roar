@@ -1,5 +1,5 @@
-import { createHash } from "node:crypto";
 import { AILogStatus, prisma } from "@bloody-roar/database";
+import { auditHash } from "./hash";
 
 export type AIWorkload = "GUARD" | "TESTGEN" | "DEBATE";
 export type AIMessage = { role: "system" | "user"; content: string };
@@ -63,9 +63,6 @@ const OPENAI_MODELS: Record<AIWorkload, string> = {
   DEBATE: "gpt-4.1-mini",
 };
 
-function sha256(value: string) {
-  return createHash("sha256").update(value).digest("hex");
-}
 
 function modelOverride(provider: "AI" | "GROQ" | "OPENAI", task: AIWorkload) {
   return process.env[`${provider}_MODEL_${task}`];
@@ -143,7 +140,7 @@ export async function completeAI(input: AICompletionInput, dependencies: AIRoute
 
   const fetcher = dependencies.fetcher ?? fetch;
   const audit = dependencies.audit ?? persistAudit;
-  const inputHash = sha256(input.messages.map((message) => `${message.role}:${message.content}`).join("\n"));
+  const inputHash = auditHash(input.messages.map((message) => `${message.role}:${message.content}`).join("\n"));
   const errors: string[] = [];
   // One deadline for the whole provider chain: a slow first provider leaves no time to fall back.
   const deadline = Date.now() + (input.timeoutMs ?? timeoutFor(input.task));
@@ -201,7 +198,7 @@ export async function completeAI(input: AICompletionInput, dependencies: AIRoute
         promptTokens: result.promptTokens,
         completionTokens: result.completionTokens,
         inputHash,
-        outputHash: sha256(text),
+        outputHash: auditHash(text),
         status,
       }).catch(() => undefined);
 

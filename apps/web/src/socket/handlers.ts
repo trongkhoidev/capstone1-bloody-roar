@@ -19,7 +19,7 @@ import { rateLimit } from "../lib/rate-limit";
 import { prisma } from "@bloody-roar/database";
 import { canReadIssueChat, canWriteIssueChat } from "../lib/chat-access";
 import { z } from "zod";
-import { createHash } from "node:crypto";
+import { auditHash } from "../ai/hash";
 import { AILogStatus, NotificationType, Prisma } from "@bloody-roar/database";
 import { guardMessage } from "../ai/guard/service";
 import { scanAndMask } from "../ai/guard/scanner";
@@ -281,7 +281,7 @@ export function registerSocketHandlers(
         const fileNameScan = scanAndMask(fileName ?? "");
         const wasModified = guard.wasModified || fileNameScan.wasModified;
         const originalHash = wasModified
-          ? createHash("sha256").update(content).digest("hex")
+          ? auditHash(content)
           : undefined;
         const startedAt = Date.now();
         let message: StoredMessage;
@@ -368,7 +368,7 @@ export function registerSocketHandlers(
         }
 
         if (wasModified) {
-          const outputHash = createHash("sha256").update(guard.content).digest("hex");
+          const outputHash = auditHash(guard.content);
           void prisma.aILog
             .create({
               data: {

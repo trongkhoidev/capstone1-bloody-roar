@@ -1,6 +1,6 @@
 import { builder } from "../../builder";
 import { GraphQLError } from "graphql";
-import { createHash } from "node:crypto";
+import { auditHash } from "../../../ai/hash";
 import { canReadIssueChat, canWriteIssueChat } from "../../../lib/chat-access";
 import { gqlError, parseOrThrow } from "../../errors";
 import { rateLimit } from "../../../lib/rate-limit";
@@ -260,7 +260,7 @@ builder.mutationFields((t) => ({
         data: {
           content: guard.content,
           wasModified: guard.wasModified,
-          originalHash: guard.wasModified ? createHash("sha256").update(content).digest("hex") : null,
+          originalHash: guard.wasModified ? auditHash(content) : null,
           editedAt: new Date(),
         },
         include: MESSAGE_INCLUDE,

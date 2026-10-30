@@ -7,6 +7,7 @@ import { gqlError } from "../../errors";
 import { UserRef } from "../user/user.module";
 import { completeAI, type AIRouterDependencies } from "../../../ai/model-router";
 import { scanAndMask } from "../../../ai/guard/scanner";
+import { aiRateLimit } from "../../../lib/rate-limit";
 
 const DisputeStatusEnum = builder.enumType(DisputeStatus, { name: "DisputeStatus" });
 const DISPUTE_INCLUDE = { raisedBy: true, resolvedBy: true } satisfies Prisma.DisputeInclude;
@@ -137,7 +138,7 @@ builder.mutationField("analyzeDispute", (t) =>
     type: DisputeRef,
     args: { issueId: t.arg.string({ required: true }) },
     resolve: async (_root, args, ctx) => {
-      requireAdmin(ctx);
+      aiRateLimit(requireAdmin(ctx));
       const dispute = await ctx.db.dispute.findUnique({
         where: { issueId: args.issueId },
         include: {

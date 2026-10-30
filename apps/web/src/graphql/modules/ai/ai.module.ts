@@ -6,6 +6,7 @@ import { requireAdmin, requireAuth } from "../../context";
 import { gqlError, parseOrThrow } from "../../errors";
 import { completeAI } from "../../../ai/model-router";
 import { scanAndMask } from "../../../ai/guard/scanner";
+import { aiRateLimit } from "../../../lib/rate-limit";
 
 const TestCasePriorityEnum = builder.enumType(TestCasePriority, { name: "TestCasePriority" });
 const TestCaseSourceEnum = builder.enumType(TestCaseSource, { name: "TestCaseSource" });
@@ -90,6 +91,7 @@ builder.mutationField("generateTestCases", (t) =>
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
       if (user.role !== UserRole.CLIENT) throw gqlError("Only client accounts can generate acceptance criteria", "CLIENT_ROLE_REQUIRED");
+      aiRateLimit(user);
 
       const issue = await ctx.db.issue.findUnique({
         where: { id: args.issueId },

@@ -2,6 +2,7 @@
 // In-memory fixed-window limiter. shortcut: per process only, so multiple instances each keep their own counts; move to a shared store before scaling out.
 
 import { NextResponse } from "next/server";
+import { gqlError } from "../graphql/errors";
 
 type Bucket = { count: number; resetAt: number };
 
@@ -34,6 +35,12 @@ export function rateLimit(
 export function clientIp(req: Request): string {
   const forwarded = req.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim();
   return forwarded || req.headers.get("x-real-ip") || "unknown";
+}
+
+// Each user may call the AI-backed mutations 10 times an hour; admins 30.
+export function aiRateLimit(user: { id: string; role: string }): void {
+  const limit = rateLimit(`ai:${user.id}`, { limit: user.role === "ADMIN" ? 30 : 10, windowMs: 3_600_000 });
+  if (!limit.ok) throw gqlError("Vượt giới hạn gọi AI", "RATE_LIMITED");
 }
 
 export function tooManyRequests(retryAfterMs: number) {

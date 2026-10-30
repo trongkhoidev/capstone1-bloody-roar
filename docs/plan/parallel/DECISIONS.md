@@ -231,3 +231,7 @@ Trước khi fund, test claim số dư còn lại của developer và ví phí. 
 ## BỔ SUNG P1-24 — phạm vi test của guard
 
 `content-guard.test.ts` kiểm bốn chỗ bằng fake DB: `createIssue` (không kèm `issueId`), `createIssueComment`, `applyToIssue`, và hàm guard mà mọi chỗ dùng. `createSubmissionDraft` và `updateIssue` cũng đã gọi `guardMessage`, nhưng chưa có case tự động vì cần projection escrow và thời gian chain; sẽ kiểm bằng tay trong G1/E2E ở phase sau.
+
+## BỔ SUNG P1-25 — vị trí gọi rate limit AI
+
+`generateTestCases` nằm ở `graphql/modules/ai/ai.module.ts` (đặc tả ghi `ai/ai.module.ts`); giới hạn gọi sau kiểm tra vai trò CLIENT để không tính lượt của người không được phép. Hai mutation duy nhất gọi `completeAI` từ GraphQL là `generateTestCases` và `analyzeDispute`.

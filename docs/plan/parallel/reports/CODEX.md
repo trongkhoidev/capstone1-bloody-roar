@@ -1,4 +1,4 @@
-ĐANG DỞ: C2 (P1-22). Bước tiếp theo: reputation.ts, recalcReputation, submitReview.
+ĐANG DỞ: C2 (P1-23). Bước tiếp theo: auditHash HMAC trong apps/web/src/ai/hash.ts.
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -18,6 +18,7 @@
 | P1-19 | xong | `apps/web/src/test/socket-rate-limit.test.ts`: 10 tin/10 giây, `afterDispute` |
 | P1-20 | xong | `apps/web/src/test/admin-ops.test.ts`: 4 query ops chỉ ADMIN |
 | P1-21 | xong | `apps/web/src/test/issue-hide.db.test.ts`: ẩn/bỏ ẩn, AdminLog |
+| P1-22 | xong | `review.db.test.ts`, `effects-resolved.test.ts`: review, uy tín, undo |
 | G1 (E11–E17, E22–E24, E31) | xong | `test:e2e:local`: 25 pass, 0 fail, `G1 E2E scenarios passed` |
 | N-6, N-10, N-11 | chưa làm | N-6 cùng P1-30a; N-10/N-11 tại G2 |
 | FE-1–FE-8 | chưa làm | Phase FE |

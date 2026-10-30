@@ -23,4 +23,4 @@ export * from "@prisma/client";
 export * from "./notifications";
 export type { PrismaClient };
 export * from "./escrow-channels";
-  
+export * from "./reputation";

@@ -2,6 +2,7 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
+| P1-22 | apps/web/src/test/review.db.test.ts; apps/worker/test/effects-resolved.test.ts | bun run --cwd apps/web test -- src/test/review.db.test.ts; bun run --cwd apps/worker test -- test/effects-resolved.test.ts; bun run typecheck; bun run lint | Pass: review trước COMPLETED và người khác bị từ chối, trùng CONFLICT, điểm trung bình và completedTaskCount đúng, release/undo cập nhật số bài |
 | P1-21 | apps/web/src/test/issue-hide.db.test.ts | bun run --cwd apps/web test -- src/test/issue-hide.db.test.ts; bun run typecheck; bun run lint | Pass 2/2: issue ẩn không có trong issues, người ngoài nhận null, client/dev/admin vẫn thấy, có AdminLog |
 | P1-20 | apps/web/src/test/admin-ops.test.ts | bun run --cwd apps/web test -- src/test/admin-ops.test.ts; bun run typecheck; bun run lint | Pass 5/5: indexerStatus, reconciliationFindings, stuckIntents, contractConfig chỉ cho ADMIN |
 | P1-19 | apps/web/src/test/socket-rate-limit.test.ts; apps/web/src/test/socket-session.test.ts | bun run --cwd apps/web test -- src/test/socket-rate-limit.test.ts src/test/socket-session.test.ts; bun run typecheck; bun run lint | Pass 5/5: tin thứ 11 trong 10 giây bị từ chối; tin sau raisedAt có afterDispute = true |

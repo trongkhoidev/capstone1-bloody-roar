@@ -1,4 +1,4 @@
-import { createNotificationIdempotent, IntentStatus, IssueStatus, type Prisma } from "@bloody-roar/database";
+import { createNotificationIdempotent, IntentStatus, IssueStatus, recalcReputation, type Prisma } from "@bloody-roar/database";
 import type { FoldEffect } from "@bloody-roar/shared/escrow";
 import { notifyNotificationCreated } from "../indexer/notify";
 import type { EffectMeta } from "./escrow";
@@ -34,7 +34,7 @@ export async function applyResolved(tx: Prisma.TransactionClient, effect: Resolv
   const issue = await tx.issue.findUniqueOrThrow({ where: { id: projection.issueId }, select: { clientId: true, developerId: true, status: true, title: true } });
   if (issue.status !== IssueStatus.IN_PROGRESS && issue.status !== IssueStatus.DISPUTED) throw new Error("Issue changed before escrow resolution");
   await tx.issue.update({ where: { id: projection.issueId }, data: { status: IssueStatus.COMPLETED, outcome: effect.resolution, completedAt: new Date(Number(meta.blockTimestamp) * 1000) } });
-  // TODO(P1-22): recalculate reputation in this transaction once the review module is implemented.
+  if (issue.developerId) await recalcReputation(tx, issue.developerId);
   await tx.transactionIntent.updateMany({ where: { issueId: projection.issueId, chainId: meta.chainId, contractAddress: { equals: meta.contractAddress, mode: "insensitive" }, txHash: meta.txHash.toLowerCase(), status: { in: [IntentStatus.SUBMITTED, IntentStatus.PENDING_SAFE_HEAD] },
     method: { in: ["releaseFunds", "claimMissedDeliveryRefund", "claimReviewTimeout", "acceptSettlement", "finalizeRuling", "finalizeArbiterTimeoutSplit"] } }, data: { status: IntentStatus.CONFIRMED, confirmedByEventId: meta.chainEventId } });
   const recipients = await tx.user.findMany({ where: { walletAddress: { in: [...credits.keys()], mode: "insensitive" } }, select: { id: true, walletAddress: true } });

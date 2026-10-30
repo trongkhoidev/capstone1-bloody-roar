@@ -219,3 +219,7 @@ Trước khi fund, test claim số dư còn lại của developer và ví phí. 
 ## BỔ SUNG P1-21 — lọc ẩn cho cả thống kê marketplace
 
 `marketplaceStats` lọc `hiddenAt: null` ở cả số bounty mở và số developer đã ứng tuyển, để thống kê khớp danh sách. `adminUnhideIssue` ghi `AdminLog` với `details: {}` vì không có lý do.
+
+## BỔ SUNG P1-22 — mã lỗi và phạm vi điểm uy tín
+
+Đánh giá trước khi hoàn thành trả `INVALID_STATE` (mã mới, không có trong danh sách cũ); trùng đánh giá trả `CONFLICT` qua mã Prisma `P2002`. Điểm uy tín tính trên mọi đánh giá, kể cả issue hoàn tiền, còn số bài hoàn thành loại trừ `MISSED_DELIVERY_REFUND`. `reviews` là query công khai.

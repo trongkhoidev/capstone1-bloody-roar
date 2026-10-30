@@ -1,4 +1,4 @@
-import { ApplicationStatus, IntentStatus, IssueStatus, ReservationStatus, type Prisma } from "@bloody-roar/database";
+import { ApplicationStatus, IntentStatus, IssueStatus, ReservationStatus, recalcReputation, type Prisma } from "@bloody-roar/database";
 
 export type DepositUndo = {
   reservation: { id: string; status: ReservationStatus; fundedAt: string | null };
@@ -108,6 +108,7 @@ export async function undoResolved(tx: Prisma.TransactionClient, eventId: string
     const current = await tx.issue.findUniqueOrThrow({ where: { id: snapshot.issue.id } });
     if (current.status !== IssueStatus.COMPLETED || current.outcome !== snapshot.resolution) throw new Error("Cannot safely undo resolution: issue changed since projection");
     await tx.issue.update({ where: { id: snapshot.issue.id }, data: { status: snapshot.issue.status, outcome: snapshot.issue.outcome, completedAt: snapshot.issue.completedAt ? new Date(snapshot.issue.completedAt) : null } });
+    if (current.developerId) await recalcReputation(tx, current.developerId);
   }
   if (snapshot.settlement) {
     const restored = await tx.settlementProposal.updateMany({ where: { id: snapshot.settlement.id, closedEventId: eventId, status: { in: ["ACCEPTED", "VOIDED"] } }, data: { status: snapshot.settlement.status, closedEventId: snapshot.settlement.closedEventId } });

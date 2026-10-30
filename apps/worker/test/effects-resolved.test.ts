@@ -74,3 +74,24 @@ test("an external escrow still credits and notifies known recipients", async () 
   await prisma.$transaction((tx) => undoResolved(tx, meta.chainEventId, undo, chainId, contractAddress));
   expect(await prisma.notification.count({ where: { dedupeKey: { startsWith: meta.chainEventId } } })).toBe(0);
 });
+
+test("a release counts toward the developer's completed tasks, and undo takes it back", async () => {
+  const before = await prisma.user.findUniqueOrThrow({ where: { id: developer.id } });
+  const issue = await prisma.issue.create({ data: { title: "reputation", description: "reputation", category: "BUG_FIX", status: "IN_PROGRESS", bountyAmount: "100", tokenId, clientId: client.id, developerId: developer.id, requiredSkills: [] } });
+  issueIds.push(issue.id);
+  const key = `reputation-${issue.id}`, escrowIdHash = keccakUtf8(key), deadline = new Date(Date.now() + 86400_000);
+  escrowHashes.push(escrowIdHash);
+  await prisma.escrowProjection.create({ data: { issueId: issue.id, escrowKey: key, escrowIdHash, chainId, contractAddress, client: client.walletAddress, developer: developer.walletAddress,
+    arbiter: address(), feeRecipient: fee.walletAddress, amountRaw: "100", depositedAt: new Date(), deliveryDeadline: deadline, reviewDeadline: deadline,
+    termsHash: `0x${"11".repeat(32)}`, phase: "FUNDED", lastProjectedBlock: 100n } });
+  const effect: Extract<FoldEffect, { kind: "ESCROW_RESOLVED" }> = { kind: "ESCROW_RESOLVED", escrowIdHash, resolution: "RELEASE", client: client.walletAddress as Hex,
+    developer: developer.walletAddress as Hex, feeRecipient: fee.walletAddress as Hex, clientAmount: 0n, developerAmount: 98n, platformFee: 2n, decisionHash: `0x${"00".repeat(32)}` };
+  const meta = { chainId, contractAddress, chainEventId: `reputation-${issue.id}`, escrowIdHash, blockNumber: 101n, blockHash: `0x${"11".repeat(32)}` as Hex,
+    txHash: `0x${"22".repeat(32)}` as Hex, txIndex: 0, logIndex: 0, blockTimestamp: BigInt(Math.floor(Date.now() / 1000)) };
+  eventIds.push(meta.chainEventId);
+  const undo = await prisma.$transaction(async (tx) => { const snapshot = await captureResolvedUndo(tx, effect); await applyFoldEffects(tx, [effect], meta); return snapshot; });
+  expect((await prisma.user.findUniqueOrThrow({ where: { id: developer.id } })).completedTaskCount).toBe(before.completedTaskCount + 1);
+
+  await prisma.$transaction((tx) => undoResolved(tx, meta.chainEventId, undo, chainId, contractAddress));
+  expect((await prisma.user.findUniqueOrThrow({ where: { id: developer.id } })).completedTaskCount).toBe(before.completedTaskCount);
+});

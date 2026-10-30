@@ -42,3 +42,13 @@ export async function fund(f: Fixture) {
   await waitFor(async () => (await f.prisma.transactionIntent.count({ where: { id: { in: steps.map((step) => step.intentId) }, status: "CONFIRMED" } })) === steps.length);
   return { reservation, steps };
 }
+
+export async function externalDeposit(f: Fixture, reservation: Awaited<ReturnType<Fixture["prisma"]["fundingReservation"]["findUniqueOrThrow"]>>, overrides: { amount?: bigint; developer?: Hex } = {}) {
+  const { encodeErc20Approve, encodeEscrowCall } = await import("@bloody-roar/shared/escrow");
+  const amount = overrides.amount ?? BigInt(reservation.amountRaw.toFixed());
+  const send = (to: string, data: string) => rpc<string>("eth_sendTransaction", [{ from: f.accounts[2], to, data, gas: "0x500000" }]);
+  await send(f.token.address, encodeFunctionData({ abi: mintAbi, functionName: "mint", args: [f.accounts[2] as Hex, amount] }));
+  await send(f.token.address, encodeErc20Approve(reservation.contractAddress as Hex, amount.toString()));
+  return send(reservation.contractAddress, encodeEscrowCall("deposit", { escrowId: reservation.escrowKey, developer: overrides.developer ?? f.developer.walletAddress,
+    amount: amount.toString(), deliveryDeadline: String(Math.floor(reservation.deliveryDeadline.getTime() / 1000)), termsHash: reservation.termsHash }));
+}

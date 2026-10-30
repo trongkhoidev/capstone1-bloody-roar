@@ -1,12 +1,72 @@
-ĐANG DỞ: Z-5. Bước tiếp theo: đối chiếu và chuyển bảng trạng thái thật lên đầu CODEX.md.
+ĐANG DỞ: Z-6. Bước tiếp theo: chạy next build trong worktree và xử lý lỗi tracing theo thứ tự kế hoạch.
 
-| Mã | Trạng thái |
-| --- | --- |
-| Z-1 / BE-35 | Xong test DB, typecheck, lint; E2E Hardhat chờ Z-2 |
-| Z-2 | Xong: scanner tự khởi động Hardhat, deploy, chạy và dọn PID |
-| Z-3 | Xong: ba merge và gate trước harness pass |
-| Z-4 | Xong: approve xác nhận bằng receipt và finality |
-| Z-5–Z-7; D–I | Chưa làm |
+| ID | Trạng thái | Bằng chứng |
+| --- | --- | --- |
+| Z-1 / BE-35 | xong | `42d62ae`; DB test và scanner Hardhat pass |
+| Z-2 | xong | `4cc84ee`; scanner Hardhat pass |
+| Z-3 | xong | `79b8010`, `87bb280`, `2f27bc2`, `704cd2e`; gate trước harness pass |
+| Z-4 | xong | `6142dc4`; receipt và finality pass |
+| Z-5 | xong | Bảng đối chiếu với ma trận test |
+| Z-6–Z-7 | chưa làm | Phase 0 |
+| D4 / D5 | xong | `dde1bc7`; test theo ma trận |
+| N-6, N-8–N-13, AI-11 | chưa làm | Phase D–G |
+| FE-1–FE-8 | chưa làm | Phase FE |
+| P0-1 | dở | 3118318 (xóa template; E2E chờ) |
+| P0-2 | xong | fe78f0e |
+| P0-3 | xong | d39cc3b, d8fc33e |
+| P0-4 | dở | `2c0e108`: backend xong; tham chiếu frontend và E2E cũ chờ phase D/G |
+| P0-5 | xong | deb01d4 |
+| P0-6 | xong | fb0a25f |
+| P0-7 | xong | c9eb936 |
+| P0-8 | xong | 8301319 |
+| P0-9 | xong | 6080c61 |
+| P1-1 | xong | `8a3c28d`: log ABI + Hardhat deposit thực pass |
+| P1-2 | xong | `50df7d0`: E22/E24 deposit trên Hardhat pass; các effect khác chờ P1-9/P1-16 |
+| P1-3 | xong | `eb13815`: E23 Hardhat pass |
+| P1-4 | xong | `df7418b`: custom error/fallback/race pass |
+| P1-5 | xong | `1fb8c75`: jobs idempotent, pg_notify và race pass |
+| P1-6 | xong | `f287f80`: worker 48/48 |
+| P1-7 | xong | `5468126`: worker 48/48, thử viem với Hardhat |
+| P1-8 | xong | `a777558`; test theo LOCAL_TEST_MATRIX.md |
+| P1-9 | xong | `e538635`, `2c417cd`, `321d55b`; test theo LOCAL_TEST_MATRIX.md |
+| P1-10 | xong | `ffb6f50`; test theo LOCAL_TEST_MATRIX.md |
+| P1-11 | xong | `eebb77e`; test theo LOCAL_TEST_MATRIX.md |
+| P1-12 | xong | `f875b62`, `7cd68e3`; test theo LOCAL_TEST_MATRIX.md |
+| P1-13 | xong | `07397ca`; test theo LOCAL_TEST_MATRIX.md |
+| P1-14 | xong | `1fce246`; test theo LOCAL_TEST_MATRIX.md |
+| P1-15 | xong | `9c0da1e`; test theo LOCAL_TEST_MATRIX.md |
+| P1-16 | chưa làm | Chưa triển khai |
+| P1-17 | dở | `2c0e108`: backend xong; frontend cũ còn tham chiếu |
+| P1-18 | chưa làm | Chưa triển khai |
+| P1-19 | chưa làm | Chưa triển khai |
+| P1-20 | chưa làm | Chưa triển khai |
+| P1-21 | chưa làm | Chưa triển khai |
+| P1-22 | chưa làm | Chưa triển khai |
+| P1-23 | chưa làm | Chưa triển khai |
+| P1-24 | chưa làm | Chưa triển khai |
+| P1-25 | chưa làm | Chưa triển khai |
+| P1-26 | chưa làm | Chưa triển khai |
+| P1-27 | chưa làm | Chưa triển khai |
+| P1-28 | chưa làm | Chưa triển khai |
+| P1-29 | chưa làm | Chưa triển khai |
+| P1-30 | chưa làm | Chưa triển khai |
+| P1-31 | chưa làm | Chưa triển khai |
+| P1-32 | chưa làm | Chưa triển khai |
+| P1-33 | chưa làm | Chưa triển khai |
+| P1-34 | ngoài phạm vi | Q4 |
+| P1-35 | chưa làm | Chưa triển khai |
+| P1-36 | xong | `bd198a6`; test theo LOCAL_TEST_MATRIX.md |
+| P1-37 | xong | `dde1bc7`; test theo LOCAL_TEST_MATRIX.md |
+| S-1 | chưa làm | Chưa triển khai |
+| S-2 | chưa làm | Chưa triển khai |
+| S-3 | chưa làm | Chưa triển khai |
+| S-4 | chưa làm | Chưa triển khai |
+| S-5 | chưa làm | Chưa triển khai |
+| S-6 | ngoài phạm vi | FIX_LIST mục 3 |
+
+## Bị chặn
+
+Chưa có.
 
 ## Z-4 — receipt approve
 
@@ -214,62 +274,6 @@ Gate sau P0-5 và `60ca0cc`: `bun run typecheck && bun run lint && bun run --cwd
 - `bun run typecheck && bun run lint`: pass, lint có 4 cảnh báo any có sẵn. Gate phase A và gate cuối chưa chạy.
 - Tài liệu DECISIONS.md, FIX_LIST.md và LOCAL_FULL_FLOW_SPEC.md đã có thay đổi chưa commit từ trước; giữ nguyên.
 
-# Báo cáo Codex — 29/10/2026
-
-| ID | Trạng thái | Bằng chứng |
-| --- | --- | --- |
-| P0-1 | dở | 3118318 (xóa template; E2E chờ) |
-| P0-2 | xong | fe78f0e |
-| P0-3 | xong | d39cc3b, d8fc33e |
-| P0-4 | dở | `2c0e108`: backend xong; tham chiếu frontend và E2E cũ chờ phase D/G |
-| P0-5 | xong | deb01d4 |
-| P0-6 | xong | fb0a25f |
-| P0-7 | xong | c9eb936 |
-| P0-8 | xong | 8301319 |
-| P0-9 | xong | 6080c61 |
-| P1-1 | xong | `8a3c28d`: log ABI + Hardhat deposit thực pass |
-| P1-2 | xong | `50df7d0`: E22/E24 deposit trên Hardhat pass; các effect khác chờ P1-9/P1-16 |
-| P1-3 | xong | `eb13815`: E23 Hardhat pass |
-| P1-4 | xong | `df7418b`: custom error/fallback/race pass |
-| P1-5 | xong | `1fb8c75`: jobs idempotent, pg_notify và race pass |
-| P1-6 | xong | `f287f80`: worker 48/48 |
-| P1-7 | xong | `5468126`: worker 48/48, thử viem với Hardhat |
-| P1-8 | chưa làm | Chưa triển khai |
-| P1-9 | chưa làm | Chưa triển khai |
-| P1-10 | chưa làm | Chưa triển khai |
-| P1-11 | chưa làm | Chưa triển khai |
-| P1-12 | chưa làm | Chưa triển khai |
-| P1-13 | chưa làm | Chưa triển khai |
-| P1-14 | chưa làm | Chưa triển khai |
-| P1-15 | chưa làm | Chưa triển khai |
-| P1-16 | chưa làm | Chưa triển khai |
-| P1-17 | dở | `2c0e108`: backend xong; frontend cũ còn tham chiếu |
-| P1-18 | chưa làm | Chưa triển khai |
-| P1-19 | chưa làm | Chưa triển khai |
-| P1-20 | chưa làm | Chưa triển khai |
-| P1-21 | chưa làm | Chưa triển khai |
-| P1-22 | chưa làm | Chưa triển khai |
-| P1-23 | chưa làm | Chưa triển khai |
-| P1-24 | chưa làm | Chưa triển khai |
-| P1-25 | chưa làm | Chưa triển khai |
-| P1-26 | chưa làm | Chưa triển khai |
-| P1-27 | chưa làm | Chưa triển khai |
-| P1-28 | chưa làm | Chưa triển khai |
-| P1-29 | chưa làm | Chưa triển khai |
-| P1-30 | chưa làm | Chưa triển khai |
-| P1-31 | chưa làm | Chưa triển khai |
-| P1-32 | chưa làm | Chưa triển khai |
-| P1-33 | chưa làm | Chưa triển khai |
-| P1-34 | chưa làm | Chưa triển khai |
-| P1-35 | chưa làm | Chưa triển khai |
-| P1-36 | chưa làm | Chưa triển khai |
-| P1-37 | chưa làm | Chưa triển khai |
-| S-1 | chưa làm | Chưa triển khai |
-| S-2 | chưa làm | Chưa triển khai |
-| S-3 | chưa làm | Chưa triển khai |
-| S-4 | chưa làm | Chưa triển khai |
-| S-5 | chưa làm | Chưa triển khai |
-| S-6 | không làm theo kế hoạch | FIX_LIST mục 3 |
 
 ## File theo nhóm
 

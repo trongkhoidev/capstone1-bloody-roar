@@ -267,3 +267,7 @@ Tải bằng chứng của admin ghi `view_evidence` (theo đặc tả và P1-18
 ## BỔ SUNG P1-30 — gitignore
 
 Thêm `apps/web/.gitignore` với `.uploads/`. Thư mục gốc đã có `apps/web/.uploads/` nên đây là bản lặp có chủ đích, theo đặc tả.
+
+## BỔ SUNG P1-31 — không kiểm lệch thời gian webhook
+
+GitHub không gửi header thời gian, nên webhook không kiểm lệch đồng hồ; chống lặp chỉ dựa vào `x-github-delivery`. Migration `20261031090000_pr_merged_notification` thêm `PR_MERGED` và đã được áp dụng trên `bloody_codex_test` và `bloody_codex_local`.

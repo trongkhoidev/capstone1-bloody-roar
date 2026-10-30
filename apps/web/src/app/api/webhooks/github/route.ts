@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
-import { PRState } from "@bloody-roar/database";
+import { createNotificationIdempotent, PRState } from "@bloody-roar/database";
 import { prisma } from "@bloody-roar/database";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +25,11 @@ export async function POST(request: Request) {
   if (!verifySignature(raw, request.headers.get("x-hub-signature-256"), secret)) {
     return NextResponse.json({ error: "Invalid webhook signature" }, { status: 401 });
   }
+  // GitHub redelivers payloads; the delivery id makes a repeat a no-op. GitHub sends no timestamp header, so there is no clock-skew check.
+  const deliveryId = request.headers.get("x-github-delivery");
+  if (!deliveryId) return NextResponse.json({ error: "Missing delivery id" }, { status: 400 });
+  const { count } = await prisma.githubWebhookDelivery.createMany({ data: [{ deliveryId }], skipDuplicates: true });
+  if (count === 0) return NextResponse.json({ duplicate: true });
   if (request.headers.get("x-github-event") !== "pull_request") return NextResponse.json({ received: true, ignored: true });
 
   let event: GitHubPullRequestEvent;
@@ -41,7 +46,7 @@ export async function POST(request: Request) {
   const prState = action === "closed" ? (pr.merged ? PRState.MERGED : PRState.CLOSED) : PRState.OPEN;
   const submission = await prisma.submission.findFirst({
     where: { pullRequestUrl: { equals: prUrl, mode: "insensitive" } },
-    select: { id: true, issue: { select: { githubRepo: true } } },
+    select: { id: true, issue: { select: { id: true, title: true, clientId: true, githubRepo: true } } },
   });
   const normalizeRepo = (value: string | null | undefined) => {
     if (!value) return null;
@@ -63,6 +68,19 @@ export async function POST(request: Request) {
       ...(prState === PRState.MERGED && pr?.merged_at ? { mergedAt: new Date(pr.merged_at) } : {}),
     },
   });
+
+  // Tells the client to confirm the work on the platform; nothing here touches funds.
+  if (prState === PRState.MERGED) {
+    await createNotificationIdempotent(prisma, {
+      userId: submission.issue.clientId,
+      type: "PR_MERGED",
+      title: "Pull request đã được merge",
+      body: `PR #${pr!.number} của bài ${submission.issue.title} đã merge. Kiểm tra và xác nhận trên hệ thống.`,
+      link: `/issues/${submission.issue.id}`,
+      data: { issueId: submission.issue.id, prUrl },
+      dedupeKey: `pr-merged:${submission.issue.id}:${pr!.number}`,
+    });
+  }
 
   return NextResponse.json({ received: true, matched: true, prState });
 }

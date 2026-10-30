@@ -122,6 +122,7 @@ enum NotificationType {
   ESCROW_RESOLVED
   FUNDS_CLAIMABLE
   DEADLINE_APPROACHING
+  PR_MERGED // Client: linked pull request was merged (GitHub webhook)
 }
 
 enum MessageType {

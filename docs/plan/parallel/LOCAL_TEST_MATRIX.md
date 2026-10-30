@@ -2,6 +2,7 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
+| Z-7 | apps/web/src/test/graphql-schema.test.ts | bun run typecheck; bun run lint; bun run --cwd apps/web test -- src/test/graphql-schema.test.ts | Pass; commit `chore(z-7): remove obsolete e2e scripts` |
 | Z-6 | — | bun run build (worktree, tracing root, tracing exclusions); bun run typecheck; bun run lint | Bị chặn: build Division by zero cả ba cách; commit `docs(z-6): record build tracing failure` |
 | Z-5 | docs/plan/parallel/reports/CODEX.md | bun run typecheck; bun run lint; đối chiếu LOCAL_TEST_MATRIX.md | Pass; commit `docs(z-5): correct task status table` |
 | Z-4 | apps/worker/test/intents.test.ts; apps/worker/test/rpc.test.ts | bun run --cwd apps/worker test -- test/intents.test.ts test/rpc.test.ts; bun run typecheck; bun run lint | Pass 14/14; commit `fix(z-4): confirm approvals at finality` |

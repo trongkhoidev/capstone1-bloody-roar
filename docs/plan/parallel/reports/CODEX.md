@@ -1,4 +1,4 @@
-ĐANG DỞ: Z-7. Bước tiếp theo: xóa các script E2E cũ gọi mutation đã xóa theo kế hoạch.
+ĐANG DỞ: phase 0 gate. Bước tiếp theo: chạy gate đầy đủ có thể chạy trước harness với bloody_codex_test.
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -8,7 +8,7 @@
 | Z-4 | xong | `6142dc4`; receipt và finality pass |
 | Z-5 | xong | Bảng đối chiếu với ma trận test |
 | Z-6 | bị chặn | next build: @vercel/nft Division by zero; ba cách thử thất bại |
-| Z-7 | chưa làm | Phase 0 |
+| Z-7 | xong | Script cũ gọi mutation đã xóa được gỡ; root chuyển sang harness ở N-8 |
 | D4 / D5 | xong | `dde1bc7`; test theo ma trận |
 | N-6, N-8–N-13, AI-11 | chưa làm | Phase D–G |
 | FE-1–FE-8 | chưa làm | Phase FE |
@@ -68,6 +68,10 @@
 ## Bị chặn
 
 - Z-6: `bun run build` lỗi `RangeError: Division by zero` trong `@vercel/nft`. Đã thử build trong worktree, thêm outputFileTracingRoot, rồi loại `.uploads` và `tests` khỏi tracing; cả ba vẫn lỗi. Typecheck và lint pass. Theo FINISH_PLAN, không chặn gate và tiếp tục phase khác.
+
+## Z-7 — script E2E cũ
+
+- Xóa escrow, workflow và các script chat/application gọi assignDeveloper đã xóa; giữ login và issue. Schema test, typecheck và lint pass. Script root chuyển sang harness tại N-8.
 
 ## Z-4 — receipt approve
 

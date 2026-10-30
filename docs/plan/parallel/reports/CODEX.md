@@ -1,4 +1,4 @@
-ĐANG DỞ: P1-16. Bước tiếp theo: đọc schema, mutation và effect liên quan; viết test rồi triển khai evidence và tranh chấp on-chain.
+ĐANG DỞ: P1-16d. Bước tiếp theo: viết test draftRuling và Safe calldata, rồi triển khai theo thời gian chain.
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -36,7 +36,7 @@
 | P1-13 | xong | `07397ca`; test theo LOCAL_TEST_MATRIX.md |
 | P1-14 | xong | `1fce246`; test theo LOCAL_TEST_MATRIX.md |
 | P1-15 | xong | `9c0da1e`; test theo LOCAL_TEST_MATRIX.md |
-| P1-16 | dở | Migration dispute_onchain đã deploy; API và effect còn lại |
+| P1-16 | dở | Migration, evidence và prepare raise/counter đã test; ruling và worker còn lại |
 | P1-17 | dở | `2c0e108`: backend xong; frontend cũ còn tham chiếu |
 | P1-18 | chưa làm | Chưa triển khai |
 | P1-19 | chưa làm | Chưa triển khai |
@@ -68,6 +68,10 @@
 ## Bị chặn
 
 - Z-6: `bun run build` lỗi `RangeError: Division by zero` trong `@vercel/nft`. Đã thử build trong worktree, thêm outputFileTracingRoot, rồi loại `.uploads` và `tests` khỏi tracing; cả ba vẫn lỗi. Typecheck và lint pass. Theo FINISH_PLAN, không chặn gate và tiếp tục phase khác.
+
+## P1-16a–c — evidence
+
+- Tạo manifest đã che, hash và lưu canonical JSON; xác minh file, transcript, người tham gia và hạn counter. Hai prepare tạo intent theo projection. Test DB 2/2, typecheck và lint pass; worker và ruling còn lại.
 
 ## D-DSP-2 — migration dispute_onchain
 

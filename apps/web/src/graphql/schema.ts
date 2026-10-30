@@ -34,6 +34,7 @@ import "./modules/escrow/settlement.module";
 import "./modules/issue/issue-availability.module";
 import "./modules/chat/chat.module";
 import "./modules/dispute/dispute.module";
+import "./modules/dispute/evidence.module";
 import "./modules/notification/notification.module";
 import "./modules/analytics/analytics.module";
 import "./modules/admin/admin.module";

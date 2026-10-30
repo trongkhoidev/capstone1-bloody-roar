@@ -1,5 +1,6 @@
 import path from "node:path";
-import { S3Client } from "@aws-sdk/client-s3";
+import { mkdir, writeFile } from "node:fs/promises";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 export interface S3Storage {
   bucket: string;
@@ -37,4 +38,18 @@ export function localUploadPath(key: string): { root: string; destination: strin
   const destination = path.resolve(root, key);
   if (!destination.startsWith(`${root}${path.sep}`)) return null;
   return { root, destination };
+}
+
+/** Store a server-generated object using the same backend as uploads. */
+export async function putObject(key: string, bytes: Uint8Array, mime: string): Promise<void> {
+  const storage = getS3Storage();
+  if (storage) {
+    await storage.client.send(new PutObjectCommand({ Bucket: storage.bucket, Key: key, Body: bytes, ContentType: mime }));
+    return;
+  }
+  if (process.env.NODE_ENV === "production") throw new Error("S3 storage is not configured");
+  const local = localUploadPath(key);
+  if (!local) throw new Error("Invalid storage key");
+  await mkdir(path.dirname(local.destination), { recursive: true });
+  await writeFile(local.destination, bytes);
 }

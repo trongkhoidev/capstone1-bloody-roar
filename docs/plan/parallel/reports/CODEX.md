@@ -1,4 +1,4 @@
-ĐANG DỞ: C2 (P1-26). Bước tiếp theo: xóa GOOGLE_GENERATIVE_AI_API_KEY khỏi .env.example.
+ĐANG DỞ: C2 (P1-27). Bước tiếp theo: 10 file eval dispute trong apps/web/src/test/eval/dispute/ và dispute-eval.test.ts.
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -20,6 +20,7 @@
 | P1-21 | xong | `apps/web/src/test/issue-hide.db.test.ts`: ẩn/bỏ ẩn, AdminLog |
 | P1-22 | xong | `review.db.test.ts`, `effects-resolved.test.ts`: review, uy tín, undo |
 | P1-23 | xong | `audit-hash.test.ts`: HMAC cho hash audit AI |
+| P1-26 | xong | `.env.example`: bỏ GOOGLE_GENERATIVE_AI_API_KEY; grep rỗng |
 | P1-25 | xong | `ai-rate-limit.test.ts`: 10 lượt/giờ (admin 30) |
 | P1-24 | xong | `content-guard.test.ts`: che key ở createIssue, comment, cover letter; draft/updateIssue chưa có case tự động |
 | G1 (E11–E17, E22–E24, E31) | xong | `test:e2e:local`: 25 pass, 0 fail, `G1 E2E scenarios passed` |

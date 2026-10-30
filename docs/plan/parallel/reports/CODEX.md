@@ -46,7 +46,7 @@
 | P1-16 | xong | API/worker test và E15–E17 scanner Hardhat pass; upload hai bước chờ P1-30a |
 | P1-17 | dở | BUG-2 không còn; AI-11 và frontend chờ |
 | P1-18 | xong | Evidence admin query, download URL và audit đã test |
-| P1-19 | chưa làm | Chưa triển khai |
+| P1-19 | xong | 8827976 (socket-rate-limit.test.ts) |
 | P1-20 | chưa làm | Chưa triển khai |
 | P1-21 | chưa làm | Chưa triển khai |
 | P1-22 | chưa làm | Chưa triển khai |

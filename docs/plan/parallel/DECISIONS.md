@@ -203,3 +203,11 @@ Sau khi client kháng cáo, phase là CHALLENGED. `prepareChallengeRuling` của
 ## BỔ SUNG E31 — xóa số dư còn lại trước khi đo
 
 Trước khi fund, test claim số dư còn lại của developer và ví phí. Nhờ vậy chênh lệch số dư escrow đúng 100 USDC của issue này.
+
+## BỔ SUNG P1-19 — lỗi socket dạng chuỗi
+
+`message:send` trả lỗi bằng chuỗi như mọi nhánh khác trong file, nên giới hạn tốc độ trả `"Too many messages, slow down"` thay vì object `{ok, error: {code}}`. Mutation `editMessage` dùng `RATE_LIMITED` qua `gqlError`, vì resolver GraphQL trả mã lỗi có cấu trúc.
+
+## BỔ SUNG P1-19 — mock dispute trong socket-session
+
+`socket-session.test.ts` thêm `dispute.findUnique` vào mock transaction, vì handler giờ tra `Dispute.raisedAt` khi tạo tin.

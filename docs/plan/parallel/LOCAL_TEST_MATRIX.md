@@ -2,6 +2,7 @@
 
 | Mã | File test | Lệnh | Trạng thái |
 | --- | --- | --- | --- |
+| P1-19 | apps/web/src/test/socket-rate-limit.test.ts; apps/web/src/test/socket-session.test.ts | bun run --cwd apps/web test -- src/test/socket-rate-limit.test.ts src/test/socket-session.test.ts; bun run typecheck; bun run lint | Pass 5/5: tin thứ 11 trong 10 giây bị từ chối; tin sau raisedAt có afterDispute = true |
 | N-13 | apps/web, apps/worker (dependency) | `grep -n '"socket.io-client@\|"pino@' bun.lock` | Xong: socket.io-client 4.8.4, pino 9.14.0 trong bun.lock |
 | E31 | tests/e2e/e31-flow.test.ts | bun run test:e2e:local | Pass: escrow giảm đúng 100 USDC, developer nhận 97.5 USDC, issue COMPLETED |
 | E24 | tests/e2e/e24-replay.test.ts | bun run test:e2e:local | Pass: replay xong, checkpoint IDLE, phase và số tiền giữ nguyên |

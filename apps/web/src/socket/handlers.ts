@@ -15,6 +15,7 @@ import type {
 } from "@bloody-roar/shared";
 import { createLogger } from "../lib/logger";
 import { tokenFromCookieHeader, verifyJWT } from "../lib/auth";
+import { rateLimit } from "../lib/rate-limit";
 import { prisma } from "@bloody-roar/database";
 import { canReadIssueChat, canWriteIssueChat } from "../lib/chat-access";
 import { z } from "zod";
@@ -141,6 +142,9 @@ export function registerSocketHandlers(
           socket.disconnect(true);
           return callback?.("Unauthorized");
         }
+
+        const limit = rateLimit(`chat:${user.id}`, { limit: 10, windowMs: 10_000 });
+        if (!limit.ok) return callback?.("Too many messages, slow down");
 
         const parsed = z
           .object({
@@ -309,6 +313,7 @@ export function registerSocketHandlers(
                   return duplicate;
                 }
               }
+              const dispute = await tx.dispute.findUnique({ where: { issueId }, select: { raisedAt: true } });
               const created = await tx.message.create({
                 data: {
                   content: guard.content,
@@ -318,6 +323,7 @@ export function registerSocketHandlers(
                   clientMessageId: clientMessageId || null,
                   replyToId: replyToId || null,
                   wasModified,
+                  afterDispute: Boolean(dispute?.raisedAt && dispute.raisedAt <= new Date()),
                   ...(originalHash ? { originalHash } : {}),
                 },
               });

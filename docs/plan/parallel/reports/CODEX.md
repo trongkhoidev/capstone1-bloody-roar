@@ -1,4 +1,4 @@
-ĐANG DỞ: C2 (P1-19). Bước tiếp theo: rate limit cho socket message:send.
+ĐANG DỞ: C2 (P1-20). Bước tiếp theo: query ops admin (indexerStatus, reconciliationFindings, stuckIntents, contractConfig).
 
 | ID | Trạng thái | Bằng chứng |
 | --- | --- | --- |
@@ -15,6 +15,7 @@
 | N-9 | xong | Seed token theo manifest, guard DB test |
 | N-12 | xong | E22 trong `tests/e2e/e22-reorg.test.ts`, thay `apps/worker/e2e/reorg.e2e.ts` |
 | N-13 | xong | `socket.io-client` 4.8.4, `pino` 9.14.0 (xem mục N-13) |
+| P1-19 | xong | `apps/web/src/test/socket-rate-limit.test.ts`: 10 tin/10 giây, `afterDispute` |
 | G1 (E11–E17, E22–E24, E31) | xong | `test:e2e:local`: 25 pass, 0 fail, `G1 E2E scenarios passed` |
 | N-6, N-10, N-11 | chưa làm | N-6 cùng P1-30a; N-10/N-11 tại G2 |
 | FE-1–FE-8 | chưa làm | Phase FE |

@@ -2,7 +2,8 @@ import { builder } from "../../builder";
 import { GraphQLError } from "graphql";
 import { createHash } from "node:crypto";
 import { canReadIssueChat, canWriteIssueChat } from "../../../lib/chat-access";
-import { parseOrThrow } from "../../errors";
+import { gqlError, parseOrThrow } from "../../errors";
+import { rateLimit } from "../../../lib/rate-limit";
 import { z } from "zod";
 import type { Prisma } from "@bloody-roar/database";
 import { UserRef } from "../user/user.module";
@@ -250,6 +251,8 @@ builder.mutationFields((t) => ({
     },
     resolve: async (_root, args, ctx) => {
       const message = await findOwnWritableMessage(ctx, String(args.id));
+      const limit = rateLimit(`chat:${message.senderId}`, { limit: 10, windowMs: 10_000 });
+      if (!limit.ok) throw gqlError("Gửi quá nhanh, thử lại sau", "RATE_LIMITED");
       const { content } = parseOrThrow(EditMessageSchema, { content: args.content });
       const guard = await guardMessage(content, { issueId: message.issueId });
       const updated = await ctx.db.message.update({

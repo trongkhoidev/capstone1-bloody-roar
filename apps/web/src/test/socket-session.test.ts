@@ -6,6 +6,7 @@ const { verifyJWT, prisma, tx } = vi.hoisted(() => {
     issue: { findUnique: vi.fn() },
     message: { create: vi.fn(), findUniqueOrThrow: vi.fn() },
     attachment: { create: vi.fn() },
+    dispute: { findUnique: vi.fn(async () => null) },
   };
   const prisma = {
     ...tx,

@@ -3,7 +3,7 @@ HOÀN TẤT 2026-10-31 11:07 (gate B0.2 exit 0; điều kiện Phần E đạt; 
 ## Báo cáo cuối (C7)
 
 - Gate B0.2 exit 0 ở lần chạy cuối (sau khi thêm 10 mutation vào E28): `typecheck` pass; `lint` không lỗi (4 cảnh báo `any` có sẵn); web 584 pass (85 file); worker 72 pass (22 file); database 3 pass; contracts 35 pass; `test:e2e:local` 40 pass, 0 fail, 31 file, in `E2E scenarios passed`. Số 40 gồm 3 test của E28.
-- E1 đã fail một lần trong lần chạy gate trước (`GraphQL HTTP 429` ở request GraphQL đầu tiên của E1); lần chạy ngay sau đó pass. Chưa xác định nguyên nhân: `tests/e2e/.run/web.log` không ghi request đó. Đây là test chập chờn chưa sửa, theo dõi ở các lần chạy sau.
+- E1 đã fail một lần (`GraphQL HTTP 429` ở request GraphQL đầu tiên của E1) trong lần chạy gate đầu, trước khi thêm 10 mutation vào E28. Hai lần chạy gate sau đó, cùng mã, đều pass 40/40. Chưa xác định nguyên nhân: `tests/e2e/.run/web.log` không ghi request đó, và không có middleware hay limiter nào ngoài `graphql:<ip>` (600 điểm/phút, theo IP, trong bộ nhớ). Đây là lỗi chập chờn chưa có nguyên nhân gốc; chưa sửa.
 - Hoàn tất lượt này: E28 thêm 10 mutation còn thiếu so với AUTHZ_MATRIX (`attachIssueFile`, `cancelReservation`, `createTestCase`, `deleteTestCase`, `editMessage`, `deleteMessage`, `recordIssueView`, `recordTransactionSubmitted`, `submitFundingIntent`, `setUserRole`), mỗi mutation có dòng ma trận và case khách/người ngoài; bảng trạng thái cũ được đồng bộ với commit thực tế.
 - Các lệnh grep Phần E đều rỗng (chạy đúng như trong file): `proposeDisputeResolution|challengeDisputeResolution|assignDeveloper|reviewSubmission|depositToEscrow` (apps/web/src); `GOOGLE_GENERATIVE_AI_API_KEY` (apps/web/src và .env.example); `createHash("sha256")` (apps/web/src/ai và apps/web/src/socket); `TODO(P1-22)` (apps).
 - `fe-operations.test.ts` pass.
@@ -131,7 +131,7 @@ Bảng trạng thái gốc bên dưới giữ nguyên để tra cứu; các dòn
 | P1-35 | xong | `61112bd`: `sessions.test.ts`, `cleanup.test.ts` |
 | P1-36 | xong | `bd198a6`; test theo LOCAL_TEST_MATRIX.md |
 | P1-37 | xong | `dde1bc7`; test theo LOCAL_TEST_MATRIX.md |
-| S-1 | xong | helper dùng chung ở `apps/web/src/test/helpers/` và `apps/worker/test/helpers.ts`; bản `fakeDb` khác nhau giữ nguyên |
+| S-1 | xong | helper dùng chung ở `apps/web/src/test/helpers/` và `apps/worker/test/helpers.ts`; 18 bản `fakeDb` khác nội dung, giữ nguyên (BỔ SUNG S-1) |
 | S-2 | xong | `e2d29e4` |
 | S-3 | xong (giữ nguyên) | BỔ SUNG S-3 trong DECISIONS.md |
 | S-4 | xong | `3fa9cff`: `select.module.ts` |

@@ -10,7 +10,7 @@
 | FE-1c | apps/web/src/lib/web3/funding-intent.ts | bun run typecheck; lint; e2e funding qua harness | Xong: ký EIP-712 funding intent, nonce 16 byte, submitFundingIntent |
 | FE-8 | apps/web/src/test/fe-operations.test.ts | bun run --cwd apps/web test -- src/test/fe-operations.test.ts | Pass: mọi GraphQL trong components/app/lib parse và validate với schema |
 | FE-1 / FE-1b / FE-1c | apps/web/src/lib/web3/client.ts; send-prepared.ts; funding-intent.ts | bun run typecheck; bun run lint; e2e qua harness | Xong: ACTIVE_CHAIN theo NEXT_PUBLIC_CHAIN_ID, ensureChain, gửi giao dịch đã chuẩn bị, ký funding intent; kiểm bằng tay với MetaMask theo docs/LOCAL_DEV.md |
-| FE-2 | apps/web/src/components/marketplace/issue-detail-view.tsx | bun run typecheck; lint | Một phần: lắng nghe escrow:invalidate và poll tối đa 30 lần sau giao dịch; chưa có kiểm tự động |
+| FE-2 | apps/web/src/components/marketplace/issue-detail-view.tsx | bun run typecheck; lint | Xong: lắng nghe escrow:invalidate và poll tối đa 30 lần sau giao dịch; đặc tả không yêu cầu test tự động (xem BỔ SUNG FE-2) |
 | FE-3 | apps/web/src/components/marketplace/issue-detail-view.tsx | bun run typecheck; lint | Xong: hành động chỉ hiện khi có trong availableActions và viewerCapabilities cho phép; nút bị tắt hiện reasonDisabled (title và dòng chữ) |
 | FE-4 | apps/web/src/components/marketplace/issue-detail-view.tsx | fe-operations; typecheck; lint | Xong: chọn developer, nạp tiền, giao việc, release/yêu cầu sửa, tranh chấp, bằng chứng đối phương, đề xuất/thu hồi/chấp nhận thỏa thuận, kháng cáo, finalize, claim timeout, đánh giá |
 | FE-5 | apps/web/src/components/dashboard/dashboard-view.tsx | fe-operations; typecheck | Xong: myClaimable và nút Rút tiền gọi prepareClaim |
@@ -59,28 +59,28 @@
 | E13 | tests/e2e/e13-review-timeout.test.ts | bun run test:e2e:local | Pass: review timeout sau mốc, developer 97.5 USDC, fee 2.5 USDC |
 | E12 | tests/e2e/e12-missed-delivery.test.ts | bun run test:e2e:local | Pass: refund sau deadline, người ngoài gửi tx, client rút 100 USDC |
 | E11 | tests/e2e/e11-claim-auth.test.ts | bun run test:e2e:local | Pass: ví khác bị FORBIDDEN, số dư 0 bị NOTHING_TO_CLAIM |
-| E15–E17 / gate D | tests/e2e/scanner-deposit.ts (đã xóa ở G1, thay bằng e15–e17) | check-env; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts; typecheck; lint; web/worker/database/contracts test | Pass scanner và 499/70/3/35; upload hai bước chờ P1-30a; commit `test(phase-d): exercise dispute chain flows` |
+| E15–E17 / gate D | tests/e2e/e15-dispute-ruling.test.ts; e16-challenge.test.ts; e17-arbiter-timeout.test.ts (thay scanner-deposit.ts, đã xóa ở C1) | bun run test:e2e:local; typecheck; lint; web/worker/database/contracts test | Xong: E15–E17 pass trong harness; commit `test(phase-d): exercise dispute chain flows` |
 | E8 | tests/e2e/e08-cancel-reservation.test.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | E8 pass, harness còn thiếu kịch bản; commit `test(e8): cover reservation cancellation` |
-| E7 | tests/e2e/e07-reservation-expiry.test.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | E7 pass 3 nhánh, harness còn thiếu kịch bản; commit `test(e7): cover expired reservations` |
+| E7 | tests/e2e/e07-reservation-expiry.test.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | Xong: 3 nhánh pass trong harness; commit `test(e7): cover expired reservations` |
 | E6 | tests/e2e/e06-mismatched.test.ts; tests/e2e/harness/funding.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | E1–E6 pass, harness còn thiếu kịch bản; commit `test(e6): verify mismatched deposits` |
-| E5 | tests/e2e/e05-funding.test.ts; tests/e2e/harness/funding.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | E1–E5 pass, harness còn thiếu kịch bản; commit `test(e5): exercise signed escrow funding` |
+| E5 | tests/e2e/e05-funding.test.ts; tests/e2e/harness/funding.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | Xong: E1–E5 pass trong harness; commit `test(e5): exercise signed escrow funding` |
 | E4 | tests/e2e/e04-selection.test.ts; tests/e2e/harness/fixture.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | E1–E4 pass, harness còn thiếu kịch bản; commit `test(e4): exercise developer selection` |
 | E3 | tests/e2e/e03-criteria.test.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | E1–E3 pass, harness còn thiếu kịch bản; commit `test(e3): exercise acceptance criteria flow` |
 | E2 / BUG-7 | tests/e2e/e02-marketplace.test.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | E1/E2 pass, harness còn thiếu kịch bản; commit `fix(e2): deduplicate marketplace views` |
-| N-8 / E1 / N-3 | tests/e2e/e01-auth.test.ts; tests/e2e/run-local.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | Dở: E1 pass, harness fail vì còn thiếu E2–E17/E22–E24/E31; commit `feat(n-8): start guarded local e2e harness` |
+| N-8 / E1 / N-3 | tests/e2e/e01-auth.test.ts; tests/e2e/run-local.ts | check-env; bun run test:e2e:local; bun run typecheck; bun run lint | Xong: harness chạy đủ E1–E31; một lần E1 fail HTTP 429 chưa rõ nguyên nhân (xem CODEX); commit `feat(n-8): start guarded local e2e harness` |
 | N-9 | tests/e2e/harness/seed.test.ts | check-env; bun test tests/e2e/harness/seed.test.ts | Pass 1/1 và seed trong harness; commit `feat(n-8): start guarded local e2e harness` |
 | N-14 / provider guard | tests/e2e/check-env.test.ts | check-env; bun test tests/e2e/check-env.test.ts; bun run typecheck; bun run lint | Pass 17/17; commit `fix(n-14): block real providers during e2e` |
 | AI-11 / mock | tests/e2e/mocks/ai-server.test.ts | check-env; bun test tests/e2e/mocks/ai-server.test.ts; bun run typecheck; bun run lint | Pass 2/2; commit `fix(ai-11): update local dispute mock` |
 | AI-11 | apps/web/src/test/dispute-analysis.test.ts; apps/web/src/test/dispute-analysis.db.test.ts | migrate deploy test/local; bun run --cwd apps/web test -- hai file trên; bun run typecheck; bun run lint | Pass 4/4; commit `fix(ai-11): recover and audit dispute analysis` |
 | P1-28 | apps/web/src/test/graphql-schema.test.ts | bun run --cwd apps/web test -- src/test/graphql-schema.test.ts; bun run typecheck; bun run lint | Pass; commit `fix(p1-28): expose dispute bps and raw amounts` |
 | P1-18 | apps/web/src/test/dispute-evidence.db.test.ts; apps/web/src/test/storage-config.test.ts; apps/web/src/test/evidence-download.test.ts | bun run --cwd apps/web test -- các file trên; bun run typecheck; bun run lint | Pass 9/9; commit `feat(p1-18): audit admin evidence access` |
-| P1-17 / còn lại | apps/web/src/test/dispute-analysis.test.ts | rg BUG-2; bun run --cwd apps/web test -- src/test/dispute-analysis.test.ts; bun run typecheck; bun run lint | Pass 2/2; AI-11 và frontend chờ; commit `docs(p1-17): record remaining review` |
-| P1-16f | apps/worker/test/effects-dispute.test.ts; apps/worker/test/scanner-projection.test.ts; apps/worker/test/effects-resolved.test.ts | bun run --cwd apps/worker test; bun run typecheck; bun run lint | Pass 70/70; commit `feat(p1-16f): project dispute events with reorg undo`; E15–E17 chờ harness |
+| P1-17 / còn lại | apps/web/src/test/dispute-analysis.test.ts | rg BUG-2; bun run --cwd apps/web test -- src/test/dispute-analysis.test.ts; bun run typecheck; bun run lint | Xong: pass 2/2; AI-11 và frontend ở FE-4/FE-6; commit `docs(p1-17): record remaining review` |
+| P1-16f | apps/worker/test/effects-dispute.test.ts; apps/worker/test/scanner-projection.test.ts; apps/worker/test/effects-resolved.test.ts | bun run --cwd apps/worker test; bun run typecheck; bun run lint | Pass 70/70; commit `feat(p1-16f): project dispute events with reorg undo`; E15–E17 pass trong harness |
 | P1-16e | apps/web/src/test/dispute-ruling.db.test.ts; apps/web/src/test/escrow-availability.test.ts | bun run --cwd apps/web test -- src/test/dispute-ruling.db.test.ts src/test/escrow-availability.test.ts; bun run typecheck; bun run lint | Pass 8/8; commit `feat(p1-16e): prepare ruling actions` |
 | P1-16d | apps/web/src/test/dispute-ruling.db.test.ts | bun run --cwd apps/web test -- src/test/dispute-ruling.db.test.ts; bun run typecheck; bun run lint | Pass 2/2; commit `feat(p1-16d): draft safe rulings` |
 | P1-16a–c | apps/web/src/test/dispute-evidence.db.test.ts | bun run --cwd apps/web test -- src/test/dispute-evidence.db.test.ts; bun run typecheck; bun run lint | Pass 2/2; commit `feat(p1-16): prepare dispute evidence` |
 | D-DSP-2 | packages/database/test/ | prisma migrate dev --create-only; migrate deploy test/local; db:generate; bun run typecheck; bun run lint; database test | Pass; commit `feat(d-dsp-2): add on-chain dispute records` |
-| Gate phase 0 | web, worker, database, contracts | bun run typecheck; bun run lint; web/worker/database/contracts test | Pass 489/69/3/35; E2E local chờ G1; commit `docs(phase-0): record gate` |
+| Gate phase 0 | web, worker, database, contracts | bun run typecheck; bun run lint; web/worker/database/contracts test | Pass 489/69/3/35; E2E local xanh sau C3; commit `docs(phase-0): record gate` |
 | Z-7 | apps/web/src/test/graphql-schema.test.ts | bun run typecheck; bun run lint; bun run --cwd apps/web test -- src/test/graphql-schema.test.ts | Pass; commit `chore(z-7): remove obsolete e2e scripts` |
 | Z-6 | — | bun run build (worktree, tracing root, tracing exclusions); bun run typecheck; bun run lint | Bị chặn: build Division by zero cả ba cách; commit `docs(z-6): record build tracing failure` |
 | Z-5 | docs/plan/parallel/reports/CODEX.md | bun run typecheck; bun run lint; đối chiếu LOCAL_TEST_MATRIX.md | Pass; commit `docs(z-5): correct task status table` |
@@ -89,13 +89,13 @@
 | Z-3 / a5 | — | Gate phase 0 sau ba merge | Pass gate; commit `merge(z-3): integrate dispute chat ai` |
 | Z-3 / a1 | — | Gate phase 0 sau ba merge | Pass gate; commit `merge(z-3): integrate platform` |
 | Z-2 | tests/e2e/check-env.ts; tests/e2e/scanner-deposit.ts | bun run tests/e2e/check-env.ts; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts; bun run typecheck; bun run lint | Pass với bloody_codex_test; commit `fix(z-2): run scanner with managed hardhat` |
-| Z-1 / BE-35 | apps/worker/test/intent-race.test.ts | bun run --cwd apps/worker test -- test/intent-race.test.ts; bun run typecheck; bun run lint | Pass; commit `fix(be-35): reconcile indexed intents in batches`; E2E chờ Z-2 |
-| 2.2 | — | — | Dở: chờ manifest và xác nhận tài khoản hardhat |
+| Z-1 / BE-35 | apps/worker/test/intent-race.test.ts | bun run --cwd apps/worker test -- test/intent-race.test.ts; bun run typecheck; bun run lint | Pass; commit `fix(be-35): reconcile indexed intents in batches`; E2E xanh sau Z-2 |
+| 2.2 | — | — | Xong: manifest local và tài khoản Hardhat đã dùng trong harness (gate xanh) |
 | N-14 | tests/e2e/check-env.test.ts | bun test tests/e2e/check-env.test.ts | Pass 10/10; `79c14b4` |
 | N-1 / P0-9 | packages/database/test/test-guard.test.ts; apps/web/src/test/escrow-reservation.db.test.ts | bun test tests/e2e/check-env.test.ts packages/database/test/test-guard.test.ts; bun run --cwd apps/worker test | Pass; `6080c61` |
 | Review: local DB | — | bun run --cwd packages/database db:migrate:prod | Pass; bloody_codex_local |
 | Review: runtime ignore | — | git check-ignore tests/e2e/.run/example.pid | Pass; `6080c61` |
-| P0-1 | — | — | Dở: xóa template `3118318`; chờ kiểm nơi tạo/E2E |
+| P0-1 | — | — | Xong: template đã gỡ ở `3118318` |
 | P0-2 | apps/worker/test/effects-escrow.test.ts | bun run --cwd apps/worker test | Pass 45/45; `fe78f0e` |
 | P0-3 | apps/worker/test/effects-escrow.test.ts; apps/web/src/test/escrow-core/fold.test.ts | bun run --cwd apps/worker typecheck | Pass; `d39cc3b`, `d8fc33e` |
 | N-2 | apps/web/src/test/escrow-integration.test.ts; apps/worker/test/config.test.ts | bun run --cwd apps/web test -- src/test/escrow-integration.test.ts | Pass; `f9903af` |
@@ -106,8 +106,8 @@
 | P0-6 | apps/web/src/test/escrow-release.test.ts | bun run --cwd apps/web test -- src/test/escrow-release.test.ts | Pass; `fb0a25f` |
 | P0-7 | packages/database/test/notifications.test.ts | bun run --cwd packages/database test | Pass; `c9eb936` |
 | P0-8 | apps/worker/test/reorg.test.ts | bun run --cwd apps/worker test -- test/reorg.test.ts | Pass; `8301319` |
-| P0-4 | apps/web/src/test/graphql-schema.test.ts | bun run --cwd apps/web test -- src/test/graphql-schema.test.ts | Dở: backend pass `2c0e108`; frontend/E2E cũ còn tham chiếu |
-| P1-17 | apps/web/src/test/dispute-analysis.test.ts | bun run --cwd apps/web test -- src/test/dispute-analysis.test.ts | Dở: backend pass `2c0e108`; frontend cũ còn tham chiếu |
+| P0-4 | apps/web/src/test/graphql-schema.test.ts | bun run --cwd apps/web test -- src/test/graphql-schema.test.ts | Xong: backend `2c0e108`; graphql-schema.test.ts khẳng định các trường cũ đã gỡ |
+| P1-17 | apps/web/src/test/dispute-analysis.test.ts | bun run --cwd apps/web test -- src/test/dispute-analysis.test.ts | Xong: backend `2c0e108`; frontend ở FE-4/FE-6 |
 | N-4 | apps/worker/test/scanner.test.ts; apps/worker/test/rpc.test.ts | bun run --cwd apps/worker test -- test/scanner.test.ts test/rpc.test.ts test/config.test.ts | Pass 13/13; `42f4335` |
 | P1-6 | apps/worker/test/scheduler.test.ts | bun run --cwd apps/worker test | Pass 48/48; `f287f80` |
 | P1-7 | apps/worker/test/rpc.test.ts | bun run --cwd apps/worker test | Pass 48/48 và smoke Hardhat; `5468126` |
@@ -120,14 +120,14 @@
 | E23 | tests/e2e/scanner-deposit.ts | NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass mismatch projection, claimable, solvency; `eb13815` |
 | P1-4 | apps/worker/test/intents.test.ts | bun run --cwd apps/worker test -- test/intents.test.ts | Pass 7/7; `df7418b`; trace không hỗ trợ thì lý do chung |
 | P1-5 | apps/worker/test/reservations.test.ts; apps/worker/test/deadline-notifications.test.ts; apps/worker/test/effects-escrow.test.ts | bun run --cwd apps/worker test | Pass; `1fb8c75` |
-| E7 | apps/worker/test/reservations.test.ts | bun run --cwd apps/worker test -- test/reservations.test.ts | Pass job/idempotency; E2E toàn luồng chờ harness |
-| E30 | apps/worker/test/deadline-notifications.test.ts | bun run --cwd apps/worker test -- test/deadline-notifications.test.ts | Pass job/pg_notify; E2E toàn luồng chờ harness |
+| E7 | apps/worker/test/reservations.test.ts | bun run --cwd apps/worker test -- test/reservations.test.ts | Pass job/idempotency; E2E e07 pass trong harness |
+| E30 | apps/worker/test/deadline-notifications.test.ts | bun run --cwd apps/worker test -- test/deadline-notifications.test.ts | Pass job/pg_notify; E2E e30 pass trong harness |
 | P1-8 | apps/web/src/test/escrow-deposit.test.ts; apps/worker/test/effects-escrow.test.ts | bun run --cwd apps/web test -- src/test/escrow-deposit.test.ts; bun run --cwd apps/worker test | Pass; `a777558` |
-| E5 | tests/e2e/scanner-deposit.ts | NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass deposit thực và thông báo với fixture reservation; toàn luồng E1–E4 chờ harness; `a777558` |
+| E5 | tests/e2e/e05-funding.test.ts | bun run test:e2e:local | Xong: deposit thực và thông báo pass trong harness (scanner-deposit.ts đã xóa ở C1); `a777558` |
 | P1-9 | apps/web/src/test/submission-draft.test.ts; apps/worker/test/scanner-projection.test.ts; tests/e2e/scanner-deposit.ts | bun run --cwd apps/web test -- src/test/submission-draft.test.ts; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass; `e538635`, `2c417cd` |
 | E9 | tests/e2e/scanner-deposit.ts | NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass Hardhat với fixture deposit, reorg và resubmit; `2c417cd` |
 | P1-10 | apps/worker/test/effects-resolved.test.ts; tests/e2e/scanner-deposit.ts | bun run --cwd apps/worker test -- test/effects-resolved.test.ts; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass 7/7 và release/reorg Hardhat; `ffb6f50` |
-| E10 | tests/e2e/scanner-deposit.ts | NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Dở: release và credit pass, effect claim chưa triển khai; `ffb6f50` |
+| E10 | tests/e2e/e10-release-claim.test.ts | bun run test:e2e:local | Xong: release và claim pass trong harness; `ffb6f50` |
 | P1-11 | apps/web/src/test/settlement.test.ts; tests/e2e/scanner-deposit.ts | bun run --cwd apps/web test -- src/test/settlement.test.ts; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass 5 test và settlement/reorg Hardhat; `eebb77e` |
 | E14 | tests/e2e/scanner-deposit.ts | NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass với fixture deposit, accept/revoke và reorg; `eebb77e` |
 | P1-12 | apps/web/src/test/escrow-availability.test.ts; apps/web/src/test/issue-availability.test.ts; apps/web/src/test/escrow-chain-time.test.ts; tests/e2e/scanner-deposit.ts | bun run --cwd apps/web test -- src/test/escrow-availability.test.ts src/test/issue-availability.test.ts src/test/escrow-chain-time.test.ts; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass 12/12, Hardhat tăng thời gian; `f875b62`, `7cd68e3` |

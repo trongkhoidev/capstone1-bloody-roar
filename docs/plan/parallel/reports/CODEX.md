@@ -16,6 +16,14 @@ BỊ CHẶN 2026-10-31 15:43: gate 2.1 typecheck exit 2 do packages/database/src
 | K9 | 3a1d8e2 | E28 trên escrow FUNDED (BỔ SUNG K9) |
 | K10 | đang làm | DECISIONS, LOCAL_DEV đã xong; gate cuối bị chặn |
 
+## L0–L6 (AGY_FINISH.md)
+
+| Mục | Commit | Ghi chú |
+| --- | --- | --- |
+| L0 | e3cd76b | kiểm mốc, commit AGY_FINISH.md và AGY_PROMPT.md |
+| L1 | đang commit | seed demo không có escrow giả, typecheck và test pass |
+
+
 
 ## Báo cáo cuối (C7)
 

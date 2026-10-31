@@ -147,3 +147,4 @@
 | BE-45/BE-46 / E12/E13 | apps/web/src/test/escrow-release.test.ts; tests/e2e/scanner-deposit.ts | bun run --cwd apps/web test -- src/test/escrow-release.test.ts; NODE_ENV=test bun run tests/e2e/scanner-deposit.ts | Pass 18/18 và Hardhat; `6a44ad2` |
 | K8 | xong | apps/web/ui-e2e/e32-ui-flow.test.ts: 2/2 pass trong harness (Chrome headless + ví giả) |
 | K9 | xong | e28-authz.test.ts: người ngoài với escrow FUNDED, mọi mutation trong bảng đều bị từ chối |
+| L1 | packages/database/test/seed-demo.test.ts | bun run --cwd packages/database test; bun run db:seed:demo | Pass 4/4; seed demo chạy được hai lần liên tiếp |

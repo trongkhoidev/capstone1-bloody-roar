@@ -18,6 +18,7 @@
     "db:migrate": "bun run --cwd packages/database db:migrate",
     "db:studio": "bun run --cwd packages/database db:studio",
     "db:seed": "bun run --cwd packages/database db:seed",
+    "db:seed:demo": "bun run --cwd packages/database db:seed:demo",
     "db:push": "bun run --cwd packages/database db:push",
     "contracts:compile": "bun run --cwd apps/contracts compile",
     "contracts:test": "bun run --cwd apps/contracts test",

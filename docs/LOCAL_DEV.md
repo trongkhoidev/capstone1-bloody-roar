@@ -42,6 +42,12 @@ Tài liệu này chạy tay từng dịch vụ (không qua harness). Mọi lện
    bun run tests/e2e/harness/seed.ts
    ```
 
+   Để có thêm dữ liệu bài toán, ứng viên và đánh giá mẫu (không kèm escrow giả):
+
+   ```bash
+   bun run db:seed:demo
+   ```
+
 5. Chạy worker (cổng health mặc định `WORKER_PORT`):
 
    ```bash

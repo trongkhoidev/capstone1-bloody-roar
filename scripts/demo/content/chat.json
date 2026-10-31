@@ -1,0 +1,2219 @@
+[
+  {
+    "roomIndex": 1,
+    "issueKey": "issue_001",
+    "clientRole": "user01",
+    "developerRole": "user11",
+    "messages": [
+      {
+        "senderRole": "user01",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user11",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user11",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user01",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user11",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user11",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user01",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user11",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user11",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user01",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user11",
+        "text": "Nếu cần trao đổi gấp bạn có thể nhắn tin cho mình qua số 0912345678 nhé!"
+      },
+      {
+        "senderRole": "user01",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user11",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user11",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 2,
+    "issueKey": "issue_002",
+    "clientRole": "user02",
+    "developerRole": "user12",
+    "messages": [
+      {
+        "senderRole": "user02",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user12",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user12",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user02",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user12",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user12",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user02",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user12",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user12",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user02",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user02",
+        "text": "Bạn gửi bản thiết kế vào email client.support@demo-portal.fake giúp mình."
+      },
+      {
+        "senderRole": "user02",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user12",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user12",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 3,
+    "issueKey": "issue_003",
+    "clientRole": "user03",
+    "developerRole": "user13",
+    "messages": [
+      {
+        "senderRole": "user03",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user13",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user13",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user03",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user13",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user13",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user03",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user13",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user13",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user03",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user13",
+        "text": "Call qua điện thoại 0988776655 để sync nhanh 5 phút được không bạn?"
+      },
+      {
+        "senderRole": "user03",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user13",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user13",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 4,
+    "issueKey": "issue_004",
+    "clientRole": "user04",
+    "developerRole": "user14",
+    "messages": [
+      {
+        "senderRole": "user04",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user14",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user14",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user04",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user14",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user14",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user04",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user14",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user14",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user04",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user04",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user14",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user14",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 5,
+    "issueKey": "issue_005",
+    "clientRole": "user05",
+    "developerRole": "user15",
+    "messages": [
+      {
+        "senderRole": "user05",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user15",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user15",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user05",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user15",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user15",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user05",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user15",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user15",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user05",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user05",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user15",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user15",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 6,
+    "issueKey": "issue_006",
+    "clientRole": "user06",
+    "developerRole": "user16",
+    "messages": [
+      {
+        "senderRole": "user06",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user16",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user16",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user06",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user16",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user16",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user06",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user16",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user16",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user06",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user06",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user16",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user16",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 7,
+    "issueKey": "issue_007",
+    "clientRole": "user07",
+    "developerRole": "user17",
+    "messages": [
+      {
+        "senderRole": "user07",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user17",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user17",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user07",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user17",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user17",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user07",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user17",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user17",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user07",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user07",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user17",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user17",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 8,
+    "issueKey": "issue_008",
+    "clientRole": "user08",
+    "developerRole": "user18",
+    "messages": [
+      {
+        "senderRole": "user08",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user18",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user18",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user08",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user18",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user18",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user08",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user18",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user18",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user08",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user08",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user18",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user18",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 9,
+    "issueKey": "issue_009",
+    "clientRole": "user09",
+    "developerRole": "user19",
+    "messages": [
+      {
+        "senderRole": "user09",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user19",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user19",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user09",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user19",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user19",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user09",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user19",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user19",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user09",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user09",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user19",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user19",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 10,
+    "issueKey": "issue_010",
+    "clientRole": "user10",
+    "developerRole": "user20",
+    "messages": [
+      {
+        "senderRole": "user10",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user20",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user20",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user10",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user20",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user20",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user10",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user20",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user20",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user10",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user10",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user20",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user20",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 11,
+    "issueKey": "issue_011",
+    "clientRole": "user01",
+    "developerRole": "user21",
+    "messages": [
+      {
+        "senderRole": "user01",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user21",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user21",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user01",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user21",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user21",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user01",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user21",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user21",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user01",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user01",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user21",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user21",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 12,
+    "issueKey": "issue_012",
+    "clientRole": "user02",
+    "developerRole": "user22",
+    "messages": [
+      {
+        "senderRole": "user02",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user22",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user22",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user02",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user22",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user22",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user02",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user22",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user22",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user02",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user02",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user22",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user22",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 13,
+    "issueKey": "issue_013",
+    "clientRole": "user03",
+    "developerRole": "user23",
+    "messages": [
+      {
+        "senderRole": "user03",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user23",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user23",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user03",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user23",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user23",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user03",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user23",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user23",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user03",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user03",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user23",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user23",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 14,
+    "issueKey": "issue_014",
+    "clientRole": "user04",
+    "developerRole": "user24",
+    "messages": [
+      {
+        "senderRole": "user04",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user24",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user24",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user04",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user24",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user24",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user04",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user24",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user24",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user04",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user04",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user24",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user24",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 15,
+    "issueKey": "issue_015",
+    "clientRole": "user05",
+    "developerRole": "user25",
+    "messages": [
+      {
+        "senderRole": "user05",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user25",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user25",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user05",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user25",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user25",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user05",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user25",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user25",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user05",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user05",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user25",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user25",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 16,
+    "issueKey": "issue_016",
+    "clientRole": "user06",
+    "developerRole": "user26",
+    "messages": [
+      {
+        "senderRole": "user06",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user26",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user26",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user06",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user26",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user26",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user06",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user26",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user26",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user06",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user06",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user26",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user26",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 17,
+    "issueKey": "issue_017",
+    "clientRole": "user07",
+    "developerRole": "user27",
+    "messages": [
+      {
+        "senderRole": "user07",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user27",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user27",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user07",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user27",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user27",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user07",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user27",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user27",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user07",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user07",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user27",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user27",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 18,
+    "issueKey": "issue_018",
+    "clientRole": "user08",
+    "developerRole": "user28",
+    "messages": [
+      {
+        "senderRole": "user08",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user28",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user28",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user08",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user28",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user28",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user08",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user28",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user28",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user08",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user08",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user28",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user28",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 19,
+    "issueKey": "issue_019",
+    "clientRole": "user09",
+    "developerRole": "user29",
+    "messages": [
+      {
+        "senderRole": "user09",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user29",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user29",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user09",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user29",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user29",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user09",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user29",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user29",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user09",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user09",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user29",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user29",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 20,
+    "issueKey": "issue_020",
+    "clientRole": "user10",
+    "developerRole": "user30",
+    "messages": [
+      {
+        "senderRole": "user10",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user30",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user30",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user10",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user30",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user30",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user10",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user30",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user30",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user10",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user10",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user30",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user30",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 21,
+    "issueKey": "issue_021",
+    "clientRole": "user01",
+    "developerRole": "user31",
+    "messages": [
+      {
+        "senderRole": "user01",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user31",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user31",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user01",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user31",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user31",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user01",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user31",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user31",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user01",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user01",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user31",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user31",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 22,
+    "issueKey": "issue_022",
+    "clientRole": "user02",
+    "developerRole": "user32",
+    "messages": [
+      {
+        "senderRole": "user02",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user32",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user32",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user02",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user32",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user32",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user02",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user32",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user32",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user02",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user02",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user32",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user32",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 23,
+    "issueKey": "issue_023",
+    "clientRole": "user03",
+    "developerRole": "user11",
+    "messages": [
+      {
+        "senderRole": "user03",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user11",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user11",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user03",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user11",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user11",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user03",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user11",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user11",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user03",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user03",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user11",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user11",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 24,
+    "issueKey": "issue_024",
+    "clientRole": "user04",
+    "developerRole": "user12",
+    "messages": [
+      {
+        "senderRole": "user04",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user12",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user12",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user04",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user12",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user12",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user04",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user12",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user12",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user04",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user04",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user12",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user12",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 25,
+    "issueKey": "issue_025",
+    "clientRole": "user05",
+    "developerRole": "user13",
+    "messages": [
+      {
+        "senderRole": "user05",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user13",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user13",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user05",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user13",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user13",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user05",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user13",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user13",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user05",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user05",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user13",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user13",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 26,
+    "issueKey": "issue_026",
+    "clientRole": "user06",
+    "developerRole": "user14",
+    "messages": [
+      {
+        "senderRole": "user06",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user14",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user14",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user06",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user14",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user14",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user06",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user14",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user14",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user06",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user06",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user14",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user14",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 27,
+    "issueKey": "issue_027",
+    "clientRole": "user07",
+    "developerRole": "user15",
+    "messages": [
+      {
+        "senderRole": "user07",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user15",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user15",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user07",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user15",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user15",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user07",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user15",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user15",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user07",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user07",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user15",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user15",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 28,
+    "issueKey": "issue_028",
+    "clientRole": "user08",
+    "developerRole": "user16",
+    "messages": [
+      {
+        "senderRole": "user08",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user16",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user16",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user08",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user16",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user16",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user08",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user16",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user16",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user08",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user08",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user16",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user16",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 29,
+    "issueKey": "issue_029",
+    "clientRole": "user09",
+    "developerRole": "user17",
+    "messages": [
+      {
+        "senderRole": "user09",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user17",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user17",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user09",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user17",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user17",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user09",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user17",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user17",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user09",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user09",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user17",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user17",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 30,
+    "issueKey": "issue_030",
+    "clientRole": "user10",
+    "developerRole": "user18",
+    "messages": [
+      {
+        "senderRole": "user10",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user18",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user18",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user10",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user18",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user18",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user10",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user18",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user18",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user10",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user10",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user18",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user18",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 31,
+    "issueKey": "issue_031",
+    "clientRole": "user01",
+    "developerRole": "user19",
+    "messages": [
+      {
+        "senderRole": "user01",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user19",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user19",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user01",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user19",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user19",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user01",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user19",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user19",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user01",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user01",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user19",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user19",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 32,
+    "issueKey": "issue_032",
+    "clientRole": "user02",
+    "developerRole": "user20",
+    "messages": [
+      {
+        "senderRole": "user02",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user20",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user20",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user02",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user20",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user20",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user02",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user20",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user20",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user02",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user02",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user20",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user20",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 33,
+    "issueKey": "issue_033",
+    "clientRole": "user03",
+    "developerRole": "user21",
+    "messages": [
+      {
+        "senderRole": "user03",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user21",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user21",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user03",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user21",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user21",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user03",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user21",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user21",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user03",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user03",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user21",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user21",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 34,
+    "issueKey": "issue_034",
+    "clientRole": "user04",
+    "developerRole": "user22",
+    "messages": [
+      {
+        "senderRole": "user04",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user22",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user22",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user04",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user22",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user22",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user04",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user22",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user22",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user04",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user04",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user22",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user22",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 35,
+    "issueKey": "issue_035",
+    "clientRole": "user05",
+    "developerRole": "user23",
+    "messages": [
+      {
+        "senderRole": "user05",
+        "text": "Chào bạn, mình đã chọn bạn làm task này và escrow đã được nạp thành công."
+      },
+      {
+        "senderRole": "user23",
+        "text": "Cảm ơn bạn! Mình đang clone repo và dựng môi trường local để reproduce lỗi."
+      },
+      {
+        "senderRole": "user23",
+        "text": "Mình đã tái hiện được vấn đề ở hàm xử lý sự kiện. Đang viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "user05",
+        "text": "Tuyệt vời, chú ý trường hợp concurrency khi có nhiều request đồng thời nhé."
+      },
+      {
+        "senderRole": "user23",
+        "text": "Đã thêm test race condition và fix hoạt động tốt, 100% test suites pass."
+      },
+      {
+        "senderRole": "user23",
+        "text": "Mình gửi kèm file log kết quả chạy benchmark local nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "user05",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "user23",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "user23",
+        "text": "Đã gửi giao dịch delivery lên Base Sepolia thành công, nhờ bạn review nhé!"
+      },
+      {
+        "senderRole": "user05",
+        "text": "Đang pull code về review và chạy E2E check. Kết quả rất tốt!"
+      },
+      {
+        "senderRole": "user05",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "user23",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "user23",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  }
+]

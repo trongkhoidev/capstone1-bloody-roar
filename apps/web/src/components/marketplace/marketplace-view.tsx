@@ -4,12 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { graphqlRequest } from "@/lib/graphql-client";
 import { MarketplaceFilterBar, type FilterState } from "./filter-bar";
-import { MOCK_ISSUES } from "./mock-issues";
 import { IssueCard } from "./issue-card";
 import { TaskSkeleton } from "./task-skeleton";
 import { MarketplaceEmpty } from "./marketplace-empty";
 import type { IssueItem } from "./issue-card";
-import { useAuthStore } from "@/lib/store/use-auth-store";
 import { useUiPreferences } from "@/lib/ui-preferences";
 import { LeftSidebar } from "@/components/layout/left-sidebar";
 
@@ -54,7 +52,7 @@ type StatsResponse = {
   marketplaceStats: { openBounties: number; bountyPool: Array<{ symbol: string; formatted: string }>; activeHunters: number };
 };
 
-type DataSource = "loading" | "live" | "demo";
+type DataSource = "loading" | "live";
 
 function localFilter(issues: IssueItem[], filters: FilterState) {
   const term = filters.search.trim().toLowerCase();
@@ -78,26 +76,17 @@ function localFilter(issues: IssueItem[], filters: FilterState) {
 }
 
 export function MarketplaceView({ initialSearch = "" }: { initialSearch?: string }) {
-  const user = useAuthStore((state) => state.user);
-  const isAdmin = user?.role === "ADMIN";
   const { theme } = useUiPreferences();
   
   const [filters, setFilters] = useState<FilterState>({ search: initialSearch, category: "", status: "", sortBy: "NEWEST" });
-  const [issues, setIssues] = useState<IssueItem[]>(MOCK_ISSUES);
+  const [issues, setIssues] = useState<IssueItem[]>([]);
   const [dataSource, setDataSource] = useState<DataSource>("loading");
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [endCursor, setEndCursor] = useState<string | null>(null);
-  const [totalCount, setTotalCount] = useState(MOCK_ISSUES.length);
-  const [stats, setStats] = useState({
-    openBounties: MOCK_ISSUES.filter((issue) => issue.status === "OPEN").length,
-    bountyPool: Object.entries(MOCK_ISSUES.reduce<Record<string, number>>((totals, issue) => {
-      totals[issue.token.symbol] = (totals[issue.token.symbol] ?? 0) + issue.bountyAmount;
-      return totals;
-    }, {})).map(([symbol, amount]) => ({ symbol, amount })),
-    activeHunters: new Set(MOCK_ISSUES.map((issue) => issue.client.id)).size,
-  });
+  const [totalCount, setTotalCount] = useState(0);
+  const [stats, setStats] = useState<StatsResponse["marketplaceStats"] | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
 
   const variables = useMemo(() => ({
@@ -136,11 +125,10 @@ export function MarketplaceView({ initialSearch = "" }: { initialSearch?: string
     } catch (error) {
       if (signal?.aborted) return;
       if (!append) {
-        setIssues(MOCK_ISSUES);
-        setTotalCount(MOCK_ISSUES.length);
+        setIssues([]);
+        setTotalCount(0);
         setHasNextPage(false);
         setEndCursor(null);
-        setDataSource("demo");
       }
       setRequestError(error instanceof Error ? error.message : "Không thể tải bài toán.");
     } finally {
@@ -161,13 +149,12 @@ export function MarketplaceView({ initialSearch = "" }: { initialSearch?: string
   }, [fetchPage, filters.search]);
 
   useEffect(() => {
-    if (!isAdmin) return;
     const controller = new AbortController();
     void graphqlRequest<StatsResponse>(STATS_QUERY, {}, controller.signal)
-      .then((result) => setStats({ ...result.marketplaceStats, bountyPool: result.marketplaceStats.bountyPool.map((pool) => ({ symbol: pool.symbol, amount: Number(pool.formatted) })) }))
-      .catch(() => undefined);
+      .then((result) => setStats(result.marketplaceStats))
+      .catch(() => setStats(null));
     return () => controller.abort();
-  }, [isAdmin]);
+  }, []);
 
   const filteredIssues = useMemo(() => localFilter(issues, filters), [issues, filters]);
 
@@ -189,9 +176,9 @@ export function MarketplaceView({ initialSearch = "" }: { initialSearch?: string
                 <div>
                   <h1 className="h1">All bounties</h1>
                   <p className="sub text-xs sm:text-sm">
-                    <span className="mono font-semibold">{dataSource !== "live" ? filteredIssues.length : totalCount}</span> open ·{" "}
+                    <span className="mono font-semibold">{totalCount}</span> open ·{" "}
                     <span className="mono font-semibold text-[var(--gold)]">
-                      {stats.bountyPool.length ? stats.bountyPool.map((pool) => `${pool.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${pool.symbol}`).join(" · ") : "184,320 USDC"}
+                      {stats && stats.bountyPool.length ? stats.bountyPool.map((pool) => `${Number(pool.formatted).toLocaleString(undefined, { maximumFractionDigits: 2 })} ${pool.symbol}`).join(" · ") : "—"}
                     </span>{" "}
                     locked in escrow
                   </p>
@@ -203,7 +190,7 @@ export function MarketplaceView({ initialSearch = "" }: { initialSearch?: string
 
               <MarketplaceFilterBar
                 filters={filters}
-                totalCount={dataSource !== "live" ? filteredIssues.length : totalCount}
+                totalCount={totalCount}
                 onFilterChange={handleFilterChange}
               />
 
@@ -213,10 +200,17 @@ export function MarketplaceView({ initialSearch = "" }: { initialSearch?: string
                 </p>
               )}
 
-              {requestError && dataSource === "demo" && (
-                <p role="status" className="my-3 rounded-lg border border-[var(--warn)] bg-[var(--warn-bg)] px-3 py-2 text-xs text-[var(--warn)]">
-                  Đang dùng dữ liệu demo vì API chưa kết nối được. {requestError}
-                </p>
+              {requestError && (
+                <div role="status" className="my-3 flex items-center justify-between gap-3 rounded-lg border border-[var(--warn)] bg-[var(--warn-bg)] px-3 py-2 text-xs text-[var(--warn)]">
+                  <span>{requestError}</span>
+                  <button
+                    type="button"
+                    onClick={() => void fetchPage(null, false)}
+                    className="btn btn-sm btn-o"
+                  >
+                    Thử lại
+                  </button>
+                </div>
               )}
 
               <div className="list mt-4" data-testid="issues-list">
@@ -235,7 +229,7 @@ export function MarketplaceView({ initialSearch = "" }: { initialSearch?: string
                 )}
               </div>
 
-              {hasNextPage && dataSource === "live" && (
+              {hasNextPage && (
                 <div className="mt-6 flex justify-center">
                   <button
                     type="button"
@@ -259,16 +253,16 @@ export function MarketplaceView({ initialSearch = "" }: { initialSearch?: string
                 <div className="panel-b">
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-[var(--ink-2)]">Open bounties</span>
-                    <span className="mono font-bold text-[var(--ink)]">{stats.openBounties}</span>
+                    <span className="mono font-bold text-[var(--ink)]">{stats ? stats.openBounties : "—"}</span>
                   </div>
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-[var(--ink-2)]">Active developers</span>
-                    <span className="mono font-bold text-[var(--ink)]">{stats.activeHunters}</span>
+                    <span className="mono font-bold text-[var(--ink)]">{stats ? stats.activeHunters : "—"}</span>
                   </div>
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-[var(--ink-2)]">Locked in escrow</span>
                     <span className="mono font-bold text-[var(--gold)]">
-                      {stats.bountyPool.length ? stats.bountyPool.map((p) => `${p.amount} ${p.symbol}`).join(", ") : "184,320 USDC"}
+                      {stats && stats.bountyPool.length ? stats.bountyPool.map((p) => `${p.formatted} ${p.symbol}`).join(", ") : "—"}
                     </span>
                   </div>
                 </div>

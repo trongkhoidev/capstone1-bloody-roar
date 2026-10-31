@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { AuthRequiredPanel } from "@/components/auth/auth-required-panel";
 import { useUiPreferences } from "@/lib/ui-preferences";
 import { MarketplaceEmpty } from "./marketplace-empty";
-import { MOCK_ISSUES } from "./mock-issues";
 import type { IssueItem } from "./issue-card";
 import { sendPreparedCalls } from "@/lib/web3/send-prepared";
 import { signFundingIntent } from "@/lib/web3/funding-intent";
@@ -119,7 +118,6 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const [reviewNotes, setReviewNotes] = useState("");
   const [activeTab, setActiveTab] = useState<"overview" | "delivery" | "chat" | "escrow">("overview");
   const [isLoading, setIsLoading] = useState(true);
-  const [demoMode, setDemoMode] = useState(false);
   const [isWorking, setIsWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -129,16 +127,14 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     setError(null);
     try {
       const result = await graphqlRequest<DetailResponse>(ISSUE_QUERY, { id: issueId });
-      setIssue(result.issue ? { ...result.issue, bountyAmount: Number(result.issue.bountyAmount.formatted) } : null);
-      setDemoMode(false);
-    } catch (reason) {
-      const demoIssue = MOCK_ISSUES.find((item) => item.id === issueId);
-      if (demoIssue) {
-        setIssue({ ...demoIssue, clientId: demoIssue.client.id, developerId: null });
-        setDemoMode(true);
+      if (result.issue) {
+        setIssue({ ...result.issue, bountyAmount: Number(result.issue.bountyAmount.formatted) });
       } else {
-        setError(reason instanceof Error ? reason.message : "Could not load this task.");
+        setIssue(null);
+        setError("Không tìm thấy bài toán.");
       }
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Không tìm thấy bài toán.");
     } finally {
       setIsLoading(false);
     }
@@ -148,12 +144,12 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
 
   // Live refresh: the server emits escrow:invalidate to the task room when a confirmed transaction changes the escrow.
   useEffect(() => {
-    if (!user || demoMode) return;
+    if (!user) return;
     const socket = io({ withCredentials: true, transports: ["websocket"] });
     socket.emit("task:join", issueId);
     socket.on("escrow:invalidate", () => { void load(); });
     return () => { socket.disconnect(); };
-  }, [user, demoMode, issueId, load]);
+  }, [user, issueId, load]);
 
   // Fallback after an on-chain action: refresh every 4 seconds, up to 30 times, while the chain confirms.
   const [chainPending, setChainPending] = useState(false);
@@ -185,7 +181,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   }, [isClient, issueId]);
   const isDeveloper = Boolean(user && issue?.developerId === user.id);
   const isAdmin = user?.role === "ADMIN";
-  const canChat = Boolean(!demoMode && user && (isClient || isDeveloper || (isAdmin && issue?.status === "DISPUTED")));
+  const canChat = Boolean(user && (isClient || isDeveloper || (isAdmin && issue?.status === "DISPUTED")));
 
   useEffect(() => {
     if (!isClient || !issue) return;
@@ -495,11 +491,6 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
           {notice && <div className="banner bn-info"><div><b>Notice:</b> {notice}</div></div>}
           {chainPending && <div className="banner bn-info"><div>Đang chờ chain xác nhận</div></div>}
           {error && <div className="banner bn-bad"><div><b>Error:</b> {error}</div></div>}
-          {demoMode && (
-            <div className="banner bn-warn">
-              <div><b>Demo task:</b> Database is offline. UI operates in local simulation mode.</div>
-            </div>
-          )}
 
           {/* Main 2-column Grid */}
           <div className="cols">
@@ -578,14 +569,14 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                             type="button"
                             className="btn btn-p btn-sm"
                             style={{ marginBottom: 12 }}
-                            disabled={isWorking || demoMode}
+                            disabled={isWorking}
                             onClick={() => void fundEscrow()}
                           >
                             Fund escrow
                           </button>
                         )}
                         {reservationId && issue.viewerCapabilities?.canFund && (
-                          <button type="button" className="btn btn-o btn-sm" style={{ marginBottom: 12 }} disabled={isWorking || demoMode} onClick={() => void cancelFunding()}>
+                          <button type="button" className="btn btn-o btn-sm" style={{ marginBottom: 12 }} disabled={isWorking} onClick={() => void cancelFunding()}>
                             Hủy giữ chỗ
                           </button>
                         )}
@@ -620,7 +611,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                               <button
                                 type="button"
                                 className="btn btn-p btn-sm"
-                                disabled={isWorking || demoMode}
+                                disabled={isWorking}
                                 onClick={() => void assign(app.id)}
                               >
                                 Select developer
@@ -632,8 +623,8 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                     </section>
                   )}
 
-                  {!demoMode && <TestCasePanel issueId={issue.id} owner={isClient} issueStatus={issue.status} />}
-                  <IssueComments issueId={issue.id} demoMode={demoMode} />
+                  <TestCasePanel issueId={issue.id} owner={isClient} issueStatus={issue.status} />
+                  <IssueComments issueId={issue.id} />
                 </>
               )}
 
@@ -678,7 +669,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                               type="file"
                               multiple
                               style={{ display: "block", marginTop: 6, fontSize: 12 }}
-                              disabled={isWorking || demoMode}
+                              disabled={isWorking}
                               onChange={async (e) => {
                                 const picked = Array.from(e.target.files ?? []);
                                 try {
@@ -695,7 +686,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                             type="submit"
                             className="btn btn-p"
                             style={{ alignSelf: "flex-start" }}
-                            disabled={isWorking || demoMode || !actionEnabled("submitWork") || (!deliveryDescription.trim() && !pullRequestUrl.trim() && deliveryFiles.length === 0)}
+                            disabled={isWorking || !actionEnabled("submitWork") || (!deliveryDescription.trim() && !pullRequestUrl.trim() && deliveryFiles.length === 0)}
                             title={actionOf("submitWork")?.reasonDisabled ?? undefined}
                           >
                             Submit for review
@@ -769,7 +760,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                                   <button
                                     type="button"
                                     className="btn btn-o btn-sm"
-                                    disabled={isWorking || demoMode}
+                                    disabled={isWorking}
                                     onClick={() => void reviewDelivery(sub.id, false)}
                                   >
                                     Request changes
@@ -777,7 +768,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                                   <button
                                     type="button"
                                     className="btn btn-ok btn-sm"
-                                    disabled={isWorking || demoMode || !actionEnabled("releaseFunds")}
+                                    disabled={isWorking || !actionEnabled("releaseFunds")}
                                     title={actionOf("releaseFunds")?.reasonDisabled ?? undefined}
                                     onClick={() => void reviewDelivery(sub.id, true)}
                                   >
@@ -801,7 +792,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                   <div className="card-h"><h2>Escrow actions</h2></div>
                   <div className="card-b" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     {ESCROW_ACTIONS.filter((action) => issue.viewerCapabilities?.[action.flag] && actionOf(action.action)).map((action) => {
-                      const disabled = isWorking || demoMode || !actionEnabled(action.action);
+                      const disabled = isWorking || !actionEnabled(action.action);
                       const reason = actionOf(action.action)?.reasonDisabled;
                       return action.needsPercent ? (
                         <div key={action.flag} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -819,7 +810,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                     {issue.viewerCapabilities?.canSubmitEvidence && (
                       <form onSubmit={submitCounterpartyEvidence} style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%" }}>
                         <textarea className="inp" rows={3} minLength={10} maxLength={5000} required value={counterStatement} onChange={(e) => setCounterStatement(e.target.value)} placeholder="Counterparty evidence statement (at least 10 characters)" />
-                        <button type="submit" className="btn btn-o btn-sm" disabled={isWorking || demoMode || counterStatement.trim().length < 10}>Submit counterparty evidence</button>
+                        <button type="submit" className="btn btn-o btn-sm" disabled={isWorking || counterStatement.trim().length < 10}>Submit counterparty evidence</button>
                       </form>
                     )}
                   </div>
@@ -835,7 +826,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                       </select>
                     </label>
                     <textarea className="inp" rows={3} maxLength={2000} value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} placeholder="Optional comment" />
-                    <button type="submit" className="btn btn-p btn-sm" disabled={isWorking || demoMode}>Submit review</button>
+                    <button type="submit" className="btn btn-p btn-sm" disabled={isWorking}>Submit review</button>
                   </form>
                 </section>
               )}
@@ -922,7 +913,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
 
                   {/* Actions for Client */}
                   {isClient && issue.status === "OPEN" && (
-                    <Button variant="outline" className="w-full" disabled={isWorking || demoMode} onClick={() => void cancel()}>
+                    <Button variant="outline" className="w-full" disabled={isWorking} onClick={() => void cancel()}>
                       Cancel bounty
                     </Button>
                   )}
@@ -946,7 +937,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                         onChange={(e) => setApplicationText(e.target.value)}
                         placeholder="Why are you a good fit? (optional)"
                       />
-                      <button type="submit" className="btn btn-p" disabled={isWorking || demoMode}>
+                      <button type="submit" className="btn btn-p" disabled={isWorking}>
                         <MessageSquare className="ico" style={{ width: 14, height: 14 }} /> Apply to this task
                       </button>
                     </form>
@@ -979,7 +970,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                           type="file"
                           multiple
                           style={{ display: "block", marginTop: 6, fontSize: 12 }}
-                          disabled={isWorking || demoMode}
+                          disabled={isWorking}
                           onChange={async (e) => {
                             const picked = Array.from(e.target.files ?? []);
                             try {

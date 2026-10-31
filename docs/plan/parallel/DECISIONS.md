@@ -363,3 +363,8 @@ Thẻ hiện theo `viewerCapabilities` thay vì chỉ với bên tham gia ở tr
 ## BỔ SUNG K8-fund — nút nạp tiền nằm trong thẻ Review Applicants khi AWAITING_FUNDING
 
 Khi issue ở AWAITING_FUNDING, thẻ Review Applicants vẫn hiện để chứa nút "Fund escrow" và "Hủy giữ chỗ". Ô chọn hạn giao việc và nút "Select developer" chỉ hiện khi issue OPEN. Lý do: không có chỗ nào khác trên trang để nạp tiền, nên khách không nạp được từ giao diện. Không đổi màu hay khung.
+
+## BỔ SUNG M1 — frontend chỉ hiện dữ liệu thật
+
+Bỏ MOCK_ISSUES, SAMPLE_COMMENTS, RECENT_ACTIVITIES, demoMode, mock-issues.ts và các số liệu viết cứng (184,320, 1942, $128,450). Marketplace, Home và Issue detail chỉ hiển thị dữ liệu live từ GraphQL API; khi chưa tải hoặc rỗng thì hiện skeleton/empty/dấu gạch ngang `—`; lỗi hiện thông báo kèm nút Thử lại.
+

@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { Search, ArrowRight } from "lucide-react";
 import { graphqlRequest } from "@/lib/graphql-client";
 import { useAuthStore } from "@/lib/store/use-auth-store";
-import { MOCK_ISSUES } from "@/components/marketplace/mock-issues";
 import { IssueCard, type IssueItem } from "@/components/marketplace/issue-card";
 import { WolfLogo } from "@/components/ui/wolf-logo";
 import { useUiPreferences } from "@/lib/ui-preferences";
@@ -50,14 +49,14 @@ export function HomePageView({ search = "" }: { search?: string }) {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const status = useAuthStore((state) => state.status);
-  const { theme } = useUiPreferences();
+  const { theme, t } = useUiPreferences();
 
   const [searchTerm, setSearchTerm] = useState(search);
   const [activeSort, setActiveSort] = useState<"HOT" | "CLOSING" | "HIGHEST" | "NEWEST">("HOT");
-  const [issues, setIssues] = useState<IssueItem[]>(MOCK_ISSUES);
-  const [openBountiesCount, setOpenBountiesCount] = useState<number>(MOCK_ISSUES.length);
-  const [escrowTotal, setEscrowTotal] = useState<string>("184,320");
-  const [activeDevelopers, setActiveDevelopers] = useState<number>(1942);
+  const [issues, setIssues] = useState<IssueItem[]>([]);
+  const [openBountiesCount, setOpenBountiesCount] = useState<number | null>(null);
+  const [escrowTotal, setEscrowTotal] = useState<string | null>(null);
+  const [activeDevelopers, setActiveDevelopers] = useState<number | null>(null);
 
   useEffect(() => {
     if (status === "authenticated" && user?.role === "ADMIN") {
@@ -69,25 +68,31 @@ export function HomePageView({ search = "" }: { search?: string }) {
     let active = true;
     graphqlRequest<IssuesResponse>(ISSUES_QUERY, { first: 6 })
       .then((res) => {
-        if (!active || !res?.issues?.edges?.length) return;
-        setIssues(res.issues.edges.map((e) => ({ ...e.node, bountyAmount: Number(e.node.bountyAmount.formatted) })));
-        setOpenBountiesCount(res.issues.totalCount);
+        if (!active) return;
+        const edges = res?.issues?.edges ?? [];
+        setIssues(edges.map((e) => ({ ...e.node, bountyAmount: Number(e.node.bountyAmount.formatted) })));
+        setOpenBountiesCount(res?.issues?.totalCount ?? 0);
       })
       .catch(() => {
-        // Fallback to MOCK_ISSUES
+        if (!active) return;
+        setIssues([]);
+        setOpenBountiesCount(null);
       });
 
     graphqlRequest<StatsResponse>(STATS_QUERY)
       .then((res) => {
         if (!active || !res?.marketplaceStats) return;
         const stats = res.marketplaceStats;
-        if (stats.openBounties) setOpenBountiesCount(stats.openBounties);
-        if (stats.activeHunters) setActiveDevelopers(stats.activeHunters);
-        const usdcPool = stats.bountyPool.find((p) => p.symbol.toUpperCase() === "USDC");
-        if (usdcPool) setEscrowTotal(Number(usdcPool.formatted).toLocaleString());
+        setOpenBountiesCount(stats.openBounties ?? 0);
+        setActiveDevelopers(stats.activeHunters ?? 0);
+        const usdcPool = stats.bountyPool?.find((p) => p.symbol.toUpperCase() === "USDC");
+        setEscrowTotal(usdcPool ? Number(usdcPool.formatted).toLocaleString() : "0");
       })
       .catch(() => {
-        // Keep default
+        if (!active) return;
+        setOpenBountiesCount(null);
+        setActiveDevelopers(null);
+        setEscrowTotal(null);
       });
 
     return () => {
@@ -157,17 +162,17 @@ export function HomePageView({ search = "" }: { search?: string }) {
           <div className="figs" aria-label="Marketplace numbers">
             <div className="fig">
               <div className="lab">Open bounties</div>
-              <div className="v mono">{openBountiesCount}</div>
+              <div className="v mono">{openBountiesCount ?? "—"}</div>
               <div className="d">across 9 categories</div>
             </div>
             <div className="fig">
               <div className="lab">Locked in escrow</div>
-              <div className="v mono" style={{ color: "var(--gold)" }}>{escrowTotal}</div>
+              <div className="v mono" style={{ color: "var(--gold)" }}>{escrowTotal ?? "—"}</div>
               <div className="d">USDC, confirmed on-chain</div>
             </div>
             <div className="fig">
               <div className="lab">Active developers</div>
-              <div className="v mono">{activeDevelopers.toLocaleString()}</div>
+              <div className="v mono">{activeDevelopers != null ? activeDevelopers.toLocaleString() : "—"}</div>
               <div className="d">applied in the last 30 days</div>
             </div>
             <div className="fig">
@@ -220,13 +225,17 @@ export function HomePageView({ search = "" }: { search?: string }) {
               </div>
 
               <div className="list">
-                {sortedIssues.slice(0, 5).map((issue) => (
-                  <IssueCard key={issue.id} issue={issue} />
-                ))}
+                {sortedIssues.length > 0 ? (
+                  sortedIssues.slice(0, 5).map((issue) => (
+                    <IssueCard key={issue.id} issue={issue} />
+                  ))
+                ) : (
+                  <p style={{ color: "var(--ink-3)", fontSize: 14, margin: "16px 0" }}>{t("noIssuesYet")}</p>
+                )}
               </div>
 
               <Link href="/marketplace" style={{ fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 6, color: "var(--link)" }}>
-                Browse all {openBountiesCount} bounties <ArrowRight style={{ width: 14, height: 14 }} />
+                Browse all {openBountiesCount ?? "—"} bounties <ArrowRight style={{ width: 14, height: 14 }} />
               </Link>
             </div>
 

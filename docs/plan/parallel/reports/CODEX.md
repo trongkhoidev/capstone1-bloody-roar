@@ -28,6 +28,13 @@ HOÀN TẤT 2026-10-31 16:48 (gate exit 0; typecheck, build, E1–E32 pass)
 | L5 | 29024da | kiểm quyền kháng cáo trước pha escrow, dùng hằng số thời gian |
 | L6 | fcc455f | gate 3.2 exit 0 (typecheck, lint, build, web 596, worker 73, db 4, contracts 35, E1–E32) |
 
+## M0–M6 (AGY_FINISH_M.md)
+
+| Mục | Commit | Ghi chú |
+| --- | --- | --- |
+| M0 | 324d958 | kiểm mốc, commit AGY_FINISH_M.md và AGY_PROMPT_M.md |
+| M1 | đang commit | bỏ toàn bộ mock data ở frontend, test no-mock-data pass |
+
 
 
 ## Báo cáo cuối (C7)

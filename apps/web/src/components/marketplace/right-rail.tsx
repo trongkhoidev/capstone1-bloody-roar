@@ -9,6 +9,18 @@ import { Badge } from "../ui/badge";
 
 interface RightRailProps {
   onTagClick?: (tag: string) => void;
+  stats?: { bountyPool: Array<{ symbol: string; formatted: string }> } | null;
+  recentCompleted?: Array<{ id: string; title: string; createdAt: string }> | null;
+}
+
+function formatTimeAgo(value: string) {
+  const time = new Date(value).getTime();
+  if (!Number.isFinite(time)) return "vừa xong";
+  const hours = Math.max(0, Math.floor((Date.now() - time) / 3_600_000));
+  if (hours < 1) return "vừa xong";
+  if (hours < 24) return `${hours} giờ trước`;
+  const days = Math.floor(hours / 24);
+  return `${days} ngày trước`;
 }
 
 const POPULAR_TAGS = [
@@ -24,28 +36,7 @@ const POPULAR_TAGS = [
   { name: "erc20", count: 8 },
 ];
 
-const RECENT_ACTIVITIES = [
-  {
-    id: "act-1",
-    text: "Client 0x4a...9b1 đã ký quỹ 500 USDT vào Issue #104",
-    time: "5 phút trước",
-    icon: "🔒",
-  },
-  {
-    id: "act-2",
-    text: "Dev hoang.eth đã nộp bài giải cho Issue #098",
-    time: "25 phút trước",
-    icon: "📦",
-  },
-  {
-    id: "act-3",
-    text: "Escrow giải ngân 1,200 USDT thành công cho minhkhoi.dev",
-    time: "1 giờ trước",
-    icon: "💰",
-  },
-];
-
-export function MarketplaceRightRail({ onTagClick }: RightRailProps) {
+export function MarketplaceRightRail({ onTagClick, stats, recentCompleted }: RightRailProps) {
   return (
     <aside className="w-80 shrink-0 hidden lg:block space-y-5">
       {/* 1. How Escrow Works (Yellow notice / Info card like StackOverflow) */}
@@ -114,19 +105,23 @@ export function MarketplaceRightRail({ onTagClick }: RightRailProps) {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {RECENT_ACTIVITIES.map((act) => (
-              <div key={act.id} className="flex items-start gap-2.5 text-xs">
-                <span className="text-sm mt-0.5">{act.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] text-[hsl(var(--foreground))] leading-snug">
-                    {act.text}
-                  </p>
-                  <span className="text-[10px] text-[hsl(var(--foreground-subtle))]">
-                    {act.time}
-                  </span>
+            {recentCompleted && recentCompleted.length > 0 ? (
+              recentCompleted.map((act) => (
+                <div key={act.id} className="flex items-start gap-2.5 text-xs">
+                  <span className="text-sm mt-0.5">💰</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] text-[hsl(var(--foreground))] leading-snug">
+                      Hoàn thành: {act.title.length > 60 ? `${act.title.slice(0, 57)}...` : act.title}
+                    </p>
+                    <span className="text-[10px] text-[hsl(var(--foreground-subtle))]">
+                      {formatTimeAgo(act.createdAt)}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-xs text-[hsl(var(--foreground-subtle))]">Chưa có hoạt động.</p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -135,7 +130,9 @@ export function MarketplaceRightRail({ onTagClick }: RightRailProps) {
       <div className="p-4 rounded-xl border border-[hsl(var(--card-border))] bg-[hsl(var(--background-secondary)/0.5)] grid grid-cols-2 gap-3 text-center">
         <div>
           <div className="text-lg font-extrabold text-[hsl(var(--foreground))]">
-            $128,450
+            {stats && stats.bountyPool.length
+              ? stats.bountyPool.map((p) => `${p.formatted} ${p.symbol}`).join(" · ")
+              : "—"}
           </div>
           <div className="text-[10px] text-[hsl(var(--foreground-subtle))] uppercase tracking-wider">
             Tổng Escrow Đã Khóa

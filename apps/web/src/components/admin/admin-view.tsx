@@ -15,7 +15,7 @@ const ADMIN_STATS = `query AdminStats { adminStats { users openTasks activeTasks
 const ADMIN_USERS = `query AdminUsers($search: String, $first: Int) { adminUsers(search: $search, first: $first) { id name walletAddress role isGithubVerified githubUsername isBanned bannedReason createdAt } }`;
 const ADMIN_DISPUTES = `query AdminDisputes { adminDisputes { id issueId status reason aiReport aiConfidenceScore aiStatus suggestedClientBps proposedClientBps finalClientBps challengeDeadline createdAt } }`;
 const ADMIN_ISSUES = `query AdminIssues { adminIssues(first: 50) { id title status clientId developerId createdAt } }`;
-const OPS_QUERY = `query AdminOps { indexerStatus { chainId contractAddress lastScannedBlock lagSeconds updatedAt } reconciliationFindings(status: "OPEN", first: 20) { id kind blockNumber createdAt } stuckIntents(first: 20) { id method status createdAt } }`;
+const OPS_QUERY = `query AdminOps { indexerStatus { chainId contractAddress lastScannedBlock lagSeconds updatedAt } contractConfig { chainId contractAddress paused owner arbiter pendingArbiter feeRecipient pendingFeeRecipient updatedAt } reconciliationFindings(status: "OPEN", first: 20) { id kind blockNumber createdAt } stuckIntents(first: 20) { id method status createdAt } }`;
 const EVIDENCE_QUERY = `query AdminEvidence($issueId: ID!) { evidenceFiles(issueId: $issueId) { id side manifestHash files { name downloadUrl sha256 size } } }`;
 const BAN_USER = `mutation BanUser($input: BanUserInput!) { banUser(input: $input) { id isBanned } }`;
 const UNBAN_USER = `mutation UnbanUser($userId: ID!) { unbanUser(userId: $userId) { id isBanned } }`;
@@ -36,6 +36,7 @@ type AdminDispute = { id: string; issueId: string; status: string; reason: strin
 type AdminIssue = { id: string; title: string; status: string; clientId: string; developerId?: string | null; createdAt: string };
 type OpsData = {
   indexerStatus: Array<{ chainId: number; contractAddress: string; lastScannedBlock: string; lagSeconds: number; updatedAt: string }>;
+  contractConfig: Array<{ chainId: number; contractAddress: string; paused: boolean; owner: string; arbiter: string; pendingArbiter?: string | null; feeRecipient: string; pendingFeeRecipient?: string | null; updatedAt: string }>;
   reconciliationFindings: Array<{ id: string; kind: string; blockNumber: string; createdAt: string }>;
   stuckIntents: Array<{ id: string; method: string; status: string; createdAt: string }>;
 };
@@ -249,6 +250,13 @@ function OpsPanel({ ops, onRefresh }: { ops: OpsData | null; onRefresh: () => vo
       <div className="glass rounded-xl p-4"><div className="flex items-center justify-between"><h2 className="font-semibold">Indexer</h2><Button size="sm" variant="outline" onClick={onRefresh}>Refresh</Button></div>
         {(ops?.indexerStatus ?? []).map((row) => <p key={row.contractAddress} className="mt-2 text-xs">Block {row.lastScannedBlock} · lag {row.lagSeconds}s</p>)}
         {ops && ops.indexerStatus.length === 0 && <p className="mt-2 text-xs">No checkpoints yet.</p>}
+        {(ops?.contractConfig ?? []).map((cfg) => (
+          <div key={cfg.contractAddress} className="mt-3 border-t border-[hsl(var(--border))] pt-2">
+            <p className="mt-2 text-xs">Contract {cfg.paused ? "Paused" : "Active"}</p>
+            <p className="mt-2 text-xs">Arbiter: {cfg.arbiter}{cfg.pendingArbiter ? ` (pending: ${cfg.pendingArbiter})` : ""}</p>
+            <p className="mt-2 text-xs">Fee recipient: {cfg.feeRecipient}{cfg.pendingFeeRecipient ? ` (pending: ${cfg.pendingFeeRecipient})` : ""}</p>
+          </div>
+        ))}
       </div>
       <div className="glass rounded-xl p-4"><h2 className="font-semibold">Open findings</h2>
         {(ops?.reconciliationFindings ?? []).map((finding) => <p key={finding.id} className="mt-2 text-xs break-all">{finding.kind} · block {finding.blockNumber}</p>)}

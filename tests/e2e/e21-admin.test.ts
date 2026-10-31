@@ -4,6 +4,7 @@ import { fixture } from "./harness/fixture";
 import { fund } from "./harness/funding";
 import { gqlAs } from "./harness/gql";
 import { submitWork, releaseFunds } from "./harness/work";
+import { waitFor } from "./harness/waitFor";
 
 beforeAll(() => assertTestDatabase(process.env.TEST_DATABASE_URL));
 
@@ -54,3 +55,15 @@ test("E21: admin stats match the projection, bans cancel open work, role changes
   const average = Math.round((reviews.reduce((sum, item) => sum + item.rating, 0) / reviews.length) * 100) / 100;
   expect((await f.prisma.user.findUniqueOrThrow({ where: { id: f.developer.id } })).reputationScore).toBe(average);
 }, 240_000);
+
+test("E21: contractConfig is synced from chain and returned to admin", async () => {
+  const f = await fixture();
+  await waitFor(async () => {
+    const res = await gqlAs(f.admin, `query { contractConfig { chainId contractAddress paused owner arbiter feeRecipient } }`);
+    const rows = (res.data?.contractConfig as Array<{ arbiter: string; feeRecipient: string }>) ?? [];
+    return rows.some(
+      (r) => r.arbiter === f.arbiter.toLowerCase() && r.feeRecipient === f.feeRecipient.toLowerCase(),
+    );
+  }, 60_000);
+});
+

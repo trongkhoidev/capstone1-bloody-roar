@@ -7,5 +7,6 @@ import { indexerJob } from "./indexer";
 import { intentsJob } from "./intents";
 import { reservationsJob } from "./reservations";
 import { reconciliationJob } from "./reconciliation";
+import { contractConfigJob } from "./contract-config";
 
-export const jobs: Job[] = [indexerJob, intentsJob, reservationsJob, deadlinesJob, reconciliationJob, alertsJob, cleanupJob];
+export const jobs: Job[] = [indexerJob, intentsJob, reservationsJob, deadlinesJob, reconciliationJob, alertsJob, cleanupJob, contractConfigJob];

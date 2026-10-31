@@ -1,0 +1,482 @@
+[
+  {
+    "role": "user01",
+    "name": "Nguyen Quoc Trung",
+    "bio": "Engineering Lead with 8+ years building high-throughput payment rails and microservices.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Design",
+      "Agile"
+    ],
+    "githubUsername": "demo-client-01"
+  },
+  {
+    "role": "user02",
+    "name": "Alex Rivera",
+    "bio": "Fullstack Typescript developer, passionate about clean architecture and strict type-safety.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Design",
+      "Agile",
+      "Acceptance Testing"
+    ],
+    "githubUsername": "demo-client-02"
+  },
+  {
+    "role": "user03",
+    "name": "Le Thi Mai Anh",
+    "bio": "Solidity engineer and smart contract security auditor. Open source contributor.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Design"
+    ],
+    "githubUsername": "demo-client-03"
+  },
+  {
+    "role": "user04",
+    "name": "David K. Miller",
+    "bio": "DevOps architect specializing in Kubernetes, automated CI/CD pipelines and infrastructure as code.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Design",
+      "Agile"
+    ],
+    "githubUsername": "demo-client-04"
+  },
+  {
+    "role": "user05",
+    "name": "Tran Minh Duc",
+    "bio": "Data Scientist and ML engineer working on NLP, time-series forecasting and recommendation systems.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Design",
+      "Agile",
+      "Acceptance Testing"
+    ],
+    "githubUsername": "demo-client-05"
+  },
+  {
+    "role": "user06",
+    "name": "Elena Rostova",
+    "bio": "UI/UX frontend specialist crafting responsive, accessible, pixel-perfect user interfaces.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Design"
+    ],
+    "githubUsername": "demo-client-06"
+  },
+  {
+    "role": "user07",
+    "name": "Pham Hoang Nam",
+    "bio": "Blockchain researcher exploring EVM scalability, rollups, and zero-knowledge primitives.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Design",
+      "Agile"
+    ],
+    "githubUsername": "demo-client-07"
+  },
+  {
+    "role": "user08",
+    "name": "Kenji Sato",
+    "bio": "Product Owner focusing on Web3 developer platforms and decentralized task marketplaces.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Design",
+      "Agile",
+      "Acceptance Testing"
+    ],
+    "githubUsername": "demo-client-08"
+  },
+  {
+    "role": "user09",
+    "name": "Doan Thu Trang",
+    "bio": "Engineering Lead with 8+ years building high-throughput payment rails and microservices.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Design"
+    ],
+    "githubUsername": "demo-client-09"
+  },
+  {
+    "role": "user10",
+    "name": "Michael Vance",
+    "bio": "Fullstack Typescript developer, passionate about clean architecture and strict type-safety.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Design",
+      "Agile"
+    ],
+    "githubUsername": "demo-client-10"
+  },
+  {
+    "role": "user11",
+    "name": "Vu Tuan Kiet",
+    "bio": "Solidity engineer and smart contract security auditor. Open source contributor.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js",
+      "Node.js",
+      "Solidity"
+    ],
+    "githubUsername": "demo-developer-11"
+  },
+  {
+    "role": "user12",
+    "name": "Lucas Silva",
+    "bio": "DevOps architect specializing in Kubernetes, automated CI/CD pipelines and infrastructure as code.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js"
+    ],
+    "githubUsername": "demo-developer-12"
+  },
+  {
+    "role": "user13",
+    "name": "Hoang Van Long",
+    "bio": "Data Scientist and ML engineer working on NLP, time-series forecasting and recommendation systems.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js",
+      "Node.js"
+    ],
+    "githubUsername": "demo-developer-13"
+  },
+  {
+    "role": "user14",
+    "name": "Chloe Martin",
+    "bio": "UI/UX frontend specialist crafting responsive, accessible, pixel-perfect user interfaces.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js",
+      "Node.js",
+      "Solidity"
+    ],
+    "githubUsername": "demo-developer-14"
+  },
+  {
+    "role": "user15",
+    "name": "Ngo Quang Huy",
+    "bio": "Blockchain researcher exploring EVM scalability, rollups, and zero-knowledge primitives.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js"
+    ],
+    "githubUsername": "demo-developer-15"
+  },
+  {
+    "role": "user16",
+    "name": "Dmitri Ivanov",
+    "bio": "Product Owner focusing on Web3 developer platforms and decentralized task marketplaces.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js",
+      "Node.js"
+    ],
+    "githubUsername": "demo-developer-16"
+  },
+  {
+    "role": "user17",
+    "name": "Dang Thai Son",
+    "bio": "Engineering Lead with 8+ years building high-throughput payment rails and microservices.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js",
+      "Node.js",
+      "Solidity"
+    ],
+    "githubUsername": "demo-developer-17"
+  },
+  {
+    "role": "user18",
+    "name": "Priya Sharma",
+    "bio": "Fullstack Typescript developer, passionate about clean architecture and strict type-safety.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js"
+    ],
+    "githubUsername": "demo-developer-18"
+  },
+  {
+    "role": "user19",
+    "name": "Bui Duc Thinh",
+    "bio": "Solidity engineer and smart contract security auditor. Open source contributor.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js",
+      "Node.js"
+    ],
+    "githubUsername": "demo-developer-19"
+  },
+  {
+    "role": "user20",
+    "name": "Marcus Aurelius",
+    "bio": "DevOps architect specializing in Kubernetes, automated CI/CD pipelines and infrastructure as code.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js",
+      "Node.js",
+      "Solidity"
+    ],
+    "githubUsername": "demo-developer-20"
+  },
+  {
+    "role": "user21",
+    "name": "Phan Thanh Dat",
+    "bio": "Data Scientist and ML engineer working on NLP, time-series forecasting and recommendation systems.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js"
+    ],
+    "githubUsername": "demo-developer-21"
+  },
+  {
+    "role": "user22",
+    "name": "Sophia Taylor",
+    "bio": "UI/UX frontend specialist crafting responsive, accessible, pixel-perfect user interfaces.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js",
+      "Node.js"
+    ],
+    "githubUsername": "demo-developer-22"
+  },
+  {
+    "role": "user23",
+    "name": "Dinh Trong Khoi",
+    "bio": "Blockchain researcher exploring EVM scalability, rollups, and zero-knowledge primitives.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js",
+      "Node.js",
+      "Solidity"
+    ],
+    "githubUsername": "demo-developer-23"
+  },
+  {
+    "role": "user24",
+    "name": "Carlos Mendez",
+    "bio": "Product Owner focusing on Web3 developer platforms and decentralized task marketplaces.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js"
+    ],
+    "githubUsername": "demo-developer-24"
+  },
+  {
+    "role": "user25",
+    "name": "Ta Bao Ngoc",
+    "bio": "Engineering Lead with 8+ years building high-throughput payment rails and microservices.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js",
+      "Node.js"
+    ],
+    "githubUsername": "demo-developer-25"
+  },
+  {
+    "role": "user26",
+    "name": "Yuki Takahashi",
+    "bio": "Fullstack Typescript developer, passionate about clean architecture and strict type-safety.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js",
+      "Node.js",
+      "Solidity"
+    ],
+    "githubUsername": "demo-developer-26"
+  },
+  {
+    "role": "user27",
+    "name": "Nguyen Huu Phuc",
+    "bio": "Solidity engineer and smart contract security auditor. Open source contributor.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js"
+    ],
+    "githubUsername": "demo-developer-27"
+  },
+  {
+    "role": "user28",
+    "name": "Oliver Brown",
+    "bio": "DevOps architect specializing in Kubernetes, automated CI/CD pipelines and infrastructure as code.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js",
+      "Node.js"
+    ],
+    "githubUsername": "demo-developer-28"
+  },
+  {
+    "role": "user29",
+    "name": "Ly Gia Huy",
+    "bio": "Data Scientist and ML engineer working on NLP, time-series forecasting and recommendation systems.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js",
+      "Node.js",
+      "Solidity"
+    ],
+    "githubUsername": "demo-developer-29"
+  },
+  {
+    "role": "user30",
+    "name": "Fatima Al-Mansoor",
+    "bio": "UI/UX frontend specialist crafting responsive, accessible, pixel-perfect user interfaces.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js"
+    ],
+    "githubUsername": "demo-developer-30"
+  },
+  {
+    "role": "user31",
+    "name": "Trinh Cong Minh",
+    "bio": "Blockchain researcher exploring EVM scalability, rollups, and zero-knowledge primitives.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js",
+      "Node.js"
+    ],
+    "githubUsername": "demo-developer-31"
+  },
+  {
+    "role": "user32",
+    "name": "Jan Kowalski",
+    "bio": "Product Owner focusing on Web3 developer platforms and decentralized task marketplaces.",
+    "skills": [
+      "TypeScript",
+      "React",
+      "Next.js",
+      "Node.js",
+      "Solidity"
+    ],
+    "githubUsername": "demo-developer-32"
+  },
+  {
+    "role": "user33",
+    "name": "Le Xuan Bach",
+    "bio": "Engineering Lead with 8+ years building high-throughput payment rails and microservices.",
+    "skills": [
+      "Fullstack Dev",
+      "Solidity",
+      "Architecture"
+    ],
+    "githubUsername": "demo-both-33"
+  },
+  {
+    "role": "user34",
+    "name": "Emma Watson",
+    "bio": "Fullstack Typescript developer, passionate about clean architecture and strict type-safety.",
+    "skills": [
+      "Fullstack Dev",
+      "Solidity",
+      "Architecture",
+      "Smart Contracts"
+    ],
+    "githubUsername": "demo-both-34"
+  },
+  {
+    "role": "user35",
+    "name": "Nguyen Ngoc Lan",
+    "bio": "Solidity engineer and smart contract security auditor. Open source contributor.",
+    "skills": [
+      "Fullstack Dev",
+      "Solidity",
+      "Architecture",
+      "Smart Contracts",
+      "DeFi"
+    ],
+    "githubUsername": "demo-both-35"
+  },
+  {
+    "role": "user36",
+    "name": "Arthur Pendelton",
+    "bio": "DevOps architect specializing in Kubernetes, automated CI/CD pipelines and infrastructure as code.",
+    "skills": [
+      "Fullstack Dev",
+      "Solidity",
+      "Architecture"
+    ],
+    "githubUsername": "demo-both-36"
+  },
+  {
+    "role": "user37",
+    "name": "Cao Tien Dung",
+    "bio": "Data Scientist and ML engineer working on NLP, time-series forecasting and recommendation systems.",
+    "skills": [
+      "Fullstack Dev",
+      "Solidity",
+      "Architecture",
+      "Smart Contracts"
+    ],
+    "githubUsername": "demo-both-37"
+  },
+  {
+    "role": "user38",
+    "name": "Lukas Weber",
+    "bio": "UI/UX frontend specialist crafting responsive, accessible, pixel-perfect user interfaces.",
+    "skills": [
+      "Fullstack Dev",
+      "Solidity",
+      "Architecture",
+      "Smart Contracts",
+      "DeFi"
+    ],
+    "githubUsername": "demo-both-38"
+  },
+  {
+    "role": "user39",
+    "name": "Do Quynh Chi",
+    "bio": "Blockchain researcher exploring EVM scalability, rollups, and zero-knowledge primitives.",
+    "skills": [
+      "Fullstack Dev",
+      "Solidity",
+      "Architecture"
+    ],
+    "githubUsername": "demo-both-39"
+  },
+  {
+    "role": "user40",
+    "name": "Devon Miles",
+    "bio": "Product Owner focusing on Web3 developer platforms and decentralized task marketplaces.",
+    "skills": [
+      "Fullstack Dev",
+      "Solidity",
+      "Architecture",
+      "Smart Contracts"
+    ],
+    "githubUsername": "demo-both-40"
+  }
+]

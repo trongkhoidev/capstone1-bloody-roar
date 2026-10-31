@@ -41,6 +41,7 @@
     "server.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "ui-e2e"
   ]
 }

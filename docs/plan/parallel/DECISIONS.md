@@ -326,3 +326,27 @@ Trang chi tiết issue giữ dữ liệu bằng `useState` và hàm `load()` có
 ## BỔ SUNG K7 — form ứng tuyển và màn chặn đăng bài theo vai trò
 
 Màn chặn đăng bài chỉ còn cho ADMIN. Bỏ dòng "Client workspace" và đoạn giải thích vai trò vì không còn đúng cho ADMIN; xóa ba key i18n không còn dùng. Form ứng tuyển hiện cho mọi người xem không phải chủ bài và không phải ADMIN, thay cho nhánh "chuyển sang vai trò Developer". Lý do: API đã bỏ chặn role (QĐ-21).
+
+## BỔ SUNG K8-chain — harness đặt NEXT_PUBLIC_CHAIN_ID=31337
+
+`.env` không có `NEXT_PUBLIC_CHAIN_ID`, nên `ACTIVE_CHAIN` ở trình duyệt là Base Sepolia. Ví giả trả `0x7a69` sẽ bị yêu cầu chuyển mạng và luồng UI dừng. `run-local.ts` đặt `NEXT_PUBLIC_CHAIN_ID=31337` cho tiến trình web. Lý do: đây là môi trường local, không đổi cấu hình sản phẩm.
+
+## BỔ SUNG K8-phase — giao việc kiểm bằng trạng thái submission
+
+`EscrowPhase` không có pha "đã giao" (chỉ có NONE, FUNDED, DISPUTED, ...). E32 chờ `submission.status === "SUBMITTED"`, đúng cách `submitWork` trong `harness/work.ts` đang làm.
+
+## BỔ SUNG K8-alert — kiểm lỗi bằng lớp `.bn-bad`
+
+Banner lỗi của `issue-detail-view.tsx` không có `role="alert"`. E32 kiểm `.bn-bad` có 0 phần tử, hoặc chứa chuỗi lỗi mong đợi. Không thêm `data-testid`, vì đặc tả chỉ cho phép thêm vào nút.
+
+## BỔ SUNG K8-claim — số dư kiểm theo tổng chưa rút
+
+Tài khoản developer (`accounts[3]`) dùng chung giữa các file test, nên có thể còn số dư chưa rút từ file trước. E32 kiểm: (1) sau release, phần tăng của `claimable` đúng `97500000n`; (2) sau "Rút tiền", số dư ví tăng đúng tổng `claimable` còn lại. Không kiểm cứng `97500000n` ở bước rút.
+
+## BỔ SUNG K8-tsconfig — loại ui-e2e khỏi tsconfig của web
+
+`ui-e2e` dùng `bun:test`, và các file harness import từ `tests/e2e` kéo theo lỗi kiểu khi web typecheck. Thêm `"ui-e2e"` vào `exclude` của `apps/web/tsconfig.json`, đúng như đặc tả cho phép. Không thêm `@types/bun`.
+
+## BỔ SUNG K8-nonce — thử lại nonce khi Next dev trả 404
+
+Ba lần chạy harness liên tiếp (run 10, 11, và run trước khi xóa `.next`) có đúng 4 test lỗi `Nonce failed: 404` ở E2 và E18. Log `tests/e2e/.run/web.log` cho thấy route `/api/auth/nonce` đã biên dịch lúc khởi động, rồi các request sau đó trả 404 kèm thời gian xử lý 35 và 51 giây. Giả thuyết: Next dev hủy route không được gọi trong một lúc, và request đến trong lúc biên dịch lại thì nhận 404. Chưa xác minh được nguyên nhân gốc. Tạm thời `login()` thử lại tối đa 5 lần, cách 2 giây, chỉ khi gặp 404. Không đổi code sản phẩm.

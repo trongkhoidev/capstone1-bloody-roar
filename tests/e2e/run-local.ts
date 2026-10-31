@@ -56,7 +56,7 @@ try {
   const env = { ...process.env, DATABASE_URL: databaseUrl, DIRECT_URL: databaseUrl, TEST_DATABASE_URL: databaseUrl,
     RPC_URL: "http://127.0.0.1:8545", CHAIN_ID: "31337", FINALITY: "latest", AI_BASE_URL: "http://127.0.0.1:4019",
     AI_EXTERNAL_GUARD: "false", NEXT_PUBLIC_APP_URL: "http://localhost:4012", WORKER_PORT: "4011", PORT: "4012", NODE_ENV: "development",
-    GITHUB_WEBHOOK_SECRET: "harness-webhook-secret" };
+    GITHUB_WEBHOOK_SECRET: "harness-webhook-secret", NEXT_PUBLIC_CHAIN_ID: "31337" };
   const hardhat = await start("hardhat", ["sh", "-c", "ulimit -n 65536; exec bun run --cwd apps/contracts node"], env);
   await waitFor(async () => {
     if (hardhat.exitCode !== null) throw new Error("Hardhat exited before becoming ready");
@@ -86,7 +86,10 @@ try {
   const required = Array.from({ length: 31 }, (_, i) => i + 1);
   const missing = required.filter((n) => !files.some((file) => file.startsWith(`e${String(n).padStart(2, "0")}-`)));
   if (missing.length) throw new Error(`Missing G1 scenarios: ${missing.map((n) => `E${n}`).join(", ")}`);
-  summary = "E2E scenarios passed";
+  if (!(await Bun.file("apps/web/ui-e2e/e32-ui-flow.test.ts").exists())) throw new Error("Missing E32 UI scenario");
+  const ui = Bun.spawn(["bun", "test", "./ui-e2e"], { cwd: "apps/web", env: { ...env, NODE_ENV: "test" }, stdout: "inherit", stderr: "inherit" });
+  if (await ui.exited !== 0) throw new Error("E32 UI tests failed");
+  summary = "E2E scenarios passed (E1–E32)";
 } catch (error) {
   summary = error instanceof Error ? error.message : "Harness failed";
   process.exitCode = 1;

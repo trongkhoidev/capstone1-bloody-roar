@@ -27,6 +27,10 @@ export async function prepareAndSend(f: Fixture, user: Fixture["client"], field:
   await sendPrepared(user, walletOf(f, user), step);
   return step;
 }
+// Mints mock USDC to `to`, sent from the client account (the local token is mintable by anyone).
+export async function mintUsdc(f: Fixture, to: string, amount: bigint) {
+  await rpc("eth_sendTransaction", [{ from: f.accounts[2], to: f.token.address, data: encodeFunctionData({ abi: mintAbi, functionName: "mint", args: [to as Hex, amount] }), gas: "0x500000" }]);
+}
 export async function fund(f: Fixture) {
   const selection = await f.select(f.applicationId);
   if (selection.errors?.length) throw new Error(`Select: ${selection.errors[0]?.message}`);
@@ -43,7 +47,7 @@ export async function fund(f: Fixture) {
   const signature = await rpc<string>("eth_signTypedData_v4", [f.accounts[2], payload]);
   const signed = await gqlAs(f.client, `mutation($id: ID!, $signature: String!, $nonce: String!, $expiry: String!) { submitFundingIntent(reservationId: $id, signature: $signature, nonce: $nonce, intentExpiry: $expiry) { id } }`, { id, signature, nonce: nonce.toString(), expiry: expiry.toISOString() });
   if (signed.errors?.length) throw new Error(`Funding signature: ${signed.errors[0]?.message}`);
-  await rpc("eth_sendTransaction", [{ from: f.accounts[2], to: f.token.address, data: encodeFunctionData({ abi: mintAbi, functionName: "mint", args: [f.accounts[2] as Hex, 100000000n] }), gas: "0x500000" }]);
+  await mintUsdc(f, f.accounts[2]!, 100000000n);
   const prepared = await gqlAs(f.client, `mutation($id: ID!) { prepareEscrowDeposit(reservationId: $id) { steps { intentId method contractAddress data value } } }`, { id });
   if (prepared.errors?.length) throw new Error(`Prepare deposit: ${prepared.errors[0]?.message}`);
   const steps = (prepared.data?.prepareEscrowDeposit as { steps: Prepared[] }).steps;

@@ -553,24 +553,26 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                   </section>
 
                   {/* Client: Review Applicants */}
-                  {isClient && issue.status === "OPEN" && applications.length > 0 && (
+                  {isClient && (issue.status === "OPEN" || issue.status === "AWAITING_FUNDING") && applications.length > 0 && (
                     <section className="card">
                       <div className="card-h">
                         <h2>Review Applicants</h2>
                         <span className="badge b-open" style={{ marginLeft: "auto" }}>{applications.length} pending</span>
                       </div>
                       <div className="card-b">
-                        <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 12, marginBottom: 12 }}>
-                          Delivery deadline
-                          <input
-                            type="date"
-                            className="inp"
-                            style={{ height: 32, fontSize: 12 }}
-                            value={deliveryDeadline}
-                            min={new Date().toISOString().slice(0, 10)}
-                            onChange={(e) => setDeliveryDeadline(e.target.value)}
-                          />
-                        </label>
+                        {issue.status === "OPEN" && (
+                          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 12, marginBottom: 12 }}>
+                            Delivery deadline
+                            <input
+                              type="date"
+                              className="inp"
+                              style={{ height: 32, fontSize: 12 }}
+                              value={deliveryDeadline}
+                              min={new Date().toISOString().slice(0, 10)}
+                              onChange={(e) => setDeliveryDeadline(e.target.value)}
+                            />
+                          </label>
+                        )}
                         {reservationId && issue.viewerCapabilities?.canFund && (
                           <button
                             type="button"
@@ -614,7 +616,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                                 {app.message || "No cover letter provided."}
                               </p>
                             </div>
-                            {app.status === "PENDING" && issue.viewerCapabilities?.canSelect && (
+                            {app.status === "PENDING" && issue.status === "OPEN" && issue.viewerCapabilities?.canSelect && (
                               <button
                                 type="button"
                                 className="btn btn-p btn-sm"

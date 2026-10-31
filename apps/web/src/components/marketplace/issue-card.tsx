@@ -12,7 +12,7 @@ export interface IssueItem {
   title: string;
   description: string;
   category: string;
-  status: "OPEN" | "ASSIGNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "DISPUTED";
+  status: "OPEN" | "AWAITING_FUNDING" | "ASSIGNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "DISPUTED";
   bountyAmount: number;
   token: {
     symbol: string;

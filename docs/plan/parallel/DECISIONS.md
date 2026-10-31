@@ -376,4 +376,33 @@ Khi chainId là 31337, seed-demo.ts dùng tài khoản mặc định của Hardh
 
 Xóa model `Escrow` và `Transaction`, các enum `EscrowStatus`, `TransactionType`, `TransactionStatus`, cùng các field quan hệ liên quan (`Token.escrows`, `Issue.escrow`, `User.escrowsAsClient`/`User.escrowsAsDev`, `Dispute.escrowId`/`Dispute.escrow`). Escrow thật nằm on-chain và trong `EscrowProjection`. File migration `20261031173000_drop_legacy_escrow_tables` chỉ chứa các lệnh DROP (bảng, cột, ràng buộc, index, enum). Cập nhật `packages/database/test/seed-demo.test.ts` bỏ bảng `escrows` khỏi lệnh truncate và assertion.
 
+## BỔ SUNG R1 — kho ví 53 ví và tách bạch tệp bí mật
+
+Tạo mới 53 ví cho kịch bản Base Sepolia gồm 3 Safe x 3 signer = 9 ví, 1 admin, 1 treasury, 1 spammer, 41 dev/client. Lưu trong `demo-wallets/keys.json` với quyền `0600`. Tệp bí mật `.env.demo`, thư mục `demo-wallets/`, và `docs/demo/*.local.md` được chặn trong `.gitignore` và kiểm chứng bằng `git check-ignore`. Tài liệu `docs/demo/WALLETS.md` chỉ ghi địa chỉ công khai và vai trò, tuyệt đối không lộ private key.
+
+## BỔ SUNG R2 — nguồn faucet Base Sepolia và đo lường nhu cầu quỹ
+
+Kiểm tra tuần tự CDP Faucet API, Circle Faucet và các faucet công khai theo R2. Do CDP API key không có trong môi trường và các faucet công khai yêu cầu captcha Turnstile hoặc số dư ETH mainnet, script dừng an toàn theo quy tắc 298. Tính toán chính xác lượng quỹ cần cho toàn bộ 9 đợt là `0.0247 ETH` (khuyến nghị `0.05 ETH`) và `35.0 USDC`, yêu cầu nạp về ví `treasury` (`0x6d5fCc753Dfeb150d7f3526dac114F38Dd169b95`). Ghi nhật ký vào `demo-wallets/ledger.jsonl`.
+
+## BỔ SUNG R3 — tính toán CREATE2 địa chỉ Safe v1.4.1 deterministically
+
+Sử dụng Safe Proxy Factory v1.4.1 (`0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67`) và Safe Singleton (`0x41fC31F462a6305c45e607F10777595696c4Ec4d`) trên Base Sepolia. Dự đoán chính xác 3 địa chỉ Safe (Owner, Arbiter, Fee) bằng thuật toán CREATE2 keccak256 với initializer byte code từ `setup(...)` và nonce, đảm bảo tính xác định và có thể sử dụng cấu hình ngay mà không cần deploy trước.
+
+## BỔ SUNG R4 — môi trường demo độc lập bloody_demo và quản lý PID
+
+Tạo database `bloody_demo` độc lập trên Postgres cổng 5433, áp dụng toàn bộ 13 Prisma migrations và seed token USDC Base Sepolia (`0x036CbD53842c5426634e7929541eC2318f3dCF7e`). Phân bổ cổng riêng biệt: 4100 (web), 4101 (worker), 4019 (AI mock), không đụng chạm cổng 4000 và các cổng harness gate (4010-4012). Script `up.sh` và `down.sh` lưu PID vào `demo-wallets/` để quản lý vòng đời tiến trình sạch sẽ.
+
+## BỔ SUNG R5 — chống nghẽn rate-limit bằng x-forwarded-for theo ví
+
+Rate-limiter `graphql:<ip>` (600 điểm/phút) sẽ chặn nếu 40 ví gửi đồng thời từ `127.0.0.1`. Mỗi ví demo được gán một địa chỉ IP ảo xác định (`10.77.<i>.1`) truyền qua header `x-forwarded-for` trong session HTTP và socket handshake, mô phỏng đúng hành vi người dùng phân tán trên mạng Internet và loại bỏ nguy cơ rate-limit.
+
+## BỔ SUNG R6 — ký và thực thi Safe Transaction theo chuẩn EIP-712
+
+Tạo transaction hash chuẩn Safe v1.4.1 với `domainSeparator` và `SAFE_TX_TYPEHASH`. Thu thập 2 chữ ký từ 2 trong 3 ví signer của Arbiter Safe, sắp xếp các chữ ký theo thứ tự địa chỉ signer tăng dần (lexicographical order) theo yêu cầu của `GnosisSafe.checkNSignatures`. Gọi `execTransaction` với payload chữ ký nối chuỗi `r + s + v`.
+
+## BỔ SUNG R7-1 — hạ BOUNTY_MIN_AMOUNT từ 10 xuống 0.5 USDC
+
+Kế hoạch đợt R yêu cầu phân bổ ngân sách 150 bounty trong khoảng 0.5–5 USDC để tối ưu chi phí faucet testnet. Hằng số `BOUNTY_MIN_AMOUNT` trước đây bị fix cứng là 10 trong `packages/shared/src/constants/index.ts`, khiến các bounty nhỏ bị từ chối bởi validation schema. Thêm test tái hiện `apps/web/src/test/bounty-range.test.ts` và hạ ngưỡng tối thiểu xuống 0.5 USDC.
+
+
 

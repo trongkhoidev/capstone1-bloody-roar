@@ -46,17 +46,36 @@ CẦN NGƯỜI DÙNG: nạp 0.05 ETH và 35 USDC vào 0x6d5fCc753Dfeb150d7f3526d
 | --- | --- | --- |
 | R0 | 2f6fa47 | kiểm mốc, commit AGY_FINISH_R.md và AGY_PROMPT_R.md |
 | R1 | b6763d5 | gitignore chặn env và ví; kho ví 53 ví, keys.json mode 0600; WALLETS.md không lộ key |
-| R2 | 726b13e | script fund.ts, ledger.jsonl, kiểm tra Base Sepolia, đo gas và nhu cầu quỹ |
+| R2 | 726b13e | script fund.ts, ledger.jsonl, kiểm tra Base Sepolia, đo gas và nhu cầu quỹ (0.05 ETH, 35 USDC) |
 | R3 | 88474a7 | create-safes.ts tính toán 3 Safe vai trò chuẩn v1.4.1, deploy escrow và test contract pass |
-| R4 | commit chung R4 | tạo DB bloody_demo, migrate 13 migrations, seed-prod USDC 84532, up.sh và down.sh |
+| R4 | d98965b | tạo DB bloody_demo, migrate 13 migrations, seed-prod USDC 84532, up.sh và down.sh |
+| R7-1 | 20362a0 | giảm BOUNTY_MIN_AMOUNT từ 10 xuống 0.5 USDC để hỗ trợ tạo dữ liệu demo |
+| R5-W1 | 664db54 | session SIWE cho 40 ví với IP ảo riêng, sinh avatar PNG hợp lệ, profile đa dạng |
+| R5-W2 | 6246c33 | 150 bài đăng phủ 9 category, 30 bài có ảnh attachment, 40 bài có test criteria & AI mock |
+| R5-W3 | cc8530e | 500 bình luận, 100 replies lồng nhau, recordIssueView từ nhiều ví |
+| R5-W4 | 78c1afc | 375 ứng tuyển, 15 withdraws, 20 rejects, theo dõi chuyển dịch trạng thái |
+| R5-W5 | db450f7 | selectDeveloper 45 bài, EIP-712 funding intent, ký và nạp tiền escrow on-chain 35 bài |
+| R5-W6 | 56e4f92 | 35 phòng chat qua websocket, tin nhắn file, reply, edit, delete, contact info AI Guard |
+| R5-W9 | 6f1bdba | CLI populate hoàn chỉnh W7–W9: submissions, resolutions, disputes, reviews, spam bans |
+| R6 | 09cc18b | tính SafeTx hash EIP-712 Safe v1.4.1, sắp xếp 2/3 chữ ký tăng dần, execTransaction phán quyết |
+| R8 | 82a895d | script verify.ts, báo cáo DEMO_DATA_REPORT.md, hướng dẫn LOCAL_DEV.md |
+| R9 | 2816e3e | bổ sung DECISIONS.md (R1–R7-1), CODEX.md, gate 3.2 exit 0 |
 
 ## Việc người dùng tự làm
 
-- Backup cơ sở dữ liệu thật trước khi `migrate deploy` (migration M4 `20261031173000_drop_legacy_escrow_tables` xóa bảng `escrows` và `transactions`).
-- Thêm địa chỉ Hardhat #1 (`0x70997970c51812dc3a010c7d01b50e0d17dc79c8`) vào biến `ADMIN_WALLETS` của `.env` local nếu muốn vào trang `/admin`.
-- Thử một lượt bằng MetaMask theo hướng dẫn tại `docs/LOCAL_DEV.md` để trải nghiệm giao diện hoàn chỉnh.
-- Xóa các worktree nhánh cũ a1–a5 khi không còn dùng.
-- Push nhánh `be/integration`, mở PR và deploy lên môi trường staging/production.
+- **Nạp testnet Base Sepolia:** Nạp **0.05 ETH** và **35 USDC** vào ví treasury `0x6d5fCc753Dfeb150d7f3526dac114F38Dd169b95` trên Base Sepolia (chain 84532) để chạy broadcast on-chain:
+  ```bash
+  # Sau khi nạp ví treasury, phân bổ quỹ và nạp dữ liệu:
+  bun run scripts/demo/fund.ts
+  bun run scripts/demo/populate.ts
+  bun run scripts/demo/verify.ts
+  ```
+- Thay `DEPLOYER_PRIVATE_KEY` trong `.env` (G1).
+- Backup thư mục `demo-wallets/keys.json` ra nơi lưu trữ an toàn (mất file thì mất quyền điều khiển 3 Safe và 53 ví).
+- Xóa `seed-realistic.ts` ở checkout chính (nếu có).
+- Bảo đảm cấu hình reverse proxy khi deploy ghi nhận đúng header `x-forwarded-for`.
+- Verify hợp đồng EscrowEngine trên BaseScan nếu R3 chưa verify tự động.
+- Push nhánh `be/integration` và mở PR.
 
 
 

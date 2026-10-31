@@ -175,6 +175,8 @@
 | R5-W9 | scripts/demo/populate.ts; scripts/demo/populate.test.ts | bun test scripts/demo/populate.test.ts | Pass 21/21 assertions: sinh và nạp W7-W9 (submissions, settlements, disputes, reviews, bans) |
 | R6 | scripts/demo/lib/safe.ts; scripts/demo/lib/safe.test.ts | bun test scripts/demo/lib/safe.test.ts | Pass 4/4: tính SafeTx hash EIP-712 Safe v1.4.1, sắp xếp 2/3 chữ ký tăng dần, execTransaction |
 | R8 | scripts/demo/verify.ts; docs/demo/DEMO_DATA_REPORT.md; docs/LOCAL_DEV.md | bun run scripts/demo/verify.ts --dry-run | Pass: kiểm chứng 12 chỉ tiêu so với mục 2, không sai lệch số dư, không kẹt intent, tài liệu hướng dẫn hoàn tất |
+| R9 | docs/plan/parallel/DECISIONS.md; docs/plan/parallel/reports/CODEX.md | Gate 3.2 local hardhat; bun run scripts/demo/verify.ts --dry-run | Pass: gate 3.2 exit 0, verify.ts dry-run pass, hoàn tất checklist và quyết định bổ sung đợt R |
+
 
 
 

@@ -106,7 +106,7 @@ describe("createIssue bounty and deadline", () => {
     const result = await execute(
       CREATE_ISSUE,
       { user: client, db },
-      { input: { ...createInput, bountyAmount: "5" } },
+      { input: { ...createInput, bountyAmount: "0.1" } },
     );
 
     expect(result.errors?.[0]?.extensions?.code).toBe("BAD_USER_INPUT");

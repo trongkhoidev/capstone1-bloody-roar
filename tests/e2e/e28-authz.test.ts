@@ -66,6 +66,17 @@ const rows: Row[] = [
   // Phiên đăng nhập
   { name: "revokeSession", decl: "$id: ID!", args: "id: $id", ret: "", vars: (_f, x) => ({ id: x.sessionId }), outsider: ["NOT_FOUND"] },
   { name: "revokeOtherSessions", decl: "", args: "", ret: "", vars: () => ({}), allowed: true },
+  // Phase E–F: tiêu chí, tin nhắn, giữ chỗ, ví, đính kèm, quản trị
+  { name: "attachIssueFile", decl: "$issue: ID!, $attachment: ID!", args: "issueId: $issue, attachmentId: $attachment", ret: obj, vars: (f) => ({ issue: f.issueId, attachment: "missing-attachment" }), outsider: ["FORBIDDEN"] },
+  { name: "cancelReservation", decl: "$id: ID!", args: "reservationId: $id", ret: obj, vars: () => ({ id: "missing-reservation" }), outsider: ["NOT_FOUND"] },
+  { name: "createTestCase", decl: "$input: CreateTestCaseInput!", args: "input: $input", ret: obj, vars: (f) => ({ input: { issueId: f.issueId, title: "Outsider criterion", description: "Outsider attempt", given: "a task", when: "it is done", then: "it passes" } }), outsider: ["FORBIDDEN"] },
+  { name: "deleteTestCase", decl: "$id: ID!", args: "id: $id", ret: "", vars: (f) => ({ id: f.criterionId }), outsider: ["FORBIDDEN"] },
+  { name: "editMessage", decl: "$id: ID!, $content: String!", args: "id: $id, content: $content", ret: obj, vars: () => ({ id: "missing-message", content: "Outsider edit" }), outsider: ["NOT_FOUND"] },
+  { name: "deleteMessage", decl: "$id: ID!", args: "id: $id", ret: "", vars: () => ({ id: "missing-message" }), outsider: ["NOT_FOUND"] },
+  { name: "recordIssueView", decl: "$issue: ID!", args: "issueId: $issue", ret: "", vars: (f) => ({ issue: f.issueId }), allowed: true },
+  { name: "recordTransactionSubmitted", decl: "$intent: ID!, $hash: String!", args: "intentId: $intent, txHash: $hash", ret: obj, vars: () => ({ intent: "missing-intent", hash: `0x${"1".repeat(64)}` }), outsider: ["NOT_FOUND"] },
+  { name: "submitFundingIntent", decl: "$id: ID!, $sig: String!, $nonce: String!, $expiry: String!", args: "reservationId: $id, signature: $sig, nonce: $nonce, intentExpiry: $expiry", ret: obj, vars: () => ({ id: "missing-reservation", sig: `0x${"1".repeat(130)}`, nonce: "1", expiry: new Date(Date.now() + 600_000).toISOString() }), outsider: ["NOT_FOUND"] },
+  { name: "setUserRole", decl: "$userId: ID!, $role: String!", args: "userId: $userId, role: $role", ret: obj, vars: (f) => ({ userId: f.developer.id, role: "ADMIN" }), outsider: ["FORBIDDEN"] },
 ];
 
 // Mutations the matrix records as removed. None may exist in the schema.

@@ -92,6 +92,16 @@ Kiểm bằng `tests/e2e/e28-authz.test.ts`: khách và người ngoài theo mã
 | `revokeSession` | UNAUTHORIZED | NOT_FOUND (phiên không thuộc mình) | ✅ (phiên mình) | ✅ (phiên mình) | ✅ (phiên mình) | UNAUTHORIZED | |
 | `revokeOtherSessions` | UNAUTHORIZED | ✅ (phiên của mình) | ✅ | ✅ | ✅ | UNAUTHORIZED | Trả số phiên đã thu hồi. |
 | `markAllNotificationsRead` | UNAUTHORIZED | ✅ (của mình) | ✅ | ✅ | ✅ | UNAUTHORIZED | |
+| `attachIssueFile` | UNAUTHORIZED | FORBIDDEN | ✅ (chủ bài, khi OPEN) | FORBIDDEN | FORBIDDEN | UNAUTHORIZED | `ISSUE_NOT_EDITABLE` khi bài không còn OPEN; `INVALID_ATTACHMENT` khi tệp không hợp lệ. |
+| `cancelReservation` | UNAUTHORIZED | NOT_FOUND | ✅ (chủ giữ chỗ, khi đang chờ nạp) | FORBIDDEN | FORBIDDEN | UNAUTHORIZED | `RESERVATION_NOT_CANCELLABLE` khi giữ chỗ đã đổi trạng thái. |
+| `createTestCase` | UNAUTHORIZED | FORBIDDEN | ✅ (chủ bài, khi OPEN và chưa có giữ chỗ) | FORBIDDEN | FORBIDDEN | UNAUTHORIZED | `ISSUE_NOT_EDITABLE` khi tiêu chí đã khóa. |
+| `deleteTestCase` | UNAUTHORIZED | FORBIDDEN | ✅ (chủ bài, cùng điều kiện) | FORBIDDEN | FORBIDDEN | UNAUTHORIZED | Tiêu chí đã duyệt bị xóa thì tăng `termsVersion`. |
+| `editMessage` | UNAUTHORIZED | NOT_FOUND (tin không có) | ✅ (tin của mình) | ✅ (tin của mình) | ✅ (tin của mình) | UNAUTHORIZED | `FORBIDDEN` với tin của người khác; `CHAT_LOCKED` khi đang tranh chấp. |
+| `deleteMessage` | UNAUTHORIZED | NOT_FOUND (tin không có) | ✅ (tin của mình) | ✅ (tin của mình) | ✅ (tin của mình) | UNAUTHORIZED | Cùng quy tắc với `editMessage`. |
+| `recordIssueView` | UNAUTHORIZED | ✅ (bài không phải bản nháp) | ✅ | ✅ | ✅ | UNAUTHORIZED | `NOT_FOUND` với bản nháp của người khác. |
+| `recordTransactionSubmitted` | UNAUTHORIZED | NOT_FOUND | ✅ (giao dịch của mình) | ✅ (giao dịch của mình) | ✅ (giao dịch của mình) | UNAUTHORIZED | `INTENT_NOT_SUBMITTABLE`, `INTENT_EXPIRED`, `TX_HASH_USED`. |
+| `submitFundingIntent` | UNAUTHORIZED | NOT_FOUND | ✅ (chủ giữ chỗ) | FORBIDDEN | FORBIDDEN | UNAUTHORIZED | `RESERVATION_NOT_FUNDABLE`, `INTENT_EXPIRY_INVALID`. |
+| `setUserRole` | UNAUTHORIZED | FORBIDDEN | FORBIDDEN | FORBIDDEN | ✅ (không tự hạ quyền mình) | UNAUTHORIZED | `SELF_DEMOTION` khi admin tự hạ quyền. Ghi `AdminLog` `set_user_role`. |
 
 ## Ghi chú
 

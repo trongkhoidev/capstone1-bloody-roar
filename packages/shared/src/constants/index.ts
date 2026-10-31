@@ -61,7 +61,7 @@ export const ISSUE_SORT_BY = [
 
 export const ISSUE_DIFFICULTY = ["Easy", "Medium", "Hard", "Expert"] as const;
 
-export const BOUNTY_MIN_AMOUNT = 10; // Minimum 10 USDT
+export const BOUNTY_MIN_AMOUNT = 0.5; // Minimum 0.5 USDC
 export const BOUNTY_MAX_AMOUNT = 100_000; // Maximum 100,000 USDT
 
 // =============================================================================

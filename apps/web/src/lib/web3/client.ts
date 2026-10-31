@@ -201,7 +201,6 @@ export async function ensureChain(chain: ChainConfig, walletId?: string): Promis
 // Chain the app talks to: local Hardhat when NEXT_PUBLIC_CHAIN_ID is 31337, otherwise Base Sepolia.
 export const ACTIVE_CHAIN: ChainConfig = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 84532) === 31337 ? LOCALHOST_CHAIN : BASE_SEPOLIA_CHAIN;
 
-export const ensureBaseSepolia = (walletId?: string) => ensureChain(BASE_SEPOLIA_CHAIN, walletId);
 export const ensureActiveChain = (walletId?: string) => ensureChain(ACTIVE_CHAIN, walletId);
 
 

@@ -5,12 +5,13 @@ import React, { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { X, AlertCircle } from "lucide-react";
 import { WolfLogo } from "@/components/ui/wolf-logo";
+import { WalletLogo } from "./wallet-icons";
 import { useAuthStore } from "../../lib/store/use-auth-store";
 import {
   WALLET_OPTIONS,
   hasInjectedProvider,
   connectInjectedWallet,
-  ensureBaseSepolia,
+  ensureActiveChain,
   signMessageWithInjected,
 } from "../../lib/web3/client";
 import type { WalletOption } from "../../lib/web3/client";
@@ -50,7 +51,7 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
         }
 
         const address = await connectInjectedWallet(option.id);
-        await ensureBaseSepolia(option.id);
+        await ensureActiveChain(option.id);
         const success = await loginWithSignature(address, (msg) =>
           signMessageWithInjected(address, msg, option.id)
         );
@@ -227,13 +228,15 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
                         style={{
                           background:
                             wallet.id === "metamask"
-                              ? "#E2761B"
+                              ? "transparent"
                               : wallet.id === "coinbase"
                               ? "#0052FF"
-                              : "#3A3F4B",
+                              : "#EEF2FE",
+                          overflow: "hidden",
+                          padding: 0,
                         }}
                       >
-                        {wallet.id === "metamask" ? "M" : wallet.id === "coinbase" ? "C" : "B"}
+                        <WalletLogo walletId={wallet.id} size={30} />
                       </span>
                       <span>{wallet.name}</span>
                       {wallet.id === "metamask" && isMetaMaskDetected && (

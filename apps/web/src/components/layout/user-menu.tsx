@@ -291,19 +291,14 @@ export function UserMenu() {
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className="text-[11px] text-[var(--link)] hover:underline flex items-center gap-0.5 cursor-pointer ml-1"
-                  title="Copy address"
+                  className="p-1 rounded hover:bg-[var(--surface-3)] text-[var(--ink-3)] hover:text-[var(--ink)] transition-colors flex items-center justify-center cursor-pointer"
+                  title={copied ? "Copied" : "Copy address"}
+                  aria-label={copied ? "Copied address" : "Copy address"}
                 >
                   {copied ? (
-                    <>
-                      <Check className="w-3 h-3 text-[var(--ok)]" />
-                      <span className="text-[var(--ok)] text-[10px]">Copied</span>
-                    </>
+                    <Check className="w-3.5 h-3.5 text-[var(--ok)]" />
                   ) : (
-                    <>
-                      <Copy className="w-3 h-3 text-[var(--ink-3)]" />
-                      <span className="text-[10px] text-[var(--ink-3)]">Copy</span>
-                    </>
+                    <Copy className="w-3.5 h-3.5" />
                   )}
                 </button>
               </div>

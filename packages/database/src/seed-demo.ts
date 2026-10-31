@@ -27,6 +27,28 @@ export interface SeedDemoSummary {
   notifications: number;
 }
 
+export const HARDHAT_DEMO_WALLETS = {
+  admin: "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+  client1: "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
+  client2: "0x14dc79964da2c08b23698b3d3cc7ca32193d9955",
+  client3: "0xa0ee7a142d267c1f36714e4a8f75612f20a79720",
+  developer1: "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+  developer2: "0x15d34aaf54267db7d7c367839aaf71a00a2c6a65",
+  developer3: "0x23618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f",
+  developer4: "0x8888888888888888888888888888888888888888",
+} as const;
+
+export const DEFAULT_DEMO_WALLETS = {
+  admin: "0x000000000000000000000000000000000000dead",
+  client1: "0x1111111111111111111111111111111111111111",
+  client2: "0x3333333333333333333333333333333333333333",
+  client3: "0x5555555555555555555555555555555555555555",
+  developer1: "0x2222222222222222222222222222222222222222",
+  developer2: "0x4444444444444444444444444444444444444444",
+  developer3: "0x6666666666666666666666666666666666666666",
+  developer4: "0x8888888888888888888888888888888888888888",
+} as const;
+
 export function guardDatabaseUrl(url: string | undefined): string {
   if (process.env.NODE_ENV === "production") {
     throw new Error("Cannot run seedDemo in production");
@@ -69,11 +91,36 @@ export async function seedDemo(db: PrismaClient): Promise<SeedDemoSummary> {
   // -------------------------------------------------------------------------
   // 1. Users (Admin, 3 Clients, 4 Developers)
   // -------------------------------------------------------------------------
+  const wallets = chainId === 31337 ? HARDHAT_DEMO_WALLETS : DEFAULT_DEMO_WALLETS;
+
+  if (chainId === 31337) {
+    const oldAddresses = Object.values(DEFAULT_DEMO_WALLETS);
+    const newAddresses = Object.values(HARDHAT_DEMO_WALLETS);
+    for (let i = 0; i < oldAddresses.length; i++) {
+      const oldAddr = oldAddresses[i]!;
+      const newAddr = newAddresses[i]!;
+      if (oldAddr !== newAddr) {
+        const userWithNew = await db.user.findUnique({ where: { walletAddress: newAddr } });
+        if (userWithNew) {
+          await db.user.updateMany({
+            where: { walletAddress: oldAddr },
+            data: { email: null },
+          });
+        } else {
+          await db.user.updateMany({
+            where: { walletAddress: oldAddr },
+            data: { walletAddress: newAddr },
+          });
+        }
+      }
+    }
+  }
+
   const admin = await db.user.upsert({
-    where: { walletAddress: "0x000000000000000000000000000000000000dead" },
+    where: { walletAddress: wallets.admin },
     update: {},
     create: {
-      walletAddress: "0x000000000000000000000000000000000000dead",
+      walletAddress: wallets.admin,
       role: UserRole.ADMIN,
       name: "Bloody-Roar Arbiter",
       email: "arbiter@bloody-roar.dev",
@@ -84,10 +131,10 @@ export async function seedDemo(db: PrismaClient): Promise<SeedDemoSummary> {
   });
 
   const clientAlice = await db.user.upsert({
-    where: { walletAddress: "0x1111111111111111111111111111111111111111" },
+    where: { walletAddress: wallets.client1 },
     update: {},
     create: {
-      walletAddress: "0x1111111111111111111111111111111111111111",
+      walletAddress: wallets.client1,
       role: UserRole.CLIENT,
       name: "Alice Chen",
       email: "alice@nexus-protocol.io",
@@ -101,10 +148,10 @@ export async function seedDemo(db: PrismaClient): Promise<SeedDemoSummary> {
   });
 
   const clientMarcus = await db.user.upsert({
-    where: { walletAddress: "0x3333333333333333333333333333333333333333" },
+    where: { walletAddress: wallets.client2 },
     update: {},
     create: {
-      walletAddress: "0x3333333333333333333333333333333333333333",
+      walletAddress: wallets.client2,
       role: UserRole.CLIENT,
       name: "Marcus Brody",
       email: "marcus@zk-rollup.org",
@@ -118,10 +165,10 @@ export async function seedDemo(db: PrismaClient): Promise<SeedDemoSummary> {
   });
 
   const clientElena = await db.user.upsert({
-    where: { walletAddress: "0x5555555555555555555555555555555555555555" },
+    where: { walletAddress: wallets.client3 },
     update: {},
     create: {
-      walletAddress: "0x5555555555555555555555555555555555555555",
+      walletAddress: wallets.client3,
       role: UserRole.CLIENT,
       name: "Elena Rostova",
       email: "elena@aetheria.game",
@@ -135,10 +182,10 @@ export async function seedDemo(db: PrismaClient): Promise<SeedDemoSummary> {
   });
 
   const devBob = await db.user.upsert({
-    where: { walletAddress: "0x2222222222222222222222222222222222222222" },
+    where: { walletAddress: wallets.developer1 },
     update: {},
     create: {
-      walletAddress: "0x2222222222222222222222222222222222222222",
+      walletAddress: wallets.developer1,
       role: UserRole.DEVELOPER,
       name: "Bob Vance",
       email: "bob@vance-engineering.dev",
@@ -153,10 +200,10 @@ export async function seedDemo(db: PrismaClient): Promise<SeedDemoSummary> {
   });
 
   const devSophia = await db.user.upsert({
-    where: { walletAddress: "0x4444444444444444444444444444444444444444" },
+    where: { walletAddress: wallets.developer2 },
     update: {},
     create: {
-      walletAddress: "0x4444444444444444444444444444444444444444",
+      walletAddress: wallets.developer2,
       role: UserRole.DEVELOPER,
       name: "Sophia Nguyen",
       email: "sophia@auditsec.xyz",
@@ -171,10 +218,10 @@ export async function seedDemo(db: PrismaClient): Promise<SeedDemoSummary> {
   });
 
   const devLucas = await db.user.upsert({
-    where: { walletAddress: "0x6666666666666666666666666666666666666666" },
+    where: { walletAddress: wallets.developer3 },
     update: {},
     create: {
-      walletAddress: "0x6666666666666666666666666666666666666666",
+      walletAddress: wallets.developer3,
       role: UserRole.DEVELOPER,
       name: "Lucas Miller",
       email: "lucas@pixelsandcode.studio",
@@ -189,10 +236,10 @@ export async function seedDemo(db: PrismaClient): Promise<SeedDemoSummary> {
   });
 
   const devAlex = await db.user.upsert({
-    where: { walletAddress: "0x8888888888888888888888888888888888888888" },
+    where: { walletAddress: wallets.developer4 },
     update: {},
     create: {
-      walletAddress: "0x8888888888888888888888888888888888888888",
+      walletAddress: wallets.developer4,
       role: UserRole.DEVELOPER,
       name: "Alex Rivera",
       email: "alex@chainbridge.tech",

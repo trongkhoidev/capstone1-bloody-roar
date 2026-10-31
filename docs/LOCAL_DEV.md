@@ -64,11 +64,26 @@ Tài liệu này chạy tay từng dịch vụ (không qua harness). Mọi lện
 
    Web cũng kiểm cấu hình chuỗi trước khi nhận kết nối. Mở `http://localhost:4010`.
 
-## 3. Ví MetaMask
+## 3. Ví MetaMask và tài khoản demo Hardhat
 
 1. Thêm mạng: tên tùy chọn, RPC `http://127.0.0.1:8545`, Chain ID `31337`, ký hiệu ETH.
-2. Import tài khoản test #1 đến #4 của Hardhat. Lấy khóa riêng từ đầu ra của `hardhat node` ở terminal bước 2; không ghi khóa vào tài liệu hay repo.
-3. Ghi nhớ vai trò: #1 admin, #2 client, #3 và #4 developer, #5 arbiter, #6 nhận phí, #7 người ngoài.
+2. Khi chạy local với `bun run db:seed:demo`, dữ liệu mẫu được liên kết sẵn với các tài khoản mặc định của Hardhat để có thể đăng nhập thử trực tiếp bằng MetaMask:
+
+| Vai trò seed | Tài khoản | Địa chỉ |
+|---|---|---|
+| Admin | #1 | `0x70997970C51812dc3A010C7d01b50e0d17dc79C8` |
+| Client 1 (Alice) | #2 | `0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC` |
+| Developer 1 (Bob) | #3 | `0x90F79bf6EB2c4f870365E785982E1f101E93b906` |
+| Developer 2 (Sophia) | #4 | `0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65` |
+| Client 2 (Marcus) | #7 | `0x14dC79964da2C08b23698B3D3cc7Ca32193d9955` |
+| Developer 3 (Lucas) | #8 | `0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f` |
+| Client 3 (Elena) | #9 | `0xa0Ee7A142d267C1f36714E4a8F75612F20a79720` |
+| Developer 4 (Alex) | — | (chỉ hiển thị) |
+
+*Lưu ý: Không dùng #0 (owner contract), #5 (arbiter on-chain), #6 (nhận phí platform), để giữ các vai trò on-chain tách bạch.*
+*Khóa riêng (private key) lấy trực tiếp từ đầu ra của `hardhat node`; không ghi khóa riêng vào tài liệu hay repo.*
+
+3. Admin: Để vào trang `/admin`, cấu hình `ADMIN_WALLETS` trong `.env` local phải chứa địa chỉ tài khoản #1 (`0x70997970c51812dc3a010c7d01b50e0d17dc79c8`).
 
 ## 4. Thử luồng
 

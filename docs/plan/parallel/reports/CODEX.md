@@ -33,7 +33,8 @@ HOÀN TẤT 2026-10-31 16:48 (gate exit 0; typecheck, build, E1–E32 pass)
 | Mục | Commit | Ghi chú |
 | --- | --- | --- |
 | M0 | 324d958 | kiểm mốc, commit AGY_FINISH_M.md và AGY_PROMPT_M.md |
-| M1 | đang commit | bỏ toàn bộ mock data ở frontend, test no-mock-data pass |
+| M1 | 8ed38e7 | bỏ toàn bộ mock data ở frontend, test no-mock-data pass |
+| M2 | đang commit | seed demo dùng ví Hardhat khi chạy local, test pass |
 
 
 

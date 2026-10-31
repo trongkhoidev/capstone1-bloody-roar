@@ -74,6 +74,23 @@ test("seedDemo is idempotent and conforms to architecture", async () => {
     const roundedAvg = Math.round(avg * 100) / 100;
     expect(dev.reputationScore).toBe(roundedAvg);
   }
+
+  // Với chainId 31337, user client 1 có ví 0x3c44…93bc (chữ thường)
+  const client1 = await prisma.user.findFirst({
+    where: { email: "alice@nexus-protocol.io" },
+  });
+  expect(client1?.walletAddress).toBe("0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc");
+
+  // Không có user nào trùng ví #0, #5, #6
+  const forbiddenWallets = [
+    "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266", // #0 (owner)
+    "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc", // #5 (arbiter)
+    "0x976ea74026e72cd555457b05e9402c7370030da7", // #6 (fee recipient)
+  ];
+  const allUsers = await prisma.user.findMany();
+  for (const user of allUsers) {
+    expect(forbiddenWallets).not.toContain(user.walletAddress.toLowerCase());
+  }
 });
 
 afterAll(async () => {

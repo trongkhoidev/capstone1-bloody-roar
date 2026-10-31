@@ -368,3 +368,8 @@ Khi issue ở AWAITING_FUNDING, thẻ Review Applicants vẫn hiện để chứ
 
 Bỏ MOCK_ISSUES, SAMPLE_COMMENTS, RECENT_ACTIVITIES, demoMode, mock-issues.ts và các số liệu viết cứng (184,320, 1942, $128,450). Marketplace, Home và Issue detail chỉ hiển thị dữ liệu live từ GraphQL API; khi chưa tải hoặc rỗng thì hiện skeleton/empty/dấu gạch ngang `—`; lỗi hiện thông báo kèm nút Thử lại.
 
+## BỔ SUNG M2 — ví demo là tài khoản Hardhat
+
+Khi chainId là 31337, seed-demo.ts dùng tài khoản mặc định của Hardhat (#1 admin, #2 client 1, #3 dev 1, #4 dev 2, #7 client 2, #8 dev 3, #9 client 3) để người dùng có thể dùng MetaMask đăng nhập trực tiếp. Không dùng #0, #5, #6 nhằm tách bạch vai trò on-chain. Xử lý di chuyển tài khoản cũ trên local tránh vi phạm unique constraint trên email và walletAddress.
+
+

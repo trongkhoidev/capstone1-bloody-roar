@@ -42,6 +42,7 @@ Bảng trạng thái gốc bên dưới giữ nguyên để tra cứu; các dòn
 | Z-6 | xong | K1: next build pass (NODE_ENV=production, xem BỔ SUNG K1); nft không còn lỗi Division by zero |
 | K2 / FE-4 | xong | reservation có clientWallet, developerWallet; fundEscrow không còn return im lặng; escrow-reservation.test.ts 17/17 pass |
 | K3 / FE-1b | xong | walletSigner(expected) so địa chỉ ví với tài khoản đăng nhập; wallet-signer.test.ts 2/2 pass |
+| K4 / P1-31 | xong | route: không ghi đè commitSha, xóa delivery khi lỗi, orderBy submittedAt desc; github-webhook.test.ts 7/7 pass |
 | Z-7 | xong | Script cũ gọi mutation đã xóa được gỡ; root chuyển sang harness ở N-8 |
 | D4 / D5 | xong | `dde1bc7`; test theo ma trận |
 | AI-11 | xong | Timeout, bps và một AILog mỗi lượt được kiểm bằng test DB |

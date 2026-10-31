@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   createMany: vi.fn(),
   submissionFindFirst: vi.fn(),
   submissionUpdate: vi.fn(),
+  deliveryDelete: vi.fn(),
   notify: vi.fn(),
 }));
 
@@ -13,7 +14,7 @@ vi.mock("@bloody-roar/database", () => ({
   PRState: { OPEN: "OPEN", MERGED: "MERGED", CLOSED: "CLOSED" },
   createNotificationIdempotent: mocks.notify,
   prisma: {
-    githubWebhookDelivery: { createMany: mocks.createMany },
+    githubWebhookDelivery: { createMany: mocks.createMany, delete: mocks.deliveryDelete },
     submission: { findFirst: mocks.submissionFindFirst, update: mocks.submissionUpdate },
   },
 }));
@@ -45,6 +46,7 @@ beforeEach(() => {
     issue: { id: "issue-1", title: "Export report", clientId: "client-1", githubRepo: "https://github.com/acme/app" },
   });
   mocks.submissionUpdate.mockResolvedValue({});
+  mocks.deliveryDelete.mockResolvedValue({});
   mocks.notify.mockResolvedValue({ id: "n1" });
 });
 
@@ -84,5 +86,39 @@ describe("GitHub webhook deliveries", () => {
     });
     expect((await POST(request)).status).toBe(401);
     expect(mocks.createMany).not.toHaveBeenCalled();
+  });
+
+  it("keeps the delivered commit when a PR is pushed again", async () => {
+    const synchronize = JSON.stringify({
+      action: "synchronize",
+      repository: { html_url: "https://github.com/acme/app" },
+      pull_request: { html_url: "https://github.com/acme/app/pull/12", number: 12, merged: false, head: { sha: "def456" } },
+    });
+    mocks.createMany.mockResolvedValueOnce({ count: 1 });
+
+    const response = await POST(signed("delivery-4", synchronize));
+
+    expect(await response.json()).toMatchObject({ matched: true, prState: "OPEN" });
+    expect(mocks.submissionUpdate.mock.calls[0]?.[0].data).not.toHaveProperty("commitSha");
+  });
+
+  it("forgets a delivery whose processing failed, so GitHub's redelivery is processed", async () => {
+    mocks.submissionUpdate.mockRejectedValueOnce(new Error("db down"));
+    mocks.createMany.mockResolvedValueOnce({ count: 1 });
+
+    await expect(POST(signed("delivery-3"))).rejects.toThrow("db down");
+    expect(mocks.deliveryDelete).toHaveBeenCalledWith({ where: { deliveryId: "delivery-3" } });
+
+    mocks.createMany.mockResolvedValueOnce({ count: 1 });
+    const retry = await POST(signed("delivery-3"));
+    expect(await retry.json()).toMatchObject({ matched: true });
+  });
+
+  it("matches the latest submission for the pull request", async () => {
+    mocks.createMany.mockResolvedValueOnce({ count: 1 });
+
+    await POST(signed("delivery-5"));
+
+    expect(mocks.submissionFindFirst).toHaveBeenCalledWith(expect.objectContaining({ orderBy: { submittedAt: "desc" } }));
   });
 });

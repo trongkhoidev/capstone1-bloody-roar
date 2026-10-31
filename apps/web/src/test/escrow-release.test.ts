@@ -242,6 +242,12 @@ describe("prepareClaim and myClaimable (BE-48)", () => {
     expect(result.errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
   });
 
+  it("rejects a malformed recipient address", async () => {
+    const result = await execute(CLAIM, { user: developer, db: fakeDb() }, { recipient: "0x1234" });
+
+    expect(result.errors?.[0]?.extensions?.code).toBe("BAD_USER_INPUT");
+  });
+
   it("refuses when there is nothing to claim", async () => {
     const result = await execute(CLAIM, { user: developer, db: fakeDb() }, { recipient: DEVELOPER_WALLET });
 

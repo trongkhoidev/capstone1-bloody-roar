@@ -143,6 +143,8 @@ builder.mutationField("prepareClaim", (t) =>
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
       const recipient = String(args.recipient);
+      if (!/^0x[0-9a-fA-F]{40}$/.test(recipient))
+        throw gqlError("Địa chỉ nhận không hợp lệ", "BAD_USER_INPUT");
       if (!sameWallet(recipient, user.walletAddress))
         throw gqlError("Chỉ rút được số dư của ví mình", "FORBIDDEN");
       const target = escrowTarget();

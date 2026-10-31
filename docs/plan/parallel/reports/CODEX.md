@@ -44,6 +44,8 @@ Bảng trạng thái gốc bên dưới giữ nguyên để tra cứu; các dòn
 | K3 / FE-1b | xong | walletSigner(expected) so địa chỉ ví với tài khoản đăng nhập; wallet-signer.test.ts 2/2 pass |
 | K4 / P1-31 | xong | route: không ghi đè commitSha, xóa delivery khi lỗi, orderBy submittedAt desc; github-webhook.test.ts 7/7 pass |
 | K5 | xong | ba lần test:e2e:local liên tiếp pass (40 test, 31 file), 0 dòng HTTP 429; mỗi request harness có IP riêng, E27 ghim 203.0.113.27 |
+| K6 / P1-30b | xong | GET /api/uploads: PENDING chỉ người upload được tải; upload-access.test.ts 7/7 pass |
+| K7 / FE | xong | create-issue-form chỉ chặn ADMIN; form ứng tuyển cho mọi người không phải chủ bài và không phải ADMIN; fe-operations pass |
 | Z-7 | xong | Script cũ gọi mutation đã xóa được gỡ; root chuyển sang harness ở N-8 |
 | D4 / D5 | xong | `dde1bc7`; test theo ma trận |
 | AI-11 | xong | Timeout, bps và một AILog mỗi lượt được kiểm bằng test DB |

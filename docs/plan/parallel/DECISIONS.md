@@ -322,3 +322,7 @@ Trang chi tiết issue giữ dữ liệu bằng `useState` và hàm `load()` có
 ## BỔ SUNG K3 — chainId trong test ví lấy từ ACTIVE_CHAIN
 
 Đặc tả ghi `eth_chainId` trả `0x7a69`. `ensureActiveChain` đọc `NEXT_PUBLIC_CHAIN_ID` (mặc định Base Sepolia), nên test trả `ACTIVE_CHAIN.chainHex` để không phụ thuộc môi trường. Hành vi kiểm không đổi.
+
+## BỔ SUNG K7 — form ứng tuyển và màn chặn đăng bài theo vai trò
+
+Màn chặn đăng bài chỉ còn cho ADMIN. Bỏ dòng "Client workspace" và đoạn giải thích vai trò vì không còn đúng cho ADMIN; xóa ba key i18n không còn dùng. Form ứng tuyển hiện cho mọi người xem không phải chủ bài và không phải ADMIN, thay cho nhánh "chuyển sang vai trò Developer". Lý do: API đã bỏ chặn role (QĐ-21).

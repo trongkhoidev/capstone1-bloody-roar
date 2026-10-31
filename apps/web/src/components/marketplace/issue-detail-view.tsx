@@ -935,25 +935,19 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                     />
                   )}
 
-                  {user && !isClient && issue.status === "OPEN" && (
-                    user.role === "DEVELOPER" ? (
-                      <form onSubmit={apply} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                        <textarea
-                          className="inp"
-                          style={{ height: 68, padding: 8, fontSize: 12.5 }}
-                          value={applicationText}
-                          onChange={(e) => setApplicationText(e.target.value)}
-                          placeholder="Why are you a good fit? (optional)"
-                        />
-                        <button type="submit" className="btn btn-p" disabled={isWorking || demoMode}>
-                          <MessageSquare className="ico" style={{ width: 14, height: 14 }} /> Apply to this task
-                        </button>
-                      </form>
-                    ) : (
-                      <p style={{ fontSize: 12, color: "var(--ink-3)", margin: 0 }}>
-                        Switch to Developer role in <Link href="/profile" style={{ color: "var(--link)" }}>profile</Link> to apply.
-                      </p>
-                    )
+                  {user && !isClient && !isAdmin && issue.status === "OPEN" && (
+                    <form onSubmit={apply} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <textarea
+                        className="inp"
+                        style={{ height: 68, padding: 8, fontSize: 12.5 }}
+                        value={applicationText}
+                        onChange={(e) => setApplicationText(e.target.value)}
+                        placeholder="Why are you a good fit? (optional)"
+                      />
+                      <button type="submit" className="btn btn-p" disabled={isWorking || demoMode}>
+                        <MessageSquare className="ico" style={{ width: 14, height: 14 }} /> Apply to this task
+                      </button>
+                    </form>
                   )}
 
                   {canChat && issue.status === "IN_PROGRESS" && issue.viewerCapabilities?.canDispute && actionOf("raiseDispute") && (

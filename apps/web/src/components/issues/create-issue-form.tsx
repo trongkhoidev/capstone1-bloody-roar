@@ -173,7 +173,7 @@ export function CreateIssueForm() {
     );
   }
 
-  if (user.role !== "CLIENT") {
+  if (user.role === "ADMIN") {
     return (
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <Link
@@ -183,11 +183,9 @@ export function CreateIssueForm() {
           <ArrowLeft className="h-4 w-4" /> {t("marketplace")}
         </Link>
         <section className="mt-5 form">
-          <p className="lab">{t("clientWorkspace")}</p>
           <h1 className="h1" style={{ fontSize: 24, marginTop: 4 }}>
-            {t("switchToClient")}
+            {t("adminCannotCreateIssue")}
           </h1>
-          <p className="sub">{t("developerRoleExplanation")}</p>
           <Button asChild className="mt-5" style={{ alignSelf: "flex-start" }}>
             <Link href="/profile">{t("openProfileSettings")}</Link>
           </Button>

@@ -354,3 +354,11 @@ Ba lần chạy harness liên tiếp (run 10, 11, và run trước khi xóa `.ne
 ## BỔ SUNG K9 — mã từ chối của người ngoài khi đã có escrow
 
 Trên issue đã có escrow, người ngoài không tạo được thay đổi nào. Năm mutation `prepareReleaseFunds`, `prepareSubmitCounterpartyEvidence`, `prepareProposeSettlement`, `prepareAcceptSettlement`, `prepareRevokeSettlement` trả `FORBIDDEN`. `prepareChallengeRuling` trả `INVALID_PHASE`, vì kiểm pha escrow chạy trước kiểm bên tham gia trong `ruling.module.ts`. Cả hai mã đều là từ chối, không có giao dịch nào được chuẩn bị. Đã thêm các mã này vào danh sách mã của người ngoài trong `e28-authz.test.ts`. Chưa đổi thứ tự kiểm trong `ruling.module.ts`. Rủi ro còn lại: người ngoài biết được pha của escrow qua `INVALID_PHASE`.
+
+## BỔ SUNG FE-LAYOUT — chấp nhận thay đổi thẻ Escrow actions
+
+Thẻ hiện theo `viewerCapabilities` thay vì chỉ với bên tham gia ở trạng thái IN_PROGRESS. Thêm nút "Hủy giữ chỗ" và ô mã commit. Lý do: các hành động mới cần chỗ hiển thị. Không đổi màu hay khung.
+
+## BỔ SUNG K8-fund — nút nạp tiền nằm trong thẻ Review Applicants khi AWAITING_FUNDING
+
+Khi issue ở AWAITING_FUNDING, thẻ Review Applicants vẫn hiện để chứa nút "Fund escrow" và "Hủy giữ chỗ". Ô chọn hạn giao việc và nút "Select developer" chỉ hiện khi issue OPEN. Lý do: không có chỗ nào khác trên trang để nạp tiền, nên khách không nạp được từ giao diện. Không đổi màu hay khung.

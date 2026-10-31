@@ -83,3 +83,7 @@ cat tests/e2e/.run/last-run.txt
 ```
 
 Harness tự bật và tắt Hardhat, worker, web và AI mock trên các cổng 8545, 4011, 4012, 4019. Đọc `tests/e2e/.run/last-run.txt` để xem kết quả; các log nằm cùng thư mục đó.
+
+## 6. Test UI tự động (E32)
+
+`bun run test:e2e:local` cũng chạy `apps/web/ui-e2e/e32-ui-flow.test.ts`: Chrome headless qua Playwright (`channel: "chrome"`), với ví giả gắn vào `window.ethereum`. Ví giả chuyển mọi lệnh tới Hardhat local. Log console và các phản hồi `/api/` ghi ở `tests/e2e/.run/ui.log`.

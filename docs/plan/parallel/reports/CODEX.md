@@ -1,4 +1,21 @@
-HOÀN TẤT 2026-10-31 11:07 (gate B0.2 exit 0; điều kiện Phần E đạt; một số mục FE và S có phạm vi hẹp hơn đặc tả, xem Ghi chú kiểm toán)
+BỊ CHẶN 2026-10-31 15:15: gate 2.1 typecheck exit 2 do packages/database/src/seed-realistic.ts (untracked, không thuộc K0–K10, chưa rõ tác giả). Cần chủ dự án quyết định: commit, xóa, hoặc sửa file đó. Git status chưa sạch vì file này.
+
+## K0–K10 (HAIKU_FINAL.md)
+
+| Mục | Commit | Ghi chú |
+| --- | --- | --- |
+| K0 | ca37d9c | handoff committed |
+| K1 | a3f9bb0 | next build qua với NODE_ENV=production (BỔ SUNG K1) |
+| K2 | 4c738bb | nạp tiền bằng ví của reservation |
+| K3 | 9380602 | ví khác tài khoản đăng nhập bị từ chối |
+| K4 | 84284be | webhook GitHub |
+| K5 | d481fb6 | IP riêng cho mỗi request harness; 3 lần E2E trước đó pass |
+| K6 | aa5cc94 | upload PENDING ẩn với người không phải uploader |
+| K7 | 486a6e0 | form tạo bài theo role |
+| K8 | cd0d01b, 5edd013, 95bd3a5, c34437e | E32 qua UI; nút nạp tiền trong Review Applicants (BỔ SUNG K8-fund) |
+| K9 | 3a1d8e2 | E28 trên escrow FUNDED (BỔ SUNG K9) |
+| K10 | đang làm | DECISIONS, LOCAL_DEV đã xong; gate cuối bị chặn |
+
 
 ## Báo cáo cuối (C7)
 

@@ -30,6 +30,14 @@ export const FundingReservationRef = builder.prismaObject("FundingReservation", 
     applicationId: t.exposeString("applicationId"),
     clientId: t.exposeString("clientId"),
     developerId: t.exposeString("developerId"),
+    clientWallet: t.string({
+      resolve: async (reservation, _args, ctx) =>
+        (await ctx.db.user.findUniqueOrThrow({ where: { id: reservation.clientId }, select: { walletAddress: true } })).walletAddress,
+    }),
+    developerWallet: t.string({
+      resolve: async (reservation, _args, ctx) =>
+        (await ctx.db.user.findUniqueOrThrow({ where: { id: reservation.developerId }, select: { walletAddress: true } })).walletAddress,
+    }),
     escrowKey: t.exposeString("escrowKey"),
     escrowIdHash: t.exposeString("escrowIdHash"),
     status: t.expose("status", { type: ReservationStatusEnum }),

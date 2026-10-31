@@ -49,7 +49,7 @@ const APPLICATIONS_QUERY = `
 
 const APPLY_MUTATION = `mutation Apply($input: ApplyToIssueInput!) { applyToIssue(input: $input) { id status } }`;
 const SELECT_DEVELOPER = `mutation SelectDeveloper($issue: ID!, $application: ID!, $deadline: String!) { selectDeveloper(issueId: $issue, applicationId: $application, deliveryDeadline: $deadline) { id status escrowKey termsHash amountRaw deliveryDeadline } }`;
-const RESERVATION_QUERY = `query Reservation($issueId: ID!) { reservation(issueId: $issueId) { id status chainId contractAddress tokenAddress escrowKey termsHash amountRaw deliveryDeadline } }`;
+const RESERVATION_QUERY = `query Reservation($issueId: ID!) { reservation(issueId: $issueId) { id status chainId contractAddress tokenAddress escrowKey termsHash amountRaw deliveryDeadline clientWallet developerWallet } }`;
 const SUBMIT_FUNDING_INTENT = `mutation FundingIntent($id: ID!, $signature: String!, $nonce: String!, $expiry: String!) { submitFundingIntent(reservationId: $id, signature: $signature, nonce: $nonce, intentExpiry: $expiry) { id } }`;
 const PREPARE_DEPOSIT = `mutation PrepareDeposit($id: ID!) { prepareEscrowDeposit(reservationId: $id) { steps { intentId method contractAddress data value } } }`;
 const CANCEL_RESERVATION = `mutation CancelReservation($id: ID!) { cancelReservation(reservationId: $id) { id status } }`;
@@ -78,7 +78,7 @@ const SUBMISSIONS_QUERY = `query TaskSubmissions($issueId: String!) { submission
 
 type PreparedStep = { intentId: string; method: string; contractAddress: string; data: string; value: string };
 
-type ReservationRow = { id: string; status: string; chainId: number; contractAddress: string; tokenAddress: string; escrowKey: string; termsHash: string; amountRaw: string; deliveryDeadline: string };
+type ReservationRow = { id: string; status: string; chainId: number; contractAddress: string; tokenAddress: string; escrowKey: string; termsHash: string; amountRaw: string; deliveryDeadline: string; clientWallet: string; developerWallet: string };
 
 type ViewerCapabilities = { canSelect: boolean; canFund: boolean; canSubmit: boolean; canRelease: boolean; canRequestChanges: boolean; canDispute: boolean; canProposeSettlement: boolean; canRevokeSettlement: boolean; canAcceptSettlement: boolean; canSubmitEvidence: boolean; canChallengeRuling: boolean; canFinalizeRuling: boolean; canFinalizeArbiterTimeoutSplit: boolean; canClaimMissedDeliveryRefund: boolean; canClaimReviewTimeout: boolean };
 type IssueDetail = IssueItem & { clientId: string; developerId?: string | null; developer?: IssueItem["client"] | null; viewerCapabilities?: ViewerCapabilities | null; escrow?: { availableActions: Array<{ action: string; reasonDisabled: string | null }> } | null };
@@ -327,14 +327,11 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
 
   // Client funding: sign the funding intent, submit it, then send the approve and deposit calls the server prepared.
   const fundEscrow = async () => {
-    const clientWallet = issue?.client?.walletAddress;
-    const developerWallet = issue?.developer?.walletAddress;
-    if (!clientWallet || !developerWallet) return;
     setIsWorking(true); setError(null); setNotice(null);
     try {
       const { reservation } = await graphqlRequest<{ reservation: ReservationRow | null }>(RESERVATION_QUERY, { issueId });
       if (!reservation) throw new Error("No funding reservation is waiting for this task.");
-      const intent = await signFundingIntent(reservation, clientWallet, developerWallet);
+      const intent = await signFundingIntent(reservation, reservation.clientWallet, reservation.developerWallet);
       await graphqlRequest(SUBMIT_FUNDING_INTENT, { id: reservation.id, signature: intent.signature, nonce: intent.nonce, expiry: intent.intentExpiry });
       const prepared = await graphqlRequest<{ prepareEscrowDeposit: { steps: PreparedStep[] } }>(PREPARE_DEPOSIT, { id: reservation.id });
       await sendPreparedCalls(prepared.prepareEscrowDeposit.steps, recordTx);

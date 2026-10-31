@@ -86,6 +86,7 @@ function fakeDb(
       findFirst: vi.fn(),
       findMany: vi.fn().mockResolvedValue([]),
     },
+    user: { findUniqueOrThrow: vi.fn() },
   };
 }
 
@@ -349,6 +350,30 @@ describe("reservation query (BE-31)", () => {
         }),
       }),
     );
+  });
+
+  it("returns the client and developer wallets while awaiting funding (FE-4)", async () => {
+    const db = fakeDb();
+    db.fundingReservation.findFirst.mockResolvedValue({
+      id: "reservation-1",
+      clientId: client.id,
+      developerId: developer.id,
+      status: "AWAITING_FUNDING",
+    });
+    db.user.findUniqueOrThrow.mockImplementation(async ({ where }: { where: { id: string } }) => ({
+      walletAddress: where.id === client.id ? "0x3333333333333333333333333333333333333333" : "0x4444444444444444444444444444444444444444",
+    }));
+
+    const result = await execute(
+      `{ reservation(issueId: "issue-1") { clientWallet developerWallet } }`,
+      { user: client, db },
+    );
+
+    expect(result.errors).toBeUndefined();
+    expect(result.data?.reservation).toEqual({
+      clientWallet: "0x3333333333333333333333333333333333333333",
+      developerWallet: "0x4444444444444444444444444444444444444444",
+    });
   });
 });
 

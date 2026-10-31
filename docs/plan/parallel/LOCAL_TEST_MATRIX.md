@@ -158,4 +158,7 @@
 | M2 | packages/database/test/seed-demo.test.ts; seed-demo.ts | bun run --cwd packages/database test; bun run db:seed:demo | Pass 4/4; chainId 31337 dùng ví Hardhat cho 7 vai trò, không trùng #0, #5, #6; chạy lặp lại idempotent |
 | M3 | tests/e2e/e21-admin.test.ts | bun run typecheck; bun run lint | Pass: thêm timeout 90_000 cho test E21 contractConfig |
 | M4 | packages/database/prisma/schema.prisma; 20261031173000_drop_legacy_escrow_tables; seed-demo.test.ts | bun run db:generate; typecheck; lint; bun run --cwd packages/database test; web test; worker test; contracts:test | Pass: xóa bảng legacy escrows và transactions cùng các enum và field quan hệ; migration chỉ có DROP; typecheck và toàn bộ test suites pass |
+| M5 | docs/LOCAL_DEV.md; docs/plan/parallel/DECISIONS.md; docs/plan/parallel/reports/CODEX.md | cập nhật tài liệu, bổ sung quyết định và việc người dùng tự làm | Xong: cập nhật hướng dẫn local, danh sách BỔ SUNG M1/M2/M4, checklist người dùng tự làm |
+| M6 | Gate 3.2: typecheck, lint, build, web, worker, db, contracts, test:e2e:local | bun run typecheck && bun run lint && NODE_ENV=production bun run --cwd apps/web build && bun run --cwd apps/web test && bun run --cwd apps/worker test && bun run --cwd packages/database test && bun run contracts:test && bun run test:e2e:local | Pass: toàn bộ 8 lệnh gate exit 0; E2E scenarios passed (E1–E32) 3 lần liên tiếp |
+
 

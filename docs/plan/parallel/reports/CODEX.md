@@ -1,4 +1,4 @@
-HOÀN TẤT 2026-10-31 16:48 (gate exit 0; typecheck, build, E1–E32 pass)
+HOÀN TẤT 2026-10-31 18:02 (đợt M; gate exit 0; E1–E32 pass 3 lần liên tiếp)
 
 ## K0–K10 (HAIKU_FINAL.md)
 
@@ -36,7 +36,18 @@ HOÀN TẤT 2026-10-31 16:48 (gate exit 0; typecheck, build, E1–E32 pass)
 | M1 | 8ed38e7 | bỏ toàn bộ mock data ở frontend, test no-mock-data pass |
 | M2 | d6e02bb | seed demo dùng ví Hardhat khi chạy local, test pass |
 | M3 | d0b46ce | timeout 90_000 cho test E21 contractConfig |
-| M4 | đang commit | xóa bảng legacy escrows và transactions, migration chỉ có DROP |
+| M4 | 1a9ef83 | xóa bảng legacy escrows và transactions, migration chỉ có DROP |
+| M5 | commit chung M6 | cập nhật DECISIONS.md, LOCAL_DEV.md, CODEX.md |
+| M6 | b7e7c8b | gate 3.2 exit 0 (typecheck, lint, build, web 597, worker 73, db 4, contracts 35, E1–E32 pass 3 lần liên tiếp) |
+
+## Việc người dùng tự làm
+
+- Backup cơ sở dữ liệu thật trước khi `migrate deploy` (migration M4 `20261031173000_drop_legacy_escrow_tables` xóa bảng `escrows` và `transactions`).
+- Thêm địa chỉ Hardhat #1 (`0x70997970c51812dc3a010c7d01b50e0d17dc79c8`) vào biến `ADMIN_WALLETS` của `.env` local nếu muốn vào trang `/admin`.
+- Thử một lượt bằng MetaMask theo hướng dẫn tại `docs/LOCAL_DEV.md` để trải nghiệm giao diện hoàn chỉnh.
+- Xóa các worktree nhánh cũ a1–a5 khi không còn dùng.
+- Push nhánh `be/integration`, mở PR và deploy lên môi trường staging/production.
+
 
 
 

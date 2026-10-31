@@ -156,3 +156,72 @@ describe("applyToIssue roles", () => {
     expect(db.tx.application.create).not.toHaveBeenCalled();
   });
 });
+
+const CANCEL_ISSUE = `mutation($id: ID!) { cancelIssue(id: $id) { id status } }`;
+
+function cancelDb(issue: Record<string, unknown> | null) {
+  const tx = {
+    issue: {
+      findUnique: vi.fn().mockResolvedValue(issue),
+      update: vi.fn().mockImplementation(async ({ data }: { data: unknown }) => ({ ...issue, ...(data as object) })),
+    },
+    application: {
+      findMany: vi.fn().mockResolvedValue([{ developerId: "dev-applicant" }]),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+    },
+  };
+  return Object.assign(fakeDb(), {
+    $transaction: vi.fn(async (fn: (client: typeof tx) => unknown) => fn(tx)),
+    issue: {
+      findUnique: vi.fn().mockImplementation(async () => ({ ...issue, status: "CANCELLED" })),
+    },
+    tx,
+  });
+}
+
+describe("cancelIssue", () => {
+  it("cancels an OPEN issue when called by the owner", async () => {
+    const db = cancelDb({
+      id: "issue-1",
+      clientId: "client-1",
+      title: "Open bounty",
+      status: "OPEN",
+    });
+
+    const result = await execute(
+      CANCEL_ISSUE,
+      { user: userWithRole("CLIENT", "client-1"), db },
+      { id: "issue-1" },
+    );
+
+    expect(result.errors).toBeUndefined();
+    expect(db.tx.issue.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "issue-1" },
+        data: { status: "CANCELLED" },
+      }),
+    );
+  });
+
+  it.each(["IN_PROGRESS", "AWAITING_FUNDING", "COMPLETED"] as const)(
+    "rejects cancelling a %s issue with ISSUE_NOT_CANCELLABLE",
+    async (status) => {
+      const db = cancelDb({
+        id: "issue-1",
+        clientId: "client-1",
+        title: "Bounty",
+        status,
+      });
+
+      const result = await execute(
+        CANCEL_ISSUE,
+        { user: userWithRole("CLIENT", "client-1"), db },
+        { id: "issue-1" },
+      );
+
+      expect(result.errors?.[0]?.extensions?.code).toBe("ISSUE_NOT_CANCELLABLE");
+      expect(db.tx.issue.update).not.toHaveBeenCalled();
+    },
+  );
+});
+

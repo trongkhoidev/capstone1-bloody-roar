@@ -11,7 +11,11 @@ import { releaseFunds, submitWork } from "./harness/work";
 const abi = [{ type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "uint256" }] }] as const;
 beforeAll(() => assertTestDatabase(process.env.TEST_DATABASE_URL));
 test("E10: release and claim transfer the indexed balances", async () => {
-  const f = await fixture(); await fund(f); await submitWork(f, "Completed work for release");
+  const f = await fixture(); await fund(f);
+  const cancelAttempt = await gqlAs(f.client, `mutation($id: ID!) { cancelIssue(id: $id) { id status } }`, { id: f.issueId });
+  expect(cancelAttempt.errors?.[0]?.extensions?.code).toBe("ISSUE_NOT_CANCELLABLE");
+  expect((await f.prisma.issue.findUniqueOrThrow({ where: { id: f.issueId } })).status).toBe("IN_PROGRESS");
+  await submitWork(f, "Completed work for release");
   const userBalanceData = encodeFunctionData({ abi, functionName: "balanceOf", args: [f.accounts[3] as Hex] });
   const walletBalance = async () => decodeFunctionResult({ abi, functionName: "balanceOf", data: await rpc<Hex>("eth_call", [{ to: f.token.address, data: userBalanceData }, "latest"]) });
   const before = await walletBalance();

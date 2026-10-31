@@ -21,7 +21,8 @@ BỊ CHẶN 2026-10-31 15:43: gate 2.1 typecheck exit 2 do packages/database/src
 | Mục | Commit | Ghi chú |
 | --- | --- | --- |
 | L0 | e3cd76b | kiểm mốc, commit AGY_FINISH.md và AGY_PROMPT.md |
-| L1 | đang commit | seed demo không có escrow giả, typecheck và test pass |
+| L1 | eca0045 | seed demo không có escrow giả, typecheck và test pass |
+| L2 | đang commit | chỉ hủy được bài OPEN, funded work kết thúc qua escrow |
 
 
 

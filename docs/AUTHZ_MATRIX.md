@@ -27,7 +27,7 @@ Các ô của khách và người ngoài được kiểm bởi `tests/e2e/e28-au
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `createIssue` | UNAUTHORIZED | ✅ (QĐ-21: mọi tài khoản trừ ADMIN) | ✅ | ✅ | ADMIN_NOT_ALLOWED | UNAUTHORIZED | Bỏ chặn theo role Client/Developer (QĐ-21, BE-09). Admin không đăng bài. |
 | `updateIssue` | UNAUTHORIZED | FORBIDDEN | ✅ (chủ bài) | FORBIDDEN | FORBIDDEN | UNAUTHORIZED | Chỉ chủ bài. |
-| `cancelIssue` | UNAUTHORIZED | FORBIDDEN | ✅ (chủ bài, khi OPEN hoặc IN_PROGRESS chưa ký quỹ) | FORBIDDEN | FORBIDDEN | UNAUTHORIZED | `ISSUE_NOT_CANCELLABLE` khi đã có ký quỹ. |
+| `cancelIssue` | UNAUTHORIZED | FORBIDDEN | ✅ (chủ bài, khi OPEN) | FORBIDDEN | FORBIDDEN | UNAUTHORIZED | `ISSUE_NOT_CANCELLABLE` khi khác OPEN (đã nạp ký quỹ hoặc kết thúc). |
 | `createIssueComment` | UNAUTHORIZED | ✅ (bài công khai, chưa hủy) | ✅ | ✅ | ✅ | UNAUTHORIZED | `NOT_FOUND` với bản nháp, `ISSUE_CLOSED` khi đã hủy. |
 | `generateTestCases` | UNAUTHORIZED | FORBIDDEN | ✅ (chủ bài, role CLIENT) | CLIENT_ROLE_REQUIRED | CLIENT_ROLE_REQUIRED | UNAUTHORIZED | Chỉ chủ bài với role CLIENT. |
 | `updateTestCase` | UNAUTHORIZED | FORBIDDEN | ✅ (chủ bài) | FORBIDDEN | FORBIDDEN | UNAUTHORIZED | |

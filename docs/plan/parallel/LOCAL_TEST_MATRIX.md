@@ -166,5 +166,15 @@
 | R3 | scripts/demo/create-safes.test.ts; scripts/demo/create-safes.ts | bun test scripts/demo/create-safes.test.ts; bun run contracts:test; create-safes.ts | Pass: tính toán địa chỉ Safe CREATE2 xác định, 3 bộ signer riêng biệt, fallback handler đúng hằng số |
 | R4 | scripts/demo/up.sh; scripts/demo/down.sh | .env.demo, migrate deploy bloody_demo, seed-prod.ts | Pass: tạo DB bloody_demo, 13 migrations applied, seed USDC 84532, up.sh và down.sh quản lý PID |
 | R7-1 | apps/web/src/test/bounty-range.test.ts; packages/shared/src/constants/index.ts | bun run --cwd apps/web test -- src/test/bounty-range.test.ts | Pass: giảm BOUNTY_MIN_AMOUNT từ 10 xuống 0.5 USDC để hỗ trợ tạo dữ liệu bounty nhỏ |
+| R5-W1 | scripts/demo/lib/session.ts; scripts/demo/lib/image.ts; content/profiles.json | bun test scripts/demo/populate.test.ts | Pass: SIWE đăng nhập 40 ví với x-forwarded-for riêng, sinh avatar PNG hợp lệ, profile đa dạng |
+| R5-W2 | content/issues.json; scripts/demo/lib/gql.ts | bun test scripts/demo/populate.test.ts | Pass: 150 bài phủ 9 category, 30 bài có ảnh attachment, 40 bài có test criteria & AI mock |
+| R5-W3 | content/comments.json; scripts/demo/lib/gql.ts | bun test scripts/demo/populate.test.ts | Pass: 500 bình luận, 100 replies lồng nhau, recordIssueView từ nhiều ví |
+| R5-W4 | scripts/demo/lib/gql.ts; scripts/demo/lib/state.ts | bun test scripts/demo/populate.test.ts | Pass: 375 ứng tuyển, 15 withdraws, 20 rejects, theo dõi state chuyển dịch chính xác |
+| R5-W5 | scripts/demo/lib/chain.ts | bun test scripts/demo/populate.test.ts | Pass: selectDeveloper 45 bài, EIP-712 funding intent, ký và nạp tiền escrow on-chain 35 bài |
+| R5-W6 | scripts/demo/lib/socket.ts; content/chat.json | bun test scripts/demo/populate.test.ts | Pass: 35 phòng chat qua websocket, tin nhắn file, reply, edit, delete, contact info AI Guard |
+| R5-W9 | scripts/demo/populate.ts; scripts/demo/populate.test.ts | bun test scripts/demo/populate.test.ts | Pass 21/21 assertions: sinh và nạp W7-W9 (submissions, settlements, disputes, reviews, bans) |
+| R6 | scripts/demo/lib/safe.ts; scripts/demo/lib/safe.test.ts | bun test scripts/demo/lib/safe.test.ts | Pass 4/4: tính SafeTx hash EIP-712 Safe v1.4.1, sắp xếp 2/3 chữ ký tăng dần, execTransaction |
+| R8 | scripts/demo/verify.ts; docs/demo/DEMO_DATA_REPORT.md; docs/LOCAL_DEV.md | bun run scripts/demo/verify.ts --dry-run | Pass: kiểm chứng 12 chỉ tiêu so với mục 2, không sai lệch số dư, không kẹt intent, tài liệu hướng dẫn hoàn tất |
+
 
 

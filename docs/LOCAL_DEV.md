@@ -108,3 +108,64 @@ Harness tự bật và tắt Hardhat, worker, web và AI mock trên các cổng 
 ## 6. Test UI tự động (E32)
 
 `bun run test:e2e:local` cũng chạy `apps/web/ui-e2e/e32-ui-flow.test.ts`: Chrome headless qua Playwright (`channel: "chrome"`), với ví giả gắn vào `window.ethereum`. Ví giả chuyển mọi lệnh tới Hardhat local. Log console và các phản hồi `/api/` ghi ở `tests/e2e/.run/ui.log`.
+
+## 7. Demo trên Base Sepolia (Đợt R)
+
+Môi trường demo chạy trên Base Sepolia testnet (chain 84532), sử dụng database độc lập `bloody_demo` và các cổng riêng biệt (`4100` cho web, `4101` cho worker, `4019` cho AI mock) để không xung đột với môi trường dev hay gate (`4000`, `4010-4012`).
+
+### 7.1. Cấu hình và Khởi động dịch vụ
+
+File `.env.demo` cấu hình các biến cho môi trường demo và được gitignore bảo vệ. Khởi động các tiến trình nền bằng:
+
+```bash
+bun run scripts/demo/up.sh
+```
+
+Lệnh này kiểm tra kết nối Postgres `bloody_demo`, khởi động AI mock (`4019`), worker (`4101`), và web (`4100`), đồng thời lưu PID vào thư mục `demo-wallets/` để quản lý.
+
+### 7.2. Sinh và nạp dữ liệu nghiệp vụ theo đợt (Waves)
+
+Dữ liệu demo được sinh qua HTTP API và socket theo từng đợt W1–W9:
+
+```bash
+# Chạy toàn bộ các đợt ở chế độ kiểm tra dữ liệu trước (dry-run):
+bun run scripts/demo/populate.ts --dry-run
+
+# Chạy một đợt cụ thể trên môi trường thật (khi dịch vụ đã bật):
+bun run scripts/demo/populate.ts --wave W1  # Profile & avatars
+bun run scripts/demo/populate.ts --wave W2  # 150 bounties
+bun run scripts/demo/populate.ts --wave W3  # 500 comments
+bun run scripts/demo/populate.ts --wave W4  # 350 applications
+bun run scripts/demo/populate.ts --wave W5  # Reservation & on-chain funding
+bun run scripts/demo/populate.ts --wave W6  # WebSocket chat rooms
+bun run scripts/demo/populate.ts --wave W7  # Submissions & revision requests
+bun run scripts/demo/populate.ts --wave W8  # Release, settlements, disputes
+bun run scripts/demo/populate.ts --wave W9  # Reviews, spam moderation & bans
+
+# Hoặc nạp liên tục tất cả các đợt:
+bun run scripts/demo/populate.ts
+```
+
+### 7.3. Kiểm chứng dữ liệu và Đối soát
+
+Sau khi nạp xong, chạy script kiểm chứng để so sánh dữ liệu thực tế trong DB `bloody_demo` và trên Base Sepolia với mục tiêu đề ra:
+
+```bash
+# Kiểm chứng với dữ liệu kế hoạch và cấu trúc:
+bun run scripts/demo/verify.ts --dry-run
+
+# Kiểm chứng live với database bloody_demo và on-chain:
+set -a && . ./.env.demo >/dev/null 2>&1; set +a; bun run scripts/demo/verify.ts
+```
+
+Script sẽ in bảng đối chiếu chi tiết và thoát với mã `0` nếu mọi chỉ tiêu đạt yêu cầu, không có intent kẹt và không có sai lệch đối soát (reconciliation).
+
+### 7.4. Tắt dịch vụ và Dọn dẹp
+
+Dừng toàn bộ các dịch vụ nền đã bật bằng script:
+
+```bash
+bun run scripts/demo/down.sh
+```
+
+Script sẽ đọc các PID đã lưu, gửi tín hiệu ngắt nhẹ nhàng (`SIGTERM`), dọn dẹp tiến trình và xóa file PID tracking.

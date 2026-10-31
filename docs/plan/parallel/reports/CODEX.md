@@ -24,7 +24,8 @@ BỊ CHẶN 2026-10-31 15:43: gate 2.1 typecheck exit 2 do packages/database/src
 | L1 | eca0045 | seed demo không có escrow giả, typecheck và test pass |
 | L2 | ac3a7c2 | chỉ hủy được bài OPEN, funded work kết thúc qua escrow |
 | L3 | 98f619b | xóa query escrow cũ đọc bảng legacy, schema.prisma đánh dấu legacy |
-| L4 | đang commit | đồng bộ contract config từ chain cho màn admin ops |
+| L4 | e2fd258 | đồng bộ contract config từ chain cho màn admin ops |
+| L5 | đang commit | kiểm quyền kháng cáo trước pha escrow, dùng hằng số thời gian |
 
 
 

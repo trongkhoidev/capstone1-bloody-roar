@@ -1,4 +1,12 @@
-import { encodeFunctionData } from "@bloody-roar/shared";
+import {
+  ARBITER_STALL_DAYS,
+  DAY_MS,
+  DISPUTE_CHALLENGE_DAYS,
+  DISPUTE_EVIDENCE_RESPONSE_HOURS,
+  DISPUTE_FINAL_NOTICE_HOURS,
+  HOUR_MS,
+  encodeFunctionData,
+} from "@bloody-roar/shared";
 import { computeDecisionHash, ESCROW_ABI } from "@bloody-roar/shared/escrow";
 import { builder } from "../../builder";
 import type { GraphQLContext } from "../../context";
@@ -31,7 +39,7 @@ builder.mutationField("draftRuling", (t) => t.field({
     if ((args.kind === "INITIAL" ? projection.phase !== "DISPUTED" : projection.phase !== "CHALLENGED") || !start)
       throw gqlError("Trạng thái tranh chấp không hợp lệ", "INVALID_PHASE");
     const elapsed = now.getTime() - start.getTime();
-    if (elapsed >= 30 * 86_400_000 || (args.kind === "INITIAL" && elapsed < 72 * 3_600_000) || elapsed < 0)
+    if (elapsed >= ARBITER_STALL_DAYS * DAY_MS || (args.kind === "INITIAL" && elapsed < DISPUTE_EVIDENCE_RESPONSE_HOURS * HOUR_MS) || elapsed < 0)
       throw gqlError("Ngoài thời hạn phán quyết", "DEADLINE_PASSED");
     const decisionHash = computeDecisionHash({ issueId, escrowId: projection.escrowKey, clientBps: args.clientBps, rationale: args.rationale });
     const draft = await ctx.db.$transaction(async (tx) => {
@@ -63,11 +71,16 @@ for (const [field, method] of [["prepareChallengeRuling", "challengeRuling"], ["
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
       const projection = await rulingProjection(ctx, String(args.issueId));
+      if (method === "challengeRuling") {
+        const wallet = user.walletAddress.toLowerCase();
+        if (wallet !== projection.client.toLowerCase() && wallet !== projection.developer.toLowerCase())
+          throw gqlError("Không được kháng cáo phán quyết này", "FORBIDDEN");
+      }
       let deadline: Date;
       if (method === "finalizeArbiterTimeoutSplit") {
         const start = projection.phase === "DISPUTED" ? projection.disputeRaisedAt : projection.phase === "CHALLENGED" ? projection.challengedAt : null;
         if (!start) throw gqlError("Trạng thái tranh chấp không hợp lệ", "INVALID_PHASE");
-        deadline = new Date(start.getTime() + 30 * 86_400_000);
+        deadline = new Date(start.getTime() + ARBITER_STALL_DAYS * DAY_MS);
       } else {
         const kind = projection.phase === "INITIAL_RULING" ? "INITIAL" : projection.phase === "FINAL_RULING" && method === "finalizeRuling" ? "FINAL" : null;
         if (!kind) throw gqlError("Trạng thái phán quyết không hợp lệ", "INVALID_PHASE");
@@ -76,10 +89,10 @@ for (const [field, method] of [["prepareChallengeRuling", "challengeRuling"], ["
         if (method === "challengeRuling") {
           const wallet = user.walletAddress.toLowerCase();
           const client = wallet === projection.client.toLowerCase(), developer = wallet === projection.developer.toLowerCase();
-          if ((!client && !developer) || (client && ruling.clientBps >= 10_000) || (developer && ruling.clientBps <= 0))
+          if ((client && ruling.clientBps >= 10_000) || (developer && ruling.clientBps <= 0))
             throw gqlError("Không được kháng cáo phán quyết này", "FORBIDDEN");
         }
-        deadline = new Date(ruling.postedAt.getTime() + (kind === "INITIAL" ? 7 : 1) * 86_400_000);
+        deadline = new Date(ruling.postedAt.getTime() + (kind === "INITIAL" ? DISPUTE_CHALLENGE_DAYS * DAY_MS : DISPUTE_FINAL_NOTICE_HOURS * HOUR_MS));
       }
       const now = await readChainTime(projection.chainId);
       if (method === "challengeRuling" ? now >= deadline : now < deadline)

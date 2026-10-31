@@ -151,3 +151,4 @@
 | L2 | apps/web/src/test/issue-application-resolvers.test.ts; tests/e2e/e10-release-claim.test.ts | bun run --cwd apps/web test -- src/test/issue-application-resolvers.test.ts | Pass 13/13; chỉ hủy được bài OPEN, chặn IN_PROGRESS/AWAITING_FUNDING/COMPLETED |
 | L3 | apps/web/src/test/graphql-schema.test.ts | bun run --cwd apps/web test -- src/test/graphql-schema.test.ts | Pass; query escrow cũ và kiểu Escrow trong GraphQL đã xóa |
 | L4 | apps/worker/test/contract-config.test.ts; tests/e2e/e21-admin.test.ts; apps/web/src/test/fe-operations.test.ts | bun run --cwd apps/worker test -- test/contract-config.test.ts | Pass; contractConfigJob đồng bộ 7 getter từ chain, ops query và FE hiển thị |
+| L5 | apps/web/src/test/dispute-ruling.db.test.ts; tests/e2e/e28-authz.test.ts | bun run --cwd apps/web test -- src/test/dispute-ruling.db.test.ts | Pass 3/3; kiểm người gọi trước pha escrow trong prepareChallengeRuling (FORBIDDEN); dùng hằng số thời gian từ shared |

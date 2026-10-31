@@ -52,7 +52,7 @@ const rows: Row[] = [
   // Phase D–F: escrow, phán quyết, bằng chứng, đánh giá
   { name: "prepareReleaseFunds", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), outsider: ["NOT_FOUND", "FORBIDDEN"] },
   { name: "prepareSubmitCounterpartyEvidence", decl: "$issue: ID!, $manifest: ID!", args: "issueId: $issue, manifestId: $manifest", ret: obj, vars: (f) => ({ issue: f.issueId, manifest: "missing-manifest" }), outsider: ["NOT_FOUND", "FORBIDDEN"] },
-  { name: "prepareChallengeRuling", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), outsider: ["NOT_FOUND", "INVALID_PHASE"] },
+  { name: "prepareChallengeRuling", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), outsider: ["NOT_FOUND", "FORBIDDEN"] },
   { name: "prepareFinalizeRuling", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), allowed: true },
   { name: "prepareFinalizeArbiterTimeoutSplit", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), allowed: true },
   { name: "prepareClaimMissedDeliveryRefund", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), allowed: true },
@@ -117,7 +117,7 @@ test("E28: a signed-in non-participant gets the matrix code, or passes the permi
 }, 120_000);
 
 test("E28: on a funded escrow, a signed-in non-participant still gets the matrix code", async () => {
-  // With an escrow, the guards answer FORBIDDEN or INVALID_PHASE instead of NOT_FOUND (see BỔ SUNG K9).
+  // With an escrow, the guards answer FORBIDDEN instead of NOT_FOUND (see BỔ SUNG K9).
   const f = await fixture();
   await fund(f);
   const x = await extras(f);

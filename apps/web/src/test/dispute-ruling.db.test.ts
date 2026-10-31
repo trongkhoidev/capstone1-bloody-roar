@@ -69,10 +69,12 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("ruling drafts on test database"
     expect((await run(admin, "FINAL", 7000)).errors).toBeDefined();
   }, 60_000);
   it("prepares challenge and permissionless finalization at chain boundaries", async () => {
+    const prepare = (method: string, user: typeof admin) => execute(`mutation($issue: ID!) { ${method}(issueId: $issue) { method data } }`, { user, db: prisma }, { issue: issueId });
+    // Outsider gets FORBIDDEN even when phase is not INITIAL_RULING (e.g. CHALLENGED)
+    expect((await prepare("prepareChallengeRuling", admin)).errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
     const postedAt = new Date("2030-03-01T00:00:00Z"); clock.now = postedAt;
     await prisma.escrowProjection.update({ where: { escrowIdHash: escrowHash }, data: { phase: "INITIAL_RULING" } });
     const ruling = await prisma.rulingRecord.create({ data: { escrowIdHash: escrowHash, kind: "INITIAL", clientBps: 5000, decisionHash: hex(32), arbiter, postedAt, noticeEndsAt: new Date(postedAt.getTime() + 7 * 86400_000), chainEventId: hex(32) } });
-    const prepare = (method: string, user: typeof admin) => execute(`mutation($issue: ID!) { ${method}(issueId: $issue) { method data } }`, { user, db: prisma }, { issue: issueId });
     expect((await prepare("prepareChallengeRuling", admin)).errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
     expect((await prepare("prepareChallengeRuling", client)).errors).toBeUndefined();
     expect((await prepare("prepareChallengeRuling", developer)).errors).toBeUndefined();
@@ -87,6 +89,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("ruling drafts on test database"
     expect(final.errors).toBeUndefined();
     expect((final.data?.prepareFinalizeRuling as { data: string }).data).toBe(encodeEscrowCall("finalizeRuling", { escrowId: escrowKey }));
     await prisma.escrowProjection.update({ where: { escrowIdHash: escrowHash }, data: { phase: "FINAL_RULING" } });
+    expect((await prepare("prepareChallengeRuling", admin)).errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
     await prisma.rulingRecord.create({ data: { escrowIdHash: escrowHash, kind: "FINAL", clientBps: 5000, decisionHash: hex(32), arbiter, postedAt, noticeEndsAt: new Date(postedAt.getTime() + 86400_000), chainEventId: hex(32) } });
     clock.now = new Date(postedAt.getTime() + 86400_000 - 1);
     expect((await prepare("prepareFinalizeRuling", admin)).errors).toBeDefined();

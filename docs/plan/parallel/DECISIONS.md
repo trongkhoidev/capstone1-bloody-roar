@@ -354,6 +354,7 @@ Ba lần chạy harness liên tiếp (run 10, 11, và run trước khi xóa `.ne
 ## BỔ SUNG K9 — mã từ chối của người ngoài khi đã có escrow
 
 Trên issue đã có escrow, người ngoài không tạo được thay đổi nào. Năm mutation `prepareReleaseFunds`, `prepareSubmitCounterpartyEvidence`, `prepareProposeSettlement`, `prepareAcceptSettlement`, `prepareRevokeSettlement` trả `FORBIDDEN`. `prepareChallengeRuling` trả `INVALID_PHASE`, vì kiểm pha escrow chạy trước kiểm bên tham gia trong `ruling.module.ts`. Cả hai mã đều là từ chối, không có giao dịch nào được chuẩn bị. Đã thêm các mã này vào danh sách mã của người ngoài trong `e28-authz.test.ts`. Chưa đổi thứ tự kiểm trong `ruling.module.ts`. Rủi ro còn lại: người ngoài biết được pha của escrow qua `INVALID_PHASE`.
+Đã sửa ở L5.
 
 ## BỔ SUNG FE-LAYOUT — chấp nhận thay đổi thẻ Escrow actions
 

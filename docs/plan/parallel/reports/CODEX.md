@@ -34,7 +34,8 @@ HOÀN TẤT 2026-10-31 16:48 (gate exit 0; typecheck, build, E1–E32 pass)
 | --- | --- | --- |
 | M0 | 324d958 | kiểm mốc, commit AGY_FINISH_M.md và AGY_PROMPT_M.md |
 | M1 | 8ed38e7 | bỏ toàn bộ mock data ở frontend, test no-mock-data pass |
-| M2 | đang commit | seed demo dùng ví Hardhat khi chạy local, test pass |
+| M2 | d6e02bb | seed demo dùng ví Hardhat khi chạy local, test pass |
+| M3 | đang commit | timeout 90_000 cho test E21 contractConfig |
 
 
 

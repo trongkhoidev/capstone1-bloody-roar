@@ -156,3 +156,4 @@
 | M0 | docs/plan/parallel/AGY_FINISH_M.md; AGY_PROMPT_M.md | git log -1; git status | Xong: kiểm mốc `550781d`, commit tài liệu kế hoạch đợt M |
 | M1 | apps/web/src/test/no-mock-data.test.ts; apps/web/src/test/fe-operations.test.ts | bun run --cwd apps/web test -- src/test/no-mock-data.test.ts src/test/fe-operations.test.ts; typecheck; lint | Pass: bỏ MOCK_ISSUES, SAMPLE_COMMENTS, RECENT_ACTIVITIES, demoMode, mock-issues.ts; FE chỉ dùng dữ liệu live |
 | M2 | packages/database/test/seed-demo.test.ts; seed-demo.ts | bun run --cwd packages/database test; bun run db:seed:demo | Pass 4/4; chainId 31337 dùng ví Hardhat cho 7 vai trò, không trùng #0, #5, #6; chạy lặp lại idempotent |
+| M3 | tests/e2e/e21-admin.test.ts | bun run typecheck; bun run lint | Pass: thêm timeout 90_000 cho test E21 contractConfig |

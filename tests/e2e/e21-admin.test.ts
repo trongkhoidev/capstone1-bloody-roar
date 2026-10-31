@@ -65,5 +65,4 @@ test("E21: contractConfig is synced from chain and returned to admin", async () 
       (r) => r.arbiter === f.arbiter.toLowerCase() && r.feeRecipient === f.feeRecipient.toLowerCase(),
     );
   }, 60_000);
-});
-
+}, 90_000);

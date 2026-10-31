@@ -1,130 +1,13 @@
-import {
-  EscrowStatus,
-  EscrowPhase,
-  EscrowResolutionKind,
-  type Prisma,
-  TransactionStatus,
-  TransactionType,
-} from "@bloody-roar/database";
+import { EscrowPhase, EscrowResolutionKind } from "@bloody-roar/database";
 import { Contract, providers, utils } from "ethers";
 import { ESCROW_ABI } from "@bloody-roar/shared";
 import { builder } from "../../builder";
 import { requireAuth } from "../../context";
 import { gqlError } from "../../errors";
 import { escrowTarget } from "../../../lib/escrow/prepare";
-import { UserRef } from "../user/user.module";
-
-const ESCROW_INCLUDE = {
-  token: true,
-  client: true,
-  developer: true,
-  transactions: { orderBy: [{ createdAt: "desc" }, { id: "desc" }] },
-} satisfies Prisma.EscrowInclude;
-
-const EscrowStatusEnum = builder.enumType(EscrowStatus, { name: "EscrowStatus" });
-const TransactionTypeEnum = builder.enumType(TransactionType, { name: "EscrowTransactionType" });
-const TransactionStatusEnum = builder.enumType(TransactionStatus, {
-  name: "EscrowTransactionStatus",
-});
 
 export const EscrowPhaseEnum = builder.enumType(EscrowPhase, { name: "EscrowPhase" });
 export const ResolutionKindEnum = builder.enumType(EscrowResolutionKind, { name: "EscrowResolutionKind" });
-
-const TransactionRef = builder.prismaObject("Transaction", {
-  fields: (t) => ({
-    id: t.exposeID("id"),
-    txHash: t.exposeString("txHash"),
-    type: t.expose("type", { type: TransactionTypeEnum }),
-    status: t.expose("status", { type: TransactionStatusEnum }),
-    from: t.exposeString("from", { nullable: true }),
-    to: t.exposeString("to", { nullable: true }),
-    blockNumber: t.exposeInt("blockNumber", { nullable: true }),
-    blockHash: t.exposeString("blockHash", { nullable: true }),
-    confirmations: t.exposeInt("confirmations", { nullable: true }),
-    gasUsed: t.string({
-      nullable: true,
-      resolve: (transaction) => transaction.gasUsed?.toString() ?? null,
-    }),
-    gasPrice: t.string({
-      nullable: true,
-      resolve: (transaction) => transaction.gasPrice?.toString() ?? null,
-    }),
-    chainId: t.exposeInt("chainId"),
-    createdAt: t.string({ resolve: (transaction) => transaction.createdAt.toISOString() }),
-  }),
-});
-
-export const EscrowRef = builder.prismaObject("Escrow", {
-  include: ESCROW_INCLUDE,
-  fields: (t) => ({
-    id: t.exposeID("id"),
-    issueId: t.exposeString("issueId"),
-    status: t.expose("status", { type: EscrowStatusEnum }),
-    phase: t.expose("phase", { type: EscrowPhaseEnum }),
-    resolutionKind: t.expose("resolutionKind", { type: ResolutionKindEnum }),
-    arbiterAddress: t.exposeString("arbiterAddress", { nullable: true }),
-    feeRecipientAddress: t.exposeString("feeRecipientAddress", { nullable: true }),
-    termsHash: t.exposeString("termsHash", { nullable: true }),
-    deliveryHash: t.exposeString("deliveryHash", { nullable: true }),
-    settlementProposer: t.exposeString("settlementProposer", { nullable: true }),
-    settlementClientBps: t.exposeInt("settlementClientBps", { nullable: true }),
-    deliveryDeadline: t.string({
-      nullable: true,
-      resolve: (e) => e.deliveryDeadline?.toISOString() ?? null,
-    }),
-    reviewDeadline: t.string({
-      nullable: true,
-      resolve: (e) => e.reviewDeadline?.toISOString() ?? null,
-    }),
-    resolvedAt: t.string({ nullable: true, resolve: (e) => e.resolvedAt?.toISOString() ?? null }),
-    contractAddress: t.exposeString("contractAddress", { nullable: true }),
-    onChainIssueId: t.exposeString("onChainIssueId", { nullable: true }),
-    txHashDeposit: t.exposeString("txHashDeposit", { nullable: true }),
-    txHashRelease: t.exposeString("txHashRelease", { nullable: true }),
-    txHashCancel: t.exposeString("txHashCancel", { nullable: true }),
-    bountyAmountRaw: t.string({ resolve: (escrow) => escrow.bountyAmount.toFixed() }),
-    platformFeeAmountRaw: t.string({ resolve: (escrow) => escrow.platformFeeAmount.toFixed() }),
-    developerPayoutRaw: t.string({ resolve: (escrow) => escrow.developerPayout.toFixed() }),
-    clientRefundRaw: t.string({ resolve: (escrow) => escrow.clientRefund.toFixed() }),
-    platformFeeBps: t.exposeInt("platformFeeBps"),
-    depositedAt: t.string({
-      nullable: true,
-      resolve: (escrow) => escrow.depositedAt?.toISOString() ?? null,
-    }),
-    releasedAt: t.string({
-      nullable: true,
-      resolve: (escrow) => escrow.releasedAt?.toISOString() ?? null,
-    }),
-    timeoutClaimAt: t.string({
-      nullable: true,
-      resolve: (escrow) => escrow.timeoutClaimAt?.toISOString() ?? null,
-    }),
-    client: t.field({ type: UserRef, resolve: (escrow) => escrow.client }),
-    developer: t.field({ type: UserRef, resolve: (escrow) => escrow.developer }),
-    transactions: t.field({ type: [TransactionRef], resolve: (escrow) => escrow.transactions }),
-  }),
-});
-
-builder.queryField("escrow", (t) =>
-  t.prismaField({
-    type: EscrowRef,
-    nullable: true,
-    args: { issueId: t.arg.string({ required: true }) },
-    resolve: async (query, _root, args, ctx) => {
-      const user = requireAuth(ctx);
-      const escrow = await ctx.db.escrow.findUnique({
-        ...query,
-        where: { issueId: args.issueId },
-        include: ESCROW_INCLUDE,
-      });
-      if (!escrow) return null;
-      if (user.role !== "ADMIN" && escrow.clientId !== user.id && escrow.developerId !== user.id) {
-        throw gqlError("You are not allowed to view this escrow", "FORBIDDEN");
-      }
-      return escrow;
-    },
-  }),
-);
 
 const ClaimableRef = builder.objectRef<{
   rawAmount: string;

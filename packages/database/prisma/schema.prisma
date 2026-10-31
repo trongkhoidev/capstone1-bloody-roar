@@ -433,7 +433,7 @@ model Application {
   @@map("applications")
 }
 
-// Escrow — on-chain escrow state mirrored in DB
+/// Legacy: no code writes this table. Escrow state lives on chain and in EscrowProjection.
 model Escrow {
   id     String       @id @default(cuid())
   status EscrowStatus @default(AWAITING_DELIVERY)

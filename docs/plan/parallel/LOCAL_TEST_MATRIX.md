@@ -149,3 +149,4 @@
 | K9 | xong | e28-authz.test.ts: người ngoài với escrow FUNDED, mọi mutation trong bảng đều bị từ chối |
 | L1 | packages/database/test/seed-demo.test.ts | bun run --cwd packages/database test; bun run db:seed:demo | Pass 4/4; seed demo chạy được hai lần liên tiếp |
 | L2 | apps/web/src/test/issue-application-resolvers.test.ts; tests/e2e/e10-release-claim.test.ts | bun run --cwd apps/web test -- src/test/issue-application-resolvers.test.ts | Pass 13/13; chỉ hủy được bài OPEN, chặn IN_PROGRESS/AWAITING_FUNDING/COMPLETED |
+| L3 | apps/web/src/test/graphql-schema.test.ts | bun run --cwd apps/web test -- src/test/graphql-schema.test.ts | Pass; query escrow cũ và kiểu Escrow trong GraphQL đã xóa |

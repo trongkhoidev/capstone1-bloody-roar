@@ -46,9 +46,9 @@ test("seedDemo is idempotent and conforms to architecture", async () => {
   expect(issues1).toBe(issues2);
   expect(reviews1).toBe(reviews2);
 
-  // prisma.escrow.count() bằng 0
-  const escrowCount = await prisma.escrow.count();
-  expect(escrowCount).toBe(0);
+  // Escrow table count is 0
+  const [{ count: escrowCount }] = await prisma.$queryRaw<Array<{ count: bigint }>>`SELECT count(*)::bigint as count FROM "escrows"`;
+  expect(Number(escrowCount)).toBe(0);
 
   // Không có issue nào ở IN_PROGRESS
   const inProgressCount = await prisma.issue.count({

@@ -40,6 +40,13 @@ HOÀN TẤT 2026-10-31 18:02 (đợt M; gate exit 0; E1–E32 pass 3 lần liên
 | M5 | commit chung M6 | cập nhật DECISIONS.md, LOCAL_DEV.md, CODEX.md |
 | M6 | b7e7c8b | gate 3.2 exit 0 (typecheck, lint, build, web 597, worker 73, db 4, contracts 35, E1–E32 pass 3 lần liên tiếp) |
 
+## R0–R9 (AGY_FINISH_R.md)
+
+| Mục | Commit | Ghi chú |
+| --- | --- | --- |
+| R0 | 2f6fa47 | kiểm mốc, commit AGY_FINISH_R.md và AGY_PROMPT_R.md |
+| R1 | commit chung R1 | gitignore chặn env và ví; kho ví 53 ví, keys.json mode 0600; WALLETS.md không lộ key |
+
 ## Việc người dùng tự làm
 
 - Backup cơ sở dữ liệu thật trước khi `migrate deploy` (migration M4 `20261031173000_drop_legacy_escrow_tables` xóa bảng `escrows` và `transactions`).

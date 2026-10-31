@@ -4,10 +4,15 @@
 
 # Environment variables — NEVER commit these
 .env
+.env.demo
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Demo environment & wallets
+demo-wallets/
+docs/demo/*.local.md
 
 # Dependencies
 node_modules/

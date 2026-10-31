@@ -163,5 +163,6 @@
 | R0 | docs/plan/parallel/AGY_FINISH_R.md; AGY_PROMPT_R.md | git log -1; git status | Xong: kiểm mốc `b7c1a67`, commit tài liệu kế hoạch đợt R (`2f6fa47`) |
 | R1 | scripts/demo/wallets.test.ts; scripts/demo/wallets.ts | bun test scripts/demo/wallets.test.ts; git check-ignore | Pass: gitignore chặn .env.demo và demo-wallets; tạo 53 ví, file keys.json quyền 0600, WALLETS.md không lộ key |
 | R2 | scripts/demo/fund.test.ts; scripts/demo/fund.ts | bun test scripts/demo/fund.test.ts; bun run scripts/demo/fund.ts | Pass: kiểm tra Base Sepolia 84532, chặn deployer cũ, phân bổ ETH/USDC an toàn, ghi ledger.jsonl |
+| R3 | scripts/demo/create-safes.test.ts; scripts/demo/create-safes.ts | bun test scripts/demo/create-safes.test.ts; bun run contracts:test; create-safes.ts | Pass: tính toán địa chỉ Safe CREATE2 xác định, 3 bộ signer riêng biệt, fallback handler đúng hằng số |
 
 

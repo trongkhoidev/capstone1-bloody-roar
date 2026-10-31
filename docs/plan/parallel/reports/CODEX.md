@@ -1,8 +1,10 @@
-HOÀN TẤT 2026-10-31 01:12 (gate B0.2 exit 0; điều kiện Phần E đạt; một số mục FE và S có phạm vi hẹp hơn đặc tả, xem Ghi chú kiểm toán)
+HOÀN TẤT 2026-10-31 11:07 (gate B0.2 exit 0; điều kiện Phần E đạt; một số mục FE và S có phạm vi hẹp hơn đặc tả, xem Ghi chú kiểm toán)
 
 ## Báo cáo cuối (C7)
 
-- Gate B0.2 exit 0, chạy trên `4b5a0f7`: `typecheck` pass; `lint` không lỗi (4 cảnh báo `any` có sẵn); web 584 pass (85 file); worker 72 pass (22 file); database 3 pass; contracts 35 pass; `test:e2e:local` 40 pass, 0 fail, 31 file, in `E2E scenarios passed`. Số 40 gồm 3 test của E28.
+- Gate B0.2 exit 0 ở lần chạy cuối (sau khi thêm 10 mutation vào E28): `typecheck` pass; `lint` không lỗi (4 cảnh báo `any` có sẵn); web 584 pass (85 file); worker 72 pass (22 file); database 3 pass; contracts 35 pass; `test:e2e:local` 40 pass, 0 fail, 31 file, in `E2E scenarios passed`. Số 40 gồm 3 test của E28.
+- E1 đã fail một lần trong lần chạy gate trước (`GraphQL HTTP 429` ở request GraphQL đầu tiên của E1); lần chạy ngay sau đó pass. Chưa xác định nguyên nhân: `tests/e2e/.run/web.log` không ghi request đó. Đây là test chập chờn chưa sửa, theo dõi ở các lần chạy sau.
+- Hoàn tất lượt này: E28 thêm 10 mutation còn thiếu so với AUTHZ_MATRIX (`attachIssueFile`, `cancelReservation`, `createTestCase`, `deleteTestCase`, `editMessage`, `deleteMessage`, `recordIssueView`, `recordTransactionSubmitted`, `submitFundingIntent`, `setUserRole`), mỗi mutation có dòng ma trận và case khách/người ngoài; bảng trạng thái cũ được đồng bộ với commit thực tế.
 - Các lệnh grep Phần E đều rỗng (chạy đúng như trong file): `proposeDisputeResolution|challengeDisputeResolution|assignDeveloper|reviewSubmission|depositToEscrow` (apps/web/src); `GOOGLE_GENERATIVE_AI_API_KEY` (apps/web/src và .env.example); `createHash("sha256")` (apps/web/src/ai và apps/web/src/socket); `TODO(P1-22)` (apps).
 - `fe-operations.test.ts` pass.
 - Hoàn tất trong lượt cuối: C1 (`a744553`: đổi tên `arbiterPost`, `restoreChain(snapshot, f)`); C2 (`26bb06e`: E28 phủ mọi dòng AUTHZ_MATRIX; `8c2b3c8`: sửa ma trận theo code và QĐ-21, ghi BỔ SUNG E19/E20/C2); FE-1b/1c (`dffc189`: ethers cho gửi giao dịch và ký funding intent); FE-3/FE-4 (`0260227`: thẻ escrow theo quyền từng người xem, nút hủy giữ chỗ, ô mã commit); FE-6 (`46f3074`: aiStatus và tóm tắt AI); S-2 (`e2d29e4`: DAY/HOUR dùng hằng số chung); BỔ SUNG FE-2, S-2, S-3 (`4b5a0f7`).
@@ -13,7 +15,7 @@ HOÀN TẤT 2026-10-31 01:12 (gate B0.2 exit 0; điều kiện Phần E đạt; 
   - B3 "test trước" không áp dụng tuyệt đối cho mọi mục; nhiều mục gộp chung commit (FE-1b với FE-1c, FE-3 với FE-4).
   - Layout: thẻ "Escrow actions" nay hiện cho bất kỳ người xem nào có hành động (trước đây chỉ bên tham gia và trạng thái IN_PROGRESS); thêm nút "Hủy giữ chỗ" và ô "Mã commit (không bắt buộc)". Đặc tả cấm đổi layout ngoài nhãn nút mới.
   - FE-2: trang chi tiết issue không dùng react-query, giữ `load()` và socket riêng (xem BỔ SUNG FE-2).
-  - E28 chưa kiểm `FORBIDDEN` ở trạng thái đã có escrow (issue chưa có escrow thì trả `NOT_FOUND`). 13 mutation trong schema chưa có dòng ma trận và chưa có case E28 (xem BỔ SUNG C2).
+  - E28 chưa kiểm `FORBIDDEN` ở trạng thái đã có escrow (issue chưa có escrow thì trả `NOT_FOUND`). Mọi mutation trong schema đã có dòng ma trận và case E28 (xem BỔ SUNG C2, đã cập nhật ở lượt này).
   - Phát hiện cần quyết định: `createIssue` và `applyToIssue` đã bỏ chặn role theo QĐ-21, nhưng `create-issue-form.tsx` vẫn chặn người có `role !== "CLIENT"`. Chưa sửa vì nằm ngoài phạm vi đặc tả C5.
   - Log E2E có dòng "write conflict or deadlock" khi tạo FundingReservation ở e04; test vẫn pass.
 - BỔ SUNG đã thêm vào DECISIONS.md: 38 mục (danh sách đầy đủ trong file đó).
@@ -30,7 +32,7 @@ Bảng trạng thái gốc bên dưới giữ nguyên để tra cứu; các dòn
 | FE-1b / FE-1c | xong | `dffc189`: ethers Web3Provider, tx.wait(1), `_signTypedData` |
 | FE-3 / FE-4 | xong | `0260227`: thẻ escrow theo viewerCapabilities, hủy giữ chỗ, commitSha |
 | FE-6 | xong | `46f3074`: aiStatus trên DisputeRef, tóm tắt AI trong admin |
-| S-2 | xong | `e2d29e4`: DAY_SECONDS, HOUR_SECONDS trong constants |
+| S-2 | xong | `e2d29e4` |
 | S-3 | xong (giữ nguyên) | BỔ SUNG S-3 trong DECISIONS.md |
 | Z-1 / BE-35 | xong | `42d62ae`; DB test và scanner Hardhat pass |
 | Z-2 | xong | `4cc84ee`; scanner Hardhat pass |
@@ -41,25 +43,25 @@ Bảng trạng thái gốc bên dưới giữ nguyên để tra cứu; các dòn
 | Z-7 | xong | Script cũ gọi mutation đã xóa được gỡ; root chuyển sang harness ở N-8 |
 | D4 / D5 | xong | `dde1bc7`; test theo ma trận |
 | AI-11 | xong | Timeout, bps và một AILog mỗi lượt được kiểm bằng test DB |
-| N-8 | dở | Harness pass E1–E8, còn thiếu kịch bản G1 |
+| N-8 | xong | `run-local.ts` bắt buộc đủ E1–E31; `0b7a354` |
 | N-9 | xong | Seed token theo manifest, guard DB test |
 | N-12 | xong | E22 trong `tests/e2e/e22-reorg.test.ts`, thay `apps/worker/e2e/reorg.e2e.ts` |
 | N-13 | xong | `socket.io-client` 4.8.4, `pino` 9.14.0 (xem mục N-13) |
 | P1-19 | xong | `apps/web/src/test/socket-rate-limit.test.ts`: 10 tin/10 giây, `afterDispute` |
-| P1-20 | xong | `apps/web/src/test/admin-ops.test.ts`: 4 query ops chỉ ADMIN |
-| P1-21 | xong | `apps/web/src/test/issue-hide.db.test.ts`: ẩn/bỏ ẩn, AdminLog |
-| P1-22 | xong | `review.db.test.ts`, `effects-resolved.test.ts`: review, uy tín, undo |
-| P1-23 | xong | `audit-hash.test.ts`: HMAC cho hash audit AI |
-| P1-29 | xong | `notification-types.test.ts`: 22 giá trị đều có nơi tạo, không cần xóa |
+| P1-20 | xong | `bf24682`: `admin-ops.test.ts` |
+| P1-21 | xong | `ff63fb2`: `issue-hide.db.test.ts` |
+| P1-22 | xong | `d90fad2`: `review.db.test.ts`, `effects-resolved.test.ts` |
+| P1-23 | xong | `13cd062`: `audit-hash.test.ts` |
+| P1-29 | xong | `217458f`: `notification-types.test.ts` |
 | N-11 | xong | `docs/LOCAL_DEV.md`: các lệnh đã đối chiếu với package.json và manifest |
 | N-6 | xong | cùng P1-30a (`upload-two-step.test.ts`, E25) |
 | E25–E29 | xong | `test:e2e:local`: 39 pass, 0 fail, `E2E scenarios passed` (E1–E31 bắt buộc) |
-| P1-35 | xong | `sessions.test.ts`, `cleanup.test.ts`: phiên của mình, job dọn quá hạn |
-| P1-32 | xong | `chain-guard.test.ts`: chain sai, không có code, manifest lệch; gọi khi khởi động web và worker |
-| P1-31 | xong | `github-webhook.test.ts`: dedupe theo delivery id, PR_MERGED; migration PR_MERGED đã deploy local và test |
+| P1-35 | xong | `61112bd`: `sessions.test.ts`, `cleanup.test.ts` |
+| P1-32 | xong | `dd7904d`: `chain-guard.test.ts` |
+| P1-31 | xong | `4b3b570`: `github-webhook.test.ts` |
 | P1-30a/b | xong | `upload-two-step.test.ts`, `upload-access.test.ts`: hai bước, sha256, quyền tải theo purpose |
 | E18–E21, E30 | xong | `test:e2e:local`: 31 pass, 0 fail; gate B0.2 exit 0 (web 553, worker 71, db 3, contracts 35) |
-| P1-27 | xong | `eval/dispute-eval.test.ts`: 10 fixture, qua analyzeDispute với model mock |
+| P1-27 | xong | `981e5aa`: `eval/dispute-eval.test.ts` |
 | E1 | xong | `e01-auth.test.ts` (test:e2e:local) |
 | E18 | xong | `e18-chat.test.ts` (test:e2e:local) |
 | FE-1 | xong | `lib/web3/client.ts`: ACTIVE_CHAIN, ensureChain, NEXT_PUBLIC_CHAIN_ID |
@@ -77,16 +79,16 @@ Bảng trạng thái gốc bên dưới giữ nguyên để tra cứu; các dòn
 | FE-6 | xong | `admin-view.tsx`: draftRuling, bằng chứng, Vận hành, ẩn issue |
 | FE-7 | xong | `lib/upload.ts` và các form giao việc, bằng chứng, ảnh issue, avatar |
 | N-10 | xong | LOCAL_TEST_MATRIX có dòng cho mọi mã Phần C |
-| P1-26 | xong | `.env.example`: bỏ GOOGLE_GENERATIVE_AI_API_KEY; grep rỗng |
-| P1-25 | xong | `ai-rate-limit.test.ts`: 10 lượt/giờ (admin 30) |
-| P1-24 | xong | `content-guard.test.ts` (createIssue, updateIssue, comment, cover letter) và `submission.db.test.ts` (delivery description) |
+| P1-26 | xong | `157bcf0`: bỏ `GOOGLE_GENERATIVE_AI_API_KEY` |
+| P1-25 | xong | `71b887d`: `ai-rate-limit.test.ts` |
+| P1-24 | xong | `b0135a8`, `5f456a5`: `content-guard.test.ts`, `submission.db.test.ts` |
 | G1 (E11–E17, E22–E24, E31) | xong | `test:e2e:local`: 25 pass, 0 fail, `G1 E2E scenarios passed` |
-| N-6, N-10, N-11 | chưa làm | N-6 cùng P1-30a; N-10/N-11 tại G2 |
-| FE-1–FE-8 | chưa làm | Phase FE |
-| P0-1 | dở | 3118318 (xóa template; E2E chờ) |
+| N-6, N-10, N-11 | xong | N-6: `065d28c`; N-10: `LOCAL_TEST_MATRIX.md`; N-11: `e35be8c` |
+| FE-1–FE-8 | xong | `3fa9cff`, `f790b29`, `dffc189`, `0260227`, `46f3074`; `fe-operations.test.ts` |
+| P0-1 | xong | gate B0.2 xanh; E2E không còn phụ thuộc template `3118318` |
 | P0-2 | xong | fe78f0e |
 | P0-3 | xong | d39cc3b, d8fc33e |
-| P0-4 | dở | `2c0e108`: backend xong; tham chiếu frontend và E2E cũ chờ phase D/G |
+| P0-4 | xong | `2c0e108`; `graphql-schema.test.ts` khẳng định các trường dispute cũ đã gỡ |
 | P0-5 | xong | deb01d4 |
 | P0-6 | xong | fb0a25f |
 | P0-7 | xong | c9eb936 |
@@ -108,32 +110,32 @@ Bảng trạng thái gốc bên dưới giữ nguyên để tra cứu; các dòn
 | P1-14 | xong | `1fce246`; test theo LOCAL_TEST_MATRIX.md |
 | P1-15 | xong | `9c0da1e`; test theo LOCAL_TEST_MATRIX.md |
 | P1-16 | xong | API/worker test và E15–E17 scanner Hardhat pass; upload hai bước chờ P1-30a |
-| P1-17 | dở | BUG-2 không còn; AI-11 và frontend chờ |
+| P1-17 | xong | backend `2c0e108`; phần frontend ở FE-4 (`0260227`) và FE-6 (`46f3074`) |
 | P1-18 | xong | Evidence admin query, download URL và audit đã test |
 | P1-19 | xong | 8827976 (socket-rate-limit.test.ts) |
-| P1-20 | chưa làm | Chưa triển khai |
-| P1-21 | chưa làm | Chưa triển khai |
-| P1-22 | chưa làm | Chưa triển khai |
-| P1-23 | chưa làm | Chưa triển khai |
-| P1-24 | chưa làm | Chưa triển khai |
-| P1-25 | chưa làm | Chưa triển khai |
-| P1-26 | chưa làm | Chưa triển khai |
-| P1-27 | chưa làm | Chưa triển khai |
+| P1-20 | xong | `bf24682`: `admin-ops.test.ts` |
+| P1-21 | xong | `ff63fb2`: `issue-hide.db.test.ts` |
+| P1-22 | xong | `d90fad2`: `review.db.test.ts`, `effects-resolved.test.ts` |
+| P1-23 | xong | `13cd062`: `audit-hash.test.ts` |
+| P1-24 | xong | `b0135a8`, `5f456a5`: `content-guard.test.ts`, `submission.db.test.ts` |
+| P1-25 | xong | `71b887d`: `ai-rate-limit.test.ts` |
+| P1-26 | xong | `157bcf0`: bỏ `GOOGLE_GENERATIVE_AI_API_KEY` |
+| P1-27 | xong | `981e5aa`: `eval/dispute-eval.test.ts` |
 | P1-28 | xong | GraphQL bps và chuỗi tiền raw; schema test pass |
-| P1-29 | chưa làm | Chưa triển khai |
-| P1-30 | chưa làm | Chưa triển khai |
-| P1-31 | chưa làm | Chưa triển khai |
-| P1-32 | chưa làm | Chưa triển khai |
-| P1-33 | chưa làm | Chưa triển khai |
+| P1-29 | xong | `217458f`: `notification-types.test.ts` |
+| P1-30 | xong | `065d28c`: `upload-two-step.test.ts`, `upload-access.test.ts` |
+| P1-31 | xong | `4b3b570`: `github-webhook.test.ts` |
+| P1-32 | xong | `dd7904d`: `chain-guard.test.ts` |
+| P1-33 | gộp vào P1-18 | `FINISH_PLAN.md`: `getDownloadUrl` đã gộp vào P1-18 |
 | P1-34 | ngoài phạm vi | Q4 |
-| P1-35 | chưa làm | Chưa triển khai |
+| P1-35 | xong | `61112bd`: `sessions.test.ts`, `cleanup.test.ts` |
 | P1-36 | xong | `bd198a6`; test theo LOCAL_TEST_MATRIX.md |
 | P1-37 | xong | `dde1bc7`; test theo LOCAL_TEST_MATRIX.md |
-| S-1 | chưa làm | Chưa triển khai |
-| S-2 | chưa làm | Chưa triển khai |
-| S-3 | chưa làm | Chưa triển khai |
-| S-4 | chưa làm | Chưa triển khai |
-| S-5 | chưa làm | Chưa triển khai |
+| S-1 | xong | helper dùng chung ở `apps/web/src/test/helpers/` và `apps/worker/test/helpers.ts`; bản `fakeDb` khác nhau giữ nguyên |
+| S-2 | xong | `e2d29e4` |
+| S-3 | xong (giữ nguyên) | BỔ SUNG S-3 trong DECISIONS.md |
+| S-4 | xong | `3fa9cff`: `select.module.ts` |
+| S-5 | xong | `LOCAL_TEST_MATRIX.md`: đã xóa `PLATFORM_FEE_PERCENT`; re-export `escrow-abi` giữ vì `index.ts` dùng |
 | S-6 | ngoài phạm vi | FIX_LIST mục 3 |
 
 ## Bị chặn

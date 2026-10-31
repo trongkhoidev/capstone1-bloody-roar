@@ -26,7 +26,7 @@ HOÀN TẤT 2026-10-31 16:48 (gate exit 0; typecheck, build, E1–E32 pass)
 | L3 | 98f619b | xóa query escrow cũ đọc bảng legacy, schema.prisma đánh dấu legacy |
 | L4 | e2fd258 | đồng bộ contract config từ chain cho màn admin ops |
 | L5 | 29024da | kiểm quyền kháng cáo trước pha escrow, dùng hằng số thời gian |
-| L6 | đang commit | gate 3.2 exit 0 (typecheck, lint, build, web 596, worker 73, db 4, contracts 35, E1–E32) |
+| L6 | fcc455f | gate 3.2 exit 0 (typecheck, lint, build, web 596, worker 73, db 4, contracts 35, E1–E32) |
 
 
 

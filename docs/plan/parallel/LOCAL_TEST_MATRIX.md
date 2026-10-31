@@ -164,5 +164,6 @@
 | R1 | scripts/demo/wallets.test.ts; scripts/demo/wallets.ts | bun test scripts/demo/wallets.test.ts; git check-ignore | Pass: gitignore chặn .env.demo và demo-wallets; tạo 53 ví, file keys.json quyền 0600, WALLETS.md không lộ key |
 | R2 | scripts/demo/fund.test.ts; scripts/demo/fund.ts | bun test scripts/demo/fund.test.ts; bun run scripts/demo/fund.ts | Pass: kiểm tra Base Sepolia 84532, chặn deployer cũ, phân bổ ETH/USDC an toàn, ghi ledger.jsonl |
 | R3 | scripts/demo/create-safes.test.ts; scripts/demo/create-safes.ts | bun test scripts/demo/create-safes.test.ts; bun run contracts:test; create-safes.ts | Pass: tính toán địa chỉ Safe CREATE2 xác định, 3 bộ signer riêng biệt, fallback handler đúng hằng số |
+| R4 | scripts/demo/up.sh; scripts/demo/down.sh | .env.demo, migrate deploy bloody_demo, seed-prod.ts | Pass: tạo DB bloody_demo, 13 migrations applied, seed USDC 84532, up.sh và down.sh quản lý PID |
 
 

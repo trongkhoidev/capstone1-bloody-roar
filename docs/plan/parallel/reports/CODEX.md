@@ -47,7 +47,8 @@ CẦN NGƯỜI DÙNG: nạp 0.05 ETH và 35 USDC vào 0x6d5fCc753Dfeb150d7f3526d
 | R0 | 2f6fa47 | kiểm mốc, commit AGY_FINISH_R.md và AGY_PROMPT_R.md |
 | R1 | b6763d5 | gitignore chặn env và ví; kho ví 53 ví, keys.json mode 0600; WALLETS.md không lộ key |
 | R2 | 726b13e | script fund.ts, ledger.jsonl, kiểm tra Base Sepolia, đo gas và nhu cầu quỹ |
-| R3 | commit chung R3 | create-safes.ts tính toán 3 Safe vai trò chuẩn v1.4.1, deploy escrow và test contract pass |
+| R3 | 88474a7 | create-safes.ts tính toán 3 Safe vai trò chuẩn v1.4.1, deploy escrow và test contract pass |
+| R4 | commit chung R4 | tạo DB bloody_demo, migrate 13 migrations, seed-prod USDC 84532, up.sh và down.sh |
 
 ## Việc người dùng tự làm
 

@@ -100,7 +100,8 @@ builder.queryFields((t) => ({
       }
       const canonicalKeys = new Set(projections.map((p) => `${keyOf(p.chainId, p.contractAddress)}:${p.escrowIdHash.toLowerCase()}`));
       const disputeKeys = new Set<string>();
-      const disputes = new Map<string, bigint>(); let duration = 0n, resolvedDisputes = 0n;
+      // Count as a number: nft folds a 0n literal and crashes the build on the guarded division below.
+      const disputes = new Map<string, bigint>(); let duration = 0n, resolvedDisputes = 0;
       for (const event of events) {
         if (!event.escrowIdHash) continue;
         const key = `${keyOf(event.chainId, event.contractAddress)}:${event.escrowIdHash.toLowerCase()}`;
@@ -115,7 +116,7 @@ builder.queryFields((t) => ({
       return { users, openTasks, activeTasks, completedTasks, openDisputes,
         completedBounties: [...byToken.values()].map(({ token, amount }) => tokenAmount(amount, token)), assets: [...groups.assets.values()],
         disputeRateBps: totalEscrows ? Math.floor(disputeKeys.size * 10000 / totalEscrows) : 0,
-        meanDisputeResolutionSeconds: resolvedDisputes ? (duration / resolvedDisputes).toString() : null };
+        meanDisputeResolutionSeconds: resolvedDisputes ? (duration / BigInt(resolvedDisputes)).toString() : null };
     },
   }),
 }));

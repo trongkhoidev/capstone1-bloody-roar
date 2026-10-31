@@ -39,7 +39,7 @@ Bảng trạng thái gốc bên dưới giữ nguyên để tra cứu; các dòn
 | Z-3 | xong | `79b8010`, `87bb280`, `2f27bc2`, `704cd2e`; gate trước harness pass |
 | Z-4 | xong | `6142dc4`; receipt và finality pass |
 | Z-5 | xong | Bảng đối chiếu với ma trận test |
-| Z-6 | bị chặn | next build: @vercel/nft Division by zero; ba cách thử thất bại |
+| Z-6 | xong | K1: next build pass (NODE_ENV=production, xem BỔ SUNG K1); nft không còn lỗi Division by zero |
 | Z-7 | xong | Script cũ gọi mutation đã xóa được gỡ; root chuyển sang harness ở N-8 |
 | D4 / D5 | xong | `dde1bc7`; test theo ma trận |
 | AI-11 | xong | Timeout, bps và một AILog mỗi lượt được kiểm bằng test DB |
@@ -140,7 +140,6 @@ Bảng trạng thái gốc bên dưới giữ nguyên để tra cứu; các dòn
 
 ## Bị chặn
 
-- Z-6: `bun run build` lỗi `RangeError: Division by zero` trong `@vercel/nft`. Đã thử build trong worktree, thêm outputFileTracingRoot, rồi loại `.uploads` và `tests` khỏi tracing; cả ba vẫn lỗi. Typecheck và lint pass. Theo FINISH_PLAN, không chặn gate và tiếp tục phase khác.
 
 ## N-13 dependency
 

@@ -314,3 +314,7 @@ Trang chi tiết issue giữ dữ liệu bằng `useState` và hàm `load()` có
 ## BỔ SUNG S-1 — không gom 18 bản fakeDb
 
 Đã so sánh thân hàm `fakeDb` (chuẩn hóa khoảng trắng) trong `apps/web/src/test` và `apps/worker/test`: 18 bản, không bản nào giống bản khác. Các bản khác nhau ở mock và dữ liệu từng file, nên giữ nguyên theo đặc tả S-1. Các helper trùng hoàn toàn (`callQuery`, `callMutation`, fixture user, `CONTRACT`) đã gom vào `apps/web/src/test/helpers/` và `apps/worker/test/helpers.ts`.
+
+## BỔ SUNG K1 — build đặt NODE_ENV=production sau khi nạp .env
+
+`.env` có `NODE_ENV=` (rỗng). Sau `set -a; . ./.env`, `next build` prerender bằng runtime dev của React và lỗi `Cannot read properties of null (reading 'useContext')` ở mọi trang. Lệnh build trong gate đặt `NODE_ENV=production` sau khi nạp .env. Không đổi `.env`.

@@ -84,6 +84,7 @@
 | Z-7 | apps/web/src/test/graphql-schema.test.ts | bun run typecheck; bun run lint; bun run --cwd apps/web test -- src/test/graphql-schema.test.ts | Pass; commit `chore(z-7): remove obsolete e2e scripts` |
 | Z-6 | xong | K1: bun run --cwd apps/web build exit 0 với NODE_ENV=production; analytics-projection.test.ts 4/4 pass; commit của K1 |
 | K2 | xong | escrow-reservation.test.ts: query clientWallet/developerWallet khi AWAITING_FUNDING |
+| K3 | xong | wallet-signer.test.ts: ví khác tài khoản thì từ chối ký |
 | Z-5 | docs/plan/parallel/reports/CODEX.md | bun run typecheck; bun run lint; đối chiếu LOCAL_TEST_MATRIX.md | Pass; commit `docs(z-5): correct task status table` |
 | Z-4 | apps/worker/test/intents.test.ts; apps/worker/test/rpc.test.ts | bun run --cwd apps/worker test -- test/intents.test.ts test/rpc.test.ts; bun run typecheck; bun run lint | Pass 14/14; commit `fix(z-4): confirm approvals at finality` |
 | Z-3 / ui | apps/web/src/test/ui-preferences.test.tsx | bun run typecheck; bun run lint; web/worker/database/contracts test | Pass; merge `2f27bc2`, sửa kỳ vọng `fix(z-3): align merged ui checks` |

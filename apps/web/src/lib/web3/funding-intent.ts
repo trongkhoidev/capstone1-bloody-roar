@@ -14,7 +14,7 @@ export type FundingReservation = {
 
 // Signs the EIP-712 funding intent for a reservation. Same typed data the local harness signs.
 export async function signFundingIntent(reservation: FundingReservation, client: string, developer: string) {
-  const signer = await walletSigner();
+  const signer = await walletSigner(client);
   const nonceBytes = crypto.getRandomValues(new Uint8Array(16));
   const nonce = BigInt(`0x${Array.from(nonceBytes, (byte) => byte.toString(16).padStart(2, "0")).join("")}`);
   const expiry = new Date(Date.now() + 10 * 60_000);

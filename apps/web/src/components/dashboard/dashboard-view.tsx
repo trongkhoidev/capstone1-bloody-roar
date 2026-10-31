@@ -64,7 +64,7 @@ export function DashboardView() {
     setClaiming(true); setError(null); setClaimNotice(null);
     try {
       const prepared = await graphqlRequest<{ prepareClaim: PreparedCall }>(PREPARE_CLAIM, { recipient: user.walletAddress });
-      await sendPreparedCalls([prepared.prepareClaim], (intentId, txHash) => graphqlRequest(RECORD_TX, { id: intentId, hash: txHash }).then(() => undefined));
+      await sendPreparedCalls([prepared.prepareClaim], (intentId, txHash) => graphqlRequest(RECORD_TX, { id: intentId, hash: txHash }).then(() => undefined), user.walletAddress);
       setClaimNotice("Payout withdrawn to your wallet.");
       await loadClaimable();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not withdraw funds."); }

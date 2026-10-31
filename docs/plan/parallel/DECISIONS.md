@@ -318,3 +318,7 @@ Trang chi tiết issue giữ dữ liệu bằng `useState` và hàm `load()` có
 ## BỔ SUNG K1 — build đặt NODE_ENV=production sau khi nạp .env
 
 `.env` có `NODE_ENV=` (rỗng). Sau `set -a; . ./.env`, `next build` prerender bằng runtime dev của React và lỗi `Cannot read properties of null (reading 'useContext')` ở mọi trang. Lệnh build trong gate đặt `NODE_ENV=production` sau khi nạp .env. Không đổi `.env`.
+
+## BỔ SUNG K3 — chainId trong test ví lấy từ ACTIVE_CHAIN
+
+Đặc tả ghi `eth_chainId` trả `0x7a69`. `ensureActiveChain` đọc `NEXT_PUBLIC_CHAIN_ID` (mặc định Base Sepolia), nên test trả `ACTIVE_CHAIN.chainHex` để không phụ thuộc môi trường. Hành vi kiểm không đổi.

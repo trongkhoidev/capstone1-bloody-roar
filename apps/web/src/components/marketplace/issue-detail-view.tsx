@@ -234,7 +234,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
         files: deliveryFiles,
       });
       const prepared = await graphqlRequest<{ prepareSubmitWork: PreparedStep }>(PREPARE_SUBMIT, { id: draft.createSubmissionDraft.id });
-      await sendPreparedCalls([prepared.prepareSubmitWork], recordTx);
+      await sendPreparedCalls([prepared.prepareSubmitWork], recordTx, user!.walletAddress);
       setDeliveryDescription(""); setPullRequestUrl(""); setCommitSha(""); setDeliveryFiles([]); setUploadStatus(null);
       const refreshed = await graphqlRequest<SubmissionResponse>(SUBMISSIONS_QUERY, { issueId });
       setSubmissions(refreshed.submissions);
@@ -249,7 +249,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     try {
       if (approved) {
         const prepared = await graphqlRequest<{ prepareReleaseFunds: PreparedStep }>(PREPARE_RELEASE, { id: issueId });
-        await sendPreparedCalls([prepared.prepareReleaseFunds], recordTx);
+        await sendPreparedCalls([prepared.prepareReleaseFunds], recordTx, user!.walletAddress);
         setNotice("Escrow released on-chain. The developer can claim the payout.");
         awaitChain();
       } else {
@@ -271,7 +271,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
         ? { issue: issueId, bps: Math.round(Number(percent) * 100) }
         : { issue: issueId };
       const prepared = await graphqlRequest<Record<string, PreparedStep>>(action.mutation, variables);
-      await sendPreparedCalls([prepared[action.field]!], recordTx);
+      await sendPreparedCalls([prepared[action.field]!], recordTx, user!.walletAddress);
       setNotice(`${action.label}: sent on-chain.`);
       awaitChain();
     } catch (reason) { setError(reason instanceof Error ? reason.message : `Could not ${action.label.toLowerCase()}.`); }
@@ -283,7 +283,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     try {
       const evidence = await graphqlRequest<{ createEvidenceManifest: { id: string } }>(CREATE_EVIDENCE, { issue: issueId, statement: counterStatement.trim(), files: [] });
       const prepared = await graphqlRequest<{ prepareSubmitCounterpartyEvidence: PreparedStep }>(SUBMIT_COUNTERPARTY, { issue: issueId, manifest: evidence.createEvidenceManifest.id });
-      await sendPreparedCalls([prepared.prepareSubmitCounterpartyEvidence], recordTx);
+      await sendPreparedCalls([prepared.prepareSubmitCounterpartyEvidence], recordTx, user!.walletAddress);
       setCounterStatement(""); setNotice("Counterparty evidence sent on-chain."); awaitChain();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not submit evidence."); }
     finally { setIsWorking(false); }
@@ -334,7 +334,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
       const intent = await signFundingIntent(reservation, reservation.clientWallet, reservation.developerWallet);
       await graphqlRequest(SUBMIT_FUNDING_INTENT, { id: reservation.id, signature: intent.signature, nonce: intent.nonce, expiry: intent.intentExpiry });
       const prepared = await graphqlRequest<{ prepareEscrowDeposit: { steps: PreparedStep[] } }>(PREPARE_DEPOSIT, { id: reservation.id });
-      await sendPreparedCalls(prepared.prepareEscrowDeposit.steps, recordTx);
+      await sendPreparedCalls(prepared.prepareEscrowDeposit.steps, recordTx, user!.walletAddress);
       setReservationId(null);
       setNotice("Escrow funded. The developer can start the work.");
       awaitChain();
@@ -368,7 +368,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     try {
       const evidence = await graphqlRequest<{ createEvidenceManifest: { id: string } }>(CREATE_EVIDENCE, { issue: issueId, statement: disputeReason.trim(), files: evidenceFiles });
       const prepared = await graphqlRequest<{ prepareRaiseDispute: PreparedStep }>(PREPARE_RAISE_DISPUTE, { issue: issueId, manifest: evidence.createEvidenceManifest.id });
-      await sendPreparedCalls([prepared.prepareRaiseDispute], recordTx);
+      await sendPreparedCalls([prepared.prepareRaiseDispute], recordTx, user!.walletAddress);
       setNotice("Dispute opened on-chain. The arbiter will review the evidence.");
       setShowDisputeForm(false); setDisputeReason(""); setEvidenceFiles([]); setUploadStatus(null); awaitChain();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not open dispute."); }

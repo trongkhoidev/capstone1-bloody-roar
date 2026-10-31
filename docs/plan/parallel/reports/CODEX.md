@@ -1,4 +1,4 @@
-HOÀN TẤT 2026-10-31 18:02 (đợt M; gate exit 0; E1–E32 pass 3 lần liên tiếp)
+CẦN NGƯỜI DÙNG: nạp 0.05 ETH và 35 USDC vào 0x6d5fCc753Dfeb150d7f3526dac114F38Dd169b95 trên Base Sepolia
 
 ## K0–K10 (HAIKU_FINAL.md)
 
@@ -45,7 +45,8 @@ HOÀN TẤT 2026-10-31 18:02 (đợt M; gate exit 0; E1–E32 pass 3 lần liên
 | Mục | Commit | Ghi chú |
 | --- | --- | --- |
 | R0 | 2f6fa47 | kiểm mốc, commit AGY_FINISH_R.md và AGY_PROMPT_R.md |
-| R1 | commit chung R1 | gitignore chặn env và ví; kho ví 53 ví, keys.json mode 0600; WALLETS.md không lộ key |
+| R1 | b6763d5 | gitignore chặn env và ví; kho ví 53 ví, keys.json mode 0600; WALLETS.md không lộ key |
+| R2 | commit chung R2 | script fund.ts, ledger.jsonl, kiểm tra Base Sepolia, đo gas và nhu cầu quỹ |
 
 ## Việc người dùng tự làm
 

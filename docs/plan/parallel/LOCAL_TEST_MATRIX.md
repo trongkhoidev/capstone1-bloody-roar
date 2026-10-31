@@ -162,5 +162,6 @@
 | M6 | Gate 3.2: typecheck, lint, build, web, worker, db, contracts, test:e2e:local | bun run typecheck && bun run lint && NODE_ENV=production bun run --cwd apps/web build && bun run --cwd apps/web test && bun run --cwd apps/worker test && bun run --cwd packages/database test && bun run contracts:test && bun run test:e2e:local | Pass: toàn bộ 8 lệnh gate exit 0; E2E scenarios passed (E1–E32) 3 lần liên tiếp |
 | R0 | docs/plan/parallel/AGY_FINISH_R.md; AGY_PROMPT_R.md | git log -1; git status | Xong: kiểm mốc `b7c1a67`, commit tài liệu kế hoạch đợt R (`2f6fa47`) |
 | R1 | scripts/demo/wallets.test.ts; scripts/demo/wallets.ts | bun test scripts/demo/wallets.test.ts; git check-ignore | Pass: gitignore chặn .env.demo và demo-wallets; tạo 53 ví, file keys.json quyền 0600, WALLETS.md không lộ key |
+| R2 | scripts/demo/fund.test.ts; scripts/demo/fund.ts | bun test scripts/demo/fund.test.ts; bun run scripts/demo/fund.ts | Pass: kiểm tra Base Sepolia 84532, chặn deployer cũ, phân bổ ETH/USDC an toàn, ghi ledger.jsonl |
 
 

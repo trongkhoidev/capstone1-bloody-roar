@@ -7,7 +7,7 @@ beforeAll(async () => {
   assertTestDatabase(process.env.TEST_DATABASE_URL);
   await prisma.$executeRawUnsafe(`
     TRUNCATE TABLE "notifications", "messages", "issue_comments", "reviews",
-    "submissions", "applications", "escrows", "funding_reservations",
+    "submissions", "applications", "funding_reservations",
     "escrow_projections", "issues", "users" CASCADE
   `);
   await prisma.token.upsert({
@@ -45,10 +45,6 @@ test("seedDemo is idempotent and conforms to architecture", async () => {
   expect(users1).toBe(users2);
   expect(issues1).toBe(issues2);
   expect(reviews1).toBe(reviews2);
-
-  // Escrow table count is 0
-  const [{ count: escrowCount }] = await prisma.$queryRaw<Array<{ count: bigint }>>`SELECT count(*)::bigint as count FROM "escrows"`;
-  expect(Number(escrowCount)).toBe(0);
 
   // Không có issue nào ở IN_PROGRESS
   const inProgressCount = await prisma.issue.count({

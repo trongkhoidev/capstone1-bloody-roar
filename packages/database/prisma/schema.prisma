@@ -61,14 +61,6 @@ enum ApplicationStatus {
   WITHDRAWN // Developer withdrew their application
 }
 
-enum EscrowStatus {
-  AWAITING_DELIVERY // Funds locked, dev working
-  COMPLETED // Funds allocated; recipient claims are separate
-  CANCELLED // Full client refund allocated
-  DISPUTED // Dispute raised, funds frozen
-  RESOLUTION_PROPOSED // Legacy business status; use EscrowPhase for ruling state
-}
-
 enum EscrowPhase {
   NONE
   FUNDED
@@ -129,25 +121,6 @@ enum MessageType {
   TEXT
   FILE
   SYSTEM // System messages (e.g., "Task assigned")
-}
-
-enum TransactionType {
-  DEPOSIT
-  RELEASE
-  CANCEL
-  DISPUTE
-  RESOLVE
-  WORK
-  SETTLEMENT
-  EVIDENCE
-  RULING
-  CHALLENGE
-}
-
-enum TransactionStatus {
-  PENDING
-  CONFIRMED
-  FAILED
 }
 
 enum SubmissionStatus {
@@ -268,8 +241,6 @@ model User {
   assignedIssues   Issue[]        @relation("DeveloperIssues")
   sentMessages     Message[]
   notifications    Notification[]
-  escrowsAsClient  Escrow[]       @relation("ClientEscrows")
-  escrowsAsDev     Escrow[]       @relation("DeveloperEscrows")
   raisedDisputes   Dispute[]      @relation("DisputeRaiser")
   resolvedDisputes Dispute[]      @relation("DisputeResolver")
   sessions         Session[]
@@ -303,7 +274,6 @@ model Token {
   updatedAt DateTime @updatedAt
 
   issues  Issue[]
-  escrows Escrow[]
 
   @@unique([chainId, address])
   @@index([isActive])
@@ -391,7 +361,6 @@ model Issue {
   applications Application[]
   messages     Message[]
   attachments  Attachment[]
-  escrow       Escrow?
   dispute      Dispute?
   testCases    TestCase[]
   submissions  Submission[]
@@ -431,95 +400,6 @@ model Application {
   @@index([issueId])
   @@index([developerId])
   @@map("applications")
-}
-
-/// Legacy: no code writes this table. Escrow state lives on chain and in EscrowProjection.
-model Escrow {
-  id     String       @id @default(cuid())
-  status EscrowStatus @default(AWAITING_DELIVERY)
-  phase EscrowPhase @default(FUNDED)
-  resolutionKind EscrowResolutionKind @default(NONE)
-
-  // On-chain data
-  txHashDeposit   String? // Transaction hash for deposit
-  txHashRelease   String? // Transaction hash for release
-  txHashCancel    String? // Transaction hash for cancel
-  contractAddress String? // Escrow contract address
-  onChainIssueId  String? // issueId as stored on-chain
-
-  // Token + fee snapshot (audit)
-  tokenId        String
-  token          Token   @relation(fields: [tokenId], references: [id])
-  arbiterAddress String?
-  feeRecipientAddress String?
-  termsHash String?
-  deliveryHash String?
-  settlementProposer String?
-  settlementClientBps Int?
-  lastChainBlock Int?
-  lastChainTransactionIndex Int?
-  lastChainLogIndex Int?
-  platformFeeBps Int     @default(250) // 2.5% in basis points, snapshot at deposit
-
-  // Amounts (human-readable, mirror of on-chain state)
-  bountyAmount      Decimal
-  platformFeeAmount Decimal @default(0)
-  developerPayout   Decimal @default(0)
-  clientRefund      Decimal @default(0)
-
-  // Timelock info
-  depositedAt    DateTime?
-  releasedAt     DateTime?
-  timeoutClaimAt DateTime? // Deprecated alias of reviewDeadline
-  deliveryDeadline DateTime?
-  reviewDeadline DateTime? // deliveryDeadline + 7 days
-  resolvedAt DateTime? // Allocation recorded; recipients still need claim(address)
-
-  issueId     String @unique
-  issue       Issue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
-  clientId    String
-  client      User   @relation("ClientEscrows", fields: [clientId], references: [id])
-  developerId String
-  developer   User   @relation("DeveloperEscrows", fields: [developerId], references: [id])
-
-  transactions Transaction[]
-  dispute      Dispute?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([issueId])
-  @@index([clientId])
-  @@index([developerId])
-  @@index([tokenId])
-  @@map("escrows")
-}
-
-// Transaction — blockchain transaction log
-model Transaction {
-  id          String            @id @default(cuid())
-  txHash      String
-  logIndex    Int               @default(0)
-  type        TransactionType
-  status      TransactionStatus @default(PENDING)
-  from        String? // Sender address (audit)
-  to          String? // Recipient address (audit)
-  blockNumber Int?
-  blockHash   String?
-  confirmations Int?
-  gasUsed     BigInt? // Raw gas units
-  gasPrice    BigInt? // wei
-  chainId     Int
-
-  escrowId String
-  escrow   Escrow @relation(fields: [escrowId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-
-  @@index([escrowId])
-  @@index([txHash])
-  @@unique([chainId, to, txHash, logIndex])
-  @@map("transactions")
 }
 
 // Message — chat message between Client and Developer in a task (per room)
@@ -620,8 +500,6 @@ model Dispute {
 
   issueId      String  @unique
   issue        Issue   @relation(fields: [issueId], references: [id], onDelete: Cascade)
-  escrowId     String? @unique
-  escrow       Escrow? @relation(fields: [escrowId], references: [id], onDelete: Cascade)
   raisedById   String
   raisedBy     User    @relation("DisputeRaiser", fields: [raisedById], references: [id])
   resolvedById String?
@@ -631,7 +509,6 @@ model Dispute {
   updatedAt DateTime @updatedAt
 
   @@index([issueId])
-  @@index([escrowId])
   @@map("disputes")
 }
 

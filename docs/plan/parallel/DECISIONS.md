@@ -372,4 +372,8 @@ Bỏ MOCK_ISSUES, SAMPLE_COMMENTS, RECENT_ACTIVITIES, demoMode, mock-issues.ts v
 
 Khi chainId là 31337, seed-demo.ts dùng tài khoản mặc định của Hardhat (#1 admin, #2 client 1, #3 dev 1, #4 dev 2, #7 client 2, #8 dev 3, #9 client 3) để người dùng có thể dùng MetaMask đăng nhập trực tiếp. Không dùng #0, #5, #6 nhằm tách bạch vai trò on-chain. Xử lý di chuyển tài khoản cũ trên local tránh vi phạm unique constraint trên email và walletAddress.
 
+## BỔ SUNG M4 — xóa bảng legacy
+
+Xóa model `Escrow` và `Transaction`, các enum `EscrowStatus`, `TransactionType`, `TransactionStatus`, cùng các field quan hệ liên quan (`Token.escrows`, `Issue.escrow`, `User.escrowsAsClient`/`User.escrowsAsDev`, `Dispute.escrowId`/`Dispute.escrow`). Escrow thật nằm on-chain và trong `EscrowProjection`. File migration `20261031173000_drop_legacy_escrow_tables` chỉ chứa các lệnh DROP (bảng, cột, ràng buộc, index, enum). Cập nhật `packages/database/test/seed-demo.test.ts` bỏ bảng `escrows` khỏi lệnh truncate và assertion.
+
 

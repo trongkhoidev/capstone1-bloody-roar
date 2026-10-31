@@ -54,6 +54,10 @@ async function main() {
       await token.waitForDeployment();
       tokenAddress = await token.getAddress();
       console.log(`Local MockUSDC deployed to ${tokenAddress}`);
+      // No faucet in the app: fund the default Hardhat accounts so local deposits work.
+      for (const signer of signers.slice(0, 10)) {
+        await (await token.mint(signer.address, 1_000_000n * 10n ** 6n)).wait();
+      }
     }
     if (!localOwner || !localArbiter || !localFeeRecipient) {
       throw new Error("Local deployment needs Hardhat signers 0, 5, and 6");

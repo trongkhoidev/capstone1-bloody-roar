@@ -19,6 +19,7 @@
     "db:studio": "bun run --cwd packages/database db:studio",
     "db:seed": "bun run --cwd packages/database db:seed",
     "db:seed:demo": "bun run --cwd packages/database db:seed:demo",
+    "db:seed:local": "bun run --cwd packages/database db:seed:local",
     "db:push": "bun run --cwd packages/database db:push",
     "contracts:compile": "bun run --cwd apps/contracts compile",
     "contracts:test": "bun run --cwd apps/contracts test",

@@ -1,6 +1,7 @@
 import { beforeAll, expect, test } from "bun:test";
 import { assertTestDatabase } from "@bloody-roar/database/test-guard";
 import { fixture } from "./harness/fixture";
+import { fund } from "./harness/funding";
 import { gqlAs } from "./harness/gql";
 
 beforeAll(() => assertTestDatabase(process.env.TEST_DATABASE_URL));
@@ -49,17 +50,17 @@ const rows: Row[] = [
   { name: "adminHideIssue", decl: "$issue: ID!, $reason: String!", args: "issueId: $issue, reason: $reason", ret: "", vars: (f) => ({ issue: f.issueId, reason: "Outsider attempt" }), outsider: ["FORBIDDEN"] },
   { name: "adminUnhideIssue", decl: "$issue: ID!", args: "issueId: $issue", ret: "", vars: (f) => ({ issue: f.issueId }), outsider: ["FORBIDDEN"] },
   // Phase D–F: escrow, phán quyết, bằng chứng, đánh giá
-  { name: "prepareReleaseFunds", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), outsider: ["NOT_FOUND"] },
-  { name: "prepareSubmitCounterpartyEvidence", decl: "$issue: ID!, $manifest: ID!", args: "issueId: $issue, manifestId: $manifest", ret: obj, vars: (f) => ({ issue: f.issueId, manifest: "missing-manifest" }), outsider: ["NOT_FOUND"] },
-  { name: "prepareChallengeRuling", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), outsider: ["NOT_FOUND"] },
+  { name: "prepareReleaseFunds", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), outsider: ["NOT_FOUND", "FORBIDDEN"] },
+  { name: "prepareSubmitCounterpartyEvidence", decl: "$issue: ID!, $manifest: ID!", args: "issueId: $issue, manifestId: $manifest", ret: obj, vars: (f) => ({ issue: f.issueId, manifest: "missing-manifest" }), outsider: ["NOT_FOUND", "FORBIDDEN"] },
+  { name: "prepareChallengeRuling", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), outsider: ["NOT_FOUND", "INVALID_PHASE"] },
   { name: "prepareFinalizeRuling", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), allowed: true },
   { name: "prepareFinalizeArbiterTimeoutSplit", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), allowed: true },
   { name: "prepareClaimMissedDeliveryRefund", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), allowed: true },
   { name: "prepareClaimReviewTimeout", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), allowed: true },
   { name: "prepareClaim", decl: "$recipient: String!", args: "recipient: $recipient", ret: obj, vars: (f) => ({ recipient: f.client.walletAddress }), outsider: ["FORBIDDEN"] },
-  { name: "prepareProposeSettlement", decl: "$issue: ID!, $clientBps: Int!", args: "issueId: $issue, clientBps: $clientBps", ret: obj, vars: (f) => ({ issue: f.issueId, clientBps: 3000 }), outsider: ["NOT_FOUND"] },
-  { name: "prepareAcceptSettlement", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), outsider: ["NOT_FOUND"] },
-  { name: "prepareRevokeSettlement", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), outsider: ["NOT_FOUND"] },
+  { name: "prepareProposeSettlement", decl: "$issue: ID!, $clientBps: Int!", args: "issueId: $issue, clientBps: $clientBps", ret: obj, vars: (f) => ({ issue: f.issueId, clientBps: 3000 }), outsider: ["NOT_FOUND", "FORBIDDEN"] },
+  { name: "prepareAcceptSettlement", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), outsider: ["NOT_FOUND", "FORBIDDEN"] },
+  { name: "prepareRevokeSettlement", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), outsider: ["NOT_FOUND", "FORBIDDEN"] },
   { name: "draftRuling", decl: "$issueId: ID!, $kind: RulingDraftKind!, $clientBps: Int!, $rationale: String!", args: "issueId: $issueId, kind: $kind, clientBps: $clientBps, rationale: $rationale", ret: obj, vars: (f) => ({ issueId: f.issueId, kind: "INITIAL", clientBps: 5000, rationale: "Outsider ruling" }), outsider: ["FORBIDDEN"] },
   { name: "createEvidenceManifest", decl: "$issue: ID!, $statement: String!", args: "issueId: $issue, statement: $statement", ret: obj, vars: (f) => ({ issue: f.issueId, statement: "Outsider evidence" }), outsider: ["FORBIDDEN", "NOT_FOUND"] },
   { name: "submitReview", decl: "$issue: ID!, $rating: Int!", args: "issueId: $issue, rating: $rating", ret: obj, vars: (f) => ({ issue: f.issueId, rating: 5 }), outsider: ["FORBIDDEN", "INVALID_STATE"] },
@@ -114,6 +115,22 @@ test("E28: a signed-in non-participant gets the matrix code, or passes the permi
   }
   expect(mismatches).toEqual([]);
 }, 120_000);
+
+test("E28: on a funded escrow, a signed-in non-participant still gets the matrix code", async () => {
+  // With an escrow, the guards answer FORBIDDEN or INVALID_PHASE instead of NOT_FOUND (see BỔ SUNG K9).
+  const f = await fixture();
+  await fund(f);
+  const x = await extras(f);
+  const mismatches: string[] = [];
+  for (const row of rows) {
+    if (!row.outsider) continue;
+    const result = await gqlAs(f.outsider, build(row), row.vars(f, x));
+    const code = result.errors?.[0]?.extensions?.code;
+    if (!code) mismatches.push(`${row.name}: no error, a non-participant got through`);
+    else if (!row.outsider.includes(code)) mismatches.push(`${row.name}: expected ${row.outsider.join("|")}, got ${code}`);
+  }
+  expect(mismatches).toEqual([]);
+}, 240_000);
 
 test("E28: removed mutations are absent from the schema", async () => {
   const present: string[] = [];

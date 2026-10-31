@@ -350,3 +350,7 @@ Tài khoản developer (`accounts[3]`) dùng chung giữa các file test, nên c
 ## BỔ SUNG K8-nonce — thử lại nonce khi Next dev trả 404
 
 Ba lần chạy harness liên tiếp (run 10, 11, và run trước khi xóa `.next`) có đúng 4 test lỗi `Nonce failed: 404` ở E2 và E18. Log `tests/e2e/.run/web.log` cho thấy route `/api/auth/nonce` đã biên dịch lúc khởi động, rồi các request sau đó trả 404 kèm thời gian xử lý 35 và 51 giây. Giả thuyết: Next dev hủy route không được gọi trong một lúc, và request đến trong lúc biên dịch lại thì nhận 404. Chưa xác minh được nguyên nhân gốc. Tạm thời `login()` thử lại tối đa 5 lần, cách 2 giây, chỉ khi gặp 404. Không đổi code sản phẩm.
+
+## BỔ SUNG K9 — mã từ chối của người ngoài khi đã có escrow
+
+Trên issue đã có escrow, người ngoài không tạo được thay đổi nào. Năm mutation `prepareReleaseFunds`, `prepareSubmitCounterpartyEvidence`, `prepareProposeSettlement`, `prepareAcceptSettlement`, `prepareRevokeSettlement` trả `FORBIDDEN`. `prepareChallengeRuling` trả `INVALID_PHASE`, vì kiểm pha escrow chạy trước kiểm bên tham gia trong `ruling.module.ts`. Cả hai mã đều là từ chối, không có giao dịch nào được chuẩn bị. Đã thêm các mã này vào danh sách mã của người ngoài trong `e28-authz.test.ts`. Chưa đổi thứ tự kiểm trong `ruling.module.ts`. Rủi ro còn lại: người ngoài biết được pha của escrow qua `INVALID_PHASE`.

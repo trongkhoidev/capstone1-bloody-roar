@@ -47,6 +47,7 @@ Bảng trạng thái gốc bên dưới giữ nguyên để tra cứu; các dòn
 | K6 / P1-30b | xong | GET /api/uploads: PENDING chỉ người upload được tải; upload-access.test.ts 7/7 pass |
 | K7 / FE | xong | create-issue-form chỉ chặn ADMIN; form ứng tuyển cho mọi người không phải chủ bài và không phải ADMIN; fe-operations pass |
 | K8 / E32 | xong | apps/web/ui-e2e/e32-ui-flow.test.ts: nạp, giao, duyệt, rút qua UI; 2/2 pass; harness E1–E32 pass |
+| K9 / E28 | xong | E28: người ngoài trên escrow đã FUNDED bị từ chối; mã FORBIDDEN/INVALID_PHASE, xem BỔ SUNG K9 |
 | Z-7 | xong | Script cũ gọi mutation đã xóa được gỡ; root chuyển sang harness ở N-8 |
 | D4 / D5 | xong | `dde1bc7`; test theo ma trận |
 | AI-11 | xong | Timeout, bps và một AILog mỗi lượt được kiểm bằng test DB |

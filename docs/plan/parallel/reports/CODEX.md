@@ -1,4 +1,4 @@
-BỊ CHẶN 2026-10-31 15:43: gate 2.1 typecheck exit 2 do packages/database/src/seed-realistic.ts (untracked, không thuộc K0–K10, chưa rõ tác giả). Các bước khác của gate pass: lint, next build, web 592/592, worker 72/72, database, contracts 35/35. E2E ba lần liên tiếp đều "E2E scenarios passed (E1–E32)", mỗi lần 41 test harness + 2 test UI, 0 fail, 0 HTTP 429: gate run, final-e2e-2.log, final-e2e-3.log. Git status chưa sạch vì file trên. Cần chủ dự án quyết định: chuyển ra ngoài worktree, sửa lỗi type rồi commit, hoặc xóa.
+HOÀN TẤT 2026-10-31 16:48 (gate exit 0; typecheck, build, E1–E32 pass)
 
 ## K0–K10 (HAIKU_FINAL.md)
 
@@ -14,7 +14,7 @@ BỊ CHẶN 2026-10-31 15:43: gate 2.1 typecheck exit 2 do packages/database/src
 | K7 | 486a6e0 | form tạo bài theo role |
 | K8 | cd0d01b, 5edd013, 95bd3a5, c34437e | E32 qua UI; nút nạp tiền trong Review Applicants (BỔ SUNG K8-fund) |
 | K9 | 3a1d8e2 | E28 trên escrow FUNDED (BỔ SUNG K9) |
-| K10 | đang làm | DECISIONS, LOCAL_DEV đã xong; gate cuối bị chặn |
+| K10 | xong | DECISIONS, LOCAL_DEV đã xong; gate cuối hoàn tất ở L6 |
 
 ## L0–L6 (AGY_FINISH.md)
 
@@ -25,7 +25,8 @@ BỊ CHẶN 2026-10-31 15:43: gate 2.1 typecheck exit 2 do packages/database/src
 | L2 | ac3a7c2 | chỉ hủy được bài OPEN, funded work kết thúc qua escrow |
 | L3 | 98f619b | xóa query escrow cũ đọc bảng legacy, schema.prisma đánh dấu legacy |
 | L4 | e2fd258 | đồng bộ contract config từ chain cho màn admin ops |
-| L5 | đang commit | kiểm quyền kháng cáo trước pha escrow, dùng hằng số thời gian |
+| L5 | 29024da | kiểm quyền kháng cáo trước pha escrow, dùng hằng số thời gian |
+| L6 | đang commit | gate 3.2 exit 0 (typecheck, lint, build, web 596, worker 73, db 4, contracts 35, E1–E32) |
 
 
 

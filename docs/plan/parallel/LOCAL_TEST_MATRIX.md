@@ -87,6 +87,7 @@
 | K3 | xong | wallet-signer.test.ts: ví khác tài khoản thì từ chối ký |
 | K4 | xong | github-webhook.test.ts: giữ commitSha, redelivery sau lỗi, latest submission |
 | K5 | xong | tests/e2e/harness/ip.ts; e27-rate-limit.test.ts ghim IP; 3/3 lần pass |
+| K6 | xong | upload-access.test.ts: PENDING ẩn với khách, uploader vẫn tải được |
 | Z-5 | docs/plan/parallel/reports/CODEX.md | bun run typecheck; bun run lint; đối chiếu LOCAL_TEST_MATRIX.md | Pass; commit `docs(z-5): correct task status table` |
 | Z-4 | apps/worker/test/intents.test.ts; apps/worker/test/rpc.test.ts | bun run --cwd apps/worker test -- test/intents.test.ts test/rpc.test.ts; bun run typecheck; bun run lint | Pass 14/14; commit `fix(z-4): confirm approvals at finality` |
 | Z-3 / ui | apps/web/src/test/ui-preferences.test.tsx | bun run typecheck; bun run lint; web/worker/database/contracts test | Pass; merge `2f27bc2`, sửa kỳ vọng `fix(z-3): align merged ui checks` |

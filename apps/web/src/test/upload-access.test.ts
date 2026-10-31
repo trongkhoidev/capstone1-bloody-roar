@@ -109,4 +109,15 @@ describe("attachment download rules by purpose", () => {
     state.attachment = attachment(null, { messageId: "msg-1", message: { issue: { ...chatIssue, status: "DISPUTED" } } });
     expect(await download("admin")).toBe(200);
   });
+
+  it("hides a pending avatar upload from guests and other users", async () => {
+    state.attachment = { ...attachment("AVATAR", {}), status: "PENDING" };
+    expect(await download("guest")).toBe(404);
+    expect(await download("outsider")).toBe(404);
+  });
+
+  it("lets the uploader see their own pending upload", async () => {
+    state.attachment = { ...attachment("AVATAR", {}), status: "PENDING" };
+    expect(await download("client")).toBe(200);
+  });
 });

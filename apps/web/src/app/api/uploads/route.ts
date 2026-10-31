@@ -201,6 +201,10 @@ export async function GET(request: Request) {
   if (!attachment || !key.startsWith(`${attachment.uploaderId}/`)) {
     return NextResponse.json({ error: "File not found" }, { status: 404 });
   }
+  // An upload that never completed has no checksum; only its uploader may see it.
+  if (attachment.status === "PENDING" && user?.id !== attachment.uploaderId) {
+    return NextResponse.json({ error: "File not found" }, { status: 404 });
+  }
 
   const issue = attachment.message?.issue ?? attachment.issue;
   if (!(await canDownload(attachment, issue, user))) {

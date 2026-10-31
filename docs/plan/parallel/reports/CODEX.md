@@ -1,4 +1,4 @@
-BỊ CHẶN 2026-10-31 15:15: gate 2.1 typecheck exit 2 do packages/database/src/seed-realistic.ts (untracked, không thuộc K0–K10, chưa rõ tác giả). Cần chủ dự án quyết định: commit, xóa, hoặc sửa file đó. Git status chưa sạch vì file này.
+BỊ CHẶN 2026-10-31 15:43: gate 2.1 typecheck exit 2 do packages/database/src/seed-realistic.ts (untracked, không thuộc K0–K10, chưa rõ tác giả). Các bước khác của gate pass: lint, next build, web 592/592, worker 72/72, database, contracts 35/35. E2E ba lần liên tiếp đều "E2E scenarios passed (E1–E32)", mỗi lần 41 test harness + 2 test UI, 0 fail, 0 HTTP 429: gate run, final-e2e-2.log, final-e2e-3.log. Git status chưa sạch vì file trên. Cần chủ dự án quyết định: chuyển ra ngoài worktree, sửa lỗi type rồi commit, hoặc xóa.
 
 ## K0–K10 (HAIKU_FINAL.md)
 

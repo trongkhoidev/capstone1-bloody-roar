@@ -1,0 +1,73 @@
+{
+  "name": "complete-but-rejected",
+  "dispute": {
+    "id": "dispute-1",
+    "reason": "The client rejected work that meets the criteria.",
+    "createdAt": "2030-03-05T09:00:00.000Z",
+    "issue": {
+      "id": "issue-1",
+      "title": "Export report as CSV",
+      "description": "Add a CSV export to the reports page with a download button.",
+      "category": "FEATURE",
+      "requiredSkills": [
+        "react"
+      ],
+      "clientId": "client-1",
+      "developerId": "developer-1",
+      "messages": [
+        {
+          "id": "msg-1",
+          "senderId": "client-1",
+          "content": "The export matches the spec, but I reject it for style.",
+          "type": "TEXT",
+          "createdAt": "2030-03-04T09:00:00.000Z"
+        }
+      ],
+      "submissions": [
+        {
+          "id": "sub-1",
+          "description": "CSV export with download button",
+          "pullRequestUrl": "https://github.com/acme/app/pull/12",
+          "status": "REJECTED",
+          "submittedAt": "2030-03-03T12:00:00.000Z",
+          "reviewNotes": "Style does not match the design"
+        }
+      ],
+      "testCases": [
+        {
+          "id": "tc-1",
+          "title": "CSV download",
+          "description": "Check CSV download",
+          "given": "a report",
+          "when": "exported",
+          "then": "the CSV downloads",
+          "priority": "HIGH",
+          "isApproved": true
+        }
+      ]
+    }
+  },
+  "mockResponse": {
+    "summary": "The submission meets the approved CSV criterion, and the client rejected it for style rather than function.",
+    "suggestedClientBps": 1000,
+    "confidenceScore": 0.7,
+    "findings": [
+      {
+        "evidenceType": "SUBMISSION",
+        "evidenceId": "sub-1",
+        "side": "DEVELOPER",
+        "finding": "The export works and meets the approved criterion for CSV download."
+      }
+    ],
+    "missingEvidence": [
+      "A style guide that the criteria did not state."
+    ],
+    "reasoning": "The work satisfies the functional criterion. Style alone was not part of the approved acceptance, so the developer keeps most of the escrow."
+  },
+  "expect": {
+    "minClientBps": 0,
+    "maxClientBps": 2000,
+    "validCitations": 1,
+    "droppedCitations": 0
+  }
+}

@@ -16,15 +16,15 @@ import "../src/lib/env";
 const TEST_CLIENT_KEY =
   process.env.TEST_CLIENT_KEY ||
   "0x0000000000000000000000000000000000000000000000000000000000000001";
-const base = "http://localhost:3000";
+const base = "http://localhost:4000";
 
 async function gql<T = any>(
   query: string,
-  token?: string,
+  cookie?: string,
   variables?: Record<string, unknown>
 ): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (cookie) headers.Cookie = cookie;
   const res = await fetch(`${base}/api/graphql`, {
     method: "POST",
     headers,
@@ -46,9 +46,9 @@ async function login(): Promise<string> {
     headers: { "Content-Type": "application/json" },
   });
   assert.strictEqual(loginRes.status, 200, "Login failed");
-  const { token } = await loginRes.json();
-  assert(token, "Missing token");
-  return token;
+  const cookie = loginRes.headers.get("set-cookie")?.split(";")[0] ?? "";
+  assert(cookie.startsWith("bloody_token="), "Missing HttpOnly session cookie");
+  return cookie;
 }
 
 async function run() {
@@ -65,6 +65,16 @@ async function run() {
 
   console.log("0. Logging in...");
   const token = await login();
+  const clientAddress = (await new PrivateKeyWallet(TEST_CLIENT_KEY).getAddress()).toLowerCase();
+  const client = await prisma.user.findUnique({ where: { walletAddress: clientAddress }, select: { role: true } });
+  assert(client, "Test client account was not created");
+  const originalRole = client.role;
+  const switchedRole = await gql(
+    `mutation($input: UpdateProfileInput!) { updateProfile(input: $input) { role } }`,
+    token,
+    { input: { role: "CLIENT" } }
+  );
+  assert.strictEqual(switchedRole.data?.updateProfile?.role, "CLIENT");
 
   // -------------------------------------------------------------------
   // B-3.1 — createIssue KHÔNG auth → UNAUTHORIZED
@@ -80,7 +90,7 @@ async function run() {
         title: "Should not be created at all",
         description: "This description is long enough for validation.",
         category: "BUG_FIX",
-        bountyAmount: 100,
+        bountyAmount: "100",
         tokenId: usdc.id,
       },
     }
@@ -105,7 +115,7 @@ async function run() {
         title: "short", // < 10 ký tự
         description: "This description is long enough for validation.",
         category: "BUG_FIX",
-        bountyAmount: 100,
+        bountyAmount: "100",
         tokenId: usdc.id,
       },
     }
@@ -130,7 +140,7 @@ async function run() {
         title: "Valid title for this test",
         description: "This description is long enough for validation.",
         category: "BUG_FIX",
-        bountyAmount: 100,
+        bountyAmount: "100",
         tokenId: "nonexistent-token-id",
       },
     }
@@ -148,12 +158,11 @@ async function run() {
   const created = await gql(
     `mutation($input: CreateIssueInput!) {
       createIssue(input: $input) {
-        id title status category bountyAmount
+        id title status category bountyAmount { formatted }
         requiredSkills difficulty timeEstimate
         client { walletAddress }
         token { symbol }
         applicationCount
-        isDraft
       }
     }`,
     token,
@@ -163,7 +172,7 @@ async function run() {
         description:
           "This is an E2E test bounty created by scripts/e2e-issue.ts. Safe to delete.",
         category: "UI_UX",
-        bountyAmount: 250,
+        bountyAmount: "250",
         tokenId: usdc.id,
         requiredSkills: ["React", "Next.js"],
         difficulty: "Medium",
@@ -175,8 +184,7 @@ async function run() {
   assert(createdIssue?.id, "createIssue should return the created issue");
   assert.strictEqual(createdIssue.status, "OPEN");
   assert.strictEqual(createdIssue.category, "UI_UX");
-  assert.strictEqual(createdIssue.bountyAmount, 250);
-  assert.strictEqual(createdIssue.isDraft, false);
+  assert.strictEqual(createdIssue.bountyAmount.formatted, "250");
   assert.deepStrictEqual(createdIssue.requiredSkills, ["React", "Next.js"]);
   assert.strictEqual(createdIssue.token.symbol, "USDC");
   assert.strictEqual(createdIssue.applicationCount, 0);
@@ -186,19 +194,18 @@ async function run() {
   // -------------------------------------------------------------------
   // B-2 — issue(id): chi tiết + viewCount tăng dần
   // -------------------------------------------------------------------
-  console.log("5. issue(id) detail + viewCount increment...");
-  const view1 = await gql(
+  console.log("5. issue(id) detail + recordIssueView dedupe...");
+  const recordView = `mutation($id: ID!) { recordIssueView(issueId: $id) }`;
+  const rec1 = await gql(recordView, token, { id: createdId });
+  const rec2 = await gql(recordView, token, { id: createdId });
+  assert.strictEqual(rec1.data?.recordIssueView, true, "first view should be recorded");
+  assert.strictEqual(rec2.data?.recordIssueView, false, "repeat view within an hour should be deduped");
+  const view = await gql(
     `query($id: ID!) { issue(id: $id) { id viewCount title client { name } token { symbol } } }`,
     undefined,
     { id: createdId }
   );
-  const view2 = await gql(
-    `query($id: ID!) { issue(id: $id) { id viewCount } }`,
-    undefined,
-    { id: createdId }
-  );
-  assert.strictEqual(view1.data.issue.viewCount, 1, "viewCount should be 1 on first view");
-  assert.strictEqual(view2.data.issue.viewCount, 2, "viewCount should increment");
+  assert.strictEqual(view.data.issue.viewCount, 1, "viewCount should count one view per user");
 
   const notFound = await gql(`query { issue(id: "does-not-exist") { id } }`);
   assert.strictEqual(notFound.data.issue, null, "issue(id) should be null if not found");
@@ -233,15 +240,15 @@ async function run() {
 
   console.log("8. issues sort by BOUNTY_AMOUNT ASC...");
   const byBounty = await gql(
-    `{ issues(sortBy: BOUNTY_AMOUNT, sortOrder: ASC, first: 100) { edges { node { id bountyAmount } } } }`
+    `{ issues(sortBy: BOUNTY_AMOUNT, sortOrder: ASC, first: 100) { edges { node { id bountyAmount { formatted } } } } }`
   );
-  const bounties = byBounty.data.issues.edges.map((e: any) => e.node.bountyAmount);
+  const bounties = byBounty.data.issues.edges.map((e: any) => Number(e.node.bountyAmount.formatted));
   const sorted = [...bounties].sort((a: number, b: number) => a - b);
   assert.deepStrictEqual(bounties, sorted, "Bounties should be sorted ASC");
 
   console.log("9. issues cursor pagination (first: 2 → page 2)...");
   const page1 = await gql(
-    `{ issues(first: 2, sortBy: BOUNTY_AMOUNT, sortOrder: ASC) { edges { node { id bountyAmount } } pageInfo { hasNextPage endCursor } } }`
+    `{ issues(first: 2, sortBy: BOUNTY_AMOUNT, sortOrder: ASC) { edges { node { id bountyAmount { formatted } } } pageInfo { hasNextPage endCursor } } }`
   );
   assert.strictEqual(page1.data.issues.edges.length, 2, "Page 1 should have 2 items");
   assert.strictEqual(page1.data.issues.pageInfo.hasNextPage, true, "Page 1 should have next");
@@ -249,15 +256,15 @@ async function run() {
   assert(cursor, "endCursor should exist");
 
   const page2 = await gql(
-    `query($after: String) { issues(first: 2, after: $after, sortBy: BOUNTY_AMOUNT, sortOrder: ASC) { edges { node { id bountyAmount } } pageInfo { hasNextPage hasPreviousPage } } }`,
+    `query($after: String) { issues(first: 2, after: $after, sortBy: BOUNTY_AMOUNT, sortOrder: ASC) { edges { node { id bountyAmount { formatted } } } pageInfo { hasNextPage hasPreviousPage } } }`,
     undefined,
     { after: cursor }
   );
   const p1Last =
-    page1.data.issues.edges[page1.data.issues.edges.length - 1].node.bountyAmount;
-  const p2First = page2.data.issues.edges[0]?.node?.bountyAmount;
+    page1.data.issues.edges[page1.data.issues.edges.length - 1].node.bountyAmount.formatted;
+  const p2First = page2.data.issues.edges[0]?.node?.bountyAmount.formatted;
   assert(
-    p2First >= p1Last,
+    Number(p2First) >= Number(p1Last),
     "Page 2 first bounty should be >= page 1 last bounty (không trùng lặp)"
   );
   assert.strictEqual(
@@ -273,6 +280,9 @@ async function run() {
   await prisma.issue.delete({ where: { id: createdId } }).catch(() => {});
   const afterCleanup = await prisma.issue.findUnique({ where: { id: createdId } });
   assert(!afterCleanup, "Test issue should be deleted");
+  await prisma.user.update({ where: { walletAddress: clientAddress }, data: { role: originalRole } });
+  await fetch(`${base}/api/auth/logout`, { method: "POST", headers: { Cookie: token } });
+  await prisma.$disconnect();
 
   console.log("\n✅ All E2E Issue Module assertions passed!");
   process.exit(0);

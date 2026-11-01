@@ -1,0 +1,71 @@
+{
+  "name": "no-delivery",
+  "dispute": {
+    "id": "dispute-1",
+    "reason": "No work was delivered before the deadline.",
+    "createdAt": "2030-03-05T09:00:00.000Z",
+    "issue": {
+      "id": "issue-1",
+      "title": "Export report as CSV",
+      "description": "Add a CSV export to the reports page with a download button.",
+      "category": "FEATURE",
+      "requiredSkills": [
+        "react"
+      ],
+      "clientId": "client-1",
+      "developerId": "developer-1",
+      "messages": [
+        {
+          "id": "msg-1",
+          "senderId": "client-1",
+          "content": "The deadline passed and nothing was delivered.",
+          "type": "TEXT",
+          "createdAt": "2030-03-03T10:00:00.000Z"
+        },
+        {
+          "id": "msg-2",
+          "senderId": "developer-1",
+          "content": "I was blocked by a missing API key and asked for it.",
+          "type": "TEXT",
+          "createdAt": "2030-03-02T10:00:00.000Z"
+        }
+      ],
+      "submissions": [],
+      "testCases": [
+        {
+          "id": "tc-1",
+          "title": "CSV download",
+          "description": "Check CSV download",
+          "given": "a report",
+          "when": "exported",
+          "then": "the CSV downloads",
+          "priority": "HIGH",
+          "isApproved": true
+        }
+      ]
+    }
+  },
+  "mockResponse": {
+    "summary": "The developer did not submit any work before the deadline, and the chat shows a request for access that was not answered in time.",
+    "suggestedClientBps": 9000,
+    "confidenceScore": 0.7,
+    "findings": [
+      {
+        "evidenceType": "MESSAGE",
+        "evidenceId": "msg-1",
+        "side": "CLIENT",
+        "finding": "The client reports that nothing was delivered by the deadline."
+      }
+    ],
+    "missingEvidence": [
+      "A delivery record or a status update from the developer."
+    ],
+    "reasoning": "No submission exists in the record, so the client keeps most of the escrow. The developer's blocker message is recorded but does not show that work was delivered."
+  },
+  "expect": {
+    "minClientBps": 8000,
+    "maxClientBps": 10000,
+    "validCitations": 1,
+    "droppedCitations": 0
+  }
+}

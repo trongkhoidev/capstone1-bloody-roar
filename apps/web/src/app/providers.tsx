@@ -2,12 +2,14 @@
 
 // apps/web/src/app/providers.tsx
 // Global providers wrapper
-// Sprint 1: Add ThirdwebProvider, TanStackQueryProvider
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { useAuthStore } from "@/lib/store/use-auth-store";
+import { UiPreferencesProvider } from "@/lib/ui-preferences";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children }: { children: ReactNode }) {
+  const restoreSession = useAuthStore((state) => state.restoreSession);
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -20,11 +22,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
       })
   );
 
+  useEffect(() => {
+    // Remove JWTs persisted by older builds. Authentication now uses an
+    // HttpOnly cookie managed by the server.
+    window.localStorage.removeItem("bloody-roar-auth");
+    void restoreSession();
+  }, [restoreSession]);
+
   return (
-    <QueryClientProvider client={queryClient}>
-      {/* Sprint 1: Add ThirdwebProvider here */}
-      {/* Sprint 1: Add Toaster (shadcn/ui) here */}
-      {children}
-    </QueryClientProvider>
+    <UiPreferencesProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    </UiPreferencesProvider>
   );
 }

@@ -6,21 +6,27 @@
 // =============================================================================
 
 export const PLATFORM_NAME = "Bloody-Roar";
-export const PLATFORM_FEE_PERCENT = 2.5; // 2.5% platform fee
+export const PLATFORM_FEE_BPS = 250; // 2.5% trên phần Developer, khớp contract
 
 // =============================================================================
 // ESCROW
 // =============================================================================
 
-export const ESCROW_TIMEOUT_DAYS = 30; // Days before dev can auto-claim
-export const DISPUTE_CHALLENGE_HOURS = 24; // Hours to challenge a resolution
+export const ESCROW_REVIEW_DAYS = 7;
+export const DISPUTE_EVIDENCE_RESPONSE_HOURS = 72;
+export const DISPUTE_CHALLENGE_DAYS = 7;
+export const DISPUTE_FINAL_NOTICE_HOURS = 24;
+export const ARBITER_STALL_DAYS = 30;
 export const SUPPORTED_CHAIN_IDS = {
   BASE_SEPOLIA: 84532,
   LOCALHOST: 31337,
   // mainnet (1/8453) sẽ thêm khi lên production
 } as const;
 
-export const ACTIVE_CHAIN_ID = 84532;
+// The client stays on Base Sepolia until frontend chain selection is implemented.
+export const ACTIVE_CHAIN_ID = typeof (globalThis as { window?: unknown }).window === "undefined"
+  ? Number(process.env.CHAIN_ID || SUPPORTED_CHAIN_IDS.BASE_SEPOLIA)
+  : SUPPORTED_CHAIN_IDS.BASE_SEPOLIA;
 
 // =============================================================================
 // ISSUE / BOUNTY
@@ -46,11 +52,16 @@ export const ISSUE_STATUSES = [
   "DISPUTED",
 ] as const;
 
-export const ISSUE_SORT_BY = ["CREATED_AT", "BOUNTY_AMOUNT", "VIEW_COUNT"] as const;
+export const ISSUE_SORT_BY = [
+  "CREATED_AT",
+  "BOUNTY_AMOUNT",
+  "VIEW_COUNT",
+  "DEADLINE",
+] as const;
 
 export const ISSUE_DIFFICULTY = ["Easy", "Medium", "Hard", "Expert"] as const;
 
-export const BOUNTY_MIN_AMOUNT = 10; // Minimum 10 USDT
+export const BOUNTY_MIN_AMOUNT = 0.5; // Minimum 0.5 USDC
 export const BOUNTY_MAX_AMOUNT = 100_000; // Maximum 100,000 USDT
 
 // =============================================================================
@@ -93,33 +104,6 @@ export const ALLOWED_FILE_TYPES = [
 // AI GUARD
 // =============================================================================
 
-export const AI_GUARD_PATTERNS = {
-  // Private keys / seeds
-  ETH_PRIVATE_KEY: /0x[0-9a-fA-F]{64}/g,
-  MNEMONIC_PHRASE: /(\b\w+\b\s+){11,23}\b\w+\b/g, // 12-24 word seed phrases
-
-  // API keys (generic)
-  GENERIC_API_KEY: /[A-Za-z0-9_\-]{32,}(?=\s|$|["'])/g,
-
-  // OpenAI
-  OPENAI_API_KEY: /sk-[A-Za-z0-9]{32,}/g,
-
-  // Groq
-  GROQ_API_KEY: /gsk_[A-Za-z0-9]{32,}/g,
-
-  // AWS
-  AWS_ACCESS_KEY: /AKIA[0-9A-Z]{16}/g,
-  AWS_SECRET_KEY: /[0-9a-zA-Z/+]{40}/g,
-
-  // GitHub
-  GITHUB_TOKEN: /gh[pousr]_[A-Za-z0-9]{36}/g,
-
-  // PII
-  EMAIL: /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g,
-  PHONE_VN: /(\+84|0)[0-9]{9,10}/g,
-  CCCD_VN: /[0-9]{9}([0-9]{3})?/g, // 9 or 12 digit
-} as const;
-
 export const AI_GUARD_MASK = "[REDACTED]";
 
 // =============================================================================
@@ -158,3 +142,15 @@ export const TECH_SKILLS = [
   // Testing
   "Vitest", "Jest", "Playwright", "Cypress", "Hardhat Testing",
 ] as const;
+
+// =============================================================================
+// TIME AND BASIS POINTS (shared by web, worker and escrow code)
+// =============================================================================
+
+export const MINUTE_MS = 60_000;
+export const HOUR_MS = 3_600_000;
+export const DAY_MS = 86_400_000;
+// Same spans in seconds, for contract deadlines and fold arithmetic.
+export const HOUR_SECONDS = 3_600;
+export const DAY_SECONDS = 86_400;
+export const MAX_BPS = 10_000;

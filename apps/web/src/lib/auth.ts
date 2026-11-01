@@ -6,6 +6,45 @@ import * as crypto from "crypto";
 
 const log = createLogger("auth");
 
+export const AUTH_COOKIE_NAME = "bloody_token";
+
+export function tokenFromCookieHeader(cookieHeader: string | null): string | null {
+  const cookie = cookieHeader
+    ?.split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${AUTH_COOKIE_NAME}=`));
+  if (!cookie) return null;
+  try {
+    return decodeURIComponent(cookie.slice(AUTH_COOKIE_NAME.length + 1));
+  } catch {
+    return null;
+  }
+}
+
+export function tokenFromRequest(request: Request): string | null {
+  const authorization = request.headers.get("authorization");
+  if (authorization?.startsWith("Bearer ")) return authorization.slice(7);
+  return tokenFromCookieHeader(request.headers.get("cookie"));
+}
+
+export function toPublicAuthUser(user: Awaited<ReturnType<typeof verifyJWT>>) {
+  if (!user) return null;
+  return {
+    id: user.id,
+    walletAddress: user.walletAddress,
+    role: user.role,
+    name: user.name,
+    avatar: user.avatar,
+    bio: user.bio,
+    skills: user.skills,
+    location: user.location,
+    reputationScore: user.reputationScore,
+    completedTaskCount: user.completedTaskCount,
+    isGithubVerified: user.isGithubVerified,
+    createdAt: user.createdAt,
+  };
+}
+
 // Fail gracefully instead of crashing the entire server on import
 const AUTH_PRIVATE_KEY = process.env.AUTH_PRIVATE_KEY;
 if (!AUTH_PRIVATE_KEY) {
@@ -22,8 +61,7 @@ function getThirdwebAuth(): ThirdwebAuth {
   }
   return new ThirdwebAuth(
     new PrivateKeyWallet(AUTH_PRIVATE_KEY),
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/^https?:\/\//, "") ??
-      "localhost:3000",
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/^https?:\/\//, "") ?? "localhost:4000",
   );
 }
 
@@ -53,17 +91,18 @@ export async function verifyJWT(token: string) {
     const refreshHash = crypto.createHash("sha256").update(token).digest("hex");
     const session = await prisma.session.findUnique({
       where: { refreshHash },
+      select: { userId: true, revokedAt: true, expiresAt: true },
     });
 
-    if (!session || session.revokedAt) {
+    if (!session || session.revokedAt || session.expiresAt <= new Date()) {
       return null;
     }
-
 
     const user = await prisma.user.findUnique({
       where: { walletAddress: authUser.address.toLowerCase() },
     });
 
+    if (!user || user.id !== session.userId || user.isBanned) return null;
     return user;
   } catch {
     return null;

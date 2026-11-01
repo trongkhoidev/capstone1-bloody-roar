@@ -1,0 +1,80 @@
+{
+  "name": "client-scope-change",
+  "dispute": {
+    "id": "dispute-1",
+    "reason": "The client added features after the task began.",
+    "createdAt": "2030-03-05T09:00:00.000Z",
+    "issue": {
+      "id": "issue-1",
+      "title": "Export report as CSV",
+      "description": "Add a CSV export to the reports page with a download button.",
+      "category": "FEATURE",
+      "requiredSkills": [
+        "react"
+      ],
+      "clientId": "client-1",
+      "developerId": "developer-1",
+      "messages": [
+        {
+          "id": "msg-1",
+          "senderId": "client-1",
+          "content": "Please also add PDF and email delivery to the export.",
+          "type": "TEXT",
+          "createdAt": "2030-03-03T09:00:00.000Z"
+        },
+        {
+          "id": "msg-2",
+          "senderId": "developer-1",
+          "content": "That was not part of the original task, so it costs more.",
+          "type": "TEXT",
+          "createdAt": "2030-03-03T10:00:00.000Z"
+        }
+      ],
+      "submissions": [
+        {
+          "id": "sub-1",
+          "description": "CSV export only",
+          "pullRequestUrl": "https://github.com/acme/app/pull/12",
+          "status": "SUBMITTED",
+          "submittedAt": "2030-03-04T09:00:00.000Z",
+          "reviewNotes": null
+        }
+      ],
+      "testCases": [
+        {
+          "id": "tc-1",
+          "title": "CSV download",
+          "description": "Check CSV download",
+          "given": "a report",
+          "when": "exported",
+          "then": "the CSV downloads",
+          "priority": "HIGH",
+          "isApproved": true
+        }
+      ]
+    }
+  },
+  "mockResponse": {
+    "summary": "The client asked for PDF and email delivery after the task started. The developer delivered the agreed CSV scope only.",
+    "suggestedClientBps": 2500,
+    "confidenceScore": 0.7,
+    "findings": [
+      {
+        "evidenceType": "MESSAGE",
+        "evidenceId": "msg-1",
+        "side": "CLIENT",
+        "finding": "The client requested extra formats that were not in the original task."
+      }
+    ],
+    "missingEvidence": [
+      "A written change request accepted by both sides."
+    ],
+    "reasoning": "The developer delivered what was agreed, and the client's later requests were not part of the original scope. The split favors the developer."
+  },
+  "expect": {
+    "minClientBps": 1500,
+    "maxClientBps": 3500,
+    "validCitations": 1,
+    "droppedCitations": 0
+  }
+}

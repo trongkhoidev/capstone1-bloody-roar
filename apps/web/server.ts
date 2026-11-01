@@ -5,17 +5,24 @@
 // =============================================================================
 
 import "./src/lib/env";
+import "./src/lib/config/env";
 
 import { createServer } from "node:http";
 import { parse } from "node:url";
 import next from "next";
 import { Server as SocketIOServer } from "socket.io";
 import { registerSocketHandlers } from "./src/socket/handlers";
+import { startEscrowBridge } from "./src/lib/realtime/escrow-bridge";
 import { logger } from "./src/lib/logger";
+import { assertChainConfig, defaultLocalManifestPath } from "@bloody-roar/shared/chain-guard";
 
 const dev = process.env.NODE_ENV !== "production";
-const hostname = process.env.HOSTNAME || "localhost";
-const port = parseInt(process.env.PORT || "3000", 10);
+// Containers (Railway/Docker) set HOSTNAME to the container id, so never use it to bind.
+const hostname = process.env.BIND_HOST || (dev ? "localhost" : "0.0.0.0");
+const port = Number.parseInt(process.env.PORT || "4000", 10);
+const appUrl = dev
+  ? `http://localhost:${port}`
+  : process.env.NEXT_PUBLIC_APP_URL ?? `http://${hostname}:${port}`;
 
 // Initialize Next.js
 const app = next({ dev, hostname, port });
@@ -23,8 +30,8 @@ const handle = app.getRequestHandler();
 
 // GraphQL is now handled by Next.js App Router API routes (/api/graphql/route.ts)
 
-app.prepare().then(() => {
-  const httpServer = createServer((req, res) => {
+app.prepare().then(async () => {
+  const httpServer = createServer(async (req, res) => {
     const parsedUrl = parse(req.url!, true);
     const { pathname } = parsedUrl;
 
@@ -32,8 +39,16 @@ app.prepare().then(() => {
 
     // Health check endpoint
     if (pathname === "/api/health") {
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ status: "ok", timestamp: new Date().toISOString() }));
+      try {
+        const { prisma } = await import("@bloody-roar/database");
+        await prisma.$queryRaw`SELECT 1`;
+        res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+        res.end(JSON.stringify({ status: "ok", database: "connected", timestamp: new Date().toISOString() }));
+      } catch (error) {
+        logger.error({ error }, "Database health check failed");
+        res.writeHead(503, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+        res.end(JSON.stringify({ status: "error", database: "disconnected", timestamp: new Date().toISOString() }));
+      }
       return;
     }
 
@@ -44,25 +59,59 @@ app.prepare().then(() => {
   // Attach Socket.io to the HTTP server
   const io = new SocketIOServer(httpServer, {
     cors: {
-      origin: dev ? ["http://localhost:3000"] : [process.env.NEXT_PUBLIC_APP_URL!],
+      origin: dev ? [appUrl, `http://127.0.0.1:${port}`] : [appUrl],
       credentials: true,
     },
     transports: ["websocket", "polling"],
+    maxHttpBufferSize: 256 * 1024,
   });
 
   // Register all Socket.io event handlers
   registerSocketHandlers(io);
+  startEscrowBridge(io);
 
   // Make io instance available globally (for use in GraphQL resolvers)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (global as any).__socketIO = io;
 
-  httpServer.listen(port, () => {
+  // io.close() also closes the HTTP server; its callback runs once the last connection ends.
+  const shutdown = async (signal: string) => {
+    logger.info({ signal }, "Shutting down");
+    setTimeout(() => process.exit(1), 10_000).unref();
+    await new Promise<void>((resolve) => io.close(() => resolve()));
+    const { prisma } = await import("@bloody-roar/database");
+    await prisma.$disconnect();
+    process.exit(0);
+  };
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+
+  // Check the configured chain before serving: a wrong RPC, chain ID, or escrow address would mislabel every action.
+  const escrowAddress = process.env.ESCROW_ADDRESS;
+  if (escrowAddress) {
+    await assertChainConfig({
+      rpcUrl: process.env.RPC_URL ?? "",
+      chainId: Number(process.env.CHAIN_ID),
+      escrowAddress,
+      manifestPath: defaultLocalManifestPath(),
+    }).catch((error: unknown) => {
+      logger.fatal({ error: error instanceof Error ? error.message : String(error) }, "chain configuration check failed");
+      process.exit(1);
+    });
+  } else if (!dev && process.env.ESCROW_OPTIONAL !== "1") {
+    // ESCROW_OPTIONAL=1 lets CI run chain-free e2e against a production build.
+    logger.fatal({}, "ESCROW_ADDRESS is required in production");
+    process.exit(1);
+  } else {
+    logger.warn({}, "ESCROW_ADDRESS is not set; escrow actions are disabled");
+  }
+
+  httpServer.listen(port, hostname, () => {
     logger.info(
       {
         mode: dev ? "development" : "production",
-        url: `http://${hostname}:${port}`,
-        graphql: `http://${hostname}:${port}/api/graphql`,
+        url: appUrl,
+        graphql: `${appUrl}/api/graphql`,
       },
       `🩸 Bloody-Roar server started`
     );

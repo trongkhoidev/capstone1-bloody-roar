@@ -1,7 +1,9 @@
 // =============================================================================
-// Bloody-Roar — Prisma Schema (Complete · FROZEN 24/8)
+// Bloody-Roar — Prisma Schema (v2 · escrow projection)
 // Stack: PostgreSQL + Prisma ORM
-// 17 models · 16 enums
+// v2: the chain is the source of truth for escrow state. ChainEvent and
+// EscrowProjection mirror it. Legacy Escrow/Transaction and the legacy enum
+// values marked "legacy" stay until BE-41-final removes them.
 // Run: bun run db:migrate (local) | bun run db:migrate:prod (production)
 // =============================================================================
 
@@ -12,7 +14,7 @@ generator client {
 generator pothos {
   provider     = "prisma-pothos-types"
   clientOutput = "@prisma/client"
-  output       = env("POTHOS_OUTPUT")
+  output       = "../../../apps/web/src/graphql/generated/pothos-types.ts"
 }
 
 datasource db {
@@ -33,8 +35,9 @@ enum UserRole {
 
 enum IssueStatus {
   OPEN // Accepting applications
+  AWAITING_FUNDING // Developer selected, reservation open until funded or expired
   IN_PROGRESS // Developer assigned, work started
-  COMPLETED // Payment released, work done
+  COMPLETED // Resolution allocated developer funds; claims are separate
   CANCELLED // Cancelled by client (before assignment)
   DISPUTED // Dispute raised, funds frozen
 }
@@ -58,12 +61,24 @@ enum ApplicationStatus {
   WITHDRAWN // Developer withdrew their application
 }
 
-enum EscrowStatus {
-  AWAITING_DELIVERY // Funds locked, dev working
-  COMPLETED // Funds released to developer
-  CANCELLED // Mutual cancel, refunded to client
-  DISPUTED // Dispute raised, funds frozen
-  RESOLUTION_PROPOSED // Arbiter proposed split, in 24h timelock
+enum EscrowPhase {
+  NONE
+  FUNDED
+  DISPUTED
+  INITIAL_RULING
+  CHALLENGED
+  FINAL_RULING
+  RESOLVED
+}
+
+enum EscrowResolutionKind {
+  NONE
+  RELEASE
+  MISSED_DELIVERY_REFUND
+  REVIEW_TIMEOUT
+  SETTLEMENT
+  RULING
+  ARBITER_TIMEOUT_SPLIT
 }
 
 enum DisputeStatus {
@@ -71,7 +86,8 @@ enum DisputeStatus {
   ANALYZING // AI analyzing evidence
   PROPOSED // Resolution proposed by arbiter
   RESOLVED // Resolution executed on-chain
-  CHALLENGED // Resolution challenged during 24h window
+  CHALLENGED // Resolution challenged during 7-day window
+  FINAL_RULING // Final decision posted, in 24h notice period
 }
 
 enum NotificationType {
@@ -83,6 +99,22 @@ enum NotificationType {
   DISPUTE_RAISED // Both: dispute was raised
   DISPUTE_RESOLVED // Both: dispute was resolved
   MESSAGE_RECEIVED // New chat message
+  // v2 (BE-61): emitted by the worker from chain events, deduped by dedupeKey
+  FUNDING_REQUIRED
+  RESERVATION_EXPIRED
+  DEPOSIT_CONFIRMED
+  DEPOSIT_MISMATCHED
+  WORK_SUBMITTED
+  CHANGES_REQUESTED
+  SETTLEMENT_PROPOSED
+  SETTLEMENT_REVOKED
+  EVIDENCE_SUBMITTED
+  RULING_POSTED
+  RULING_CHALLENGED
+  ESCROW_RESOLVED
+  FUNDS_CLAIMABLE
+  DEADLINE_APPROACHING
+  PR_MERGED // Client: linked pull request was merged (GitHub webhook)
 }
 
 enum MessageType {
@@ -91,25 +123,47 @@ enum MessageType {
   SYSTEM // System messages (e.g., "Task assigned")
 }
 
-enum TransactionType {
-  DEPOSIT
-  RELEASE
-  CANCEL
-  DISPUTE
-  RESOLVE
-}
-
-enum TransactionStatus {
-  PENDING
-  CONFIRMED
-  FAILED
-}
-
 enum SubmissionStatus {
   SUBMITTED
-  UNDER_REVIEW
-  APPROVED
-  REJECTED
+  DRAFT // v2: off-chain draft before the delivery hash is computed
+  PENDING_CHAIN // v2: submitWork sent, waiting for the chain event
+  SUPERSEDED // v2: replaced by a newer submission before the deadline
+  UNDER_REVIEW // legacy, removed in BE-41-final; data mapped to SUBMITTED
+  APPROVED // legacy, removed in BE-41-final; data mapped to SUBMITTED
+  REJECTED // legacy, removed in BE-41-final; data mapped to SUBMITTED + changesRequested
+}
+
+// v2 enums ------------------------------------------------------------------
+
+enum ReservationStatus {
+  AWAITING_FUNDING
+  FUNDED
+  EXPIRED
+  CANCELLED
+  MISMATCHED // Deposit arrived but terms differ from the reservation (QĐ-17)
+}
+
+enum IntentStatus {
+  AWAITING_SIGNATURE
+  SUBMITTED
+  PENDING_SAFE_HEAD
+  CONFIRMED // Set only by the applier after the event is folded, never from a receipt
+  FAILED
+  EXPIRED
+  DROPPED
+}
+
+enum AttachmentPurpose {
+  CHAT
+  ISSUE_IMAGE
+  DELIVERY
+  EVIDENCE
+  AVATAR
+}
+
+enum AttachmentStatus {
+  PENDING
+  ATTACHED
 }
 
 enum AttestationType {
@@ -187,8 +241,6 @@ model User {
   assignedIssues   Issue[]        @relation("DeveloperIssues")
   sentMessages     Message[]
   notifications    Notification[]
-  escrowsAsClient  Escrow[]       @relation("ClientEscrows")
-  escrowsAsDev     Escrow[]       @relation("DeveloperEscrows")
   raisedDisputes   Dispute[]      @relation("DisputeRaiser")
   resolvedDisputes Dispute[]      @relation("DisputeResolver")
   sessions         Session[]
@@ -197,6 +249,8 @@ model User {
   reviewsReceived  Review[]       @relation("ReviewDeveloper")
   submissions      Submission[]
   attestations     Attestation[]
+  issueComments    IssueComment[]
+  issueViews       IssueView[]
 
   @@index([walletAddress])
   @@index([githubId])
@@ -220,7 +274,6 @@ model Token {
   updatedAt DateTime @updatedAt
 
   issues  Issue[]
-  escrows Escrow[]
 
   @@unique([chainId, address])
   @@index([isActive])
@@ -244,6 +297,22 @@ model Session {
   @@map("sessions")
 }
 
+// One-time SIWE challenge issued by the server. The raw nonce is never stored.
+model AuthChallenge {
+  id            String    @id @default(cuid())
+  nonceHash     String    @unique
+  walletAddress String
+  domain        String
+  uri           String
+  chainId       Int
+  expiresAt     DateTime
+  consumedAt    DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([expiresAt])
+  @@map("auth_challenges")
+}
+
 // Issue — a bounty task posted by a Client
 model Issue {
   id          String        @id @default(cuid())
@@ -253,7 +322,7 @@ model Issue {
   status      IssueStatus   @default(OPEN)
 
   // Bounty info (multi-token)
-  bountyAmount Decimal // Human-readable units (convert to raw via token.decimals)
+  bountyAmount Decimal @db.Decimal(20, 6) // Human-readable units (convert to raw via token.decimals)
   tokenId      String
   token        Token   @relation(fields: [tokenId], references: [id])
 
@@ -268,10 +337,17 @@ model Issue {
   timeEstimate   String? // e.g., "2-3 days"
 
   // Lifecycle / publishing
-  expiresAt   DateTime? // Bounty deadline (optional)
+  expiresAt   DateTime? // Application deadline (BE-14)
   isDraft     Boolean   @default(false) // Draft before publish
   publishedAt DateTime?
   viewCount   Int       @default(0) // Analytics
+  hiddenAt    DateTime?
+
+  // Escrow terms (v2, BE-14 / QĐ-23)
+  deliveryDeadline DateTime?
+  termsVersion     Int                   @default(1)
+  termsHash        String?
+  outcome          EscrowResolutionKind? // Copied from the projection when the escrow resolves
 
   // GitHub repo link (Sprint 3)
   githubRepo           String?
@@ -285,11 +361,12 @@ model Issue {
   applications Application[]
   messages     Message[]
   attachments  Attachment[]
-  escrow       Escrow?
   dispute      Dispute?
   testCases    TestCase[]
   submissions  Submission[]
   review       Review?
+  comments     IssueComment[]
+  views        IssueView[]
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -325,78 +402,6 @@ model Application {
   @@map("applications")
 }
 
-// Escrow — on-chain escrow state mirrored in DB
-model Escrow {
-  id     String       @id @default(cuid())
-  status EscrowStatus @default(AWAITING_DELIVERY)
-
-  // On-chain data
-  txHashDeposit   String? // Transaction hash for deposit
-  txHashRelease   String? // Transaction hash for release
-  txHashCancel    String? // Transaction hash for cancel
-  contractAddress String? // Escrow contract address
-  onChainIssueId  String? // issueId as stored on-chain
-
-  // Token + fee snapshot (audit)
-  tokenId        String
-  token          Token   @relation(fields: [tokenId], references: [id])
-  arbiterAddress String?
-  platformFeeBps Int     @default(250) // 2.5% in basis points, snapshot at deposit
-
-  // Amounts (human-readable, mirror of on-chain state)
-  bountyAmount      Decimal
-  platformFeeAmount Decimal @default(0)
-  developerPayout   Decimal @default(0)
-  clientRefund      Decimal @default(0)
-
-  // Timelock info
-  depositedAt    DateTime?
-  releasedAt     DateTime?
-  timeoutClaimAt DateTime? // 30 days after deposit
-
-  issueId     String @unique
-  issue       Issue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
-  clientId    String
-  client      User   @relation("ClientEscrows", fields: [clientId], references: [id])
-  developerId String
-  developer   User   @relation("DeveloperEscrows", fields: [developerId], references: [id])
-
-  transactions Transaction[]
-  dispute      Dispute?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([issueId])
-  @@index([clientId])
-  @@index([developerId])
-  @@index([tokenId])
-  @@map("escrows")
-}
-
-// Transaction — blockchain transaction log
-model Transaction {
-  id          String            @id @default(cuid())
-  txHash      String            @unique
-  type        TransactionType
-  status      TransactionStatus @default(PENDING)
-  from        String? // Sender address (audit)
-  to          String? // Recipient address (audit)
-  blockNumber Int?
-  gasUsed     BigInt? // Raw gas units
-  gasPrice    BigInt? // wei
-  chainId     Int
-
-  escrowId String
-  escrow   Escrow @relation(fields: [escrowId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-
-  @@index([escrowId])
-  @@index([txHash])
-  @@map("transactions")
-}
-
 // Message — chat message between Client and Developer in a task (per room)
 model Message {
   id           String      @id @default(cuid())
@@ -417,6 +422,7 @@ model Message {
   editedAt        DateTime? // Edited marker
   isDeleted       Boolean   @default(false) // Soft delete
   deletedAt       DateTime?
+  afterDispute    Boolean   @default(false) // Sent after a dispute was raised (QĐ-24)
 
   createdAt   DateTime     @default(now())
   attachments Attachment[]
@@ -441,6 +447,9 @@ model Attachment {
   fileSize   Int
   fileMime   String
   etag       String? // S3 ETag (integrity check)
+  purpose    AttachmentPurpose?
+  sha256     String? // Checked against the client value after upload (QĐ-28)
+  status     AttachmentStatus @default(PENDING)
   createdAt  DateTime @default(now())
 
   @@index([issueId])
@@ -462,20 +471,35 @@ model Dispute {
 
   // Resolution details
   proposedClientRatio Decimal? // Arbiter's proposed ratio
-  finalClientRatio    Decimal? // Executed ratio after timelock
+  finalClientRatio    Decimal? // Client percentage of resolved principal allocation
   proposedAt          DateTime? // When arbiter proposed
-  challengeDeadline   DateTime? // proposedAt + 24h
+  challengeDeadline   DateTime? // Initial ruling + 7 days
+  evidenceManifestHash String?
+  counterpartyEvidenceHash String?
+  evidenceResponseDeadline DateTime?
+  arbiterTimeoutAt DateTime?
+  initialDecisionHash String?
+  finalDecisionHash String?
+  finalRulingAt DateTime?
+  noticeDeadline DateTime? // Final ruling + 24h
   resolvedAt          DateTime?
+  raisedAt            DateTime?
 
   // Challenge tracking
   challengedById String?
   challengedAt   DateTime?
   resolutionNote String? // Arbiter reasoning
 
+  // v2 (BE-51): the *Decimal columns above are legacy; bps is the new unit
+  phase              EscrowPhase?
+  suggestedClientBps Int?
+  proposedClientBps  Int?
+  finalClientBps     Int?
+  aiStatus           String? // AI analysis state, kept apart from DisputeStatus
+  aiStartedAt        DateTime?
+
   issueId      String  @unique
   issue        Issue   @relation(fields: [issueId], references: [id], onDelete: Cascade)
-  escrowId     String? @unique
-  escrow       Escrow? @relation(fields: [escrowId], references: [id], onDelete: Cascade)
   raisedById   String
   raisedBy     User    @relation("DisputeRaiser", fields: [raisedById], references: [id])
   resolvedById String?
@@ -485,7 +509,6 @@ model Dispute {
   updatedAt DateTime @updatedAt
 
   @@index([issueId])
-  @@index([escrowId])
   @@map("disputes")
 }
 
@@ -533,6 +556,13 @@ model Submission {
   reviewedAt     DateTime?
   reviewNotes    String?
 
+  // v2 (BE-39)
+  deliveryHash     String?   @unique // keccak256 of the RFC 8785 manifest
+  manifest         Json?
+  supersededAt     DateTime?
+  onChainEventId   String?
+  changesRequested Boolean   @default(false)
+
   @@index([issueId])
   @@index([developerId])
   @@map("submissions")
@@ -553,6 +583,22 @@ model Review {
 
   @@index([developerId])
   @@map("reviews")
+}
+
+// IssueComment — public discussion and clarifying questions on a bounty
+model IssueComment {
+  id        String   @id @default(cuid())
+  body      String
+  issueId   String
+  issue     Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([issueId, createdAt])
+  @@index([userId])
+  @@map("issue_comments")
 }
 
 // Attestation — EAS on-chain reputation/certificate (v1.5)
@@ -608,8 +654,9 @@ model Notification {
   body    String
   isRead  Boolean          @default(false)
   data    Json? // Extra payload (e.g., { issueId, applicationId })
-  actorId String? // Who triggered the notification (for display)
-  link    String? // Deep link to relevant page
+  actorId  String? // Who triggered the notification (for display)
+  link     String? // Deep link to relevant page
+  dedupeKey String? @unique // Idempotency key, e.g. chainEventId:userId (QĐ-27)
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -633,4 +680,273 @@ model AdminLog {
 
   @@index([adminId])
   @@map("admin_logs")
+}
+
+// =============================================================================
+// ESCROW PROJECTION (v2) — the chain is the source of truth; these mirror it.
+// Ids are off-chain references (scalars, no relation fields) so the indexer can
+// write before the issue row exists and replays never hit FK cascades.
+// =============================================================================
+
+// FundingReservation — a 24h hold from selecting a developer until deposit.
+// Migration 20261027120000 adds a partial unique index (not in this file): one
+// AWAITING_FUNDING/FUNDED row per issue.
+model FundingReservation {
+  id               String            @id @default(cuid())
+  issueId          String
+  applicationId    String
+  clientId         String
+  developerId      String
+  escrowKey        String            @unique // string passed to deposit(), br_<issueId>_<n>
+  escrowIdHash     String            @unique // keccak256(utf8(escrowKey)), the topic in events
+  chainId          Int
+  contractAddress  String
+  tokenAddress     String
+  amountRaw        Decimal           @db.Decimal(78, 0)
+  deliveryDeadline DateTime
+  termsHash        String
+  termsVersion     Int
+  intentSignature  String?
+  intentNonce      String?           @unique
+  intentExpiresAt  DateTime?
+  status           ReservationStatus @default(AWAITING_FUNDING)
+  expiresAt        DateTime // now + 24h
+  fundedAt         DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([issueId, status])
+  @@map("funding_reservations")
+}
+
+// TransactionIntent — what the frontend is asked to sign, and its state after.
+// Only the indexer/reconciler sets CONFIRMED or FAILED.
+model TransactionIntent {
+  id                 String       @id @default(cuid())
+  userId             String
+  issueId            String?
+  escrowKey          String?
+  chainId            Int
+  contractAddress    String
+  method             String
+  args               Json // decimal strings only
+  status             IntentStatus @default(AWAITING_SIGNATURE)
+  txHash             String?      @unique
+  submittedAt        DateTime?
+  expiresAt          DateTime
+  failureReason      String?
+  confirmedByEventId String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("transaction_intents")
+}
+
+// ChainEvent — every decoded escrow log. Replays re-read these rows.
+model ChainEvent {
+  id               String    @id @default(cuid())
+  chainId          Int
+  contractAddress  String
+  txHash           String
+  logIndex         Int
+  blockNumber      BigInt
+  blockHash        String
+  txIndex          Int
+  eventName        String
+  args             Json
+  decoderVersion   Int
+  escrowIdHash     String?
+  canonical        Boolean   @default(true) // false after a reorg removed its block
+  firstSeenAt      DateTime  @default(now())
+  lastReconciledAt DateTime?
+
+  @@unique([chainId, contractAddress, txHash, logIndex])
+  @@index([escrowIdHash, blockNumber, txIndex, logIndex])
+  @@map("chain_events")
+}
+
+// ProjectionCheckpoint — indexer cursor per contract.
+model ProjectionCheckpoint {
+  chainId                Int
+  contractAddress        String
+  lastScannedBlock       BigInt
+  lastSafeBlock          BigInt
+  lastCanonicalBlockHash String
+  decoderVersion         Int
+  replayStatus           String
+  updatedAt              DateTime @updatedAt
+
+  @@id([chainId, contractAddress])
+  @@map("projection_checkpoints")
+}
+
+// EscrowProjection — current state of one escrow, folded from ChainEvent.
+model EscrowProjection {
+  id                       String               @id @default(cuid())
+  escrowIdHash             String               @unique
+  escrowKey                String?
+  issueId                  String?              @unique
+  reservationId            String?              @unique
+  chainId                  Int
+  contractAddress          String
+  client                   String
+  developer                String
+  arbiter                  String
+  feeRecipient             String
+  amountRaw                Decimal              @db.Decimal(78, 0)
+  depositedAt              DateTime
+  deliveryDeadline         DateTime
+  reviewDeadline           DateTime // deliveryDeadline + 7 days
+  termsHash                String
+  deliveryHash             String?
+  externalDelivery         Boolean              @default(false)
+  phase                    EscrowPhase
+  resolutionKind           EscrowResolutionKind @default(NONE)
+  clientAmountRaw          Decimal?             @db.Decimal(78, 0)
+  developerAmountRaw       Decimal?             @db.Decimal(78, 0)
+  platformFeeRaw           Decimal?             @db.Decimal(78, 0)
+  decisionHash             String?
+  settlementProposer       String?
+  settlementClientBps      Int?
+  disputeRaisedBy          String?
+  disputeRaisedAt          DateTime?
+  raiserEvidenceHash       String?
+  counterpartyEvidenceHash String?
+  challengedAt             DateTime?
+  orphan                   Boolean              @default(false) // deposit did not go through the backend (QĐ-05)
+  projectionVersion        Int                  @default(0)
+  lastProjectedBlock       BigInt
+  updatedAt                DateTime             @updatedAt
+
+  @@index([phase])
+  @@map("escrow_projections")
+}
+
+// RulingRecord — one row per INITIAL or FINAL ruling posted on chain.
+model RulingRecord {
+  id           String   @id @default(cuid())
+  escrowIdHash String
+  kind         String // INITIAL | FINAL
+  clientBps    Int
+  decisionHash String
+  arbiter      String
+  postedAt     DateTime
+  noticeEndsAt DateTime
+  chainEventId String   @unique
+
+  @@index([escrowIdHash])
+  @@map("ruling_records")
+}
+
+// SettlementProposal — a proposed split, until revoked, accepted or voided.
+model SettlementProposal {
+  id              String  @id @default(cuid())
+  escrowIdHash    String
+  proposer        String
+  clientBps       Int
+  status          String // PENDING | REVOKED | ACCEPTED | VOIDED
+  proposedEventId String  @unique
+  closedEventId   String?
+
+  @@index([escrowIdHash])
+  @@map("settlement_proposals")
+}
+
+// ClaimableBalance — pull-payment balance per recipient (QĐ-04).
+model ClaimableBalance {
+  chainId         Int
+  contractAddress String
+  address         String
+  amountRaw       Decimal  @db.Decimal(78, 0)
+  updatedAt       DateTime @updatedAt
+
+  @@id([chainId, contractAddress, address])
+  @@map("claimable_balances")
+}
+
+// ContractConfig — owner, arbiter, fee recipient and pause state, per contract.
+model ContractConfig {
+  chainId             Int
+  contractAddress     String
+  paused              Boolean
+  owner               String
+  pendingOwner        String?
+  arbiter             String
+  pendingArbiter      String?
+  feeRecipient        String
+  pendingFeeRecipient String?
+  updatedAt           DateTime @updatedAt
+
+  @@id([chainId, contractAddress])
+  @@map("contract_configs")
+}
+
+// EvidenceManifest — evidence a party submitted for a dispute, hash-anchored on chain.
+model EvidenceManifest {
+  id             String   @id @default(cuid())
+  disputeId      String?
+  issueId        String
+  side           String
+  submittedById  String
+  manifest       Json
+  manifestHash   String   @unique
+  storageKey     String
+  onChainEventId String?
+  createdAt      DateTime @default(now())
+
+  @@index([disputeId])
+  @@index([issueId])
+  @@map("evidence_manifests")
+}
+
+model RulingDraft {
+  id           String   @id @default(cuid())
+  issueId      String
+  kind         String
+  clientBps    Int
+  rationale    String
+  decisionHash String   @unique
+  draftedById  String
+  createdAt    DateTime @default(now())
+
+  @@index([issueId])
+  @@map("ruling_drafts")
+}
+
+// ReconciliationFinding — chain vs projection mismatch; closed when they match again.
+model ReconciliationFinding {
+  id           String    @id @default(cuid())
+  escrowIdHash String?
+  kind         String
+  expected     Json
+  actual       Json
+  blockNumber  BigInt
+  resolvedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([escrowIdHash, resolvedAt])
+  @@map("reconciliation_findings")
+}
+
+// GithubWebhookDelivery — X-GitHub-Delivery ids already handled (BE-69 dedupe).
+model GithubWebhookDelivery {
+  deliveryId String   @id
+  receivedAt DateTime @default(now())
+
+  @@map("github_webhook_deliveries")
+}
+
+model IssueView {
+  id       String   @id @default(cuid())
+  issueId  String
+  userId   String
+  viewedAt DateTime @default(now())
+  issue    Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([issueId, userId])
+  @@index([issueId])
+  @@map("issue_views")
 }

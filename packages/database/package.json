@@ -8,8 +8,12 @@
     "db:migrate:prod": "POTHOS_OUTPUT=\"${PWD}/../../apps/web/src/graphql/generated/pothos-types.ts\" prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:seed": "bun run src/seed.ts",
+    "db:seed:demo": "bun run src/seed-demo.ts",
+    "db:seed:local": "bun --env-file=../../.env run src/seed-local-token.ts",
+    "db:seed:prod": "bun run src/seed-prod.ts",
     "db:push": "POTHOS_OUTPUT=\"${PWD}/../../apps/web/src/graphql/generated/pothos-types.ts\" prisma db push",
-    "db:reset": "POTHOS_OUTPUT=\"${PWD}/../../apps/web/src/graphql/generated/pothos-types.ts\" prisma migrate reset"
+    "db:reset": "POTHOS_OUTPUT=\"${PWD}/../../apps/web/src/graphql/generated/pothos-types.ts\" prisma migrate reset",
+    "test": "bun test ./test"
   },
   "dependencies": {
     "@prisma/client": "^5.16.0"
@@ -19,6 +23,7 @@
     "prisma": "^5.16.0"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./test-guard": "./src/test-guard.ts"
   }
 }

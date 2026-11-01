@@ -1,0 +1,408 @@
+# Quyết định (bản cuối cho giai đoạn chạy local, 29/10/2026)
+
+Các quyết định dưới đây đã chốt. Codex không hỏi lại người dùng. Nếu thấy mâu thuẫn, làm theo file này và ghi lý do vào `reports/CODEX.md`. Nếu cần đổi một quyết định, thêm mục "ĐỔI QUYẾT ĐỊNH" ở cuối file, không sửa lặng lẽ.
+
+Đọc cùng: `LOCAL_FULL_FLOW_SPEC.md` (việc phải làm và kịch bản test), `FIX_LIST.md` (chi tiết từng mục).
+
+---
+
+## Q1. Database
+
+- **Test:** dùng `TEST_DATABASE_URL`, bắt buộc có. Tên database phải kết thúc bằng `_test`. Mặc định: `bloody_codex_test`.
+- **Chạy local** (server, worker, E2E thủ công): `DATABASE_URL` và `DIRECT_URL` trỏ tới `bloody_codex_local`.
+- **Cấm:** `bloody_roar_local`, `bloody_roar_dev`, `bloody_integration`, và mọi database không kết thúc bằng `_test` khi chạy test, reset hay truncate.
+- Chỉ được `migrate reset --force` và truncate khi tên database kết thúc bằng `_test`.
+- Code test gán `process.env.DATABASE_URL = TEST_DATABASE_URL` trước mọi import Prisma. Hàm `assertTestDatabase(url)` kiểm tra tên và chặn ngay nếu sai.
+
+Lý do: thỏa cả yêu cầu "tên có test" lẫn yêu cầu không chạm DB dev. Người dùng đã cho phép dùng DB nào cũng được.
+
+## Q2. Template thông báo
+
+- **Xóa** `apps/web/src/lib/notifications/templates.ts` và `apps/web/src/test/notification-templates.test.ts`.
+- Nội dung thông báo viết trực tiếp tại nơi tạo. Mỗi `NotificationType` phải có ít nhất một nơi tạo thật, và có test E2E chứng minh nó được tạo.
+- Không tạo lại bản đồ template chung.
+
+Lý do: không có luồng production nào dùng bản đồ này. Hai bản nội dung đã lệch nhau, ví dụ `DEPOSIT_CONFIRMED` ở worker ghi "Đã nạp ký quỹ", còn template ghi "Đã xác nhận tiền nạp".
+
+## Q3. GitGuardian (PR #16, #17)
+
+- Giai đoạn local: không làm gì. Không viết lại lịch sử. Không tạo PR mới.
+- Khi deploy: người dùng tự đánh dấu false positive trên dashboard GitGuardian. Hai chuỗi bị bắt là mật khẩu Postgres của CI chỉ dùng trên localhost, và fixture test giả.
+
+## Q4. Phạm vi
+
+- **Làm đủ:** toàn bộ P0, P1, P2 trong `FIX_LIST.md`, cộng các mục N trong `LOCAL_FULL_FLOW_SPEC.md`.
+- **Không làm:**
+  - AI-17 (multi-agent debate) và AI-18 (chấm mức hoàn thành submission). Proposal §5.2 đã cắt khỏi MVP.
+  - BE-88 (build Docker), BE-89 (cấu hình Railway), BE-94 (Sentry). Để giai đoạn deploy.
+  - Kích hoạt GitHub Actions. Giữ các file workflow hợp lệ, không cần chạy trên GitHub.
+- Không push, không tạo PR, không đóng PR trong giai đoạn này.
+
+## Q5. RPC của worker
+
+- Dùng viem (`createPublicClient`), import từ `@bloody-roar/shared`. Xóa `apps/worker/src/chain/rpc.ts`.
+- Không viết JSON-RPC bằng `fetch` nữa.
+
+## Q6. Các mặc định D2 đến D5
+
+- **D2, coverage:** giữ mock ngoài phép đo (đã làm trên `be/a1-platform`). Ngưỡng 95/90 giữ nguyên. Nhánh đang đo 90,00% ở branches, sát ngưỡng. Khi thêm code escrow, phải kiểm lại.
+- **D3, e2e-workflow:** không chạy trong CI, vì CI chạy production mode và không có S3. Chạy ở local bằng dev mode, xem N-E.
+- **D4, BE-10:** kiểm base xem `updateProfile` đã validate email chưa. Nếu thiếu thì thêm validate định dạng và unique. Ghi kết quả vào báo cáo.
+- **D5, BE-18:** bỏ `isDraft` khỏi API.
+
+## Q7. PR
+
+- Không mở PR, không push trong giai đoạn local.
+- Khi toàn bộ `bun run test:e2e:local` xanh và người dùng nói "mở PR", mở đúng một PR từ `be/integration` vào `feat/claude-ui-redesign`.
+- Không đóng PR #14 đến #18 nếu chưa có xác nhận.
+
+## Q8. Server và port
+
+- **Không đụng port 4000.** Đó là server của người dùng, chạy từ repo chính và dùng `bloody_roar_local`.
+- Codex dùng port **4010 đến 4019** cho server của mình. Port 4001 không dùng.
+- Chỉ dừng process do chính Codex khởi động, dựa trên PID đã ghi trong `tests/e2e/.run/`. Không dùng `pkill` theo tên.
+
+## Q9. Deploy
+
+- Giai đoạn này chỉ local. Việc deploy làm sau, người dùng chọn nơi.
+- Mọi cấu hình phải đổi được qua biến môi trường, không hardcode địa chỉ, chain hay domain.
+
+---
+
+## Quyết định mới (từ câu hỏi của Codex và kiểm tra code)
+
+**D-ENV-1. Tên biến môi trường thống nhất**
+- Web và worker cùng dùng: `RPC_URL`, `CHAIN_ID`, `ESCROW_ADDRESS`, `ESCROW_DEPLOY_BLOCK`, `DATABASE_URL`, `DIRECT_URL`.
+- Xóa: `ESCROW_RPC_URL`, `ESCROW_CONTRACT_ADDRESS`, `ESCROW_CONTRACT_ADDRESS_BASE_SEPOLIA`, `ESCROW_CHAIN_ID`, `BASE_SEPOLIA_RPC_URL`, `ALCHEMY_RPC_URL_TESTNET` (nếu không còn dùng).
+- Cập nhật `.env.example` và `docs/DEPLOY.md`.
+
+**D-ENV-2. Chain ID**
+- `ACTIVE_CHAIN_ID` trên server đọc từ `CHAIN_ID`, mặc định `84532`.
+- Local dùng `31337`. Token trong DB phải có `chainId` khớp với `CHAIN_ID` đang chạy.
+- Phía client (FE) vẫn giữ `84532` vì FE làm sau. Ghi chú trong code.
+
+**D-ENV-3. Không gọi dịch vụ thật khi chạy local**
+- Trong `.env` của worktree phải để trống: `AWS_S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AI_BASE_URL`, `AI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`.
+- Lý do: `.env` hiện có khóa thật. Nếu để S3 bật thì upload đi ra S3 thật. Nếu để AI thì tốn tiền.
+- Storage local dùng `apps/web/.uploads`, chỉ bật khi `NODE_ENV` không phải `production`. Thư mục này phải nằm trong `.gitignore`.
+- Không sửa `.env` của repo chính.
+
+**D-AI-1. AI provider giả khi test**
+- Một HTTP server giả tại `127.0.0.1:4019` trả JSON đúng schema cố định. Test đặt `AI_BASE_URL` trỏ tới đó.
+- `AI_EXTERNAL_GUARD=false` mặc định. Pass LLM của guard không chạy trừ khi bật rõ ràng.
+
+**D-FIN-1. Finality của worker**
+- Thêm biến `FINALITY`: `safe` hoặc `latest`. Mặc định `safe`.
+- Local đặt `FINALITY=latest`, vì hardhat không đảm bảo tag `safe`. Codex kiểm tra hardhat trước, ghi kết quả vào báo cáo.
+
+**D-ACC-1. Tài khoản local**
+- Lấy địa chỉ từ `eth_accounts` của hardhat. Không ghi private key vào repo.
+- Vai trò theo chỉ số: 0 owner và deployer, 1 admin (đặt trong `ADMIN_WALLETS`), 2 client, 3 developer 1, 4 developer 2, 5 arbiter (đọc từ manifest), 6 fee recipient (đọc từ manifest), 7 người ngoài, 8 user sẽ bị ban trong test.
+
+**D-SIG-1. Ký**
+- Dùng `personal_sign` và `eth_signTypedData_v4` trên tài khoản hardhat (đã unlock). Không cần khóa riêng.
+- Thông điệp SIWE và EIP-712 ký trên tài khoản hardhat, server verify bằng viem như bình thường.
+
+**D-TIME-1. Thời gian**
+- Mốc thời gian trên chain: dùng `evm_increaseTime` và `evm_mine`.
+- Mốc trong DB (reservation 24 giờ, deadline thông báo): test sửa trực tiếp cột thời gian về quá khứ rồi gọi job. Không chờ thật.
+
+**D-DEP-1. Thư viện mới được phép**
+- `socket.io-client` (devDependency, dùng cho test realtime).
+- `pino` cho worker, cùng phiên bản với web.
+- Ngoài danh sách đã chốt (`viem`, `canonicalize`, `pg`, `@scure/bip39`), không thêm gì khác.
+
+**D-TEST-1. Cách chạy E2E**
+- Phần lớn kịch bản gọi GraphQL bằng `yoga.fetch` trong process test. Nhanh, không cần Next compile.
+- Một bộ smoke test qua server HTTP thật ở port 4010–4019 kiểm tra `/api/health`, GraphQL `hello`, và socket.
+
+**D-MANIFEST-1. Manifest local**
+- `apps/contracts/deployments/localhost.json` (đã gitignore) là nguồn sự thật cho `token`, `escrow`, `arbiter`, `feeRecipient`, `deployBlock`. Harness đọc từ đây, không hardcode.
+
+**D-DEV-1. Script dev**
+- Script `dev` ở root và `apps/web` đang hardcode `PORT=4000`. Đổi thành `PORT=${PORT:-4000}`, để local chạy được trên port khác.
+
+---
+
+## Bổ sung sau review phase A (29/10, Claude)
+
+Các mục này sửa hoặc làm rõ D-N1 (guard) và mục 2.1 của `LOCAL_FULL_FLOW_SPEC.md`. Làm theo mục này khi có mâu thuẫn.
+
+- **Guard có kiểm host.** `assertTestDatabase` phải thấy host là `localhost` hoặc `127.0.0.1`. Tên `_test` không đủ, vì `migrate reset` xóa dữ liệu và URL có thể trỏ đến server khác.
+- **Unit test không cần DB.** `apps/web/src/test/setup.ts` và `apps/worker/test/preload.ts` không được ném lỗi khi thiếu `TEST_DATABASE_URL`. Khi thiếu, gán `DATABASE_URL` và `DIRECT_URL` về `postgresql://unit-tests.invalid:5432/no_database_unit_tests`, để mọi truy cập DB vô tình đều lỗi và không chạm DB nào. Khi có `TEST_DATABASE_URL` thì mới gọi `assertTestDatabase` rồi gán. Test cần DB tự gọi `assertTestDatabase(process.env.TEST_DATABASE_URL)` trong `beforeAll`.
+- **packages/database dùng preload.** Thêm `packages/database/bunfig.toml` với `[test] preload = ["./test/preload.ts"]`, cùng kiểu với worker. Bỏ lệnh guard đặt sau `import` trong `funding-reservation.test.ts`. Lý do: import được hoisted lên trước, nên guard đặt sau import chạy muộn hơn code đã import.
+- **Không import tương đối qua package khác.** Thêm export `"./test-guard": "./src/test-guard.ts"` vào `packages/database/package.json`, rồi import bằng `@bloody-roar/database/test-guard`. Áp dụng cho `apps/web/src/test/setup.ts`, `apps/worker/test/preload.ts`, `tests/e2e/check-env.ts`.
+- **Database local phải tồn tại.** `.env` trỏ `bloody_codex_local`, nhưng DB này chưa được tạo. Tạo, rồi chạy `prisma migrate deploy` trên đó. Không dùng `migrate dev`.
+- **Ignore thư mục chạy harness.** Thêm `tests/e2e/.run/` vào `.gitignore`.
+- **Commit tài liệu kế hoạch.** `DECISIONS.md`, `FIX_LIST.md`, `LOCAL_FULL_FLOW_SPEC.md` commit một lần, message `docs(plan): local plan`.
+- **Đính chính.** Đặc tả trước ghi `bloody_codex_test` và `bloody_codex_local` "đã có". Điều này sai. `bloody_codex_test` và `bloody_codex` (scratch) đã được Codex tạo. `bloody_codex_local` chưa có. Đọc mục này thay cho mục 2.1 của đặc tả.
+- **Địa chỉ admin.** `ADMIN_WALLETS` đã khớp địa chỉ hardhat #1 chuẩn. Codex xác nhận lại bằng `eth_accounts` khi chạy node ở phase B.
+
+---
+
+## Việc người dùng cần làm
+
+Không có việc nào chặn Codex. Khi deploy, người dùng cần:
+1. Đánh dấu false positive GitGuardian (Q3).
+2. Chọn nơi deploy và cấp biến môi trường thật (Q9).
+3. Build Docker trên nơi có đủ RAM, hoặc để Railway build (BE-88).
+4. Ra lệnh mở PR (Q7).
+
+## ĐỔI QUYẾT ĐỊNH — khóa chống trùng thông báo deadline
+
+`DEADLINE_APPROACHING` dùng `deadline:{escrowId}:{kind}:{userId}` thay cho `deadline:{escrowId}:{kind}` trong FIX_LIST. Cột `Notification.dedupeKey` là duy nhất toàn bảng; thêm userId để cả client và developer liên quan đều nhận đúng một thông báo cho cùng mốc, kể cả khi job chạy lại.
+
+## ĐỔI QUYẾT ĐỊNH — reputation sau escrow resolution
+
+P1-10 tạm để TODO(P1-22) gọi `recalcReputation` trong transaction của effect. Hàm chưa tồn tại; P1-22 sẽ triển khai và nối lại trước gate cuối.
+
+## BỔ SUNG P1-18 — audit tải evidence
+
+Dùng action `download_evidence` cho lượt admin tải file, phân biệt với `view_evidence` khi xem danh sách.
+
+## BỔ SUNG AI-11 — mốc bắt đầu phân tích
+
+Thêm `Dispute.aiStartedAt` để timeout và chống lượt AI cũ ghi đè vẫn chính xác khi worker cập nhật dispute.
+
+## BỔ SUNG N-14 — chặn mọi provider thật trong E2E
+
+`check-env` chặn cả khóa GROQ/OPENAI, credential S3 và webhook; AI mock chỉ dùng loopback port 4019 để không fallback sang dịch vụ thật.
+
+## BỔ SUNG N-8 — lưu báo cáo sau teardown
+
+Giữ `tests/e2e/.run/last-run.txt` và log đã ignore sau khi dừng PID để có thể chẩn đoán, vì yêu cầu xóa cả thư mục mâu thuẫn với việc ghi báo cáo trong đó.
+
+## BỔ SUNG E2 — ghi lượt xem theo tài khoản
+
+`recordIssueView` yêu cầu đăng nhập và tăng tối đa một lần mỗi giờ cho mỗi user; query chi tiết không tự tăng vì bảng IssueView gắn với user.
+
+## BỔ SUNG G1-DELTA — so hiệu số claimable thay vì số tuyệt đối
+
+`ClaimableBalance` cộng dồn giữa các file (ví phí còn số dư từ E10, E13), nên các test đo chênh lệch trước và sau bước của mình. Giá trị trong đặc tả (97.5, 2.5, 100 USDC) vẫn là hiệu số đúng.
+
+## BỔ SUNG E14 — tách thành hai test và thông báo thu hồi
+
+Nhánh bên kia chấp nhận và nhánh đề xuất rồi thu hồi chạy trên hai fixture riêng. `SETTLEMENT_REVOKED` gửi cho bên còn lại, không gửi cho người thu hồi, đúng với scanner cũ.
+
+## BỔ SUNG E15 — so calldata bằng encodeEscrowCall
+
+`encodeEscrowCall("postInitialRuling", ...)` đóng gói cùng hàm và tham số với `encodeFunctionData(ESCROW_ABI)`, dùng `escrowKey` như scanner cũ. Không thêm đường mã hóa thứ hai.
+
+## BỔ SUNG E16 — kháng cáo thứ hai trả INVALID_PHASE
+
+Sau khi client kháng cáo, phase là CHALLENGED. `prepareChallengeRuling` của developer bị chặn ở bước kiểm phase trước khi kiểm quyền kháng cáo, nên mã lỗi là `INVALID_PHASE`.
+
+## BỔ SUNG E23 — chờ indexer đuổi kịp trước khi đo
+
+`reconcileProjections` trả `null` khi chưa đến chain head. Test gọi lại cho tới khi có kết quả, nên không đo khi chưa có block để so.
+
+## BỔ SUNG E24 — đợi worker hoàn tất replay
+
+`worker:replay` chỉ ghi `REPLAY_REQUESTED`; worker thực hiện replay và đưa checkpoint về `IDLE`. Test đợi `IDLE` rồi mới so projection.
+
+## BỔ SUNG E31 — xóa số dư còn lại trước khi đo
+
+Trước khi fund, test claim số dư còn lại của developer và ví phí. Nhờ vậy chênh lệch số dư escrow đúng 100 USDC của issue này.
+
+## BỔ SUNG P1-19 — lỗi socket dạng chuỗi
+
+`message:send` trả lỗi bằng chuỗi như mọi nhánh khác trong file, nên giới hạn tốc độ trả `"Too many messages, slow down"` thay vì object `{ok, error: {code}}`. Mutation `editMessage` dùng `RATE_LIMITED` qua `gqlError`, vì resolver GraphQL trả mã lỗi có cấu trúc.
+
+## BỔ SUNG P1-19 — mock dispute trong socket-session
+
+`socket-session.test.ts` thêm `dispute.findUnique` vào mock transaction, vì handler giờ tra `Dispute.raisedAt` khi tạo tin.
+
+## BỔ SUNG P1-20 — trạng thái phát hiện mặc định OPEN
+
+`reconciliationFindings` nhận `status` là `OPEN` (mặc định), `RESOLVED`; giá trị khác trả `BAD_USER_INPUT`. Resolver cũng tự mặc định `OPEN` vì khi gọi trực tiếp (test) mặc định của schema không được áp dụng.
+
+## BỔ SUNG P1-21 — lọc ẩn cho cả thống kê marketplace
+
+`marketplaceStats` lọc `hiddenAt: null` ở cả số bounty mở và số developer đã ứng tuyển, để thống kê khớp danh sách. `adminUnhideIssue` ghi `AdminLog` với `details: {}` vì không có lý do.
+
+## BỔ SUNG P1-22 — mã lỗi và phạm vi điểm uy tín
+
+Đánh giá trước khi hoàn thành trả `INVALID_STATE` (mã mới, không có trong danh sách cũ); trùng đánh giá trả `CONFLICT` qua mã Prisma `P2002`. Điểm uy tín tính trên mọi đánh giá, kể cả issue hoàn tiền, còn số bài hoàn thành loại trừ `MISSED_DELIVERY_REFUND`. `reviews` là query công khai.
+
+## BỔ SUNG P1-23 — hash audit dùng HMAC và giữ nguyên hash nội dung
+
+`auditHash` dùng HMAC-SHA256 với `AI_HASH_KEY`. Hash `originalHash` của tin nhắn trong `socket/handlers.ts` và `chat.module.ts` cũng đổi sang `auditHash` theo đặc tả, còn hash token/nội dung ở `app/api/auth/*`, `lib/auth.ts`, `submission/draft.module.ts` giữ nguyên.
+
+## BỔ SUNG P1-24 — phạm vi test của guard
+
+`content-guard.test.ts` kiểm createIssue, updateIssue, createIssueComment, applyToIssue và hàm guard bằng fake DB. `createSubmissionDraft` được kiểm trên DB thật trong `submission.db.test.ts`, vì luồng này cần projection escrow và đồng hồ chain.
+
+## BỔ SUNG P1-25 — vị trí gọi rate limit AI
+
+`generateTestCases` nằm ở `graphql/modules/ai/ai.module.ts` (đặc tả ghi `ai/ai.module.ts`); giới hạn gọi sau kiểm tra vai trò CLIENT để không tính lượt của người không được phép. Hai mutation duy nhất gọi `completeAI` từ GraphQL là `generateTestCases` và `analyzeDispute`.
+
+## BỔ SUNG E18 — kiểm cờ afterDispute theo quy tắc lưu trữ
+
+`afterDispute` so `Dispute.raisedAt` (thời gian block) với đồng hồ máy chủ. Đồng hồ Hardhat có thể chạy nhanh hơn đồng hồ thật sau các kịch bản đổi thời gian, nên E18 kiểm đúng quy tắc `raisedAt <= createdAt` thay vì giả định luôn là `true`. Admin chỉ được join phòng khi issue ở `DISPUTED`.
+
+## BỔ SUNG E19 — tài khoản #10 và ban qua HTTP
+
+`accounts[8]` bị e01 khóa có chủ đích để kiểm 403, nên E19/E21 dùng `accounts[10]`. Ban chạy qua HTTP trên máy chủ web vì chỉ tiến trình đó giữ Socket.IO server để ngắt phiên. Đăng xuất đã ngắt socket phía server, nên E19 kiểm `connected = false` thay vì nghe sự kiện.
+
+## BỔ SUNG E30 — deadline đã qua
+
+Job deadline chỉ thông báo khi mốc đã qua (`at <= now`), nên E30 đưa `deliveryDeadline` về quá khứ thay vì gần tương lai.
+
+## BỔ SUNG E-harness — socket và thư viện
+
+`socket.io-client` chưa được hoist ở root; harness import bản trong `apps/web/node_modules` để không thêm dependency. `ack` có timeout 10 giây vì máy chủ không gọi callback khi đã ngắt socket. Eval `dispute-eval` đọc fixture theo `process.cwd()` vì `import.meta.glob` không có kiểu trong tsconfig của web.
+
+## BỔ SUNG P1-30 — file chat đi theo DELIVERY của issue
+
+Đặc tả từ chối `CHAT` ở `POST /api/uploads`, nhưng composer chat vẫn cần tải file. Composer nay gửi `purpose: "DELIVERY"` kèm `issueId`, nên file chat chỉ người trong task đọc được. Hệ quả: admin không còn đọc được file chat trong lúc tranh chấp qua đường này; nếu cần lại, phải thêm quyền riêng.
+
+## BỔ SUNG P1-30 — nhật ký xem bằng chứng
+
+Tải bằng chứng của admin ghi `view_evidence` (theo đặc tả và P1-18), thay cho `download_evidence`. Test `evidence-download.test.ts` được cập nhật theo.
+
+## BỔ SUNG P1-30 — ảnh issue đã ẩn
+
+Ảnh của issue đã ẩn vẫn hiện với client, developer và admin; người ngoài nhận 401/403. Lý do: P1-21 chỉ ẩn khỏi người ngoài, không xóa quyền của người đang làm việc.
+
+## BỔ SUNG P1-30 — gitignore
+
+Thêm `apps/web/.gitignore` với `.uploads/`. Thư mục gốc đã có `apps/web/.uploads/` nên đây là bản lặp có chủ đích, theo đặc tả.
+
+## BỔ SUNG P1-31 — không kiểm lệch thời gian webhook
+
+GitHub không gửi header thời gian, nên webhook không kiểm lệch đồng hồ; chống lặp chỉ dựa vào `x-github-delivery`. Migration `20261031090000_pr_merged_notification` thêm `PR_MERGED` và đã được áp dụng trên `bloody_codex_test` và `bloody_codex_local`.
+
+## BỔ SUNG P1-32 — guard nằm ở subpath export
+
+`assertChainConfig` đọc file manifest bằng `node:fs`, nên không đưa vào barrel `packages/shared/src/index.ts` (barrel dùng cho cả trình duyệt). Thay vào đó thêm export `@bloody-roar/shared/chain-guard`. Hàm nhận thêm đối số thứ hai là reader RPC (mặc định là viem client) để test không cần node. Trường địa chỉ escrow trong manifest là `address` (đúng như `run-local.ts` đọc); `seed.ts` chỉ đọc `token` và `chainId`.
+
+## BỔ SUNG P1-35 — không xoay refresh token
+
+Đặc tả nói không làm refresh token xoay vòng; phiên dùng JWT và bản ghi `Session` như hiện tại. `current` trong `mySessions` so sánh SHA-256 của JWT trong request với `refreshHash`. Context GraphQL nay mang `sessionToken` (tùy chọn); các test dùng `execute` không truyền thì `current` là false.
+
+## BỔ SUNG C3 — kịch bản E25–E29 và runner
+
+`run-local.ts` bắt buộc E1–E31 và in `E2E scenarios passed` (theo C3). Biến `GITHUB_WEBHOOK_SECRET` được đặt trong env của harness để E26 ký payload. E29 đọc cả stdout và stderr vì logger ghi ra stdout. E28 coi `createIssueComment` của người ngoài là hợp lệ với bài công khai (đúng AUTHZ_MATRIX), nên kiểm riêng thay vì trong bảng từ chối. AUTHZ_MATRIX đã gỡ các mutation không còn tồn tại và thêm các mutation Phase D–F.
+
+## BỔ SUNG E19 — invalidate kích hoạt bằng submitWork
+
+E19 kiểm `escrow:invalidate` sau `submitWork`, không sau deposit. Quyền join room `issue:<id>` yêu cầu người gọi là developer được giao hoặc người đọc được issue, nên sự kiện chỉ tới đúng người khi developer được giao gửi bài. `submitWork` là lệnh gửi từ developer này, nên dùng nó để kiểm đường `escrow-bridge` → socket.
+
+## BỔ SUNG E20 — tên truy vấn đếm thông báo chưa đọc
+
+Đặc tả ghi `unreadCount`, nhưng schema đã có `unreadNotificationCount` (`notification.module.ts`). E20 dùng tên có sẵn trong schema, không đổi tên để khỏi ảnh hưởng client đang gọi tên cũ.
+
+## BỔ SUNG C2 — ma trận theo QĐ-21 và trạng thái chưa có escrow
+
+- `createIssue` và `applyToIssue`: ma trận cũ ghi `CLIENT_ROLE_REQUIRED` và `DEVELOPER_ROLE_REQUIRED`. Code đã bỏ chặn theo role (QĐ-21, BE-09), chỉ chặn ADMIN (`ADMIN_NOT_ALLOWED`). Đã sửa ma trận theo code. Chủ bài không ứng tuyển bài của mình (`SELF_APPLICATION`).
+- Mutation escrow (`prepareProposeSettlement`, `prepareAcceptSettlement`, `prepareRevokeSettlement`, `prepareChallengeRuling`, `prepareSubmitCounterpartyEvidence`, `prepareReleaseFunds`): resolver tải projection trước, không có escrow thì trả `NOT_FOUND` trước khi kiểm quyền. Ma trận ghi `FORBIDDEN` là đúng khi đã có escrow. E28 chạy trên issue chưa có escrow nên kiểm `NOT_FOUND`. Chưa có test nào kiểm `FORBIDDEN` ở trạng thái có escrow; ghi là khoảng trống.
+- E28 phủ mọi dòng trong `AUTHZ_MATRIX.md` và kiểm 10 mutation đã gỡ đều vắng mặt khỏi schema. Mười ba mutation trong schema chưa có dòng ma trận và chưa có case trong E28: `attachIssueFile`, `cancelReservation`, `createTestCase`, `deleteMessage`, `deleteTestCase`, `editMessage`, `prepareEscrowDeposit`, `prepareSubmitWork`, `recordIssueView`, `recordTransactionSubmitted`, `requestChanges`, `setUserRole`, `submitFundingIntent`. Thêm dòng ma trận và case cho chúng là việc của lần sau.
+
+## BỔ SUNG FE-2 — làm mới trang issue không dùng react-query
+
+Trang chi tiết issue giữ dữ liệu bằng `useState` và hàm `load()` có sẵn, chưa chuyển sang react-query. Hai cơ chế làm mới giữ nguyên theo đặc tả: `escrow:invalidate` gọi `load()`, và sau mỗi giao dịch thì gọi lại mỗi 4 giây, tối đa 30 lần. Lý do: chuyển cả trang sang react-query đổi luồng state của một trang lớn, vượt phạm vi "không đổi hành vi" của C5. Socket mở bằng `io()` riêng trong trang, giống cách `chat-room.tsx` đang làm.
+
+## BỔ SUNG S-2 — tên hằng số thời gian theo giây
+
+`packages/shared/src/constants/index.ts` có `HOUR_SECONDS = 3_600` và `DAY_SECONDS = 86_400` (số thường). `escrow/fold.ts` lấy bản bigint bằng `BigInt(DAY_SECONDS)`. Hằng `*_MS` giữ nguyên cho phía web và worker, vì chúng là mili-giây.
+
+## BỔ SUNG S-3 — import type cho thông báo giữ nguyên
+
+`packages/database/src/notifications.ts` đã import type từ `@prisma/client`, đúng điều đặc tả cho phép. Không có import vòng nào cần tránh, nên không đổi file.
+
+
+## BỔ SUNG S-1 — không gom 18 bản fakeDb
+
+Đã so sánh thân hàm `fakeDb` (chuẩn hóa khoảng trắng) trong `apps/web/src/test` và `apps/worker/test`: 18 bản, không bản nào giống bản khác. Các bản khác nhau ở mock và dữ liệu từng file, nên giữ nguyên theo đặc tả S-1. Các helper trùng hoàn toàn (`callQuery`, `callMutation`, fixture user, `CONTRACT`) đã gom vào `apps/web/src/test/helpers/` và `apps/worker/test/helpers.ts`.
+
+## BỔ SUNG K1 — build đặt NODE_ENV=production sau khi nạp .env
+
+`.env` có `NODE_ENV=` (rỗng). Sau `set -a; . ./.env`, `next build` prerender bằng runtime dev của React và lỗi `Cannot read properties of null (reading 'useContext')` ở mọi trang. Lệnh build trong gate đặt `NODE_ENV=production` sau khi nạp .env. Không đổi `.env`.
+
+## BỔ SUNG K3 — chainId trong test ví lấy từ ACTIVE_CHAIN
+
+Đặc tả ghi `eth_chainId` trả `0x7a69`. `ensureActiveChain` đọc `NEXT_PUBLIC_CHAIN_ID` (mặc định Base Sepolia), nên test trả `ACTIVE_CHAIN.chainHex` để không phụ thuộc môi trường. Hành vi kiểm không đổi.
+
+## BỔ SUNG K7 — form ứng tuyển và màn chặn đăng bài theo vai trò
+
+Màn chặn đăng bài chỉ còn cho ADMIN. Bỏ dòng "Client workspace" và đoạn giải thích vai trò vì không còn đúng cho ADMIN; xóa ba key i18n không còn dùng. Form ứng tuyển hiện cho mọi người xem không phải chủ bài và không phải ADMIN, thay cho nhánh "chuyển sang vai trò Developer". Lý do: API đã bỏ chặn role (QĐ-21).
+
+## BỔ SUNG K8-chain — harness đặt NEXT_PUBLIC_CHAIN_ID=31337
+
+`.env` không có `NEXT_PUBLIC_CHAIN_ID`, nên `ACTIVE_CHAIN` ở trình duyệt là Base Sepolia. Ví giả trả `0x7a69` sẽ bị yêu cầu chuyển mạng và luồng UI dừng. `run-local.ts` đặt `NEXT_PUBLIC_CHAIN_ID=31337` cho tiến trình web. Lý do: đây là môi trường local, không đổi cấu hình sản phẩm.
+
+## BỔ SUNG K8-phase — giao việc kiểm bằng trạng thái submission
+
+`EscrowPhase` không có pha "đã giao" (chỉ có NONE, FUNDED, DISPUTED, ...). E32 chờ `submission.status === "SUBMITTED"`, đúng cách `submitWork` trong `harness/work.ts` đang làm.
+
+## BỔ SUNG K8-alert — kiểm lỗi bằng lớp `.bn-bad`
+
+Banner lỗi của `issue-detail-view.tsx` không có `role="alert"`. E32 kiểm `.bn-bad` có 0 phần tử, hoặc chứa chuỗi lỗi mong đợi. Không thêm `data-testid`, vì đặc tả chỉ cho phép thêm vào nút.
+
+## BỔ SUNG K8-claim — số dư kiểm theo tổng chưa rút
+
+Tài khoản developer (`accounts[3]`) dùng chung giữa các file test, nên có thể còn số dư chưa rút từ file trước. E32 kiểm: (1) sau release, phần tăng của `claimable` đúng `97500000n`; (2) sau "Rút tiền", số dư ví tăng đúng tổng `claimable` còn lại. Không kiểm cứng `97500000n` ở bước rút.
+
+## BỔ SUNG K8-tsconfig — loại ui-e2e khỏi tsconfig của web
+
+`ui-e2e` dùng `bun:test`, và các file harness import từ `tests/e2e` kéo theo lỗi kiểu khi web typecheck. Thêm `"ui-e2e"` vào `exclude` của `apps/web/tsconfig.json`, đúng như đặc tả cho phép. Không thêm `@types/bun`.
+
+## BỔ SUNG K8-nonce — thử lại nonce khi Next dev trả 404
+
+Ba lần chạy harness liên tiếp (run 10, 11, và run trước khi xóa `.next`) có đúng 4 test lỗi `Nonce failed: 404` ở E2 và E18. Log `tests/e2e/.run/web.log` cho thấy route `/api/auth/nonce` đã biên dịch lúc khởi động, rồi các request sau đó trả 404 kèm thời gian xử lý 35 và 51 giây. Giả thuyết: Next dev hủy route không được gọi trong một lúc, và request đến trong lúc biên dịch lại thì nhận 404. Chưa xác minh được nguyên nhân gốc. Tạm thời `login()` thử lại tối đa 5 lần, cách 2 giây, chỉ khi gặp 404. Không đổi code sản phẩm.
+
+## BỔ SUNG K9 — mã từ chối của người ngoài khi đã có escrow
+
+Trên issue đã có escrow, người ngoài không tạo được thay đổi nào. Năm mutation `prepareReleaseFunds`, `prepareSubmitCounterpartyEvidence`, `prepareProposeSettlement`, `prepareAcceptSettlement`, `prepareRevokeSettlement` trả `FORBIDDEN`. `prepareChallengeRuling` trả `INVALID_PHASE`, vì kiểm pha escrow chạy trước kiểm bên tham gia trong `ruling.module.ts`. Cả hai mã đều là từ chối, không có giao dịch nào được chuẩn bị. Đã thêm các mã này vào danh sách mã của người ngoài trong `e28-authz.test.ts`. Chưa đổi thứ tự kiểm trong `ruling.module.ts`. Rủi ro còn lại: người ngoài biết được pha của escrow qua `INVALID_PHASE`.
+Đã sửa ở L5.
+
+## BỔ SUNG FE-LAYOUT — chấp nhận thay đổi thẻ Escrow actions
+
+Thẻ hiện theo `viewerCapabilities` thay vì chỉ với bên tham gia ở trạng thái IN_PROGRESS. Thêm nút "Hủy giữ chỗ" và ô mã commit. Lý do: các hành động mới cần chỗ hiển thị. Không đổi màu hay khung.
+
+## BỔ SUNG K8-fund — nút nạp tiền nằm trong thẻ Review Applicants khi AWAITING_FUNDING
+
+Khi issue ở AWAITING_FUNDING, thẻ Review Applicants vẫn hiện để chứa nút "Fund escrow" và "Hủy giữ chỗ". Ô chọn hạn giao việc và nút "Select developer" chỉ hiện khi issue OPEN. Lý do: không có chỗ nào khác trên trang để nạp tiền, nên khách không nạp được từ giao diện. Không đổi màu hay khung.
+
+## BỔ SUNG M1 — frontend chỉ hiện dữ liệu thật
+
+Bỏ MOCK_ISSUES, SAMPLE_COMMENTS, RECENT_ACTIVITIES, demoMode, mock-issues.ts và các số liệu viết cứng (184,320, 1942, $128,450). Marketplace, Home và Issue detail chỉ hiển thị dữ liệu live từ GraphQL API; khi chưa tải hoặc rỗng thì hiện skeleton/empty/dấu gạch ngang `—`; lỗi hiện thông báo kèm nút Thử lại.
+
+## BỔ SUNG M2 — ví demo là tài khoản Hardhat
+
+Khi chainId là 31337, seed-demo.ts dùng tài khoản mặc định của Hardhat (#1 admin, #2 client 1, #3 dev 1, #4 dev 2, #7 client 2, #8 dev 3, #9 client 3) để người dùng có thể dùng MetaMask đăng nhập trực tiếp. Không dùng #0, #5, #6 nhằm tách bạch vai trò on-chain. Xử lý di chuyển tài khoản cũ trên local tránh vi phạm unique constraint trên email và walletAddress.
+
+## BỔ SUNG M4 — xóa bảng legacy
+
+Xóa model `Escrow` và `Transaction`, các enum `EscrowStatus`, `TransactionType`, `TransactionStatus`, cùng các field quan hệ liên quan (`Token.escrows`, `Issue.escrow`, `User.escrowsAsClient`/`User.escrowsAsDev`, `Dispute.escrowId`/`Dispute.escrow`). Escrow thật nằm on-chain và trong `EscrowProjection`. File migration `20261031173000_drop_legacy_escrow_tables` chỉ chứa các lệnh DROP (bảng, cột, ràng buộc, index, enum). Cập nhật `packages/database/test/seed-demo.test.ts` bỏ bảng `escrows` khỏi lệnh truncate và assertion.
+
+## BỔ SUNG R1 — kho ví 53 ví và tách bạch tệp bí mật
+
+Tạo mới 53 ví cho kịch bản Base Sepolia gồm 3 Safe x 3 signer = 9 ví, 1 admin, 1 treasury, 1 spammer, 41 dev/client. Lưu trong `demo-wallets/keys.json` với quyền `0600`. Tệp bí mật `.env.demo`, thư mục `demo-wallets/`, và `docs/demo/*.local.md` được chặn trong `.gitignore` và kiểm chứng bằng `git check-ignore`. Tài liệu `docs/demo/WALLETS.md` chỉ ghi địa chỉ công khai và vai trò, tuyệt đối không lộ private key.
+
+## BỔ SUNG R2 — nguồn faucet Base Sepolia và đo lường nhu cầu quỹ
+
+Kiểm tra tuần tự CDP Faucet API, Circle Faucet và các faucet công khai theo R2. Do CDP API key không có trong môi trường và các faucet công khai yêu cầu captcha Turnstile hoặc số dư ETH mainnet, script dừng an toàn theo quy tắc 298. Tính toán chính xác lượng quỹ cần cho toàn bộ 9 đợt là `0.0247 ETH` (khuyến nghị `0.05 ETH`) và `35.0 USDC`, yêu cầu nạp về ví `treasury` (`0x6d5fCc753Dfeb150d7f3526dac114F38Dd169b95`). Ghi nhật ký vào `demo-wallets/ledger.jsonl`.
+
+## BỔ SUNG R3 — tính toán CREATE2 địa chỉ Safe v1.4.1 deterministically
+
+Sử dụng Safe Proxy Factory v1.4.1 (`0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67`) và Safe Singleton (`0x41fC31F462a6305c45e607F10777595696c4Ec4d`) trên Base Sepolia. Dự đoán chính xác 3 địa chỉ Safe (Owner, Arbiter, Fee) bằng thuật toán CREATE2 keccak256 với initializer byte code từ `setup(...)` và nonce, đảm bảo tính xác định và có thể sử dụng cấu hình ngay mà không cần deploy trước.
+
+## BỔ SUNG R4 — môi trường demo độc lập bloody_demo và quản lý PID
+
+Tạo database `bloody_demo` độc lập trên Postgres cổng 5433, áp dụng toàn bộ 13 Prisma migrations và seed token USDC Base Sepolia (`0x036CbD53842c5426634e7929541eC2318f3dCF7e`). Phân bổ cổng riêng biệt: 4100 (web), 4101 (worker), 4019 (AI mock), không đụng chạm cổng 4000 và các cổng harness gate (4010-4012). Script `up.sh` và `down.sh` lưu PID vào `demo-wallets/` để quản lý vòng đời tiến trình sạch sẽ.
+
+## BỔ SUNG R5 — chống nghẽn rate-limit bằng x-forwarded-for theo ví
+
+Rate-limiter `graphql:<ip>` (600 điểm/phút) sẽ chặn nếu 40 ví gửi đồng thời từ `127.0.0.1`. Mỗi ví demo được gán một địa chỉ IP ảo xác định (`10.77.<i>.1`) truyền qua header `x-forwarded-for` trong session HTTP và socket handshake, mô phỏng đúng hành vi người dùng phân tán trên mạng Internet và loại bỏ nguy cơ rate-limit.
+
+## BỔ SUNG R6 — ký và thực thi Safe Transaction theo chuẩn EIP-712
+
+Tạo transaction hash chuẩn Safe v1.4.1 với `domainSeparator` và `SAFE_TX_TYPEHASH`. Thu thập 2 chữ ký từ 2 trong 3 ví signer của Arbiter Safe, sắp xếp các chữ ký theo thứ tự địa chỉ signer tăng dần (lexicographical order) theo yêu cầu của `GnosisSafe.checkNSignatures`. Gọi `execTransaction` với payload chữ ký nối chuỗi `r + s + v`.
+
+## BỔ SUNG R7-1 — hạ BOUNTY_MIN_AMOUNT từ 10 xuống 0.5 USDC
+
+Kế hoạch đợt R yêu cầu phân bổ ngân sách 150 bounty trong khoảng 0.5–5 USDC để tối ưu chi phí faucet testnet. Hằng số `BOUNTY_MIN_AMOUNT` trước đây bị fix cứng là 10 trong `packages/shared/src/constants/index.ts`, khiến các bounty nhỏ bị từ chối bởi validation schema. Thêm test tái hiện `apps/web/src/test/bounty-range.test.ts` và hạ ngưỡng tối thiểu xuống 0.5 USDC.
+
+
+

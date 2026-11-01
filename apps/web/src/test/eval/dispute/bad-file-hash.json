@@ -1,0 +1,79 @@
+{
+  "name": "bad-file-hash",
+  "dispute": {
+    "id": "dispute-1",
+    "reason": "The delivered file does not match its recorded hash.",
+    "createdAt": "2030-03-05T09:00:00.000Z",
+    "issue": {
+      "id": "issue-1",
+      "title": "Export report as CSV",
+      "description": "Add a CSV export to the reports page with a download button.",
+      "category": "FEATURE",
+      "requiredSkills": [
+        "react"
+      ],
+      "clientId": "client-1",
+      "developerId": "developer-1",
+      "messages": [
+        {
+          "id": "msg-1",
+          "senderId": "client-1",
+          "content": "The attached file does not open for me.",
+          "type": "TEXT",
+          "createdAt": "2030-03-03T14:00:00.000Z"
+        }
+      ],
+      "submissions": [
+        {
+          "id": "sub-1",
+          "description": "CSV export with attachment",
+          "pullRequestUrl": "https://github.com/acme/app/pull/12",
+          "status": "SUBMITTED",
+          "submittedAt": "2030-03-03T13:00:00.000Z",
+          "reviewNotes": null
+        }
+      ],
+      "testCases": [
+        {
+          "id": "tc-1",
+          "title": "CSV download",
+          "description": "Check CSV download",
+          "given": "a report",
+          "when": "exported",
+          "then": "the CSV downloads",
+          "priority": "HIGH",
+          "isApproved": true
+        }
+      ]
+    }
+  },
+  "mockResponse": {
+    "summary": "The client says the attached file does not open, and a hash mismatch would mean the stored file differs from the delivery record.",
+    "suggestedClientBps": 5000,
+    "confidenceScore": 0.7,
+    "findings": [
+      {
+        "evidenceType": "SUBMISSION",
+        "evidenceId": "sub-1",
+        "side": "CLIENT",
+        "finding": "The client reports the file does not open after download."
+      },
+      {
+        "evidenceType": "MESSAGE",
+        "evidenceId": "att-404",
+        "side": "CLIENT",
+        "finding": "This cites an attachment that is not part of the dispute record."
+      }
+    ],
+    "missingEvidence": [
+      "A re-download of the file with its recorded hash."
+    ],
+    "reasoning": "The hash mismatch is unresolved and the attachment citation does not match the record. The split stays near the middle until the file is verified."
+  },
+  "expect": {
+    "minClientBps": 4000,
+    "maxClientBps": 6000,
+    "validCitations": 1,
+    "droppedCitations": 1
+  }
+}

@@ -1,10 +1,15 @@
 import { builder } from "../../builder";
 import { GraphQLError } from "graphql";
-import { canAccessIssue } from "../../../lib/access";
-import { parseOrThrow } from "../../errors";
+import { auditHash } from "../../../ai/hash";
+import { canReadIssueChat, canWriteIssueChat } from "../../../lib/chat-access";
+import { gqlError, parseOrThrow } from "../../errors";
+import { rateLimit } from "../../../lib/rate-limit";
 import { z } from "zod";
 import type { Prisma } from "@bloody-roar/database";
 import { UserRef } from "../user/user.module";
+import type { GraphQLContext } from "../../context";
+import { guardMessage } from "../../../ai/guard/service";
+import { getSocketIO, toMessagePayload } from "../../../socket/handlers";
 
 // D-4 GraphQL Setup
 
@@ -55,7 +60,7 @@ export const MessageRef = builder.prismaObject("Message", {
     createdAt: t.string({
       resolve: (msg) => msg.createdAt.toISOString(),
     }),
-    
+
     sender: t.field({
       type: UserRef,
       resolve: (msg) => msg.sender,
@@ -73,8 +78,16 @@ function encodeCursor(id: string): string {
 }
 
 function decodeCursor(cursor: string): string {
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(cursor)) {
+    throw new GraphQLError("Invalid cursor", { extensions: { code: "INVALID_CURSOR" } });
+  }
   const id = Buffer.from(cursor, "base64").toString("utf8");
-  if (!id) throw new GraphQLError("Invalid cursor", { extensions: { code: "INVALID_CURSOR" } });
+  if (
+    !id ||
+    Buffer.from(id, "utf8").toString("base64").replace(/=+$/, "") !== cursor.replace(/=+$/, "")
+  ) {
+    throw new GraphQLError("Invalid cursor", { extensions: { code: "INVALID_CURSOR" } });
+  }
   return id;
 }
 
@@ -106,15 +119,17 @@ const PageInfoRef = builder.objectRef<PageInfoShape>("MessagePageInfo").implemen
   }),
 });
 
-const MessageConnectionRef = builder.objectRef<MessageConnectionShape>("MessageConnection").implement({
-  fields: (t) => ({
-    edges: t.field({
-      type: [MessageEdgeRef],
-      resolve: (conn) => conn.edges,
+const MessageConnectionRef = builder
+  .objectRef<MessageConnectionShape>("MessageConnection")
+  .implement({
+    fields: (t) => ({
+      edges: t.field({
+        type: [MessageEdgeRef],
+        resolve: (conn) => conn.edges,
+      }),
+      pageInfo: t.field({ type: PageInfoRef, resolve: (conn) => conn.pageInfo }),
     }),
-    pageInfo: t.field({ type: PageInfoRef, resolve: (conn) => conn.pageInfo }),
-  }),
-});
+  });
 
 const MessagesQuerySchema = z.object({
   first: z.number().int().min(1).max(100).nullish(),
@@ -134,41 +149,53 @@ builder.queryFields((t) => ({
         throw new GraphQLError("Unauthorized", { extensions: { code: "UNAUTHORIZED" } });
       }
 
-      const hasAccess = await canAccessIssue(ctx.db, args.issueId, ctx.user.id);
-      if (!hasAccess) {
+      const issue = await ctx.db.issue.findUnique({
+        where: { id: args.issueId },
+        select: { clientId: true, developerId: true, status: true },
+      });
+      if (!issue || !canReadIssueChat(issue, ctx.user)) {
         throw new GraphQLError("Forbidden", { extensions: { code: "FORBIDDEN" } });
       }
 
       const q = parseOrThrow(MessagesQuerySchema, { first: args.first, after: args.after });
       const take = q.first ?? 50;
+      const cursorId = q.after ? decodeCursor(q.after) : null;
+      if (cursorId) {
+        const cursorMessage = await ctx.db.message.findFirst({
+          where: { id: cursorId, issueId: args.issueId, isDeleted: false },
+          select: { id: true },
+        });
+        if (!cursorMessage)
+          throw new GraphQLError("Cursor does not belong to this task room", {
+            extensions: { code: "INVALID_CURSOR" },
+          });
+      }
 
       const rows = await ctx.db.message.findMany({
-        where: { issueId: args.issueId },
-        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        where: { issueId: args.issueId, isDeleted: false },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         take: take + 1,
-        ...(q.after ? { cursor: { id: decodeCursor(q.after) }, skip: 1 } : {}),
+        ...(cursorId ? { cursor: { id: cursorId }, skip: 1 } : {}),
         include: MESSAGE_INCLUDE,
       });
 
       const hasNextPage = rows.length > take;
-      const messages = hasNextPage ? rows.slice(0, take) : rows;
+      const messages = (hasNextPage ? rows.slice(0, take) : rows).reverse();
 
-      // Set readAt on fetched messages & reset unread asynchronously in DB
-      const now = new Date();
-      messages.forEach((msg) => {
-        if (msg.senderId !== ctx.user?.id && !msg.readAt) {
-          msg.readAt = now;
-        }
-      });
-
-      ctx.db.message.updateMany({
-        where: {
-          issueId: args.issueId,
-          senderId: { not: ctx.user.id },
-          readAt: null,
-        },
-        data: { readAt: now },
-      }).catch(() => null);
+      const unreadIds = messages
+        .filter((message) => message.senderId !== ctx.user?.id && !message.readAt)
+        .map((message) => message.id);
+      if (unreadIds.length) {
+        const now = new Date();
+        await ctx.db.message.updateMany({
+          where: { id: { in: unreadIds }, issueId: args.issueId, readAt: null },
+          data: { readAt: now },
+        });
+        const unread = new Set(unreadIds);
+        messages.forEach((message) => {
+          if (unread.has(message.id)) message.readAt = now;
+        });
+      }
 
       const firstItem = messages[0];
       const lastItem = messages[messages.length - 1];
@@ -188,3 +215,91 @@ builder.queryFields((t) => ({
     },
   }),
 }));
+
+const EditMessageSchema = z.object({ content: z.string().trim().min(1).max(4000) });
+
+// Edits and deletes belong to the sender while the task is open. Once a dispute opens, messages are evidence and stay fixed.
+async function findOwnWritableMessage(ctx: GraphQLContext, id: string) {
+  const user = ctx.user;
+  if (!user) throw new GraphQLError("Unauthorized", { extensions: { code: "UNAUTHORIZED" } });
+  const message = await ctx.db.message.findUnique({
+    where: { id },
+    include: { ...MESSAGE_INCLUDE, issue: { select: { clientId: true, developerId: true, status: true } } },
+  });
+  if (!message || message.isDeleted) throw new GraphQLError("Message not found", { extensions: { code: "NOT_FOUND" } });
+  if (message.senderId !== user.id) throw new GraphQLError("Only the sender can change this message", { extensions: { code: "FORBIDDEN" } });
+  if (!canWriteIssueChat(message.issue, user)) throw new GraphQLError("Chat is closed for this task", { extensions: { code: "FORBIDDEN" } });
+  if (message.issue.status === "DISPUTED") throw new GraphQLError("Messages are locked during a dispute", { extensions: { code: "CHAT_LOCKED" } });
+  return message;
+}
+
+// Live clients refresh the message; a deleted one arrives with empty content.
+function broadcastModified(message: MessageNode) {
+  try {
+    getSocketIO().to(`task:${message.issueId}`).emit("message:modified", toMessagePayload(message, message.sender));
+  } catch {
+    /* Socket server may not be available in isolated tests. */
+  }
+}
+
+builder.mutationFields((t) => ({
+  editMessage: t.field({
+    type: MessageRef,
+    args: {
+      id: t.arg.id({ required: true }),
+      content: t.arg.string({ required: true }),
+    },
+    resolve: async (_root, args, ctx) => {
+      const message = await findOwnWritableMessage(ctx, String(args.id));
+      const limit = rateLimit(`chat:${message.senderId}`, { limit: 10, windowMs: 10_000 });
+      if (!limit.ok) throw gqlError("Gửi quá nhanh, thử lại sau", "RATE_LIMITED");
+      const { content } = parseOrThrow(EditMessageSchema, { content: args.content });
+      const guard = await guardMessage(content, { issueId: message.issueId });
+      const updated = await ctx.db.message.update({
+        where: { id: message.id },
+        data: {
+          content: guard.content,
+          wasModified: guard.wasModified,
+          originalHash: guard.wasModified ? auditHash(content) : null,
+          editedAt: new Date(),
+        },
+        include: MESSAGE_INCLUDE,
+      });
+      broadcastModified(updated);
+      return updated;
+    },
+  }),
+  deleteMessage: t.boolean({
+    args: { id: t.arg.id({ required: true }) },
+    resolve: async (_root, args, ctx) => {
+      const message = await findOwnWritableMessage(ctx, String(args.id));
+      const updated = await ctx.db.message.update({
+        where: { id: message.id },
+        data: { isDeleted: true, deletedAt: new Date(), content: "", wasModified: false, originalHash: null },
+        include: MESSAGE_INCLUDE,
+      });
+      broadcastModified(updated);
+      return true;
+    },
+  }),
+}));
+
+builder.queryField("unreadMessageCount", (t) =>
+  t.int({
+    args: { issueId: t.arg.string({ required: true }) },
+    resolve: async (_root, args, ctx) => {
+      const user = ctx.user;
+      if (!user) throw new GraphQLError("Unauthorized", { extensions: { code: "UNAUTHORIZED" } });
+      const issue = await ctx.db.issue.findUnique({
+        where: { id: args.issueId },
+        select: { clientId: true, developerId: true, status: true },
+      });
+      if (!issue || !canReadIssueChat(issue, user)) {
+        throw new GraphQLError("Forbidden", { extensions: { code: "FORBIDDEN" } });
+      }
+      return ctx.db.message.count({
+        where: { issueId: args.issueId, isDeleted: false, readAt: null, senderId: { not: user.id } },
+      });
+    },
+  }),
+);

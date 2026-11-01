@@ -1,0 +1,38 @@
+import { beforeAll, expect, test } from "bun:test";
+import { assertTestDatabase } from "@bloody-roar/database/test-guard";
+import { expireReservations } from "../../apps/worker/src/jobs/reservations";
+import { fixture } from "./harness/fixture";
+import { externalDeposit } from "./harness/funding";
+import { waitFor } from "./harness/waitFor";
+beforeAll(() => assertTestDatabase(process.env.TEST_DATABASE_URL));
+test("E7: expiry, late matching deposit, and late deposit after reassignment", async () => {
+  const expire = async (f: Awaited<ReturnType<typeof fixture>>, id: string) => {
+    await f.prisma.fundingReservation.update({ where: { id }, data: { expiresAt: new Date(Date.now() - 1000) } });
+    await expireReservations({ db: f.prisma, now: () => new Date(), log: { info: () => {}, warn: () => {}, error: () => {} } as never });
+    expect((await f.prisma.fundingReservation.findUniqueOrThrow({ where: { id } })).status).toBe("EXPIRED");
+    expect((await f.prisma.issue.findUniqueOrThrow({ where: { id: f.issueId } })).status).toBe("OPEN");
+    expect(await f.prisma.notification.count({ where: { userId: f.developer.id, type: "RESERVATION_EXPIRED", data: { path: ["issueId"], equals: f.issueId } } })).toBe(1);
+  };
+  const first = await fixture();
+  const selected = await first.select(first.applicationId);
+  expect(selected.errors).toBeUndefined();
+  const id = (selected.data?.selectDeveloper as { id: string }).id;
+  await expire(first, id);
+  const late = await first.prisma.fundingReservation.findUniqueOrThrow({ where: { id } });
+  await externalDeposit(first, late);
+  await waitFor(async () => (await first.prisma.fundingReservation.findUnique({ where: { id } }))?.status === "FUNDED");
+  expect((await first.prisma.issue.findUniqueOrThrow({ where: { id: first.issueId } })).status).toBe("IN_PROGRESS");
+  const second = await fixture();
+  const oldSelection = await second.select(second.applicationId);
+  expect(oldSelection.errors).toBeUndefined();
+  const oldId = (oldSelection.data?.selectDeveloper as { id: string }).id;
+  await expire(second, oldId);
+  const old = await second.prisma.fundingReservation.findUniqueOrThrow({ where: { id: oldId } });
+  const replacement = await second.select(second.rivalApplicationId);
+  expect(replacement.errors).toBeUndefined();
+  const newId = (replacement.data?.selectDeveloper as { id: string }).id;
+  await externalDeposit(second, old);
+  await waitFor(async () => (await second.prisma.fundingReservation.findUnique({ where: { id: oldId } }))?.status === "MISMATCHED");
+  expect((await second.prisma.fundingReservation.findUniqueOrThrow({ where: { id: newId } })).status).toBe("AWAITING_FUNDING");
+  expect((await second.prisma.issue.findUniqueOrThrow({ where: { id: second.issueId } })).status).toBe("AWAITING_FUNDING");
+}, 120_000);

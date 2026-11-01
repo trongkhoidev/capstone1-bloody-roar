@@ -1,0 +1,49 @@
+{
+  "name": "both-no-evidence",
+  "dispute": {
+    "id": "dispute-1",
+    "reason": "Neither party provided any evidence.",
+    "createdAt": "2030-03-05T09:00:00.000Z",
+    "issue": {
+      "id": "issue-1",
+      "title": "Export report as CSV",
+      "description": "Add a CSV export to the reports page with a download button.",
+      "category": "FEATURE",
+      "requiredSkills": [
+        "react"
+      ],
+      "clientId": "client-1",
+      "developerId": "developer-1",
+      "messages": [],
+      "submissions": [],
+      "testCases": [
+        {
+          "id": "tc-1",
+          "title": "CSV download",
+          "description": "Check CSV download",
+          "given": "a report",
+          "when": "exported",
+          "then": "the CSV downloads",
+          "priority": "HIGH",
+          "isApproved": true
+        }
+      ]
+    }
+  },
+  "mockResponse": {
+    "summary": "Neither side has posted messages, submissions, or a statement that supports a claim, so the record is empty.",
+    "suggestedClientBps": 5000,
+    "confidenceScore": 0.7,
+    "findings": [],
+    "missingEvidence": [
+      "Any message, submission, or statement from either party."
+    ],
+    "reasoning": "With no evidence from either side, the only neutral result is an even split. The report records the gap and makes no claim about either party."
+  },
+  "expect": {
+    "minClientBps": 4500,
+    "maxClientBps": 5500,
+    "validCitations": 0,
+    "droppedCitations": 0
+  }
+}

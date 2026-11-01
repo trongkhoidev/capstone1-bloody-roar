@@ -7,20 +7,26 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "bun run --cwd apps/web dev",
+    "dev": "PORT=${PORT:-4000} NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:${PORT:-4000}} bun run --cwd apps/web dev",
     "build": "bun run --cwd apps/web build",
     "start": "bun run --cwd apps/web start",
     "lint": "bun run --cwd apps/web lint",
-    "typecheck": "bun run --cwd apps/web typecheck",
+    "typecheck": "bun run --cwd apps/web typecheck && bun run --cwd apps/worker typecheck && bun x tsc --noEmit -p tsconfig.json",
+    "test:e2e:backend": "bun run test:e2e:local",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "db:generate": "bun run --cwd packages/database db:generate",
     "db:migrate": "bun run --cwd packages/database db:migrate",
     "db:studio": "bun run --cwd packages/database db:studio",
     "db:seed": "bun run --cwd packages/database db:seed",
+    "db:seed:demo": "bun run --cwd packages/database db:seed:demo",
+    "db:seed:local": "bun run --cwd packages/database db:seed:local",
     "db:push": "bun run --cwd packages/database db:push",
     "contracts:compile": "bun run --cwd apps/contracts compile",
     "contracts:test": "bun run --cwd apps/contracts test",
-    "contracts:deploy": "bun run --cwd apps/contracts deploy:local"
+    "contracts:deploy": "bun run --cwd apps/contracts deploy:local",
+    "worker:start": "bun run --cwd apps/worker start",
+    "worker:replay": "bun run --cwd apps/worker replay",
+    "test:e2e:local": "bun run tests/e2e/run-local.ts"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

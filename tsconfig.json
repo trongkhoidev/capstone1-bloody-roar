@@ -16,8 +16,10 @@
     "baseUrl": ".",
     "paths": {
       "@bloody-roar/shared": ["./packages/shared/src"],
-      "@bloody-roar/database": ["./packages/database/src"]
+      "@bloody-roar/shared/escrow": ["./packages/shared/src/escrow"],
+      "@bloody-roar/database": ["./packages/database/src"],
+      "@bloody-roar/database/test-guard": ["./packages/database/src/test-guard.ts"]
     }
   },
-  "exclude": ["node_modules", "**/node_modules", "**/.next", "**/dist"]
+  "exclude": ["node_modules", "**/node_modules", "**/.next", "**/dist", "apps", "**/test", "tests"]
 }

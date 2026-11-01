@@ -1,0 +1,3523 @@
+[
+  {
+    "key": "issue_001",
+    "clientRole": "user01",
+    "title": "Fix race condition in WebSocket session connection pool during reconnection #1",
+    "description": "When a client drops TCP connection and immediately reconnects within 200ms, the previous session socket is not cleaned up in Redis adapter. Causes duplicate event delivery and memory leak. Reproducible under `npm run test:socket-reconnect`.\n\nRepository: https://github.com/demo-org/bloody-service-1\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "BUG_FIX",
+    "bountyAmount": 1.8,
+    "difficulty": "Medium",
+    "timeEstimate": "3 days",
+    "deliveryDays": 4,
+    "githubRepo": "https://github.com/demo-org/bloody-service-1",
+    "requiredSkills": [
+      "Node.js",
+      "WebSocket",
+      "Redis",
+      "TypeScript"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Fix race condition in WebSocke",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Fix race condition in WebSocke",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_002",
+    "clientRole": "user02",
+    "title": "Sửa lỗi floating point precision khi tính toán platform fee 2.5% #2",
+    "description": "Hàm tính phí platformFeeBps ở frontend đang dùng Number thay vì BigNumber/Decimal, dẫn đến sai lệch 1 wei ở các khoản tiền lẻ. Cần chuyển hoàn toàn sang bigint theo chuẩn packages/shared/money.\n\nRepository: https://github.com/demo-org/bloody-service-2\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "BUG_FIX",
+    "bountyAmount": 3.1,
+    "difficulty": "Hard",
+    "timeEstimate": "4 days",
+    "deliveryDays": 4,
+    "githubRepo": "https://github.com/demo-org/bloody-service-2",
+    "requiredSkills": [
+      "TypeScript",
+      "BigInt",
+      "Ethers.js"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Sửa lỗi floating point precisi",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Sửa lỗi floating point precisi",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_003",
+    "clientRole": "user03",
+    "title": "Resolve database transaction deadlocks on concurrent funding reservations #3",
+    "description": "Concurrent requests to selectDeveloper on the same bounty produce PostgreSQL serialization error 40P01. Need to ensure explicit row-level locking (`SELECT ... FOR UPDATE`) on the issue record.\n\nRepository: https://github.com/demo-org/bloody-service-3\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "BUG_FIX",
+    "bountyAmount": 4.4,
+    "difficulty": "Expert",
+    "timeEstimate": "5 days",
+    "deliveryDays": 7,
+    "githubRepo": "https://github.com/demo-org/bloody-service-3",
+    "requiredSkills": [
+      "PostgreSQL",
+      "Prisma",
+      "Transactions"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Resolve database transaction d",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Resolve database transaction d",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_004",
+    "clientRole": "user04",
+    "title": "Fix race condition in WebSocket session connection pool during reconnection #4",
+    "description": "When a client drops TCP connection and immediately reconnects within 200ms, the previous session socket is not cleaned up in Redis adapter. Causes duplicate event delivery and memory leak. Reproducible under `npm run test:socket-reconnect`.\n\nRepository: https://github.com/demo-org/bloody-service-4\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "BUG_FIX",
+    "bountyAmount": 1.1,
+    "difficulty": "Easy",
+    "timeEstimate": "6 days",
+    "deliveryDays": 8,
+    "githubRepo": "https://github.com/demo-org/bloody-service-4",
+    "requiredSkills": [
+      "Node.js",
+      "WebSocket",
+      "Redis",
+      "TypeScript"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Fix race condition in WebSocke",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Fix race condition in WebSocke",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_005",
+    "clientRole": "user05",
+    "title": "Sửa lỗi floating point precision khi tính toán platform fee 2.5% #5",
+    "description": "Hàm tính phí platformFeeBps ở frontend đang dùng Number thay vì BigNumber/Decimal, dẫn đến sai lệch 1 wei ở các khoản tiền lẻ. Cần chuyển hoàn toàn sang bigint theo chuẩn packages/shared/money.\n\nRepository: https://github.com/demo-org/bloody-service-5\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "BUG_FIX",
+    "bountyAmount": 2.4,
+    "difficulty": "Medium",
+    "timeEstimate": "7 days",
+    "deliveryDays": 9,
+    "githubRepo": "https://github.com/demo-org/bloody-service-5",
+    "requiredSkills": [
+      "TypeScript",
+      "BigInt",
+      "Ethers.js"
+    ],
+    "hasAttachment": true,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Sửa lỗi floating point precisi",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Sửa lỗi floating point precisi",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_006",
+    "clientRole": "user06",
+    "title": "Resolve database transaction deadlocks on concurrent funding reservations #6",
+    "description": "Concurrent requests to selectDeveloper on the same bounty produce PostgreSQL serialization error 40P01. Need to ensure explicit row-level locking (`SELECT ... FOR UPDATE`) on the issue record.\n\nRepository: https://github.com/demo-org/bloody-service-6\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "BUG_FIX",
+    "bountyAmount": 3.7,
+    "difficulty": "Hard",
+    "timeEstimate": "8 days",
+    "deliveryDays": 10,
+    "githubRepo": "https://github.com/demo-org/bloody-service-6",
+    "requiredSkills": [
+      "PostgreSQL",
+      "Prisma",
+      "Transactions"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Resolve database transaction d",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Resolve database transaction d",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_007",
+    "clientRole": "user07",
+    "title": "Fix race condition in WebSocket session connection pool during reconnection #7",
+    "description": "When a client drops TCP connection and immediately reconnects within 200ms, the previous session socket is not cleaned up in Redis adapter. Causes duplicate event delivery and memory leak. Reproducible under `npm run test:socket-reconnect`.\n\nRepository: https://github.com/demo-org/bloody-service-7\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "BUG_FIX",
+    "bountyAmount": 5,
+    "difficulty": "Expert",
+    "timeEstimate": "9 days",
+    "deliveryDays": 11,
+    "githubRepo": "https://github.com/demo-org/bloody-service-7",
+    "requiredSkills": [
+      "Node.js",
+      "WebSocket",
+      "Redis",
+      "TypeScript"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Fix race condition in WebSocke",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Fix race condition in WebSocke",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_008",
+    "clientRole": "user08",
+    "title": "Sửa lỗi floating point precision khi tính toán platform fee 2.5% #8",
+    "description": "Hàm tính phí platformFeeBps ở frontend đang dùng Number thay vì BigNumber/Decimal, dẫn đến sai lệch 1 wei ở các khoản tiền lẻ. Cần chuyển hoàn toàn sang bigint theo chuẩn packages/shared/money.\n\nRepository: https://github.com/demo-org/bloody-service-8\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "BUG_FIX",
+    "bountyAmount": 1.7,
+    "difficulty": "Easy",
+    "timeEstimate": "10 days",
+    "deliveryDays": 12,
+    "githubRepo": "https://github.com/demo-org/bloody-service-8",
+    "requiredSkills": [
+      "TypeScript",
+      "BigInt",
+      "Ethers.js"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Sửa lỗi floating point precisi",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Sửa lỗi floating point precisi",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_009",
+    "clientRole": "user09",
+    "title": "Resolve database transaction deadlocks on concurrent funding reservations #9",
+    "description": "Concurrent requests to selectDeveloper on the same bounty produce PostgreSQL serialization error 40P01. Need to ensure explicit row-level locking (`SELECT ... FOR UPDATE`) on the issue record.\n\nRepository: https://github.com/demo-org/bloody-service-9\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "BUG_FIX",
+    "bountyAmount": 3,
+    "difficulty": "Medium",
+    "timeEstimate": "11 days",
+    "deliveryDays": 13,
+    "githubRepo": "https://github.com/demo-org/bloody-service-9",
+    "requiredSkills": [
+      "PostgreSQL",
+      "Prisma",
+      "Transactions"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Resolve database transaction d",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Resolve database transaction d",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_010",
+    "clientRole": "user10",
+    "title": "Fix race condition in WebSocket session connection pool during reconnection #10",
+    "description": "When a client drops TCP connection and immediately reconnects within 200ms, the previous session socket is not cleaned up in Redis adapter. Causes duplicate event delivery and memory leak. Reproducible under `npm run test:socket-reconnect`.\n\nRepository: https://github.com/demo-org/bloody-service-10\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "BUG_FIX",
+    "bountyAmount": 4.3,
+    "difficulty": "Hard",
+    "timeEstimate": "2 days",
+    "deliveryDays": 14,
+    "githubRepo": "https://github.com/demo-org/bloody-service-10",
+    "requiredSkills": [
+      "Node.js",
+      "WebSocket",
+      "Redis",
+      "TypeScript"
+    ],
+    "hasAttachment": true,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Fix race condition in WebSocke",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Fix race condition in WebSocke",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_011",
+    "clientRole": "user33",
+    "title": "Sửa lỗi floating point precision khi tính toán platform fee 2.5% #11",
+    "description": "Hàm tính phí platformFeeBps ở frontend đang dùng Number thay vì BigNumber/Decimal, dẫn đến sai lệch 1 wei ở các khoản tiền lẻ. Cần chuyển hoàn toàn sang bigint theo chuẩn packages/shared/money.\n\nRepository: https://github.com/demo-org/bloody-service-11\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "BUG_FIX",
+    "bountyAmount": 1,
+    "difficulty": "Expert",
+    "timeEstimate": "3 days",
+    "deliveryDays": 4,
+    "githubRepo": "https://github.com/demo-org/bloody-service-11",
+    "requiredSkills": [
+      "TypeScript",
+      "BigInt",
+      "Ethers.js"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Sửa lỗi floating point precisi",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Sửa lỗi floating point precisi",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_012",
+    "clientRole": "user34",
+    "title": "Resolve database transaction deadlocks on concurrent funding reservations #12",
+    "description": "Concurrent requests to selectDeveloper on the same bounty produce PostgreSQL serialization error 40P01. Need to ensure explicit row-level locking (`SELECT ... FOR UPDATE`) on the issue record.\n\nRepository: https://github.com/demo-org/bloody-service-12\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "BUG_FIX",
+    "bountyAmount": 2.3,
+    "difficulty": "Easy",
+    "timeEstimate": "4 days",
+    "deliveryDays": 5,
+    "githubRepo": "https://github.com/demo-org/bloody-service-12",
+    "requiredSkills": [
+      "PostgreSQL",
+      "Prisma",
+      "Transactions"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Resolve database transaction d",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Resolve database transaction d",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_013",
+    "clientRole": "user35",
+    "title": "Fix race condition in WebSocket session connection pool during reconnection #13",
+    "description": "When a client drops TCP connection and immediately reconnects within 200ms, the previous session socket is not cleaned up in Redis adapter. Causes duplicate event delivery and memory leak. Reproducible under `npm run test:socket-reconnect`.\n\nRepository: https://github.com/demo-org/bloody-service-13\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "BUG_FIX",
+    "bountyAmount": 3.6,
+    "difficulty": "Medium",
+    "timeEstimate": "5 days",
+    "deliveryDays": 6,
+    "githubRepo": "https://github.com/demo-org/bloody-service-13",
+    "requiredSkills": [
+      "Node.js",
+      "WebSocket",
+      "Redis",
+      "TypeScript"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Fix race condition in WebSocke",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Fix race condition in WebSocke",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_014",
+    "clientRole": "user36",
+    "title": "Sửa lỗi floating point precision khi tính toán platform fee 2.5% #14",
+    "description": "Hàm tính phí platformFeeBps ở frontend đang dùng Number thay vì BigNumber/Decimal, dẫn đến sai lệch 1 wei ở các khoản tiền lẻ. Cần chuyển hoàn toàn sang bigint theo chuẩn packages/shared/money.\n\nRepository: https://github.com/demo-org/bloody-service-14\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "BUG_FIX",
+    "bountyAmount": 4.9,
+    "difficulty": "Hard",
+    "timeEstimate": "6 days",
+    "deliveryDays": 7,
+    "githubRepo": "https://github.com/demo-org/bloody-service-14",
+    "requiredSkills": [
+      "TypeScript",
+      "BigInt",
+      "Ethers.js"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Sửa lỗi floating point precisi",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Sửa lỗi floating point precisi",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_015",
+    "clientRole": "user01",
+    "title": "Resolve database transaction deadlocks on concurrent funding reservations #15",
+    "description": "Concurrent requests to selectDeveloper on the same bounty produce PostgreSQL serialization error 40P01. Need to ensure explicit row-level locking (`SELECT ... FOR UPDATE`) on the issue record.\n\nRepository: https://github.com/demo-org/bloody-service-15\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "BUG_FIX",
+    "bountyAmount": 1.6,
+    "difficulty": "Expert",
+    "timeEstimate": "7 days",
+    "deliveryDays": 8,
+    "githubRepo": "https://github.com/demo-org/bloody-service-15",
+    "requiredSkills": [
+      "PostgreSQL",
+      "Prisma",
+      "Transactions"
+    ],
+    "hasAttachment": true,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Resolve database transaction d",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Resolve database transaction d",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_016",
+    "clientRole": "user02",
+    "title": "Fix race condition in WebSocket session connection pool during reconnection #16",
+    "description": "When a client drops TCP connection and immediately reconnects within 200ms, the previous session socket is not cleaned up in Redis adapter. Causes duplicate event delivery and memory leak. Reproducible under `npm run test:socket-reconnect`.\n\nRepository: https://github.com/demo-org/bloody-service-16\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "BUG_FIX",
+    "bountyAmount": 2.9,
+    "difficulty": "Easy",
+    "timeEstimate": "8 days",
+    "deliveryDays": 9,
+    "githubRepo": "https://github.com/demo-org/bloody-service-16",
+    "requiredSkills": [
+      "Node.js",
+      "WebSocket",
+      "Redis",
+      "TypeScript"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Fix race condition in WebSocke",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Fix race condition in WebSocke",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_017",
+    "clientRole": "user03",
+    "title": "Sửa lỗi floating point precision khi tính toán platform fee 2.5% #17",
+    "description": "Hàm tính phí platformFeeBps ở frontend đang dùng Number thay vì BigNumber/Decimal, dẫn đến sai lệch 1 wei ở các khoản tiền lẻ. Cần chuyển hoàn toàn sang bigint theo chuẩn packages/shared/money.\n\nRepository: https://github.com/demo-org/bloody-service-17\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "BUG_FIX",
+    "bountyAmount": 4.2,
+    "difficulty": "Medium",
+    "timeEstimate": "9 days",
+    "deliveryDays": 10,
+    "githubRepo": "https://github.com/demo-org/bloody-service-17",
+    "requiredSkills": [
+      "TypeScript",
+      "BigInt",
+      "Ethers.js"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Sửa lỗi floating point precisi",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Sửa lỗi floating point precisi",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_018",
+    "clientRole": "user04",
+    "title": "Tích hợp EIP-712 structured signing cho luồng nộp bằng chứng tranh chấp #18",
+    "description": "Hiện tại evidence manifest chỉ upload metadata JSON. Cần cho phép các bên ký hash của manifest qua `_signTypedData` để đảm bảo tính toàn vẹn và chống giả mạo khi gửi lên chain.\n\nRepository: https://github.com/demo-org/bloody-service-18\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "FEATURE",
+    "bountyAmount": 0.9,
+    "difficulty": "Hard",
+    "timeEstimate": "10 days",
+    "deliveryDays": 11,
+    "githubRepo": "https://github.com/demo-org/bloody-service-18",
+    "requiredSkills": [
+      "Solidity",
+      "EIP-712",
+      "TypeScript",
+      "Next.js"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Tích hợp EIP-712 structured si",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Tích hợp EIP-712 structured si",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_019",
+    "clientRole": "user05",
+    "title": "Implement optimistic UI update for instant task comments and reactions #19",
+    "description": "Add Apollo/TanStack Query optimistic cache mutation when user posts a comment. If API returns 429 or network error, revert smoothly and show retry indicator with toast notification.\n\nRepository: https://github.com/demo-org/bloody-service-19\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "FEATURE",
+    "bountyAmount": 2.2,
+    "difficulty": "Expert",
+    "timeEstimate": "11 days",
+    "deliveryDays": 12,
+    "githubRepo": "https://github.com/demo-org/bloody-service-19",
+    "requiredSkills": [
+      "React",
+      "TanStack Query",
+      "UI/UX"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Implement optimistic UI update",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Implement optimistic UI update",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_020",
+    "clientRole": "user06",
+    "title": "Xây dựng dashboard thống kê thu nhập và danh tiếng cho developer #20",
+    "description": "Tạo trang `/dashboard/earnings` hiển thị biểu đồ phân tích USDC đã nhận, số lượng bài hoàn thành đúng hạn, điểm uy tín trung bình và lịch sử thanh toán escrow on-chain.\n\nRepository: https://github.com/demo-org/bloody-service-20\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "FEATURE",
+    "bountyAmount": 3.5,
+    "difficulty": "Easy",
+    "timeEstimate": "2 days",
+    "deliveryDays": 13,
+    "githubRepo": "https://github.com/demo-org/bloody-service-20",
+    "requiredSkills": [
+      "Next.js",
+      "Recharts",
+      "Tailwind CSS"
+    ],
+    "hasAttachment": true,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Xây dựng dashboard thống kê th",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Xây dựng dashboard thống kê th",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_021",
+    "clientRole": "user07",
+    "title": "Tích hợp EIP-712 structured signing cho luồng nộp bằng chứng tranh chấp #21",
+    "description": "Hiện tại evidence manifest chỉ upload metadata JSON. Cần cho phép các bên ký hash của manifest qua `_signTypedData` để đảm bảo tính toàn vẹn và chống giả mạo khi gửi lên chain.\n\nRepository: https://github.com/demo-org/bloody-service-21\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "FEATURE",
+    "bountyAmount": 4.8,
+    "difficulty": "Medium",
+    "timeEstimate": "3 days",
+    "deliveryDays": 14,
+    "githubRepo": "https://github.com/demo-org/bloody-service-21",
+    "requiredSkills": [
+      "Solidity",
+      "EIP-712",
+      "TypeScript",
+      "Next.js"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Tích hợp EIP-712 structured si",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Tích hợp EIP-712 structured si",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_022",
+    "clientRole": "user08",
+    "title": "Implement optimistic UI update for instant task comments and reactions #22",
+    "description": "Add Apollo/TanStack Query optimistic cache mutation when user posts a comment. If API returns 429 or network error, revert smoothly and show retry indicator with toast notification.\n\nRepository: https://github.com/demo-org/bloody-service-22\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "FEATURE",
+    "bountyAmount": 1.5,
+    "difficulty": "Hard",
+    "timeEstimate": "4 days",
+    "deliveryDays": 4,
+    "githubRepo": "https://github.com/demo-org/bloody-service-22",
+    "requiredSkills": [
+      "React",
+      "TanStack Query",
+      "UI/UX"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Implement optimistic UI update",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Implement optimistic UI update",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_023",
+    "clientRole": "user09",
+    "title": "Xây dựng dashboard thống kê thu nhập và danh tiếng cho developer #23",
+    "description": "Tạo trang `/dashboard/earnings` hiển thị biểu đồ phân tích USDC đã nhận, số lượng bài hoàn thành đúng hạn, điểm uy tín trung bình và lịch sử thanh toán escrow on-chain.\n\nRepository: https://github.com/demo-org/bloody-service-23\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "FEATURE",
+    "bountyAmount": 2.8,
+    "difficulty": "Expert",
+    "timeEstimate": "5 days",
+    "deliveryDays": 5,
+    "githubRepo": "https://github.com/demo-org/bloody-service-23",
+    "requiredSkills": [
+      "Next.js",
+      "Recharts",
+      "Tailwind CSS"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Xây dựng dashboard thống kê th",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Xây dựng dashboard thống kê th",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_024",
+    "clientRole": "user10",
+    "title": "Tích hợp EIP-712 structured signing cho luồng nộp bằng chứng tranh chấp #24",
+    "description": "Hiện tại evidence manifest chỉ upload metadata JSON. Cần cho phép các bên ký hash của manifest qua `_signTypedData` để đảm bảo tính toàn vẹn và chống giả mạo khi gửi lên chain.\n\nRepository: https://github.com/demo-org/bloody-service-24\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "FEATURE",
+    "bountyAmount": 4.1,
+    "difficulty": "Easy",
+    "timeEstimate": "6 days",
+    "deliveryDays": 6,
+    "githubRepo": "https://github.com/demo-org/bloody-service-24",
+    "requiredSkills": [
+      "Solidity",
+      "EIP-712",
+      "TypeScript",
+      "Next.js"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Tích hợp EIP-712 structured si",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Tích hợp EIP-712 structured si",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_025",
+    "clientRole": "user33",
+    "title": "Implement optimistic UI update for instant task comments and reactions #25",
+    "description": "Add Apollo/TanStack Query optimistic cache mutation when user posts a comment. If API returns 429 or network error, revert smoothly and show retry indicator with toast notification.\n\nRepository: https://github.com/demo-org/bloody-service-25\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "FEATURE",
+    "bountyAmount": 0.8,
+    "difficulty": "Medium",
+    "timeEstimate": "7 days",
+    "deliveryDays": 7,
+    "githubRepo": "https://github.com/demo-org/bloody-service-25",
+    "requiredSkills": [
+      "React",
+      "TanStack Query",
+      "UI/UX"
+    ],
+    "hasAttachment": true,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Implement optimistic UI update",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Implement optimistic UI update",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_026",
+    "clientRole": "user34",
+    "title": "Xây dựng dashboard thống kê thu nhập và danh tiếng cho developer #26",
+    "description": "Tạo trang `/dashboard/earnings` hiển thị biểu đồ phân tích USDC đã nhận, số lượng bài hoàn thành đúng hạn, điểm uy tín trung bình và lịch sử thanh toán escrow on-chain.\n\nRepository: https://github.com/demo-org/bloody-service-26\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "FEATURE",
+    "bountyAmount": 2.1,
+    "difficulty": "Hard",
+    "timeEstimate": "8 days",
+    "deliveryDays": 8,
+    "githubRepo": "https://github.com/demo-org/bloody-service-26",
+    "requiredSkills": [
+      "Next.js",
+      "Recharts",
+      "Tailwind CSS"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Xây dựng dashboard thống kê th",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Xây dựng dashboard thống kê th",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_027",
+    "clientRole": "user35",
+    "title": "Tích hợp EIP-712 structured signing cho luồng nộp bằng chứng tranh chấp #27",
+    "description": "Hiện tại evidence manifest chỉ upload metadata JSON. Cần cho phép các bên ký hash của manifest qua `_signTypedData` để đảm bảo tính toàn vẹn và chống giả mạo khi gửi lên chain.\n\nRepository: https://github.com/demo-org/bloody-service-27\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "FEATURE",
+    "bountyAmount": 3.4,
+    "difficulty": "Expert",
+    "timeEstimate": "9 days",
+    "deliveryDays": 9,
+    "githubRepo": "https://github.com/demo-org/bloody-service-27",
+    "requiredSkills": [
+      "Solidity",
+      "EIP-712",
+      "TypeScript",
+      "Next.js"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Tích hợp EIP-712 structured si",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Tích hợp EIP-712 structured si",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_028",
+    "clientRole": "user36",
+    "title": "Implement optimistic UI update for instant task comments and reactions #28",
+    "description": "Add Apollo/TanStack Query optimistic cache mutation when user posts a comment. If API returns 429 or network error, revert smoothly and show retry indicator with toast notification.\n\nRepository: https://github.com/demo-org/bloody-service-28\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "FEATURE",
+    "bountyAmount": 4.7,
+    "difficulty": "Easy",
+    "timeEstimate": "10 days",
+    "deliveryDays": 10,
+    "githubRepo": "https://github.com/demo-org/bloody-service-28",
+    "requiredSkills": [
+      "React",
+      "TanStack Query",
+      "UI/UX"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Implement optimistic UI update",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Implement optimistic UI update",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_029",
+    "clientRole": "user01",
+    "title": "Xây dựng dashboard thống kê thu nhập và danh tiếng cho developer #29",
+    "description": "Tạo trang `/dashboard/earnings` hiển thị biểu đồ phân tích USDC đã nhận, số lượng bài hoàn thành đúng hạn, điểm uy tín trung bình và lịch sử thanh toán escrow on-chain.\n\nRepository: https://github.com/demo-org/bloody-service-29\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "FEATURE",
+    "bountyAmount": 1.4,
+    "difficulty": "Medium",
+    "timeEstimate": "11 days",
+    "deliveryDays": 11,
+    "githubRepo": "https://github.com/demo-org/bloody-service-29",
+    "requiredSkills": [
+      "Next.js",
+      "Recharts",
+      "Tailwind CSS"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Xây dựng dashboard thống kê th",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Xây dựng dashboard thống kê th",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_030",
+    "clientRole": "user02",
+    "title": "Tích hợp EIP-712 structured signing cho luồng nộp bằng chứng tranh chấp #30",
+    "description": "Hiện tại evidence manifest chỉ upload metadata JSON. Cần cho phép các bên ký hash của manifest qua `_signTypedData` để đảm bảo tính toàn vẹn và chống giả mạo khi gửi lên chain.\n\nRepository: https://github.com/demo-org/bloody-service-30\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "FEATURE",
+    "bountyAmount": 2.7,
+    "difficulty": "Hard",
+    "timeEstimate": "2 days",
+    "deliveryDays": 12,
+    "githubRepo": "https://github.com/demo-org/bloody-service-30",
+    "requiredSkills": [
+      "Solidity",
+      "EIP-712",
+      "TypeScript",
+      "Next.js"
+    ],
+    "hasAttachment": true,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Tích hợp EIP-712 structured si",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Tích hợp EIP-712 structured si",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_031",
+    "clientRole": "user03",
+    "title": "Implement optimistic UI update for instant task comments and reactions #31",
+    "description": "Add Apollo/TanStack Query optimistic cache mutation when user posts a comment. If API returns 429 or network error, revert smoothly and show retry indicator with toast notification.\n\nRepository: https://github.com/demo-org/bloody-service-31\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "FEATURE",
+    "bountyAmount": 4,
+    "difficulty": "Expert",
+    "timeEstimate": "3 days",
+    "deliveryDays": 13,
+    "githubRepo": "https://github.com/demo-org/bloody-service-31",
+    "requiredSkills": [
+      "React",
+      "TanStack Query",
+      "UI/UX"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Implement optimistic UI update",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Implement optimistic UI update",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_032",
+    "clientRole": "user04",
+    "title": "Xây dựng dashboard thống kê thu nhập và danh tiếng cho developer #32",
+    "description": "Tạo trang `/dashboard/earnings` hiển thị biểu đồ phân tích USDC đã nhận, số lượng bài hoàn thành đúng hạn, điểm uy tín trung bình và lịch sử thanh toán escrow on-chain.\n\nRepository: https://github.com/demo-org/bloody-service-32\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "FEATURE",
+    "bountyAmount": 0.7,
+    "difficulty": "Easy",
+    "timeEstimate": "4 days",
+    "deliveryDays": 14,
+    "githubRepo": "https://github.com/demo-org/bloody-service-32",
+    "requiredSkills": [
+      "Next.js",
+      "Recharts",
+      "Tailwind CSS"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Xây dựng dashboard thống kê th",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Xây dựng dashboard thống kê th",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_033",
+    "clientRole": "user05",
+    "title": "Tích hợp EIP-712 structured signing cho luồng nộp bằng chứng tranh chấp #33",
+    "description": "Hiện tại evidence manifest chỉ upload metadata JSON. Cần cho phép các bên ký hash của manifest qua `_signTypedData` để đảm bảo tính toàn vẹn và chống giả mạo khi gửi lên chain.\n\nRepository: https://github.com/demo-org/bloody-service-33\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "FEATURE",
+    "bountyAmount": 2,
+    "difficulty": "Medium",
+    "timeEstimate": "5 days",
+    "deliveryDays": 4,
+    "githubRepo": "https://github.com/demo-org/bloody-service-33",
+    "requiredSkills": [
+      "Solidity",
+      "EIP-712",
+      "TypeScript",
+      "Next.js"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Tích hợp EIP-712 structured si",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Tích hợp EIP-712 structured si",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_034",
+    "clientRole": "user06",
+    "title": "Implement optimistic UI update for instant task comments and reactions #34",
+    "description": "Add Apollo/TanStack Query optimistic cache mutation when user posts a comment. If API returns 429 or network error, revert smoothly and show retry indicator with toast notification.\n\nRepository: https://github.com/demo-org/bloody-service-34\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "FEATURE",
+    "bountyAmount": 3.3,
+    "difficulty": "Hard",
+    "timeEstimate": "6 days",
+    "deliveryDays": 5,
+    "githubRepo": "https://github.com/demo-org/bloody-service-34",
+    "requiredSkills": [
+      "React",
+      "TanStack Query",
+      "UI/UX"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Implement optimistic UI update",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Implement optimistic UI update",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_035",
+    "clientRole": "user07",
+    "title": "Add reentrancy guards and ERC-20 SafeERC20 wrapper on settlement distribution #35",
+    "description": "Review mutual settlement execution on BloodyRoarEscrow contract. Ensure `nonReentrant` modifier is strictly ordered and tokens with transfer hooks (ERC-777/ERC-1363) cannot hijack state.\n\nRepository: https://github.com/demo-org/bloody-service-35\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "SMART_CONTRACT",
+    "bountyAmount": 4.6,
+    "difficulty": "Expert",
+    "timeEstimate": "7 days",
+    "deliveryDays": 6,
+    "githubRepo": "https://github.com/demo-org/bloody-service-35",
+    "requiredSkills": [
+      "Solidity",
+      "Smart Contract",
+      "Hardhat"
+    ],
+    "hasAttachment": true,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Add reentrancy guards and ERC-",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Add reentrancy guards and ERC-",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_036",
+    "clientRole": "user08",
+    "title": "Optimize gas usage for multi-sig batch execution in Safe arbiter proxy #36",
+    "description": "The executeTransaction call on Safe v1.4.1 consumes ~85k gas. Profile calldata layout and storage reads to minimize L1 data fee on Base Sepolia.\n\nRepository: https://github.com/demo-org/bloody-service-36\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "SMART_CONTRACT",
+    "bountyAmount": 1.3,
+    "difficulty": "Easy",
+    "timeEstimate": "8 days",
+    "deliveryDays": 7,
+    "githubRepo": "https://github.com/demo-org/bloody-service-36",
+    "requiredSkills": [
+      "Solidity",
+      "Safe",
+      "Gas Optimization"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Optimize gas usage for multi-s",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Optimize gas usage for multi-s",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_037",
+    "clientRole": "user09",
+    "title": "Add reentrancy guards and ERC-20 SafeERC20 wrapper on settlement distribution #37",
+    "description": "Review mutual settlement execution on BloodyRoarEscrow contract. Ensure `nonReentrant` modifier is strictly ordered and tokens with transfer hooks (ERC-777/ERC-1363) cannot hijack state.\n\nRepository: https://github.com/demo-org/bloody-service-37\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "SMART_CONTRACT",
+    "bountyAmount": 2.6,
+    "difficulty": "Medium",
+    "timeEstimate": "9 days",
+    "deliveryDays": 8,
+    "githubRepo": "https://github.com/demo-org/bloody-service-37",
+    "requiredSkills": [
+      "Solidity",
+      "Smart Contract",
+      "Hardhat"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Add reentrancy guards and ERC-",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Add reentrancy guards and ERC-",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_038",
+    "clientRole": "user10",
+    "title": "Optimize gas usage for multi-sig batch execution in Safe arbiter proxy #38",
+    "description": "The executeTransaction call on Safe v1.4.1 consumes ~85k gas. Profile calldata layout and storage reads to minimize L1 data fee on Base Sepolia.\n\nRepository: https://github.com/demo-org/bloody-service-38\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "SMART_CONTRACT",
+    "bountyAmount": 3.9,
+    "difficulty": "Hard",
+    "timeEstimate": "10 days",
+    "deliveryDays": 9,
+    "githubRepo": "https://github.com/demo-org/bloody-service-38",
+    "requiredSkills": [
+      "Solidity",
+      "Safe",
+      "Gas Optimization"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Optimize gas usage for multi-s",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Optimize gas usage for multi-s",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_039",
+    "clientRole": "user33",
+    "title": "Add reentrancy guards and ERC-20 SafeERC20 wrapper on settlement distribution #39",
+    "description": "Review mutual settlement execution on BloodyRoarEscrow contract. Ensure `nonReentrant` modifier is strictly ordered and tokens with transfer hooks (ERC-777/ERC-1363) cannot hijack state.\n\nRepository: https://github.com/demo-org/bloody-service-39\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "SMART_CONTRACT",
+    "bountyAmount": 0.6,
+    "difficulty": "Expert",
+    "timeEstimate": "11 days",
+    "deliveryDays": 10,
+    "githubRepo": "https://github.com/demo-org/bloody-service-39",
+    "requiredSkills": [
+      "Solidity",
+      "Smart Contract",
+      "Hardhat"
+    ],
+    "hasAttachment": false,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Add reentrancy guards and ERC-",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Add reentrancy guards and ERC-",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_040",
+    "clientRole": "user34",
+    "title": "Optimize gas usage for multi-sig batch execution in Safe arbiter proxy #40",
+    "description": "The executeTransaction call on Safe v1.4.1 consumes ~85k gas. Profile calldata layout and storage reads to minimize L1 data fee on Base Sepolia.\n\nRepository: https://github.com/demo-org/bloody-service-40\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "SMART_CONTRACT",
+    "bountyAmount": 1.9,
+    "difficulty": "Easy",
+    "timeEstimate": "2 days",
+    "deliveryDays": 11,
+    "githubRepo": "https://github.com/demo-org/bloody-service-40",
+    "requiredSkills": [
+      "Solidity",
+      "Safe",
+      "Gas Optimization"
+    ],
+    "hasAttachment": true,
+    "testCases": [
+      {
+        "title": "Acceptance Criteria 1 for Optimize gas usage for multi-s",
+        "description": "Verify normal execution path meets all functional specifications",
+        "given": "User is authenticated and on correct network chain",
+        "when": "Action is triggered with valid parameters",
+        "then": "State transitions correctly and events are emitted",
+        "priority": "CRITICAL",
+        "isEdgeCase": false
+      },
+      {
+        "title": "Edge Case Validation for Optimize gas usage for multi-s",
+        "description": "Ensure invalid inputs and boundary conditions are rejected safely",
+        "given": "Input parameters exceed permitted bounds or timestamps are in past",
+        "when": "Action is submitted",
+        "then": "Request fails with descriptive GraphQL error code without side effects",
+        "priority": "NORMAL",
+        "isEdgeCase": true
+      }
+    ]
+  },
+  {
+    "key": "issue_041",
+    "clientRole": "user35",
+    "title": "Add reentrancy guards and ERC-20 SafeERC20 wrapper on settlement distribution #41",
+    "description": "Review mutual settlement execution on BloodyRoarEscrow contract. Ensure `nonReentrant` modifier is strictly ordered and tokens with transfer hooks (ERC-777/ERC-1363) cannot hijack state.\n\nRepository: https://github.com/demo-org/bloody-service-41\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "SMART_CONTRACT",
+    "bountyAmount": 3.2,
+    "difficulty": "Medium",
+    "timeEstimate": "3 days",
+    "deliveryDays": 12,
+    "githubRepo": "https://github.com/demo-org/bloody-service-41",
+    "requiredSkills": [
+      "Solidity",
+      "Smart Contract",
+      "Hardhat"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_042",
+    "clientRole": "user36",
+    "title": "Optimize gas usage for multi-sig batch execution in Safe arbiter proxy #42",
+    "description": "The executeTransaction call on Safe v1.4.1 consumes ~85k gas. Profile calldata layout and storage reads to minimize L1 data fee on Base Sepolia.\n\nRepository: https://github.com/demo-org/bloody-service-42\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "SMART_CONTRACT",
+    "bountyAmount": 4.5,
+    "difficulty": "Hard",
+    "timeEstimate": "4 days",
+    "deliveryDays": 13,
+    "githubRepo": "https://github.com/demo-org/bloody-service-42",
+    "requiredSkills": [
+      "Solidity",
+      "Safe",
+      "Gas Optimization"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_043",
+    "clientRole": "user01",
+    "title": "Add reentrancy guards and ERC-20 SafeERC20 wrapper on settlement distribution #43",
+    "description": "Review mutual settlement execution on BloodyRoarEscrow contract. Ensure `nonReentrant` modifier is strictly ordered and tokens with transfer hooks (ERC-777/ERC-1363) cannot hijack state.\n\nRepository: https://github.com/demo-org/bloody-service-43\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "SMART_CONTRACT",
+    "bountyAmount": 1.2,
+    "difficulty": "Expert",
+    "timeEstimate": "5 days",
+    "deliveryDays": 14,
+    "githubRepo": "https://github.com/demo-org/bloody-service-43",
+    "requiredSkills": [
+      "Solidity",
+      "Smart Contract",
+      "Hardhat"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_044",
+    "clientRole": "user02",
+    "title": "Optimize gas usage for multi-sig batch execution in Safe arbiter proxy #44",
+    "description": "The executeTransaction call on Safe v1.4.1 consumes ~85k gas. Profile calldata layout and storage reads to minimize L1 data fee on Base Sepolia.\n\nRepository: https://github.com/demo-org/bloody-service-44\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "SMART_CONTRACT",
+    "bountyAmount": 2.5,
+    "difficulty": "Easy",
+    "timeEstimate": "6 days",
+    "deliveryDays": 4,
+    "githubRepo": "https://github.com/demo-org/bloody-service-44",
+    "requiredSkills": [
+      "Solidity",
+      "Safe",
+      "Gas Optimization"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_045",
+    "clientRole": "user03",
+    "title": "Add reentrancy guards and ERC-20 SafeERC20 wrapper on settlement distribution #45",
+    "description": "Review mutual settlement execution on BloodyRoarEscrow contract. Ensure `nonReentrant` modifier is strictly ordered and tokens with transfer hooks (ERC-777/ERC-1363) cannot hijack state.\n\nRepository: https://github.com/demo-org/bloody-service-45\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "SMART_CONTRACT",
+    "bountyAmount": 3.8,
+    "difficulty": "Medium",
+    "timeEstimate": "7 days",
+    "deliveryDays": 5,
+    "githubRepo": "https://github.com/demo-org/bloody-service-45",
+    "requiredSkills": [
+      "Solidity",
+      "Smart Contract",
+      "Hardhat"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_046",
+    "clientRole": "user04",
+    "title": "Optimize gas usage for multi-sig batch execution in Safe arbiter proxy #46",
+    "description": "The executeTransaction call on Safe v1.4.1 consumes ~85k gas. Profile calldata layout and storage reads to minimize L1 data fee on Base Sepolia.\n\nRepository: https://github.com/demo-org/bloody-service-46\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "SMART_CONTRACT",
+    "bountyAmount": 0.5,
+    "difficulty": "Hard",
+    "timeEstimate": "8 days",
+    "deliveryDays": 6,
+    "githubRepo": "https://github.com/demo-org/bloody-service-46",
+    "requiredSkills": [
+      "Solidity",
+      "Safe",
+      "Gas Optimization"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_047",
+    "clientRole": "user05",
+    "title": "Add reentrancy guards and ERC-20 SafeERC20 wrapper on settlement distribution #47",
+    "description": "Review mutual settlement execution on BloodyRoarEscrow contract. Ensure `nonReentrant` modifier is strictly ordered and tokens with transfer hooks (ERC-777/ERC-1363) cannot hijack state.\n\nRepository: https://github.com/demo-org/bloody-service-47\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "SMART_CONTRACT",
+    "bountyAmount": 1.8,
+    "difficulty": "Expert",
+    "timeEstimate": "9 days",
+    "deliveryDays": 7,
+    "githubRepo": "https://github.com/demo-org/bloody-service-47",
+    "requiredSkills": [
+      "Solidity",
+      "Smart Contract",
+      "Hardhat"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_048",
+    "clientRole": "user06",
+    "title": "Optimize gas usage for multi-sig batch execution in Safe arbiter proxy #48",
+    "description": "The executeTransaction call on Safe v1.4.1 consumes ~85k gas. Profile calldata layout and storage reads to minimize L1 data fee on Base Sepolia.\n\nRepository: https://github.com/demo-org/bloody-service-48\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "SMART_CONTRACT",
+    "bountyAmount": 3.1,
+    "difficulty": "Easy",
+    "timeEstimate": "10 days",
+    "deliveryDays": 8,
+    "githubRepo": "https://github.com/demo-org/bloody-service-48",
+    "requiredSkills": [
+      "Solidity",
+      "Safe",
+      "Gas Optimization"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_049",
+    "clientRole": "user07",
+    "title": "Add reentrancy guards and ERC-20 SafeERC20 wrapper on settlement distribution #49",
+    "description": "Review mutual settlement execution on BloodyRoarEscrow contract. Ensure `nonReentrant` modifier is strictly ordered and tokens with transfer hooks (ERC-777/ERC-1363) cannot hijack state.\n\nRepository: https://github.com/demo-org/bloody-service-49\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "SMART_CONTRACT",
+    "bountyAmount": 4.4,
+    "difficulty": "Medium",
+    "timeEstimate": "11 days",
+    "deliveryDays": 9,
+    "githubRepo": "https://github.com/demo-org/bloody-service-49",
+    "requiredSkills": [
+      "Solidity",
+      "Smart Contract",
+      "Hardhat"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_050",
+    "clientRole": "user08",
+    "title": "Optimize gas usage for multi-sig batch execution in Safe arbiter proxy #50",
+    "description": "The executeTransaction call on Safe v1.4.1 consumes ~85k gas. Profile calldata layout and storage reads to minimize L1 data fee on Base Sepolia.\n\nRepository: https://github.com/demo-org/bloody-service-50\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "SMART_CONTRACT",
+    "bountyAmount": 1.1,
+    "difficulty": "Hard",
+    "timeEstimate": "2 days",
+    "deliveryDays": 10,
+    "githubRepo": "https://github.com/demo-org/bloody-service-50",
+    "requiredSkills": [
+      "Solidity",
+      "Safe",
+      "Gas Optimization"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_051",
+    "clientRole": "user09",
+    "title": "Add reentrancy guards and ERC-20 SafeERC20 wrapper on settlement distribution #51",
+    "description": "Review mutual settlement execution on BloodyRoarEscrow contract. Ensure `nonReentrant` modifier is strictly ordered and tokens with transfer hooks (ERC-777/ERC-1363) cannot hijack state.\n\nRepository: https://github.com/demo-org/bloody-service-51\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "SMART_CONTRACT",
+    "bountyAmount": 2.4,
+    "difficulty": "Expert",
+    "timeEstimate": "3 days",
+    "deliveryDays": 11,
+    "githubRepo": "https://github.com/demo-org/bloody-service-51",
+    "requiredSkills": [
+      "Solidity",
+      "Smart Contract",
+      "Hardhat"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_052",
+    "clientRole": "user10",
+    "title": "Audit time-lock boundary edge cases in 7-day review timeout and challenge window #52",
+    "description": "Conduct comprehensive formal verification on review timeout timestamps. Verify that boundary condition `block.timestamp >= deadline + 7 days` is immune to 15-second miner skew.\n\nRepository: https://github.com/demo-org/bloody-service-52\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "AUDIT",
+    "bountyAmount": 3.7,
+    "difficulty": "Easy",
+    "timeEstimate": "4 days",
+    "deliveryDays": 12,
+    "githubRepo": "https://github.com/demo-org/bloody-service-52",
+    "requiredSkills": [
+      "Security Audit",
+      "Slither",
+      "Foundry"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_053",
+    "clientRole": "user33",
+    "title": "Kiểm tra bảo mật API endpoint upload và xác thực chữ ký SIWE #53",
+    "description": "Đánh giá khả năng replay attack của SIWE nonce, thời gian hết hạn JWT session, và kiểm tra quyền truy cập file nhạy cảm trong bucket local uploads.\n\nRepository: https://github.com/demo-org/bloody-service-53\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "AUDIT",
+    "bountyAmount": 5,
+    "difficulty": "Medium",
+    "timeEstimate": "5 days",
+    "deliveryDays": 13,
+    "githubRepo": "https://github.com/demo-org/bloody-service-53",
+    "requiredSkills": [
+      "Security",
+      "JWT",
+      "SIWE",
+      "Web3"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_054",
+    "clientRole": "user34",
+    "title": "Audit time-lock boundary edge cases in 7-day review timeout and challenge window #54",
+    "description": "Conduct comprehensive formal verification on review timeout timestamps. Verify that boundary condition `block.timestamp >= deadline + 7 days` is immune to 15-second miner skew.\n\nRepository: https://github.com/demo-org/bloody-service-54\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "AUDIT",
+    "bountyAmount": 1.7,
+    "difficulty": "Hard",
+    "timeEstimate": "6 days",
+    "deliveryDays": 14,
+    "githubRepo": "https://github.com/demo-org/bloody-service-54",
+    "requiredSkills": [
+      "Security Audit",
+      "Slither",
+      "Foundry"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_055",
+    "clientRole": "user35",
+    "title": "Kiểm tra bảo mật API endpoint upload và xác thực chữ ký SIWE #55",
+    "description": "Đánh giá khả năng replay attack của SIWE nonce, thời gian hết hạn JWT session, và kiểm tra quyền truy cập file nhạy cảm trong bucket local uploads.\n\nRepository: https://github.com/demo-org/bloody-service-55\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "AUDIT",
+    "bountyAmount": 3,
+    "difficulty": "Expert",
+    "timeEstimate": "7 days",
+    "deliveryDays": 4,
+    "githubRepo": "https://github.com/demo-org/bloody-service-55",
+    "requiredSkills": [
+      "Security",
+      "JWT",
+      "SIWE",
+      "Web3"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_056",
+    "clientRole": "user36",
+    "title": "Audit time-lock boundary edge cases in 7-day review timeout and challenge window #56",
+    "description": "Conduct comprehensive formal verification on review timeout timestamps. Verify that boundary condition `block.timestamp >= deadline + 7 days` is immune to 15-second miner skew.\n\nRepository: https://github.com/demo-org/bloody-service-56\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "AUDIT",
+    "bountyAmount": 4.3,
+    "difficulty": "Easy",
+    "timeEstimate": "8 days",
+    "deliveryDays": 5,
+    "githubRepo": "https://github.com/demo-org/bloody-service-56",
+    "requiredSkills": [
+      "Security Audit",
+      "Slither",
+      "Foundry"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_057",
+    "clientRole": "user01",
+    "title": "Kiểm tra bảo mật API endpoint upload và xác thực chữ ký SIWE #57",
+    "description": "Đánh giá khả năng replay attack của SIWE nonce, thời gian hết hạn JWT session, và kiểm tra quyền truy cập file nhạy cảm trong bucket local uploads.\n\nRepository: https://github.com/demo-org/bloody-service-57\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "AUDIT",
+    "bountyAmount": 1,
+    "difficulty": "Medium",
+    "timeEstimate": "9 days",
+    "deliveryDays": 6,
+    "githubRepo": "https://github.com/demo-org/bloody-service-57",
+    "requiredSkills": [
+      "Security",
+      "JWT",
+      "SIWE",
+      "Web3"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_058",
+    "clientRole": "user02",
+    "title": "Audit time-lock boundary edge cases in 7-day review timeout and challenge window #58",
+    "description": "Conduct comprehensive formal verification on review timeout timestamps. Verify that boundary condition `block.timestamp >= deadline + 7 days` is immune to 15-second miner skew.\n\nRepository: https://github.com/demo-org/bloody-service-58\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "AUDIT",
+    "bountyAmount": 2.3,
+    "difficulty": "Hard",
+    "timeEstimate": "10 days",
+    "deliveryDays": 7,
+    "githubRepo": "https://github.com/demo-org/bloody-service-58",
+    "requiredSkills": [
+      "Security Audit",
+      "Slither",
+      "Foundry"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_059",
+    "clientRole": "user03",
+    "title": "Kiểm tra bảo mật API endpoint upload và xác thực chữ ký SIWE #59",
+    "description": "Đánh giá khả năng replay attack của SIWE nonce, thời gian hết hạn JWT session, và kiểm tra quyền truy cập file nhạy cảm trong bucket local uploads.\n\nRepository: https://github.com/demo-org/bloody-service-59\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "AUDIT",
+    "bountyAmount": 3.6,
+    "difficulty": "Expert",
+    "timeEstimate": "11 days",
+    "deliveryDays": 8,
+    "githubRepo": "https://github.com/demo-org/bloody-service-59",
+    "requiredSkills": [
+      "Security",
+      "JWT",
+      "SIWE",
+      "Web3"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_060",
+    "clientRole": "user04",
+    "title": "Audit time-lock boundary edge cases in 7-day review timeout and challenge window #60",
+    "description": "Conduct comprehensive formal verification on review timeout timestamps. Verify that boundary condition `block.timestamp >= deadline + 7 days` is immune to 15-second miner skew.\n\nRepository: https://github.com/demo-org/bloody-service-60\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "AUDIT",
+    "bountyAmount": 4.9,
+    "difficulty": "Easy",
+    "timeEstimate": "2 days",
+    "deliveryDays": 9,
+    "githubRepo": "https://github.com/demo-org/bloody-service-60",
+    "requiredSkills": [
+      "Security Audit",
+      "Slither",
+      "Foundry"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_061",
+    "clientRole": "user05",
+    "title": "Kiểm tra bảo mật API endpoint upload và xác thực chữ ký SIWE #61",
+    "description": "Đánh giá khả năng replay attack của SIWE nonce, thời gian hết hạn JWT session, và kiểm tra quyền truy cập file nhạy cảm trong bucket local uploads.\n\nRepository: https://github.com/demo-org/bloody-service-61\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "AUDIT",
+    "bountyAmount": 1.6,
+    "difficulty": "Medium",
+    "timeEstimate": "3 days",
+    "deliveryDays": 10,
+    "githubRepo": "https://github.com/demo-org/bloody-service-61",
+    "requiredSkills": [
+      "Security",
+      "JWT",
+      "SIWE",
+      "Web3"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_062",
+    "clientRole": "user06",
+    "title": "Audit time-lock boundary edge cases in 7-day review timeout and challenge window #62",
+    "description": "Conduct comprehensive formal verification on review timeout timestamps. Verify that boundary condition `block.timestamp >= deadline + 7 days` is immune to 15-second miner skew.\n\nRepository: https://github.com/demo-org/bloody-service-62\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "AUDIT",
+    "bountyAmount": 2.9,
+    "difficulty": "Hard",
+    "timeEstimate": "4 days",
+    "deliveryDays": 11,
+    "githubRepo": "https://github.com/demo-org/bloody-service-62",
+    "requiredSkills": [
+      "Security Audit",
+      "Slither",
+      "Foundry"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_063",
+    "clientRole": "user07",
+    "title": "Kiểm tra bảo mật API endpoint upload và xác thực chữ ký SIWE #63",
+    "description": "Đánh giá khả năng replay attack của SIWE nonce, thời gian hết hạn JWT session, và kiểm tra quyền truy cập file nhạy cảm trong bucket local uploads.\n\nRepository: https://github.com/demo-org/bloody-service-63\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "AUDIT",
+    "bountyAmount": 4.2,
+    "difficulty": "Expert",
+    "timeEstimate": "5 days",
+    "deliveryDays": 12,
+    "githubRepo": "https://github.com/demo-org/bloody-service-63",
+    "requiredSkills": [
+      "Security",
+      "JWT",
+      "SIWE",
+      "Web3"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_064",
+    "clientRole": "user08",
+    "title": "Audit time-lock boundary edge cases in 7-day review timeout and challenge window #64",
+    "description": "Conduct comprehensive formal verification on review timeout timestamps. Verify that boundary condition `block.timestamp >= deadline + 7 days` is immune to 15-second miner skew.\n\nRepository: https://github.com/demo-org/bloody-service-64\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "AUDIT",
+    "bountyAmount": 0.9,
+    "difficulty": "Easy",
+    "timeEstimate": "6 days",
+    "deliveryDays": 13,
+    "githubRepo": "https://github.com/demo-org/bloody-service-64",
+    "requiredSkills": [
+      "Security Audit",
+      "Slither",
+      "Foundry"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_065",
+    "clientRole": "user09",
+    "title": "Kiểm tra bảo mật API endpoint upload và xác thực chữ ký SIWE #65",
+    "description": "Đánh giá khả năng replay attack của SIWE nonce, thời gian hết hạn JWT session, và kiểm tra quyền truy cập file nhạy cảm trong bucket local uploads.\n\nRepository: https://github.com/demo-org/bloody-service-65\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "AUDIT",
+    "bountyAmount": 2.2,
+    "difficulty": "Medium",
+    "timeEstimate": "7 days",
+    "deliveryDays": 14,
+    "githubRepo": "https://github.com/demo-org/bloody-service-65",
+    "requiredSkills": [
+      "Security",
+      "JWT",
+      "SIWE",
+      "Web3"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_066",
+    "clientRole": "user10",
+    "title": "Audit time-lock boundary edge cases in 7-day review timeout and challenge window #66",
+    "description": "Conduct comprehensive formal verification on review timeout timestamps. Verify that boundary condition `block.timestamp >= deadline + 7 days` is immune to 15-second miner skew.\n\nRepository: https://github.com/demo-org/bloody-service-66\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "AUDIT",
+    "bountyAmount": 3.5,
+    "difficulty": "Hard",
+    "timeEstimate": "8 days",
+    "deliveryDays": 4,
+    "githubRepo": "https://github.com/demo-org/bloody-service-66",
+    "requiredSkills": [
+      "Security Audit",
+      "Slither",
+      "Foundry"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_067",
+    "clientRole": "user33",
+    "title": "Kiểm tra bảo mật API endpoint upload và xác thực chữ ký SIWE #67",
+    "description": "Đánh giá khả năng replay attack của SIWE nonce, thời gian hết hạn JWT session, và kiểm tra quyền truy cập file nhạy cảm trong bucket local uploads.\n\nRepository: https://github.com/demo-org/bloody-service-67\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "AUDIT",
+    "bountyAmount": 4.8,
+    "difficulty": "Expert",
+    "timeEstimate": "9 days",
+    "deliveryDays": 5,
+    "githubRepo": "https://github.com/demo-org/bloody-service-67",
+    "requiredSkills": [
+      "Security",
+      "JWT",
+      "SIWE",
+      "Web3"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_068",
+    "clientRole": "user34",
+    "title": "Audit time-lock boundary edge cases in 7-day review timeout and challenge window #68",
+    "description": "Conduct comprehensive formal verification on review timeout timestamps. Verify that boundary condition `block.timestamp >= deadline + 7 days` is immune to 15-second miner skew.\n\nRepository: https://github.com/demo-org/bloody-service-68\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "AUDIT",
+    "bountyAmount": 1.5,
+    "difficulty": "Easy",
+    "timeEstimate": "10 days",
+    "deliveryDays": 6,
+    "githubRepo": "https://github.com/demo-org/bloody-service-68",
+    "requiredSkills": [
+      "Security Audit",
+      "Slither",
+      "Foundry"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_069",
+    "clientRole": "user35",
+    "title": "Thiết kế responsive modal chi tiết tranh chấp và tiến trình bỏ phiếu Safe #69",
+    "description": "Xây dựng giao diện xem timeline tranh chấp theo thiết kế Claude Design: hiển thị rõ giai đoạn EVIDENCE_PERIOD, INITIAL_RULING, CHALLENGE và FINAL_RULING với countdown timer thực tế.\n\nRepository: https://github.com/demo-org/bloody-service-69\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "UI_UX",
+    "bountyAmount": 2.8,
+    "difficulty": "Medium",
+    "timeEstimate": "11 days",
+    "deliveryDays": 7,
+    "githubRepo": "https://github.com/demo-org/bloody-service-69",
+    "requiredSkills": [
+      "Figma",
+      "Tailwind CSS",
+      "Framer Motion"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_070",
+    "clientRole": "user36",
+    "title": "Refactor marketplace filter bar with multi-category selection and URL query sync #70",
+    "description": "Improve issue discovery experience. Filter bar should support multiple categories, skill tags, bounty range slider, and sync seamlessly with `useSearchParams`.\n\nRepository: https://github.com/demo-org/bloody-service-70\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "UI_UX",
+    "bountyAmount": 4.1,
+    "difficulty": "Hard",
+    "timeEstimate": "2 days",
+    "deliveryDays": 8,
+    "githubRepo": "https://github.com/demo-org/bloody-service-70",
+    "requiredSkills": [
+      "React",
+      "Next.js",
+      "Accessibility"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_071",
+    "clientRole": "user01",
+    "title": "Thiết kế responsive modal chi tiết tranh chấp và tiến trình bỏ phiếu Safe #71",
+    "description": "Xây dựng giao diện xem timeline tranh chấp theo thiết kế Claude Design: hiển thị rõ giai đoạn EVIDENCE_PERIOD, INITIAL_RULING, CHALLENGE và FINAL_RULING với countdown timer thực tế.\n\nRepository: https://github.com/demo-org/bloody-service-71\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "UI_UX",
+    "bountyAmount": 0.8,
+    "difficulty": "Expert",
+    "timeEstimate": "3 days",
+    "deliveryDays": 9,
+    "githubRepo": "https://github.com/demo-org/bloody-service-71",
+    "requiredSkills": [
+      "Figma",
+      "Tailwind CSS",
+      "Framer Motion"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_072",
+    "clientRole": "user02",
+    "title": "Refactor marketplace filter bar with multi-category selection and URL query sync #72",
+    "description": "Improve issue discovery experience. Filter bar should support multiple categories, skill tags, bounty range slider, and sync seamlessly with `useSearchParams`.\n\nRepository: https://github.com/demo-org/bloody-service-72\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "UI_UX",
+    "bountyAmount": 2.1,
+    "difficulty": "Easy",
+    "timeEstimate": "4 days",
+    "deliveryDays": 10,
+    "githubRepo": "https://github.com/demo-org/bloody-service-72",
+    "requiredSkills": [
+      "React",
+      "Next.js",
+      "Accessibility"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_073",
+    "clientRole": "user03",
+    "title": "Thiết kế responsive modal chi tiết tranh chấp và tiến trình bỏ phiếu Safe #73",
+    "description": "Xây dựng giao diện xem timeline tranh chấp theo thiết kế Claude Design: hiển thị rõ giai đoạn EVIDENCE_PERIOD, INITIAL_RULING, CHALLENGE và FINAL_RULING với countdown timer thực tế.\n\nRepository: https://github.com/demo-org/bloody-service-73\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "UI_UX",
+    "bountyAmount": 3.4,
+    "difficulty": "Medium",
+    "timeEstimate": "5 days",
+    "deliveryDays": 11,
+    "githubRepo": "https://github.com/demo-org/bloody-service-73",
+    "requiredSkills": [
+      "Figma",
+      "Tailwind CSS",
+      "Framer Motion"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_074",
+    "clientRole": "user04",
+    "title": "Refactor marketplace filter bar with multi-category selection and URL query sync #74",
+    "description": "Improve issue discovery experience. Filter bar should support multiple categories, skill tags, bounty range slider, and sync seamlessly with `useSearchParams`.\n\nRepository: https://github.com/demo-org/bloody-service-74\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "UI_UX",
+    "bountyAmount": 4.7,
+    "difficulty": "Hard",
+    "timeEstimate": "6 days",
+    "deliveryDays": 12,
+    "githubRepo": "https://github.com/demo-org/bloody-service-74",
+    "requiredSkills": [
+      "React",
+      "Next.js",
+      "Accessibility"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_075",
+    "clientRole": "user05",
+    "title": "Thiết kế responsive modal chi tiết tranh chấp và tiến trình bỏ phiếu Safe #75",
+    "description": "Xây dựng giao diện xem timeline tranh chấp theo thiết kế Claude Design: hiển thị rõ giai đoạn EVIDENCE_PERIOD, INITIAL_RULING, CHALLENGE và FINAL_RULING với countdown timer thực tế.\n\nRepository: https://github.com/demo-org/bloody-service-75\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "UI_UX",
+    "bountyAmount": 1.4,
+    "difficulty": "Expert",
+    "timeEstimate": "7 days",
+    "deliveryDays": 13,
+    "githubRepo": "https://github.com/demo-org/bloody-service-75",
+    "requiredSkills": [
+      "Figma",
+      "Tailwind CSS",
+      "Framer Motion"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_076",
+    "clientRole": "user06",
+    "title": "Refactor marketplace filter bar with multi-category selection and URL query sync #76",
+    "description": "Improve issue discovery experience. Filter bar should support multiple categories, skill tags, bounty range slider, and sync seamlessly with `useSearchParams`.\n\nRepository: https://github.com/demo-org/bloody-service-76\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "UI_UX",
+    "bountyAmount": 2.7,
+    "difficulty": "Easy",
+    "timeEstimate": "8 days",
+    "deliveryDays": 14,
+    "githubRepo": "https://github.com/demo-org/bloody-service-76",
+    "requiredSkills": [
+      "React",
+      "Next.js",
+      "Accessibility"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_077",
+    "clientRole": "user07",
+    "title": "Thiết kế responsive modal chi tiết tranh chấp và tiến trình bỏ phiếu Safe #77",
+    "description": "Xây dựng giao diện xem timeline tranh chấp theo thiết kế Claude Design: hiển thị rõ giai đoạn EVIDENCE_PERIOD, INITIAL_RULING, CHALLENGE và FINAL_RULING với countdown timer thực tế.\n\nRepository: https://github.com/demo-org/bloody-service-77\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "UI_UX",
+    "bountyAmount": 4,
+    "difficulty": "Medium",
+    "timeEstimate": "9 days",
+    "deliveryDays": 4,
+    "githubRepo": "https://github.com/demo-org/bloody-service-77",
+    "requiredSkills": [
+      "Figma",
+      "Tailwind CSS",
+      "Framer Motion"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_078",
+    "clientRole": "user08",
+    "title": "Refactor marketplace filter bar with multi-category selection and URL query sync #78",
+    "description": "Improve issue discovery experience. Filter bar should support multiple categories, skill tags, bounty range slider, and sync seamlessly with `useSearchParams`.\n\nRepository: https://github.com/demo-org/bloody-service-78\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "UI_UX",
+    "bountyAmount": 0.7,
+    "difficulty": "Hard",
+    "timeEstimate": "10 days",
+    "deliveryDays": 5,
+    "githubRepo": "https://github.com/demo-org/bloody-service-78",
+    "requiredSkills": [
+      "React",
+      "Next.js",
+      "Accessibility"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_079",
+    "clientRole": "user09",
+    "title": "Thiết kế responsive modal chi tiết tranh chấp và tiến trình bỏ phiếu Safe #79",
+    "description": "Xây dựng giao diện xem timeline tranh chấp theo thiết kế Claude Design: hiển thị rõ giai đoạn EVIDENCE_PERIOD, INITIAL_RULING, CHALLENGE và FINAL_RULING với countdown timer thực tế.\n\nRepository: https://github.com/demo-org/bloody-service-79\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "UI_UX",
+    "bountyAmount": 2,
+    "difficulty": "Expert",
+    "timeEstimate": "11 days",
+    "deliveryDays": 6,
+    "githubRepo": "https://github.com/demo-org/bloody-service-79",
+    "requiredSkills": [
+      "Figma",
+      "Tailwind CSS",
+      "Framer Motion"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_080",
+    "clientRole": "user10",
+    "title": "Refactor marketplace filter bar with multi-category selection and URL query sync #80",
+    "description": "Improve issue discovery experience. Filter bar should support multiple categories, skill tags, bounty range slider, and sync seamlessly with `useSearchParams`.\n\nRepository: https://github.com/demo-org/bloody-service-80\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "UI_UX",
+    "bountyAmount": 3.3,
+    "difficulty": "Easy",
+    "timeEstimate": "2 days",
+    "deliveryDays": 7,
+    "githubRepo": "https://github.com/demo-org/bloody-service-80",
+    "requiredSkills": [
+      "React",
+      "Next.js",
+      "Accessibility"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_081",
+    "clientRole": "user33",
+    "title": "Thiết kế responsive modal chi tiết tranh chấp và tiến trình bỏ phiếu Safe #81",
+    "description": "Xây dựng giao diện xem timeline tranh chấp theo thiết kế Claude Design: hiển thị rõ giai đoạn EVIDENCE_PERIOD, INITIAL_RULING, CHALLENGE và FINAL_RULING với countdown timer thực tế.\n\nRepository: https://github.com/demo-org/bloody-service-81\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "UI_UX",
+    "bountyAmount": 4.6,
+    "difficulty": "Medium",
+    "timeEstimate": "3 days",
+    "deliveryDays": 8,
+    "githubRepo": "https://github.com/demo-org/bloody-service-81",
+    "requiredSkills": [
+      "Figma",
+      "Tailwind CSS",
+      "Framer Motion"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_082",
+    "clientRole": "user34",
+    "title": "Refactor marketplace filter bar with multi-category selection and URL query sync #82",
+    "description": "Improve issue discovery experience. Filter bar should support multiple categories, skill tags, bounty range slider, and sync seamlessly with `useSearchParams`.\n\nRepository: https://github.com/demo-org/bloody-service-82\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "UI_UX",
+    "bountyAmount": 1.3,
+    "difficulty": "Hard",
+    "timeEstimate": "4 days",
+    "deliveryDays": 9,
+    "githubRepo": "https://github.com/demo-org/bloody-service-82",
+    "requiredSkills": [
+      "React",
+      "Next.js",
+      "Accessibility"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_083",
+    "clientRole": "user35",
+    "title": "Thiết kế responsive modal chi tiết tranh chấp và tiến trình bỏ phiếu Safe #83",
+    "description": "Xây dựng giao diện xem timeline tranh chấp theo thiết kế Claude Design: hiển thị rõ giai đoạn EVIDENCE_PERIOD, INITIAL_RULING, CHALLENGE và FINAL_RULING với countdown timer thực tế.\n\nRepository: https://github.com/demo-org/bloody-service-83\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "UI_UX",
+    "bountyAmount": 2.6,
+    "difficulty": "Expert",
+    "timeEstimate": "5 days",
+    "deliveryDays": 10,
+    "githubRepo": "https://github.com/demo-org/bloody-service-83",
+    "requiredSkills": [
+      "Figma",
+      "Tailwind CSS",
+      "Framer Motion"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_084",
+    "clientRole": "user36",
+    "title": "Refactor marketplace filter bar with multi-category selection and URL query sync #84",
+    "description": "Improve issue discovery experience. Filter bar should support multiple categories, skill tags, bounty range slider, and sync seamlessly with `useSearchParams`.\n\nRepository: https://github.com/demo-org/bloody-service-84\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "UI_UX",
+    "bountyAmount": 3.9,
+    "difficulty": "Easy",
+    "timeEstimate": "6 days",
+    "deliveryDays": 11,
+    "githubRepo": "https://github.com/demo-org/bloody-service-84",
+    "requiredSkills": [
+      "React",
+      "Next.js",
+      "Accessibility"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_085",
+    "clientRole": "user01",
+    "title": "Thiết kế responsive modal chi tiết tranh chấp và tiến trình bỏ phiếu Safe #85",
+    "description": "Xây dựng giao diện xem timeline tranh chấp theo thiết kế Claude Design: hiển thị rõ giai đoạn EVIDENCE_PERIOD, INITIAL_RULING, CHALLENGE và FINAL_RULING với countdown timer thực tế.\n\nRepository: https://github.com/demo-org/bloody-service-85\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "UI_UX",
+    "bountyAmount": 0.6,
+    "difficulty": "Medium",
+    "timeEstimate": "7 days",
+    "deliveryDays": 12,
+    "githubRepo": "https://github.com/demo-org/bloody-service-85",
+    "requiredSkills": [
+      "Figma",
+      "Tailwind CSS",
+      "Framer Motion"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_086",
+    "clientRole": "user02",
+    "title": "Xây dựng model AI đề xuất developer phù hợp dựa trên mô tả bài toán và kỹ năng #86",
+    "description": "Tạo pipeline embedding từ issue title + description, tính toán cosine similarity với developer profile vector để xếp hạng ứng viên trong tab Review Applicants.\n\nRepository: https://github.com/demo-org/bloody-service-86\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DATA_SCIENCE",
+    "bountyAmount": 1.9,
+    "difficulty": "Hard",
+    "timeEstimate": "8 days",
+    "deliveryDays": 13,
+    "githubRepo": "https://github.com/demo-org/bloody-service-86",
+    "requiredSkills": [
+      "Python",
+      "FastAPI",
+      "Vector Search",
+      "Embeddings"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_087",
+    "clientRole": "user03",
+    "title": "Detect anomalous bidding patterns and spam submissions with clustering #87",
+    "description": "Implement automated heuristic scoring to detect Sybil accounts bidding on bounties without relevant portfolio history. Flag high-risk submissions for admin review.\n\nRepository: https://github.com/demo-org/bloody-service-87\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DATA_SCIENCE",
+    "bountyAmount": 3.2,
+    "difficulty": "Expert",
+    "timeEstimate": "9 days",
+    "deliveryDays": 14,
+    "githubRepo": "https://github.com/demo-org/bloody-service-87",
+    "requiredSkills": [
+      "Python",
+      "Scikit-learn",
+      "Data Science"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_088",
+    "clientRole": "user04",
+    "title": "Xây dựng model AI đề xuất developer phù hợp dựa trên mô tả bài toán và kỹ năng #88",
+    "description": "Tạo pipeline embedding từ issue title + description, tính toán cosine similarity với developer profile vector để xếp hạng ứng viên trong tab Review Applicants.\n\nRepository: https://github.com/demo-org/bloody-service-88\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DATA_SCIENCE",
+    "bountyAmount": 4.5,
+    "difficulty": "Easy",
+    "timeEstimate": "10 days",
+    "deliveryDays": 4,
+    "githubRepo": "https://github.com/demo-org/bloody-service-88",
+    "requiredSkills": [
+      "Python",
+      "FastAPI",
+      "Vector Search",
+      "Embeddings"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_089",
+    "clientRole": "user05",
+    "title": "Detect anomalous bidding patterns and spam submissions with clustering #89",
+    "description": "Implement automated heuristic scoring to detect Sybil accounts bidding on bounties without relevant portfolio history. Flag high-risk submissions for admin review.\n\nRepository: https://github.com/demo-org/bloody-service-89\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DATA_SCIENCE",
+    "bountyAmount": 1.2,
+    "difficulty": "Medium",
+    "timeEstimate": "11 days",
+    "deliveryDays": 5,
+    "githubRepo": "https://github.com/demo-org/bloody-service-89",
+    "requiredSkills": [
+      "Python",
+      "Scikit-learn",
+      "Data Science"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_090",
+    "clientRole": "user06",
+    "title": "Xây dựng model AI đề xuất developer phù hợp dựa trên mô tả bài toán và kỹ năng #90",
+    "description": "Tạo pipeline embedding từ issue title + description, tính toán cosine similarity với developer profile vector để xếp hạng ứng viên trong tab Review Applicants.\n\nRepository: https://github.com/demo-org/bloody-service-90\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DATA_SCIENCE",
+    "bountyAmount": 2.5,
+    "difficulty": "Hard",
+    "timeEstimate": "2 days",
+    "deliveryDays": 6,
+    "githubRepo": "https://github.com/demo-org/bloody-service-90",
+    "requiredSkills": [
+      "Python",
+      "FastAPI",
+      "Vector Search",
+      "Embeddings"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_091",
+    "clientRole": "user07",
+    "title": "Detect anomalous bidding patterns and spam submissions with clustering #91",
+    "description": "Implement automated heuristic scoring to detect Sybil accounts bidding on bounties without relevant portfolio history. Flag high-risk submissions for admin review.\n\nRepository: https://github.com/demo-org/bloody-service-91\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DATA_SCIENCE",
+    "bountyAmount": 3.8,
+    "difficulty": "Expert",
+    "timeEstimate": "3 days",
+    "deliveryDays": 7,
+    "githubRepo": "https://github.com/demo-org/bloody-service-91",
+    "requiredSkills": [
+      "Python",
+      "Scikit-learn",
+      "Data Science"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_092",
+    "clientRole": "user08",
+    "title": "Xây dựng model AI đề xuất developer phù hợp dựa trên mô tả bài toán và kỹ năng #92",
+    "description": "Tạo pipeline embedding từ issue title + description, tính toán cosine similarity với developer profile vector để xếp hạng ứng viên trong tab Review Applicants.\n\nRepository: https://github.com/demo-org/bloody-service-92\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DATA_SCIENCE",
+    "bountyAmount": 0.5,
+    "difficulty": "Easy",
+    "timeEstimate": "4 days",
+    "deliveryDays": 8,
+    "githubRepo": "https://github.com/demo-org/bloody-service-92",
+    "requiredSkills": [
+      "Python",
+      "FastAPI",
+      "Vector Search",
+      "Embeddings"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_093",
+    "clientRole": "user09",
+    "title": "Detect anomalous bidding patterns and spam submissions with clustering #93",
+    "description": "Implement automated heuristic scoring to detect Sybil accounts bidding on bounties without relevant portfolio history. Flag high-risk submissions for admin review.\n\nRepository: https://github.com/demo-org/bloody-service-93\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DATA_SCIENCE",
+    "bountyAmount": 1.8,
+    "difficulty": "Medium",
+    "timeEstimate": "5 days",
+    "deliveryDays": 9,
+    "githubRepo": "https://github.com/demo-org/bloody-service-93",
+    "requiredSkills": [
+      "Python",
+      "Scikit-learn",
+      "Data Science"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_094",
+    "clientRole": "user10",
+    "title": "Xây dựng model AI đề xuất developer phù hợp dựa trên mô tả bài toán và kỹ năng #94",
+    "description": "Tạo pipeline embedding từ issue title + description, tính toán cosine similarity với developer profile vector để xếp hạng ứng viên trong tab Review Applicants.\n\nRepository: https://github.com/demo-org/bloody-service-94\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DATA_SCIENCE",
+    "bountyAmount": 3.1,
+    "difficulty": "Hard",
+    "timeEstimate": "6 days",
+    "deliveryDays": 10,
+    "githubRepo": "https://github.com/demo-org/bloody-service-94",
+    "requiredSkills": [
+      "Python",
+      "FastAPI",
+      "Vector Search",
+      "Embeddings"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_095",
+    "clientRole": "user33",
+    "title": "Detect anomalous bidding patterns and spam submissions with clustering #95",
+    "description": "Implement automated heuristic scoring to detect Sybil accounts bidding on bounties without relevant portfolio history. Flag high-risk submissions for admin review.\n\nRepository: https://github.com/demo-org/bloody-service-95\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DATA_SCIENCE",
+    "bountyAmount": 4.4,
+    "difficulty": "Expert",
+    "timeEstimate": "7 days",
+    "deliveryDays": 11,
+    "githubRepo": "https://github.com/demo-org/bloody-service-95",
+    "requiredSkills": [
+      "Python",
+      "Scikit-learn",
+      "Data Science"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_096",
+    "clientRole": "user34",
+    "title": "Xây dựng model AI đề xuất developer phù hợp dựa trên mô tả bài toán và kỹ năng #96",
+    "description": "Tạo pipeline embedding từ issue title + description, tính toán cosine similarity với developer profile vector để xếp hạng ứng viên trong tab Review Applicants.\n\nRepository: https://github.com/demo-org/bloody-service-96\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DATA_SCIENCE",
+    "bountyAmount": 1.1,
+    "difficulty": "Easy",
+    "timeEstimate": "8 days",
+    "deliveryDays": 12,
+    "githubRepo": "https://github.com/demo-org/bloody-service-96",
+    "requiredSkills": [
+      "Python",
+      "FastAPI",
+      "Vector Search",
+      "Embeddings"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_097",
+    "clientRole": "user35",
+    "title": "Detect anomalous bidding patterns and spam submissions with clustering #97",
+    "description": "Implement automated heuristic scoring to detect Sybil accounts bidding on bounties without relevant portfolio history. Flag high-risk submissions for admin review.\n\nRepository: https://github.com/demo-org/bloody-service-97\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DATA_SCIENCE",
+    "bountyAmount": 2.4,
+    "difficulty": "Medium",
+    "timeEstimate": "9 days",
+    "deliveryDays": 13,
+    "githubRepo": "https://github.com/demo-org/bloody-service-97",
+    "requiredSkills": [
+      "Python",
+      "Scikit-learn",
+      "Data Science"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_098",
+    "clientRole": "user36",
+    "title": "Xây dựng model AI đề xuất developer phù hợp dựa trên mô tả bài toán và kỹ năng #98",
+    "description": "Tạo pipeline embedding từ issue title + description, tính toán cosine similarity với developer profile vector để xếp hạng ứng viên trong tab Review Applicants.\n\nRepository: https://github.com/demo-org/bloody-service-98\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DATA_SCIENCE",
+    "bountyAmount": 3.7,
+    "difficulty": "Hard",
+    "timeEstimate": "10 days",
+    "deliveryDays": 14,
+    "githubRepo": "https://github.com/demo-org/bloody-service-98",
+    "requiredSkills": [
+      "Python",
+      "FastAPI",
+      "Vector Search",
+      "Embeddings"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_099",
+    "clientRole": "user01",
+    "title": "Detect anomalous bidding patterns and spam submissions with clustering #99",
+    "description": "Implement automated heuristic scoring to detect Sybil accounts bidding on bounties without relevant portfolio history. Flag high-risk submissions for admin review.\n\nRepository: https://github.com/demo-org/bloody-service-99\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DATA_SCIENCE",
+    "bountyAmount": 5,
+    "difficulty": "Expert",
+    "timeEstimate": "11 days",
+    "deliveryDays": 4,
+    "githubRepo": "https://github.com/demo-org/bloody-service-99",
+    "requiredSkills": [
+      "Python",
+      "Scikit-learn",
+      "Data Science"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_100",
+    "clientRole": "user02",
+    "title": "Xây dựng model AI đề xuất developer phù hợp dựa trên mô tả bài toán và kỹ năng #100",
+    "description": "Tạo pipeline embedding từ issue title + description, tính toán cosine similarity với developer profile vector để xếp hạng ứng viên trong tab Review Applicants.\n\nRepository: https://github.com/demo-org/bloody-service-100\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DATA_SCIENCE",
+    "bountyAmount": 1.7,
+    "difficulty": "Easy",
+    "timeEstimate": "2 days",
+    "deliveryDays": 5,
+    "githubRepo": "https://github.com/demo-org/bloody-service-100",
+    "requiredSkills": [
+      "Python",
+      "FastAPI",
+      "Vector Search",
+      "Embeddings"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_101",
+    "clientRole": "user03",
+    "title": "Detect anomalous bidding patterns and spam submissions with clustering #101",
+    "description": "Implement automated heuristic scoring to detect Sybil accounts bidding on bounties without relevant portfolio history. Flag high-risk submissions for admin review.\n\nRepository: https://github.com/demo-org/bloody-service-101\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DATA_SCIENCE",
+    "bountyAmount": 3,
+    "difficulty": "Medium",
+    "timeEstimate": "3 days",
+    "deliveryDays": 6,
+    "githubRepo": "https://github.com/demo-org/bloody-service-101",
+    "requiredSkills": [
+      "Python",
+      "Scikit-learn",
+      "Data Science"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_102",
+    "clientRole": "user04",
+    "title": "Xây dựng model AI đề xuất developer phù hợp dựa trên mô tả bài toán và kỹ năng #102",
+    "description": "Tạo pipeline embedding từ issue title + description, tính toán cosine similarity với developer profile vector để xếp hạng ứng viên trong tab Review Applicants.\n\nRepository: https://github.com/demo-org/bloody-service-102\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DATA_SCIENCE",
+    "bountyAmount": 4.3,
+    "difficulty": "Hard",
+    "timeEstimate": "4 days",
+    "deliveryDays": 7,
+    "githubRepo": "https://github.com/demo-org/bloody-service-102",
+    "requiredSkills": [
+      "Python",
+      "FastAPI",
+      "Vector Search",
+      "Embeddings"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_103",
+    "clientRole": "user05",
+    "title": "Setup automated GitHub Actions workflow for Base Sepolia fork testing #103",
+    "description": "Configure CI pipeline to run Hardhat fork tests against Base Sepolia RPC. Include caching for Foundry dependencies and automated report upload to artifact storage.\n\nRepository: https://github.com/demo-org/bloody-service-103\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DEVOPS",
+    "bountyAmount": 1,
+    "difficulty": "Expert",
+    "timeEstimate": "5 days",
+    "deliveryDays": 8,
+    "githubRepo": "https://github.com/demo-org/bloody-service-103",
+    "requiredSkills": [
+      "GitHub Actions",
+      "Docker",
+      "DevOps"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_104",
+    "clientRole": "user06",
+    "title": "Tối ưu hóa cấu hình Docker multi-stage build cho Next.js 14 standalone output #104",
+    "description": "Giảm kích thước Docker image của web server từ 1.2GB xuống dưới 180MB bằng cách dùng alpine image và chỉ copy các file cần thiết từ `.next/standalone`.\n\nRepository: https://github.com/demo-org/bloody-service-104\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DEVOPS",
+    "bountyAmount": 2.3,
+    "difficulty": "Easy",
+    "timeEstimate": "6 days",
+    "deliveryDays": 9,
+    "githubRepo": "https://github.com/demo-org/bloody-service-104",
+    "requiredSkills": [
+      "Docker",
+      "Alpine",
+      "CI/CD"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_105",
+    "clientRole": "user07",
+    "title": "Setup automated GitHub Actions workflow for Base Sepolia fork testing #105",
+    "description": "Configure CI pipeline to run Hardhat fork tests against Base Sepolia RPC. Include caching for Foundry dependencies and automated report upload to artifact storage.\n\nRepository: https://github.com/demo-org/bloody-service-105\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DEVOPS",
+    "bountyAmount": 3.6,
+    "difficulty": "Medium",
+    "timeEstimate": "7 days",
+    "deliveryDays": 10,
+    "githubRepo": "https://github.com/demo-org/bloody-service-105",
+    "requiredSkills": [
+      "GitHub Actions",
+      "Docker",
+      "DevOps"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_106",
+    "clientRole": "user08",
+    "title": "Tối ưu hóa cấu hình Docker multi-stage build cho Next.js 14 standalone output #106",
+    "description": "Giảm kích thước Docker image của web server từ 1.2GB xuống dưới 180MB bằng cách dùng alpine image và chỉ copy các file cần thiết từ `.next/standalone`.\n\nRepository: https://github.com/demo-org/bloody-service-106\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DEVOPS",
+    "bountyAmount": 4.9,
+    "difficulty": "Hard",
+    "timeEstimate": "8 days",
+    "deliveryDays": 11,
+    "githubRepo": "https://github.com/demo-org/bloody-service-106",
+    "requiredSkills": [
+      "Docker",
+      "Alpine",
+      "CI/CD"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_107",
+    "clientRole": "user09",
+    "title": "Setup automated GitHub Actions workflow for Base Sepolia fork testing #107",
+    "description": "Configure CI pipeline to run Hardhat fork tests against Base Sepolia RPC. Include caching for Foundry dependencies and automated report upload to artifact storage.\n\nRepository: https://github.com/demo-org/bloody-service-107\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DEVOPS",
+    "bountyAmount": 1.6,
+    "difficulty": "Expert",
+    "timeEstimate": "9 days",
+    "deliveryDays": 12,
+    "githubRepo": "https://github.com/demo-org/bloody-service-107",
+    "requiredSkills": [
+      "GitHub Actions",
+      "Docker",
+      "DevOps"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_108",
+    "clientRole": "user10",
+    "title": "Tối ưu hóa cấu hình Docker multi-stage build cho Next.js 14 standalone output #108",
+    "description": "Giảm kích thước Docker image của web server từ 1.2GB xuống dưới 180MB bằng cách dùng alpine image và chỉ copy các file cần thiết từ `.next/standalone`.\n\nRepository: https://github.com/demo-org/bloody-service-108\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DEVOPS",
+    "bountyAmount": 2.9,
+    "difficulty": "Easy",
+    "timeEstimate": "10 days",
+    "deliveryDays": 13,
+    "githubRepo": "https://github.com/demo-org/bloody-service-108",
+    "requiredSkills": [
+      "Docker",
+      "Alpine",
+      "CI/CD"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_109",
+    "clientRole": "user33",
+    "title": "Setup automated GitHub Actions workflow for Base Sepolia fork testing #109",
+    "description": "Configure CI pipeline to run Hardhat fork tests against Base Sepolia RPC. Include caching for Foundry dependencies and automated report upload to artifact storage.\n\nRepository: https://github.com/demo-org/bloody-service-109\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DEVOPS",
+    "bountyAmount": 4.2,
+    "difficulty": "Medium",
+    "timeEstimate": "11 days",
+    "deliveryDays": 14,
+    "githubRepo": "https://github.com/demo-org/bloody-service-109",
+    "requiredSkills": [
+      "GitHub Actions",
+      "Docker",
+      "DevOps"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_110",
+    "clientRole": "user34",
+    "title": "Tối ưu hóa cấu hình Docker multi-stage build cho Next.js 14 standalone output #110",
+    "description": "Giảm kích thước Docker image của web server từ 1.2GB xuống dưới 180MB bằng cách dùng alpine image và chỉ copy các file cần thiết từ `.next/standalone`.\n\nRepository: https://github.com/demo-org/bloody-service-110\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DEVOPS",
+    "bountyAmount": 0.9,
+    "difficulty": "Hard",
+    "timeEstimate": "2 days",
+    "deliveryDays": 4,
+    "githubRepo": "https://github.com/demo-org/bloody-service-110",
+    "requiredSkills": [
+      "Docker",
+      "Alpine",
+      "CI/CD"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_111",
+    "clientRole": "user35",
+    "title": "Setup automated GitHub Actions workflow for Base Sepolia fork testing #111",
+    "description": "Configure CI pipeline to run Hardhat fork tests against Base Sepolia RPC. Include caching for Foundry dependencies and automated report upload to artifact storage.\n\nRepository: https://github.com/demo-org/bloody-service-111\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DEVOPS",
+    "bountyAmount": 2.2,
+    "difficulty": "Expert",
+    "timeEstimate": "3 days",
+    "deliveryDays": 5,
+    "githubRepo": "https://github.com/demo-org/bloody-service-111",
+    "requiredSkills": [
+      "GitHub Actions",
+      "Docker",
+      "DevOps"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_112",
+    "clientRole": "user36",
+    "title": "Tối ưu hóa cấu hình Docker multi-stage build cho Next.js 14 standalone output #112",
+    "description": "Giảm kích thước Docker image của web server từ 1.2GB xuống dưới 180MB bằng cách dùng alpine image và chỉ copy các file cần thiết từ `.next/standalone`.\n\nRepository: https://github.com/demo-org/bloody-service-112\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DEVOPS",
+    "bountyAmount": 3.5,
+    "difficulty": "Easy",
+    "timeEstimate": "4 days",
+    "deliveryDays": 6,
+    "githubRepo": "https://github.com/demo-org/bloody-service-112",
+    "requiredSkills": [
+      "Docker",
+      "Alpine",
+      "CI/CD"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_113",
+    "clientRole": "user01",
+    "title": "Setup automated GitHub Actions workflow for Base Sepolia fork testing #113",
+    "description": "Configure CI pipeline to run Hardhat fork tests against Base Sepolia RPC. Include caching for Foundry dependencies and automated report upload to artifact storage.\n\nRepository: https://github.com/demo-org/bloody-service-113\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DEVOPS",
+    "bountyAmount": 4.8,
+    "difficulty": "Medium",
+    "timeEstimate": "5 days",
+    "deliveryDays": 7,
+    "githubRepo": "https://github.com/demo-org/bloody-service-113",
+    "requiredSkills": [
+      "GitHub Actions",
+      "Docker",
+      "DevOps"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_114",
+    "clientRole": "user02",
+    "title": "Tối ưu hóa cấu hình Docker multi-stage build cho Next.js 14 standalone output #114",
+    "description": "Giảm kích thước Docker image của web server từ 1.2GB xuống dưới 180MB bằng cách dùng alpine image và chỉ copy các file cần thiết từ `.next/standalone`.\n\nRepository: https://github.com/demo-org/bloody-service-114\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DEVOPS",
+    "bountyAmount": 1.5,
+    "difficulty": "Hard",
+    "timeEstimate": "6 days",
+    "deliveryDays": 8,
+    "githubRepo": "https://github.com/demo-org/bloody-service-114",
+    "requiredSkills": [
+      "Docker",
+      "Alpine",
+      "CI/CD"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_115",
+    "clientRole": "user03",
+    "title": "Setup automated GitHub Actions workflow for Base Sepolia fork testing #115",
+    "description": "Configure CI pipeline to run Hardhat fork tests against Base Sepolia RPC. Include caching for Foundry dependencies and automated report upload to artifact storage.\n\nRepository: https://github.com/demo-org/bloody-service-115\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DEVOPS",
+    "bountyAmount": 2.8,
+    "difficulty": "Expert",
+    "timeEstimate": "7 days",
+    "deliveryDays": 9,
+    "githubRepo": "https://github.com/demo-org/bloody-service-115",
+    "requiredSkills": [
+      "GitHub Actions",
+      "Docker",
+      "DevOps"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_116",
+    "clientRole": "user04",
+    "title": "Tối ưu hóa cấu hình Docker multi-stage build cho Next.js 14 standalone output #116",
+    "description": "Giảm kích thước Docker image của web server từ 1.2GB xuống dưới 180MB bằng cách dùng alpine image và chỉ copy các file cần thiết từ `.next/standalone`.\n\nRepository: https://github.com/demo-org/bloody-service-116\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DEVOPS",
+    "bountyAmount": 4.1,
+    "difficulty": "Easy",
+    "timeEstimate": "8 days",
+    "deliveryDays": 10,
+    "githubRepo": "https://github.com/demo-org/bloody-service-116",
+    "requiredSkills": [
+      "Docker",
+      "Alpine",
+      "CI/CD"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_117",
+    "clientRole": "user05",
+    "title": "Setup automated GitHub Actions workflow for Base Sepolia fork testing #117",
+    "description": "Configure CI pipeline to run Hardhat fork tests against Base Sepolia RPC. Include caching for Foundry dependencies and automated report upload to artifact storage.\n\nRepository: https://github.com/demo-org/bloody-service-117\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DEVOPS",
+    "bountyAmount": 0.8,
+    "difficulty": "Medium",
+    "timeEstimate": "9 days",
+    "deliveryDays": 11,
+    "githubRepo": "https://github.com/demo-org/bloody-service-117",
+    "requiredSkills": [
+      "GitHub Actions",
+      "Docker",
+      "DevOps"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_118",
+    "clientRole": "user06",
+    "title": "Tối ưu hóa cấu hình Docker multi-stage build cho Next.js 14 standalone output #118",
+    "description": "Giảm kích thước Docker image của web server từ 1.2GB xuống dưới 180MB bằng cách dùng alpine image và chỉ copy các file cần thiết từ `.next/standalone`.\n\nRepository: https://github.com/demo-org/bloody-service-118\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DEVOPS",
+    "bountyAmount": 2.1,
+    "difficulty": "Hard",
+    "timeEstimate": "10 days",
+    "deliveryDays": 12,
+    "githubRepo": "https://github.com/demo-org/bloody-service-118",
+    "requiredSkills": [
+      "Docker",
+      "Alpine",
+      "CI/CD"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_119",
+    "clientRole": "user07",
+    "title": "Viết tài liệu hướng dẫn tích hợp Smart Contract Escrow cho đối tác thứ ba #119",
+    "description": "Soạn thảo tài liệu API chi tiết: cách tạo reservation, chuẩn EIP-712 funding intent, lắng nghe sự kiện Deposited và giải quyết tranh chấp qua Safe SDK.\n\nRepository: https://github.com/demo-org/bloody-service-119\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DOCUMENTATION",
+    "bountyAmount": 3.4,
+    "difficulty": "Expert",
+    "timeEstimate": "11 days",
+    "deliveryDays": 13,
+    "githubRepo": "https://github.com/demo-org/bloody-service-119",
+    "requiredSkills": [
+      "Technical Writing",
+      "Markdown",
+      "OpenAPI"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_120",
+    "clientRole": "user08",
+    "title": "Document complete local development workflow with Hardhat and PostgreSQL #120",
+    "description": "Provide comprehensive guide for onboarding new backend developers: Docker setup, migrations, local seed, AI mock server and running E2E suites.\n\nRepository: https://github.com/demo-org/bloody-service-120\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DOCUMENTATION",
+    "bountyAmount": 4.7,
+    "difficulty": "Easy",
+    "timeEstimate": "2 days",
+    "deliveryDays": 14,
+    "githubRepo": "https://github.com/demo-org/bloody-service-120",
+    "requiredSkills": [
+      "Documentation",
+      "Developer Experience"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_121",
+    "clientRole": "user09",
+    "title": "Viết tài liệu hướng dẫn tích hợp Smart Contract Escrow cho đối tác thứ ba #121",
+    "description": "Soạn thảo tài liệu API chi tiết: cách tạo reservation, chuẩn EIP-712 funding intent, lắng nghe sự kiện Deposited và giải quyết tranh chấp qua Safe SDK.\n\nRepository: https://github.com/demo-org/bloody-service-121\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DOCUMENTATION",
+    "bountyAmount": 1.4,
+    "difficulty": "Medium",
+    "timeEstimate": "3 days",
+    "deliveryDays": 4,
+    "githubRepo": "https://github.com/demo-org/bloody-service-121",
+    "requiredSkills": [
+      "Technical Writing",
+      "Markdown",
+      "OpenAPI"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_122",
+    "clientRole": "user10",
+    "title": "Document complete local development workflow with Hardhat and PostgreSQL #122",
+    "description": "Provide comprehensive guide for onboarding new backend developers: Docker setup, migrations, local seed, AI mock server and running E2E suites.\n\nRepository: https://github.com/demo-org/bloody-service-122\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DOCUMENTATION",
+    "bountyAmount": 2.7,
+    "difficulty": "Hard",
+    "timeEstimate": "4 days",
+    "deliveryDays": 5,
+    "githubRepo": "https://github.com/demo-org/bloody-service-122",
+    "requiredSkills": [
+      "Documentation",
+      "Developer Experience"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_123",
+    "clientRole": "user33",
+    "title": "Viết tài liệu hướng dẫn tích hợp Smart Contract Escrow cho đối tác thứ ba #123",
+    "description": "Soạn thảo tài liệu API chi tiết: cách tạo reservation, chuẩn EIP-712 funding intent, lắng nghe sự kiện Deposited và giải quyết tranh chấp qua Safe SDK.\n\nRepository: https://github.com/demo-org/bloody-service-123\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DOCUMENTATION",
+    "bountyAmount": 4,
+    "difficulty": "Expert",
+    "timeEstimate": "5 days",
+    "deliveryDays": 6,
+    "githubRepo": "https://github.com/demo-org/bloody-service-123",
+    "requiredSkills": [
+      "Technical Writing",
+      "Markdown",
+      "OpenAPI"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_124",
+    "clientRole": "user34",
+    "title": "Document complete local development workflow with Hardhat and PostgreSQL #124",
+    "description": "Provide comprehensive guide for onboarding new backend developers: Docker setup, migrations, local seed, AI mock server and running E2E suites.\n\nRepository: https://github.com/demo-org/bloody-service-124\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DOCUMENTATION",
+    "bountyAmount": 0.7,
+    "difficulty": "Easy",
+    "timeEstimate": "6 days",
+    "deliveryDays": 7,
+    "githubRepo": "https://github.com/demo-org/bloody-service-124",
+    "requiredSkills": [
+      "Documentation",
+      "Developer Experience"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_125",
+    "clientRole": "user35",
+    "title": "Viết tài liệu hướng dẫn tích hợp Smart Contract Escrow cho đối tác thứ ba #125",
+    "description": "Soạn thảo tài liệu API chi tiết: cách tạo reservation, chuẩn EIP-712 funding intent, lắng nghe sự kiện Deposited và giải quyết tranh chấp qua Safe SDK.\n\nRepository: https://github.com/demo-org/bloody-service-125\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DOCUMENTATION",
+    "bountyAmount": 2,
+    "difficulty": "Medium",
+    "timeEstimate": "7 days",
+    "deliveryDays": 8,
+    "githubRepo": "https://github.com/demo-org/bloody-service-125",
+    "requiredSkills": [
+      "Technical Writing",
+      "Markdown",
+      "OpenAPI"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_126",
+    "clientRole": "user36",
+    "title": "Document complete local development workflow with Hardhat and PostgreSQL #126",
+    "description": "Provide comprehensive guide for onboarding new backend developers: Docker setup, migrations, local seed, AI mock server and running E2E suites.\n\nRepository: https://github.com/demo-org/bloody-service-126\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DOCUMENTATION",
+    "bountyAmount": 3.3,
+    "difficulty": "Hard",
+    "timeEstimate": "8 days",
+    "deliveryDays": 9,
+    "githubRepo": "https://github.com/demo-org/bloody-service-126",
+    "requiredSkills": [
+      "Documentation",
+      "Developer Experience"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_127",
+    "clientRole": "user01",
+    "title": "Viết tài liệu hướng dẫn tích hợp Smart Contract Escrow cho đối tác thứ ba #127",
+    "description": "Soạn thảo tài liệu API chi tiết: cách tạo reservation, chuẩn EIP-712 funding intent, lắng nghe sự kiện Deposited và giải quyết tranh chấp qua Safe SDK.\n\nRepository: https://github.com/demo-org/bloody-service-127\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DOCUMENTATION",
+    "bountyAmount": 4.6,
+    "difficulty": "Expert",
+    "timeEstimate": "9 days",
+    "deliveryDays": 10,
+    "githubRepo": "https://github.com/demo-org/bloody-service-127",
+    "requiredSkills": [
+      "Technical Writing",
+      "Markdown",
+      "OpenAPI"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_128",
+    "clientRole": "user02",
+    "title": "Document complete local development workflow with Hardhat and PostgreSQL #128",
+    "description": "Provide comprehensive guide for onboarding new backend developers: Docker setup, migrations, local seed, AI mock server and running E2E suites.\n\nRepository: https://github.com/demo-org/bloody-service-128\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DOCUMENTATION",
+    "bountyAmount": 1.3,
+    "difficulty": "Easy",
+    "timeEstimate": "10 days",
+    "deliveryDays": 11,
+    "githubRepo": "https://github.com/demo-org/bloody-service-128",
+    "requiredSkills": [
+      "Documentation",
+      "Developer Experience"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_129",
+    "clientRole": "user03",
+    "title": "Viết tài liệu hướng dẫn tích hợp Smart Contract Escrow cho đối tác thứ ba #129",
+    "description": "Soạn thảo tài liệu API chi tiết: cách tạo reservation, chuẩn EIP-712 funding intent, lắng nghe sự kiện Deposited và giải quyết tranh chấp qua Safe SDK.\n\nRepository: https://github.com/demo-org/bloody-service-129\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DOCUMENTATION",
+    "bountyAmount": 2.6,
+    "difficulty": "Medium",
+    "timeEstimate": "11 days",
+    "deliveryDays": 12,
+    "githubRepo": "https://github.com/demo-org/bloody-service-129",
+    "requiredSkills": [
+      "Technical Writing",
+      "Markdown",
+      "OpenAPI"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_130",
+    "clientRole": "user04",
+    "title": "Document complete local development workflow with Hardhat and PostgreSQL #130",
+    "description": "Provide comprehensive guide for onboarding new backend developers: Docker setup, migrations, local seed, AI mock server and running E2E suites.\n\nRepository: https://github.com/demo-org/bloody-service-130\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DOCUMENTATION",
+    "bountyAmount": 3.9,
+    "difficulty": "Hard",
+    "timeEstimate": "2 days",
+    "deliveryDays": 13,
+    "githubRepo": "https://github.com/demo-org/bloody-service-130",
+    "requiredSkills": [
+      "Documentation",
+      "Developer Experience"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_131",
+    "clientRole": "user05",
+    "title": "Viết tài liệu hướng dẫn tích hợp Smart Contract Escrow cho đối tác thứ ba #131",
+    "description": "Soạn thảo tài liệu API chi tiết: cách tạo reservation, chuẩn EIP-712 funding intent, lắng nghe sự kiện Deposited và giải quyết tranh chấp qua Safe SDK.\n\nRepository: https://github.com/demo-org/bloody-service-131\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DOCUMENTATION",
+    "bountyAmount": 0.6,
+    "difficulty": "Expert",
+    "timeEstimate": "3 days",
+    "deliveryDays": 14,
+    "githubRepo": "https://github.com/demo-org/bloody-service-131",
+    "requiredSkills": [
+      "Technical Writing",
+      "Markdown",
+      "OpenAPI"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_132",
+    "clientRole": "user06",
+    "title": "Document complete local development workflow with Hardhat and PostgreSQL #132",
+    "description": "Provide comprehensive guide for onboarding new backend developers: Docker setup, migrations, local seed, AI mock server and running E2E suites.\n\nRepository: https://github.com/demo-org/bloody-service-132\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DOCUMENTATION",
+    "bountyAmount": 1.9,
+    "difficulty": "Easy",
+    "timeEstimate": "4 days",
+    "deliveryDays": 4,
+    "githubRepo": "https://github.com/demo-org/bloody-service-132",
+    "requiredSkills": [
+      "Documentation",
+      "Developer Experience"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_133",
+    "clientRole": "user07",
+    "title": "Viết tài liệu hướng dẫn tích hợp Smart Contract Escrow cho đối tác thứ ba #133",
+    "description": "Soạn thảo tài liệu API chi tiết: cách tạo reservation, chuẩn EIP-712 funding intent, lắng nghe sự kiện Deposited và giải quyết tranh chấp qua Safe SDK.\n\nRepository: https://github.com/demo-org/bloody-service-133\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DOCUMENTATION",
+    "bountyAmount": 3.2,
+    "difficulty": "Medium",
+    "timeEstimate": "5 days",
+    "deliveryDays": 5,
+    "githubRepo": "https://github.com/demo-org/bloody-service-133",
+    "requiredSkills": [
+      "Technical Writing",
+      "Markdown",
+      "OpenAPI"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_134",
+    "clientRole": "user08",
+    "title": "Document complete local development workflow with Hardhat and PostgreSQL #134",
+    "description": "Provide comprehensive guide for onboarding new backend developers: Docker setup, migrations, local seed, AI mock server and running E2E suites.\n\nRepository: https://github.com/demo-org/bloody-service-134\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "DOCUMENTATION",
+    "bountyAmount": 4.5,
+    "difficulty": "Hard",
+    "timeEstimate": "6 days",
+    "deliveryDays": 6,
+    "githubRepo": "https://github.com/demo-org/bloody-service-134",
+    "requiredSkills": [
+      "Documentation",
+      "Developer Experience"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_135",
+    "clientRole": "user09",
+    "title": "Tối ưu hóa Lighthouse SEO và Core Web Vitals cho trang chủ và danh sách bounty #135",
+    "description": "Cải thiện LCP (Largest Contentful Paint) và CLS (Cumulative Layout Shift). Thêm OpenGraph meta tags động cho từng bài đăng bounty để chia sẻ trên Twitter/LinkedIn.\n\nRepository: https://github.com/demo-org/bloody-service-135\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "OTHER",
+    "bountyAmount": 1.2,
+    "difficulty": "Expert",
+    "timeEstimate": "7 days",
+    "deliveryDays": 7,
+    "githubRepo": "https://github.com/demo-org/bloody-service-135",
+    "requiredSkills": [
+      "SEO",
+      "Performance",
+      "Web Vitals"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_136",
+    "clientRole": "user10",
+    "title": "Implement internationalization (i18n) support for English and Vietnamese #136",
+    "description": "Setup next-intl or custom dictionary translation system for platform navigation, status labels, and error messages.\n\nRepository: https://github.com/demo-org/bloody-service-136\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "OTHER",
+    "bountyAmount": 2.5,
+    "difficulty": "Easy",
+    "timeEstimate": "8 days",
+    "deliveryDays": 8,
+    "githubRepo": "https://github.com/demo-org/bloody-service-136",
+    "requiredSkills": [
+      "i18n",
+      "Next.js",
+      "React"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_137",
+    "clientRole": "user33",
+    "title": "Tối ưu hóa Lighthouse SEO và Core Web Vitals cho trang chủ và danh sách bounty #137",
+    "description": "Cải thiện LCP (Largest Contentful Paint) và CLS (Cumulative Layout Shift). Thêm OpenGraph meta tags động cho từng bài đăng bounty để chia sẻ trên Twitter/LinkedIn.\n\nRepository: https://github.com/demo-org/bloody-service-137\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "OTHER",
+    "bountyAmount": 3.8,
+    "difficulty": "Medium",
+    "timeEstimate": "9 days",
+    "deliveryDays": 9,
+    "githubRepo": "https://github.com/demo-org/bloody-service-137",
+    "requiredSkills": [
+      "SEO",
+      "Performance",
+      "Web Vitals"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_138",
+    "clientRole": "user34",
+    "title": "Implement internationalization (i18n) support for English and Vietnamese #138",
+    "description": "Setup next-intl or custom dictionary translation system for platform navigation, status labels, and error messages.\n\nRepository: https://github.com/demo-org/bloody-service-138\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "OTHER",
+    "bountyAmount": 0.5,
+    "difficulty": "Hard",
+    "timeEstimate": "10 days",
+    "deliveryDays": 10,
+    "githubRepo": "https://github.com/demo-org/bloody-service-138",
+    "requiredSkills": [
+      "i18n",
+      "Next.js",
+      "React"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_139",
+    "clientRole": "user35",
+    "title": "Tối ưu hóa Lighthouse SEO và Core Web Vitals cho trang chủ và danh sách bounty #139",
+    "description": "Cải thiện LCP (Largest Contentful Paint) và CLS (Cumulative Layout Shift). Thêm OpenGraph meta tags động cho từng bài đăng bounty để chia sẻ trên Twitter/LinkedIn.\n\nRepository: https://github.com/demo-org/bloody-service-139\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "OTHER",
+    "bountyAmount": 1.8,
+    "difficulty": "Expert",
+    "timeEstimate": "11 days",
+    "deliveryDays": 11,
+    "githubRepo": "https://github.com/demo-org/bloody-service-139",
+    "requiredSkills": [
+      "SEO",
+      "Performance",
+      "Web Vitals"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_140",
+    "clientRole": "user36",
+    "title": "Implement internationalization (i18n) support for English and Vietnamese #140",
+    "description": "Setup next-intl or custom dictionary translation system for platform navigation, status labels, and error messages.\n\nRepository: https://github.com/demo-org/bloody-service-140\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "OTHER",
+    "bountyAmount": 3.1,
+    "difficulty": "Easy",
+    "timeEstimate": "2 days",
+    "deliveryDays": 12,
+    "githubRepo": "https://github.com/demo-org/bloody-service-140",
+    "requiredSkills": [
+      "i18n",
+      "Next.js",
+      "React"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_141",
+    "clientRole": "user01",
+    "title": "Tối ưu hóa Lighthouse SEO và Core Web Vitals cho trang chủ và danh sách bounty #141",
+    "description": "Cải thiện LCP (Largest Contentful Paint) và CLS (Cumulative Layout Shift). Thêm OpenGraph meta tags động cho từng bài đăng bounty để chia sẻ trên Twitter/LinkedIn.\n\nRepository: https://github.com/demo-org/bloody-service-141\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "OTHER",
+    "bountyAmount": 4.4,
+    "difficulty": "Medium",
+    "timeEstimate": "3 days",
+    "deliveryDays": 13,
+    "githubRepo": "https://github.com/demo-org/bloody-service-141",
+    "requiredSkills": [
+      "SEO",
+      "Performance",
+      "Web Vitals"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_142",
+    "clientRole": "user02",
+    "title": "Implement internationalization (i18n) support for English and Vietnamese #142",
+    "description": "Setup next-intl or custom dictionary translation system for platform navigation, status labels, and error messages.\n\nRepository: https://github.com/demo-org/bloody-service-142\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "OTHER",
+    "bountyAmount": 1.1,
+    "difficulty": "Hard",
+    "timeEstimate": "4 days",
+    "deliveryDays": 14,
+    "githubRepo": "https://github.com/demo-org/bloody-service-142",
+    "requiredSkills": [
+      "i18n",
+      "Next.js",
+      "React"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_143",
+    "clientRole": "user03",
+    "title": "Tối ưu hóa Lighthouse SEO và Core Web Vitals cho trang chủ và danh sách bounty #143",
+    "description": "Cải thiện LCP (Largest Contentful Paint) và CLS (Cumulative Layout Shift). Thêm OpenGraph meta tags động cho từng bài đăng bounty để chia sẻ trên Twitter/LinkedIn.\n\nRepository: https://github.com/demo-org/bloody-service-143\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "OTHER",
+    "bountyAmount": 2.4,
+    "difficulty": "Expert",
+    "timeEstimate": "5 days",
+    "deliveryDays": 4,
+    "githubRepo": "https://github.com/demo-org/bloody-service-143",
+    "requiredSkills": [
+      "SEO",
+      "Performance",
+      "Web Vitals"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_144",
+    "clientRole": "user04",
+    "title": "Implement internationalization (i18n) support for English and Vietnamese #144",
+    "description": "Setup next-intl or custom dictionary translation system for platform navigation, status labels, and error messages.\n\nRepository: https://github.com/demo-org/bloody-service-144\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "OTHER",
+    "bountyAmount": 3.7,
+    "difficulty": "Easy",
+    "timeEstimate": "6 days",
+    "deliveryDays": 5,
+    "githubRepo": "https://github.com/demo-org/bloody-service-144",
+    "requiredSkills": [
+      "i18n",
+      "Next.js",
+      "React"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_145",
+    "clientRole": "user05",
+    "title": "Tối ưu hóa Lighthouse SEO và Core Web Vitals cho trang chủ và danh sách bounty #145",
+    "description": "Cải thiện LCP (Largest Contentful Paint) và CLS (Cumulative Layout Shift). Thêm OpenGraph meta tags động cho từng bài đăng bounty để chia sẻ trên Twitter/LinkedIn.\n\nRepository: https://github.com/demo-org/bloody-service-145\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "OTHER",
+    "bountyAmount": 5,
+    "difficulty": "Medium",
+    "timeEstimate": "7 days",
+    "deliveryDays": 6,
+    "githubRepo": "https://github.com/demo-org/bloody-service-145",
+    "requiredSkills": [
+      "SEO",
+      "Performance",
+      "Web Vitals"
+    ],
+    "hasAttachment": true
+  },
+  {
+    "key": "issue_146",
+    "clientRole": "user06",
+    "title": "Implement internationalization (i18n) support for English and Vietnamese #146",
+    "description": "Setup next-intl or custom dictionary translation system for platform navigation, status labels, and error messages.\n\nRepository: https://github.com/demo-org/bloody-service-146\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "OTHER",
+    "bountyAmount": 1.7,
+    "difficulty": "Hard",
+    "timeEstimate": "8 days",
+    "deliveryDays": 7,
+    "githubRepo": "https://github.com/demo-org/bloody-service-146",
+    "requiredSkills": [
+      "i18n",
+      "Next.js",
+      "React"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_147",
+    "clientRole": "user07",
+    "title": "Tối ưu hóa Lighthouse SEO và Core Web Vitals cho trang chủ và danh sách bounty #147",
+    "description": "Cải thiện LCP (Largest Contentful Paint) và CLS (Cumulative Layout Shift). Thêm OpenGraph meta tags động cho từng bài đăng bounty để chia sẻ trên Twitter/LinkedIn.\n\nRepository: https://github.com/demo-org/bloody-service-147\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "OTHER",
+    "bountyAmount": 3,
+    "difficulty": "Expert",
+    "timeEstimate": "9 days",
+    "deliveryDays": 8,
+    "githubRepo": "https://github.com/demo-org/bloody-service-147",
+    "requiredSkills": [
+      "SEO",
+      "Performance",
+      "Web Vitals"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_148",
+    "clientRole": "user08",
+    "title": "Implement internationalization (i18n) support for English and Vietnamese #148",
+    "description": "Setup next-intl or custom dictionary translation system for platform navigation, status labels, and error messages.\n\nRepository: https://github.com/demo-org/bloody-service-148\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "OTHER",
+    "bountyAmount": 4.3,
+    "difficulty": "Easy",
+    "timeEstimate": "10 days",
+    "deliveryDays": 9,
+    "githubRepo": "https://github.com/demo-org/bloody-service-148",
+    "requiredSkills": [
+      "i18n",
+      "Next.js",
+      "React"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_149",
+    "clientRole": "user09",
+    "title": "Tối ưu hóa Lighthouse SEO và Core Web Vitals cho trang chủ và danh sách bounty #149",
+    "description": "Cải thiện LCP (Largest Contentful Paint) và CLS (Cumulative Layout Shift). Thêm OpenGraph meta tags động cho từng bài đăng bounty để chia sẻ trên Twitter/LinkedIn.\n\nRepository: https://github.com/demo-org/bloody-service-149\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "OTHER",
+    "bountyAmount": 1,
+    "difficulty": "Medium",
+    "timeEstimate": "11 days",
+    "deliveryDays": 10,
+    "githubRepo": "https://github.com/demo-org/bloody-service-149",
+    "requiredSkills": [
+      "SEO",
+      "Performance",
+      "Web Vitals"
+    ],
+    "hasAttachment": false
+  },
+  {
+    "key": "issue_150",
+    "clientRole": "user10",
+    "title": "Implement internationalization (i18n) support for English and Vietnamese #150",
+    "description": "Setup next-intl or custom dictionary translation system for platform navigation, status labels, and error messages.\n\nRepository: https://github.com/demo-org/bloody-service-150\nAcceptance: Tất cả test tự động phải pass và code review sạch.",
+    "category": "OTHER",
+    "bountyAmount": 2.3,
+    "difficulty": "Hard",
+    "timeEstimate": "2 days",
+    "deliveryDays": 11,
+    "githubRepo": "https://github.com/demo-org/bloody-service-150",
+    "requiredSkills": [
+      "i18n",
+      "Next.js",
+      "React"
+    ],
+    "hasAttachment": true
+  }
+]

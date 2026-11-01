@@ -10,7 +10,12 @@ const nextConfig = {
   // (they're used in the custom server, not in the browser)
   experimental: {
     serverComponentsExternalPackages: ["pino", "pino-pretty", "socket.io"],
+    // Container builds set NEXT_BUILD_CPUS to cap parallel workers and avoid OOM kills.
+    ...(process.env.NEXT_BUILD_CPUS && { cpus: Number(process.env.NEXT_BUILD_CPUS) }),
   },
+
+  // Lint runs locally and in CI; container builds skip it to save memory (type checks still run).
+  eslint: { ignoreDuringBuilds: process.env.SKIP_BUILD_LINT === "1" },
 
   // Image optimization
   images: {
@@ -27,7 +32,7 @@ const nextConfig = {
   // Environment variables exposed to the browser
   // (prefix with NEXT_PUBLIC_)
   env: {
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:4000",
     NEXT_PUBLIC_THIRDWEB_CLIENT_ID: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "",
   },
 

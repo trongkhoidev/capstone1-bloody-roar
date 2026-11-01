@@ -2,3 +2,6 @@
 export * from "./types/index";
 export * from "./constants/index";
 export * from "./utils/index";
+export * from "./escrow-abi";
+export { createPublicClient, http, encodeEventTopics, encodeAbiParameters, encodeFunctionData, encodeFunctionResult, decodeFunctionResult, decodeErrorResult, encodeErrorResult } from "viem";
+export type { Abi, Hex } from "viem";

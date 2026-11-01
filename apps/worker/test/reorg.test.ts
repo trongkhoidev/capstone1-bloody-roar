@@ -1,0 +1,92 @@
+import { assertTestDatabase } from "@bloody-roar/database/test-guard";
+import { beforeAll } from "bun:test";
+import { afterAll, expect, test } from "bun:test";
+import { prisma } from "@bloody-roar/database";
+import { handleReorg } from "../src/indexer/reorg";
+import { cleanupChain, fakeRpc, newChain, rawLog, scanToHead, testConfig } from "./helpers";
+
+beforeAll(() => assertTestDatabase(process.env.TEST_DATABASE_URL));
+
+const config = testConfig();
+const where = { chainId: config.chainId, contractAddress: config.escrowAddress };
+const address = config.escrowAddress;
+
+afterAll(async () => {
+  await cleanupChain(prisma, config);
+  await prisma.$disconnect();
+});
+
+test("a reorg marks orphaned events non-canonical and re-includes events that moved", async () => {
+  const chain = newChain();
+  chain.safe = 105n;
+  chain.blockHash.set(99n, "0xA99");
+  for (let n = 100n; n <= 105n; n++) chain.blockHash.set(n, `0xA${n}`);
+  chain.logs = [
+    rawLog({ address, block: 101, blockHash: "0xA101", tx: "0xtx1" }),
+    rawLog({ address, block: 103, blockHash: "0xA103", tx: "0xtx2" }),
+    rawLog({ address, block: 104, blockHash: "0xA104", tx: "0xtx3" }),
+    rawLog({ address, block: 105, blockHash: "0xA105", tx: "0xtx4" }),
+  ];
+  await scanToHead({ db: prisma, rpc: fakeRpc(chain), config });
+  expect(await handleReorg({ db: prisma, rpc: fakeRpc(chain), config })).toBeNull();
+
+  // Blocks 104 and 105 are replaced. tx3 is included again in the new block 104. tx4 is gone.
+  chain.blockHash.set(104n, "0xB104");
+  chain.blockHash.set(105n, "0xB105");
+  chain.logs = [
+    rawLog({ address, block: 101, blockHash: "0xA101", tx: "0xtx1" }),
+    rawLog({ address, block: 103, blockHash: "0xA103", tx: "0xtx2" }),
+    rawLog({ address, block: 104, blockHash: "0xB104", tx: "0xtx3" }),
+  ];
+  const reorged = fakeRpc(chain);
+  expect(await handleReorg({ db: prisma, rpc: reorged, config })).toEqual({ rewoundTo: 99n });
+  await scanToHead({ db: prisma, rpc: reorged, config });
+
+  const events = await prisma.chainEvent.findMany({ where });
+  const byTx = Object.fromEntries(events.map((e) => [e.txHash, e]));
+  expect(byTx["0xtx1"]?.canonical).toBe(true);
+  expect(byTx["0xtx2"]?.canonical).toBe(true);
+  expect(byTx["0xtx3"]).toMatchObject({ canonical: true, blockHash: "0xB104", blockNumber: 104n });
+  expect(byTx["0xtx4"]?.canonical).toBe(false);
+  expect(await prisma.projectionCheckpoint.findUniqueOrThrow({ where: { chainId_contractAddress: where } })).toMatchObject({
+    lastScannedBlock: 105n,
+    lastCanonicalBlockHash: "0xB105",
+  });
+});
+
+
+test("an unavailable RPC block does not orphan events or move the checkpoint", async () => {
+  await cleanupChain(prisma, config);
+  const chain = newChain();
+  chain.safe = 101n;
+  chain.blockHash.set(100n, "0xA100");
+  chain.blockHash.set(101n, "0xA101");
+  chain.logs = [rawLog({ address, block: 100, blockHash: "0xA100", tx: "0xmissing" })];
+  await scanToHead({ db: prisma, rpc: fakeRpc(chain), config });
+  chain.blockHash.set(101n, "0xB101");
+  chain.blockHash.delete(100n);
+  await expect(handleReorg({ db: prisma, rpc: fakeRpc(chain), config })).rejects.toThrow("no block for 100");
+  expect((await prisma.chainEvent.findFirstOrThrow({ where: { ...where, txHash: "0xmissing" } })).canonical).toBe(true);
+  expect((await prisma.projectionCheckpoint.findUniqueOrThrow({ where: { chainId_contractAddress: where } })).lastScannedBlock).toBe(101n);
+  chain.blockHash.delete(101n);
+  await expect(handleReorg({ db: prisma, rpc: fakeRpc(chain), config })).rejects.toThrow("no block for 101");
+  chain.blockHash.set(101n, "0xB101");
+  chain.blockHash.set(100n, "0xA100");
+  await expect(handleReorg({ db: prisma, rpc: fakeRpc(chain), config })).rejects.toThrow("no block for 99");
+  expect((await prisma.chainEvent.findFirstOrThrow({ where: { ...where, txHash: "0xmissing" } })).canonical).toBe(true);
+});
+
+test("a second reorg is detected before a rewound scanner catches up", async () => {
+  await cleanupChain(prisma, config);
+  const chain = newChain(); chain.safe = 102n;
+  for (const n of [99n, 100n, 101n, 102n]) chain.blockHash.set(n, `0xA${n}`);
+  chain.logs = [rawLog({ address, block: 101, blockHash: "0xA101", tx: "0xfirst" }), rawLog({ address, block: 102, blockHash: "0xA102", tx: "0xsecond" })];
+  await scanToHead({ db: prisma, rpc: fakeRpc(chain), config });
+  chain.blockHash.set(102n, "0xB102");
+  expect(await handleReorg({ db: prisma, rpc: fakeRpc(chain), config })).toEqual({ rewoundTo: 99n });
+  expect((await prisma.chainEvent.findFirstOrThrow({ where: { ...where, txHash: "0xsecond" } })).canonical).toBe(false);
+  expect((await prisma.chainEvent.findFirstOrThrow({ where: { ...where, txHash: "0xfirst" } })).canonical).toBe(true);
+  chain.blockHash.set(101n, "0xC101");
+  expect(await handleReorg({ db: prisma, rpc: fakeRpc(chain), config })).toEqual({ rewoundTo: 99n });
+  expect((await prisma.chainEvent.findFirstOrThrow({ where: { ...where, txHash: "0xfirst" } })).canonical).toBe(false);
+});

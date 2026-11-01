@@ -1,6 +1,14 @@
+import { assertTestDatabase } from "@bloody-roar/database/test-guard";
+
+const testDatabaseUrl = process.env.TEST_DATABASE_URL;
+if (testDatabaseUrl) assertTestDatabase(testDatabaseUrl);
+process.env.DATABASE_URL = testDatabaseUrl || "postgresql://unit-tests.invalid:5432/no_database_unit_tests";
+process.env.DIRECT_URL = process.env.DATABASE_URL;
+
 // apps/web/src/test/setup.ts
 // Vitest global test setup
 
+import React from "react";
 import "@testing-library/jest-dom";
 import { vi } from "vitest";
 
@@ -19,8 +27,7 @@ vi.mock("next/navigation", () => ({
 // Mock Next.js image
 vi.mock("next/image", () => ({
   default: ({ src, alt, ...props }: { src: string; alt: string; [key: string]: unknown }) => {
-    // eslint-disable-next-line @next/next/no-img-element
-    return Object.assign(document.createElement("img"), { src, alt, ...props });
+    return React.createElement("img", { src, alt, ...props });
   },
 }));
 

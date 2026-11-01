@@ -9,6 +9,7 @@ import { WalletLogo } from "./wallet-icons";
 import { useAuthStore } from "../../lib/store/use-auth-store";
 import {
   WALLET_OPTIONS,
+  ACTIVE_CHAIN,
   hasInjectedProvider,
   connectInjectedWallet,
   ensureActiveChain,
@@ -138,7 +139,7 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
                     {"\n\n"}Sign in to Bloody-Roar.
                     {"\n\n"}URI: https://bloody-roar.app
                     {"\n"}Version: 1
-                    {"\n"}Chain ID: 84532
+                    {"\n"}Chain ID: {ACTIVE_CHAIN.chainId}
                   </div>
                   <p style={{ color: "var(--ink-2)", fontSize: "12.5px" }}>
                     Sign the one-time SIWE message in {selectedWallet?.name || "your wallet"}. No gas fee is charged.
@@ -252,7 +253,7 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
                     <b style={{ color: "var(--ink)" }}>What happens next</b>
                     <ol>
                       <li>Your wallet connects to this site.</li>
-                      <li>We ask it to switch to Base Sepolia (chain 84532).</li>
+                      <li>We ask it to switch to {ACTIVE_CHAIN.name} (chain {ACTIVE_CHAIN.chainId}).</li>
                       <li>You sign a one-time message. No transaction, no gas.</li>
                     </ol>
                   </div>

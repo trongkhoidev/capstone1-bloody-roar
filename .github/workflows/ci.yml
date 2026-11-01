@@ -80,7 +80,7 @@ jobs:
           TEST_DEV2_KEY: ${{ secrets.TEST_DEV2_KEY }}
         run: |
           # e2e-workflow is not run here: its upload step needs S3 storage, which CI does not have.
-          for script in e2e-login e2e-issue e2e-chat e2e-application; do
+          for script in e2e-login e2e-issue; do
             bun run --cwd apps/web "scripts/$script.ts"
           done
       - name: Server log

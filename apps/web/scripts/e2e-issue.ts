@@ -90,7 +90,7 @@ async function run() {
         title: "Should not be created at all",
         description: "This description is long enough for validation.",
         category: "BUG_FIX",
-        bountyAmount: 100,
+        bountyAmount: "100",
         tokenId: usdc.id,
       },
     }
@@ -115,7 +115,7 @@ async function run() {
         title: "short", // < 10 ký tự
         description: "This description is long enough for validation.",
         category: "BUG_FIX",
-        bountyAmount: 100,
+        bountyAmount: "100",
         tokenId: usdc.id,
       },
     }
@@ -140,7 +140,7 @@ async function run() {
         title: "Valid title for this test",
         description: "This description is long enough for validation.",
         category: "BUG_FIX",
-        bountyAmount: 100,
+        bountyAmount: "100",
         tokenId: "nonexistent-token-id",
       },
     }
@@ -158,12 +158,11 @@ async function run() {
   const created = await gql(
     `mutation($input: CreateIssueInput!) {
       createIssue(input: $input) {
-        id title status category bountyAmount
+        id title status category bountyAmount { formatted }
         requiredSkills difficulty timeEstimate
         client { walletAddress }
         token { symbol }
         applicationCount
-        isDraft
       }
     }`,
     token,
@@ -173,7 +172,7 @@ async function run() {
         description:
           "This is an E2E test bounty created by scripts/e2e-issue.ts. Safe to delete.",
         category: "UI_UX",
-        bountyAmount: 250,
+        bountyAmount: "250",
         tokenId: usdc.id,
         requiredSkills: ["React", "Next.js"],
         difficulty: "Medium",
@@ -185,8 +184,7 @@ async function run() {
   assert(createdIssue?.id, "createIssue should return the created issue");
   assert.strictEqual(createdIssue.status, "OPEN");
   assert.strictEqual(createdIssue.category, "UI_UX");
-  assert.strictEqual(createdIssue.bountyAmount, 250);
-  assert.strictEqual(createdIssue.isDraft, false);
+  assert.strictEqual(createdIssue.bountyAmount.formatted, "250");
   assert.deepStrictEqual(createdIssue.requiredSkills, ["React", "Next.js"]);
   assert.strictEqual(createdIssue.token.symbol, "USDC");
   assert.strictEqual(createdIssue.applicationCount, 0);
@@ -243,15 +241,15 @@ async function run() {
 
   console.log("8. issues sort by BOUNTY_AMOUNT ASC...");
   const byBounty = await gql(
-    `{ issues(sortBy: BOUNTY_AMOUNT, sortOrder: ASC, first: 100) { edges { node { id bountyAmount } } } }`
+    `{ issues(sortBy: BOUNTY_AMOUNT, sortOrder: ASC, first: 100) { edges { node { id bountyAmount { formatted } } } } }`
   );
-  const bounties = byBounty.data.issues.edges.map((e: any) => e.node.bountyAmount);
+  const bounties = byBounty.data.issues.edges.map((e: any) => Number(e.node.bountyAmount.formatted));
   const sorted = [...bounties].sort((a: number, b: number) => a - b);
   assert.deepStrictEqual(bounties, sorted, "Bounties should be sorted ASC");
 
   console.log("9. issues cursor pagination (first: 2 → page 2)...");
   const page1 = await gql(
-    `{ issues(first: 2, sortBy: BOUNTY_AMOUNT, sortOrder: ASC) { edges { node { id bountyAmount } } pageInfo { hasNextPage endCursor } } }`
+    `{ issues(first: 2, sortBy: BOUNTY_AMOUNT, sortOrder: ASC) { edges { node { id bountyAmount { formatted } } } pageInfo { hasNextPage endCursor } } }`
   );
   assert.strictEqual(page1.data.issues.edges.length, 2, "Page 1 should have 2 items");
   assert.strictEqual(page1.data.issues.pageInfo.hasNextPage, true, "Page 1 should have next");
@@ -259,15 +257,15 @@ async function run() {
   assert(cursor, "endCursor should exist");
 
   const page2 = await gql(
-    `query($after: String) { issues(first: 2, after: $after, sortBy: BOUNTY_AMOUNT, sortOrder: ASC) { edges { node { id bountyAmount } } pageInfo { hasNextPage hasPreviousPage } } }`,
+    `query($after: String) { issues(first: 2, after: $after, sortBy: BOUNTY_AMOUNT, sortOrder: ASC) { edges { node { id bountyAmount { formatted } } } pageInfo { hasNextPage hasPreviousPage } } }`,
     undefined,
     { after: cursor }
   );
   const p1Last =
-    page1.data.issues.edges[page1.data.issues.edges.length - 1].node.bountyAmount;
-  const p2First = page2.data.issues.edges[0]?.node?.bountyAmount;
+    page1.data.issues.edges[page1.data.issues.edges.length - 1].node.bountyAmount.formatted;
+  const p2First = page2.data.issues.edges[0]?.node?.bountyAmount.formatted;
   assert(
-    p2First >= p1Last,
+    Number(p2First) >= Number(p1Last),
     "Page 2 first bounty should be >= page 1 last bounty (không trùng lặp)"
   );
   assert.strictEqual(

@@ -98,7 +98,8 @@ app.prepare().then(async () => {
       logger.fatal({ error: error instanceof Error ? error.message : String(error) }, "chain configuration check failed");
       process.exit(1);
     });
-  } else if (!dev) {
+  } else if (!dev && process.env.ESCROW_OPTIONAL !== "1") {
+    // ESCROW_OPTIONAL=1 lets CI run chain-free e2e against a production build.
     logger.fatal({}, "ESCROW_ADDRESS is required in production");
     process.exit(1);
   } else {

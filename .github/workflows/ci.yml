@@ -69,6 +69,7 @@ jobs:
         env:
           THIRDWEB_SECRET_KEY: ${{ secrets.THIRDWEB_SECRET_KEY }}
           THIRDWEB_CLIENT_ID: ${{ secrets.THIRDWEB_CLIENT_ID }}
+          ESCROW_OPTIONAL: "1"
         run: |
           bun run --cwd apps/web start > server.log 2>&1 &
           curl --fail --silent --retry 60 --retry-delay 2 --retry-all-errors http://localhost:4000/api/health

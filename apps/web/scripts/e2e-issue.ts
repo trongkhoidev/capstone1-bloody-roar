@@ -194,19 +194,18 @@ async function run() {
   // -------------------------------------------------------------------
   // B-2 — issue(id): chi tiết + viewCount tăng dần
   // -------------------------------------------------------------------
-  console.log("5. issue(id) detail + viewCount increment...");
-  const view1 = await gql(
+  console.log("5. issue(id) detail + recordIssueView dedupe...");
+  const recordView = `mutation($id: ID!) { recordIssueView(issueId: $id) }`;
+  const rec1 = await gql(recordView, token, { id: createdId });
+  const rec2 = await gql(recordView, token, { id: createdId });
+  assert.strictEqual(rec1.data?.recordIssueView, true, "first view should be recorded");
+  assert.strictEqual(rec2.data?.recordIssueView, false, "repeat view within an hour should be deduped");
+  const view = await gql(
     `query($id: ID!) { issue(id: $id) { id viewCount title client { name } token { symbol } } }`,
     undefined,
     { id: createdId }
   );
-  const view2 = await gql(
-    `query($id: ID!) { issue(id: $id) { id viewCount } }`,
-    undefined,
-    { id: createdId }
-  );
-  assert.strictEqual(view1.data.issue.viewCount, 1, "viewCount should be 1 on first view");
-  assert.strictEqual(view2.data.issue.viewCount, 2, "viewCount should increment");
+  assert.strictEqual(view.data.issue.viewCount, 1, "viewCount should count one view per user");
 
   const notFound = await gql(`query { issue(id: "does-not-exist") { id } }`);
   assert.strictEqual(notFound.data.issue, null, "issue(id) should be null if not found");

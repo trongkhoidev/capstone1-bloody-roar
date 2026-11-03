@@ -224,7 +224,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
       })
       .catch(() => undefined);
     return () => { active = false; };
-  }, [user, isClient, isAdmin, issueId, issue]);
+  }, [user, isClient, isAdmin, issueId]);
 
   useEffect(() => {
     if (!canChat) return;
@@ -359,10 +359,6 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
       await graphqlRequest(REJECT_APPLICATION, { id: applicationId });
       setNotice("Applicant rejected.");
       await load();
-      if (isClient) {
-        const res = await graphqlRequest<ApplicationResponse>(APPLICATIONS_QUERY, { issueId }).catch(() => null);
-        if (res?.applications) setApplications(res.applications);
-      }
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not reject applicant."); }
     finally { setIsWorking(false); }
   };
@@ -378,17 +374,18 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
 
   const updateTask = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!issue) return;
     setIsWorking(true); setError(null); setNotice(null);
     try {
-      await graphqlRequest(UPDATE_ISSUE, {
-        input: {
-          id: issueId,
-          title: editTitle.trim(),
-          description: editDescription.trim(),
-          category: editCategory,
-          bountyAmount: String(editBounty),
-        },
-      });
+      const input: Record<string, unknown> = { id: issueId };
+      const nextTitle = editTitle.trim();
+      if (nextTitle !== issue.title) input.title = nextTitle;
+      const nextDescription = editDescription.trim();
+      if (nextDescription !== issue.description) input.description = nextDescription;
+      if (editCategory !== issue.category) input.category = editCategory;
+      if (Number(editBounty) !== Number(issue.bountyAmount)) input.bountyAmount = String(editBounty);
+
+      await graphqlRequest(UPDATE_ISSUE, { input });
       setNotice("Task updated successfully.");
       setIsEditing(false);
       await load();

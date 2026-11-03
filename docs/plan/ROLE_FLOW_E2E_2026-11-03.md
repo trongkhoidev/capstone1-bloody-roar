@@ -20,7 +20,7 @@ Toàn bộ 10 kịch bản đều **PASS** 100% với luồng tiền on-chain đ
 | **S4** | **Dev trễ hạn** | Nạp tiền thành công, Dev không nộp bài, tua thời gian qua `deliveryDeadline` → Client `prepareClaimMissedDeliveryRefund` | **PASS** | Client claim lại đủ 100% (100 USDC) trên chain, delta số dư bằng 0. |
 | **S5** | **Client không duyệt** | Dev nộp bài, tua thời gian qua review window (7 ngày) → Dev `prepareClaimReviewTimeout` | **PASS** | Escrow chuyển `RESOLVED`, Dev nhận đủ 97.5% bounty on-chain (97.5 USDC). |
 | **S6** | **Thương lượng** | Client propose settlement 4000 bps → revoke → propose lại 3000 bps → Dev accept settlement | **PASS** | Escrow `RESOLVED`, chia tiền chính xác: Client 30 USDC (3000 bps), Dev 68.25 USDC (net sau 2.5% fee), Platform fee 1.75 USDC. |
-| **S7** | **Tranh chấp đủ vòng** | Client `createEvidenceManifest` + `prepareRaiseDispute` → Dev `prepareSubmitCounterpartyEvidence` → Admin `draftRuling` (INITIAL 3000 bps) → Arbiter gửi `postInitialRuling` → Client `prepareChallengeRuling` → Admin `draftRuling` (FINAL 6000 bps) → Arbiter gửi `postFinalRuling` → Tua 24h → Outsider `prepareFinalizeRuling` | **PASS** | Issue & Escrow về trạng thái kết thúc, chia tiền đúng tỷ lệ (Client 60 USDC, Dev 39 USDC net, Fee 1 USDC), Admin truy vấn được evidence manifests và chat trong thời gian tranh chấp. |
+| **S7** | **Tranh chấp đủ vòng** | Client `createEvidenceManifest` + `prepareRaiseDispute` → Dev `prepareSubmitCounterpartyEvidence` → Admin `draftRuling` (INITIAL 3000 bps) → Arbiter gửi `postInitialRuling` → Client `prepareChallengeRuling` → Admin `draftRuling` (FINAL 6000 bps) → Arbiter gửi `postFinalRuling` → Tua 24h → Outsider `prepareFinalizeRuling` | **PASS** | Issue & Escrow về trạng thái kết thúc, chia tiền đúng tỷ lệ (Client 60 USDC, Dev 39 USDC net, Fee 1 USDC), Admin truy vấn được evidence manifests và admin query được messages (chưa kiểm nội dung) trong thời gian tranh chấp. |
 | **S8** | **Arbiter không xử lý** | Mở tranh chấp, tua thời gian quá 30 ngày (`ARBITER_STALL_DAYS`) mà Arbiter không ra phán quyết → Outsider `prepareFinalizeArbiterTimeoutSplit` | **PASS** | Phân chia 50/50: Client nhận 50 USDC (5000 bps), Dev nhận 48.75 USDC (50% trừ 2.5% fee). |
 | **S9** | **Phân quyền** | Kiểm tra ma trận quyền: Guest không gọi được mutation cần auth (`UNAUTHORIZED`), Outsider không release được bài người khác, Admin không tạo issue (`ADMIN_NOT_ALLOWED`), Client không apply vào bài của mình (`SELF_APPLICATION`), claim ví người khác bị chặn (`FORBIDDEN`), User bị ban mất session ngay lập tức. | **PASS** | Tất cả các vi phạm quyền đều bị từ chối đúng mã lỗi. |
 | **S10** | **Rút đơn và sửa bài** | Client tạo bài `OPEN`, sửa bài bằng `updateIssue`. Dev `applyToIssue` rồi `withdrawApplication` (`WITHDRAWN`), sau đó apply lại (`PENDING`). Client chọn Dev → cố tình sửa bài bị chặn (`ISSUE_NOT_EDITABLE`). | **PASS** | Rút đơn và nộp lại thành công; `updateIssue` chỉ cho phép khi bài còn `OPEN`, chặn hoàn toàn khi đã chọn Dev. |
@@ -55,11 +55,24 @@ Toàn bộ 10 kịch bản đều **PASS** 100% với luồng tiền on-chain đ
    - Không thêm trường hay bảng mới ngoài thiết kế.
 
 3. **Danh sách các API / Mutation chưa có giao diện Frontend**:
-   Các mutation dưới đây đã hoạt động hoàn chỉnh ở Backend / GraphQL API (được xác thực bởi S1–S10), nhưng hiện tại FE chưa có component UI tương ứng:
-   - **Thương lượng (Settlement)**: `prepareProposeSettlement`, `prepareRevokeSettlement`, `prepareAcceptSettlement`. *(Khuyến nghị: Mở issue/PR FE thêm modal đề xuất và chấp thuận phân chia tỷ lệ trên trang chi tiết)*.
-   - **Tranh chấp (Dispute & Evidence)**: `prepareRaiseDispute`, `createEvidenceManifest`, `prepareSubmitCounterpartyEvidence`. *(Khuyến nghị: Mở issue/PR FE thêm form nộp lý do và đính kèm bằng chứng tranh chấp)*.
-   - **Phán quyết Arbiter & Kháng cáo**: `draftRuling`, `prepareChallengeRuling`, `prepareFinalizeRuling`, `prepareFinalizeArbiterTimeoutSplit`. *(Khuyến nghị: Mở issue/PR FE xây dựng trang quản trị phán quyết dành riêng cho Arbiter và Admin)*.
-   - **Rút tiền do quá hạn**: `prepareClaimMissedDeliveryRefund` (Client claim lại khi dev trễ hẹn), `prepareClaimReviewTimeout` (Dev claim khi client ngâm review). *(Khuyến nghị: Mở issue/PR FE hiển thị nút claim tương ứng khi timeline quá hạn)*.
+   Sau khi kiểm tra trực tiếp (`grep`) toàn bộ codebase `apps/web/src/components`:
+   - Các API / Mutation sau đây thuộc backend / GraphQL API đã sẵn sàng nhưng hiện **chưa có giao diện Frontend**:
+     - `setUserRole`: Quản trị phân quyền / cập nhật role cho user (ADMIN).
+     - `revokeSession`: Thu hồi phiên đăng nhập của user.
+     - `mySessions`: Truy vấn danh sách các phiên đăng nhập đang hoạt động của user hiện tại.
+     - `myTransactions`: Truy vấn lịch sử giao dịch ví của user.
+     - `adminLogs`: Truy vấn nhật ký hành động kiểm toán của quản trị viên.
+     - `aiLogs`: Truy vấn nhật ký xử lý và kiểm duyệt nội dung của AI.
+     - `editMessage`: Chỉnh sửa nội dung tin nhắn chat (hiện chat chỉ gửi qua socket event `message:send`).
+     - `deleteMessage`: Xóa tin nhắn chat.
+     - `createTestCase`: Tạo test case phục vụ đánh giá bài toán.
+     - `deleteTestCase`: Xóa test case.
+     - `unlinkGithub`: Hủy liên kết tài khoản GitHub của người dùng.
+   - **Làm rõ về các tính năng Escrow / Dispute / Settlement**:
+     Các flow sau đã có đầy đủ UI trên Frontend (không cần mở thêm PR):
+     - Settlement & Refund Timeout: `prepareProposeSettlement`, `prepareRevokeSettlement`, `prepareAcceptSettlement`, `prepareClaimMissedDeliveryRefund`, `prepareClaimReviewTimeout` đã được cấu hình trong `ESCROW_ACTIONS` và hiển thị tại `apps/web/src/components/marketplace/issue-detail-view.tsx`.
+     - Dispute & Evidence: `createEvidenceManifest`, `prepareRaiseDispute`, `prepareSubmitCounterpartyEvidence` đã có form đính kèm evidence manifest và mở tranh chấp tại `issue-detail-view.tsx`.
+     - Arbiter Ruling: `draftRuling` đã có giao diện trong `apps/web/src/components/admin/admin-view.tsx`; `prepareChallengeRuling`, `prepareFinalizeRuling`, `prepareFinalizeArbiterTimeoutSplit` nằm trong `ESCROW_ACTIONS` tại `issue-detail-view.tsx`.
 
 ---
 
@@ -97,3 +110,15 @@ bun run lint
 bun run --cwd apps/web test
 bun run contracts:test
 ```
+
+---
+
+## 5. Vòng review 2026-11-03
+
+Báo cáo kết quả xử lý các đầu mục R1–R5 theo `AGY_PROMPT_REVIEW_FIX_2026-11-03.md`:
+
+- **R1 (Báo cáo ghi sai mục "API chưa có FE")**: **ĐÃ SỬA**. Đã rà soát và đính chính mục 3.3. Xác nhận đúng 11 API chưa có FE theo prompt gốc (`setUserRole`, `revokeSession`, `mySessions`, `myTransactions`, `adminLogs`, `aiLogs`, `editMessage`, `deleteMessage`, `createTestCase`, `deleteTestCase`, `unlinkGithub`). Xoá toàn bộ các khuyến nghị mở PR FE nhầm lẫn cho settlement/dispute/ruling/timeout vì các tính năng này đã có sẵn trên FE (`issue-detail-view.tsx`, `admin-view.tsx`).
+- **R2 (Form sửa bài luôn gửi bounty)**: **ĐÃ SỬA**. Sửa hàm `updateTask` trong `issue-detail-view.tsx` chỉ gửi vào `input` những field khác với giá trị ban đầu của `issue` (`id` luôn gửi). Điều này ngăn chặn việc kích hoạt `assertBountyRange` và nhảy `termsVersion` khi chỉ sửa tiêu đề hoặc mô tả mà bounty cũ nằm ngoài khoảng cho phép hiện tại.
+- **R3 (Effect `myApplications` chạy lại sau mỗi lần reload issue)**: **ĐÃ SỬA**. Đã gỡ bỏ `issue` khỏi dependency array của `useEffect` tải `MY_APPLICATIONS_QUERY` (chỉ giữ `[user, isClient, isAdmin, issueId]`). Tránh tình trạng tải lại toàn bộ đơn ứng tuyển của dev mỗi khi bài toán reload.
+- **R4 (Tải lại hai lần trong `reject`)**: **ĐÃ SỬA**. Trong hàm `reject` tại `issue-detail-view.tsx`, đã xoá đoạn gọi `APPLICATIONS_QUERY` thủ công sau `await load()`. Do effect tải danh sách đơn đã có `[isClient, issue, issueId]` trong deps nên sẽ tự động kích hoạt khi `load()` hoàn thành.
+- **R5 (S7 kiểm tra chat admin)**: **BỎ QUA (theo điều kiện prompt)**. Do hệ thống chat trong dự án gửi tin qua Socket.IO client (`message:send`) mà không có mutation GraphQL `sendMessage`, việc dựng socket client trong script E2E sẽ vượt quá ngưỡng 15 dòng và làm phức tạp script. Báo cáo đã cập nhật câu xác nhận thành "admin query được messages (chưa kiểm nội dung)" theo đúng hướng dẫn.

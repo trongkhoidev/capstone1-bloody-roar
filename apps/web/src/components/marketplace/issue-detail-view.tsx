@@ -27,7 +27,7 @@ const ISSUE_QUERY = `
     issue(id: $id) {
       id title description category status bountyAmount { formatted } requiredSkills difficulty timeEstimate
       expiresAt viewCount applicationCount createdAt clientId developerId
-      viewerCapabilities { canSelect canFund canSubmit canRelease canRequestChanges canDispute canProposeSettlement canRevokeSettlement canAcceptSettlement canSubmitEvidence canChallengeRuling canFinalizeRuling canFinalizeArbiterTimeoutSplit canClaimMissedDeliveryRefund canClaimReviewTimeout }
+      viewerCapabilities { canApply canSelect canFund canSubmit canRelease canRequestChanges canDispute canProposeSettlement canRevokeSettlement canAcceptSettlement canSubmitEvidence canChallengeRuling canFinalizeRuling canFinalizeArbiterTimeoutSplit canClaimMissedDeliveryRefund canClaimReviewTimeout }
       escrow { availableActions { action reasonDisabled } }
       token { symbol name }
       attachments { id fileName fileUrl fileMime }
@@ -46,7 +46,21 @@ const APPLICATIONS_QUERY = `
   }
 `;
 
+const MY_APPLICATIONS_QUERY = `
+  query MyApplications {
+    myApplications {
+      id
+      issueId
+      status
+      message
+    }
+  }
+`;
+
 const APPLY_MUTATION = `mutation Apply($input: ApplyToIssueInput!) { applyToIssue(input: $input) { id status } }`;
+const WITHDRAW_APPLICATION = `mutation WithdrawApp($id: ID!) { withdrawApplication(id: $id) { id status } }`;
+const REJECT_APPLICATION = `mutation RejectApp($id: ID!) { rejectApplication(id: $id) { id status } }`;
+const UPDATE_ISSUE = `mutation UpdateIssue($input: UpdateIssueInput!) { updateIssue(input: $input) { id title description category status bountyAmount { formatted } } }`;
 const SELECT_DEVELOPER = `mutation SelectDeveloper($issue: ID!, $application: ID!, $deadline: String!) { selectDeveloper(issueId: $issue, applicationId: $application, deliveryDeadline: $deadline) { id status escrowKey termsHash amountRaw deliveryDeadline } }`;
 const RESERVATION_QUERY = `query Reservation($issueId: ID!) { reservation(issueId: $issueId) { id status chainId contractAddress tokenAddress escrowKey termsHash amountRaw deliveryDeadline clientWallet developerWallet } }`;
 const SUBMIT_FUNDING_INTENT = `mutation FundingIntent($id: ID!, $signature: String!, $nonce: String!, $expiry: String!) { submitFundingIntent(reservationId: $id, signature: $signature, nonce: $nonce, intentExpiry: $expiry) { id } }`;
@@ -79,7 +93,7 @@ type PreparedStep = { intentId: string; method: string; contractAddress: string;
 
 type ReservationRow = { id: string; status: string; chainId: number; contractAddress: string; tokenAddress: string; escrowKey: string; termsHash: string; amountRaw: string; deliveryDeadline: string; clientWallet: string; developerWallet: string };
 
-type ViewerCapabilities = { canSelect: boolean; canFund: boolean; canSubmit: boolean; canRelease: boolean; canRequestChanges: boolean; canDispute: boolean; canProposeSettlement: boolean; canRevokeSettlement: boolean; canAcceptSettlement: boolean; canSubmitEvidence: boolean; canChallengeRuling: boolean; canFinalizeRuling: boolean; canFinalizeArbiterTimeoutSplit: boolean; canClaimMissedDeliveryRefund: boolean; canClaimReviewTimeout: boolean };
+type ViewerCapabilities = { canApply?: boolean; canSelect: boolean; canFund: boolean; canSubmit: boolean; canRelease: boolean; canRequestChanges: boolean; canDispute: boolean; canProposeSettlement: boolean; canRevokeSettlement: boolean; canAcceptSettlement: boolean; canSubmitEvidence: boolean; canChallengeRuling: boolean; canFinalizeRuling: boolean; canFinalizeArbiterTimeoutSplit: boolean; canClaimMissedDeliveryRefund: boolean; canClaimReviewTimeout: boolean };
 type IssueDetail = IssueItem & { clientId: string; developerId?: string | null; developer?: IssueItem["client"] | null; viewerCapabilities?: ViewerCapabilities | null; escrow?: { availableActions: Array<{ action: string; reasonDisabled: string | null }> } | null };
 type Application = { id: string; status: string; message?: string | null; createdAt: string; developer: IssueItem["client"] & { skills?: string[] } };
 
@@ -121,6 +135,12 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const [isWorking, setIsWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [myApplication, setMyApplication] = useState<{ id: string; status: string; message?: string | null } | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editCategory, setEditCategory] = useState("BUG_FIX");
+  const [editBounty, setEditBounty] = useState<number>(0);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -191,6 +211,20 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
       .catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : "Could not load applications."); });
     return () => { active = false; };
   }, [isClient, issue, issueId]);
+
+  useEffect(() => {
+    if (!user || isClient || isAdmin) return;
+    let active = true;
+    void graphqlRequest<{ myApplications: Array<{ id: string; issueId: string; status: string; message?: string | null }> }>(MY_APPLICATIONS_QUERY)
+      .then((result) => {
+        if (active) {
+          const app = result.myApplications?.find((a) => a.issueId === issueId) ?? null;
+          setMyApplication(app);
+        }
+      })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, [user, isClient, isAdmin, issueId, issue]);
 
   useEffect(() => {
     if (!canChat) return;
@@ -302,7 +336,63 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
       setNotice("Application sent. The client will be notified.");
       setApplicationText("");
       await load();
+      const myRes = await graphqlRequest<{ myApplications: Array<{ id: string; issueId: string; status: string; message?: string | null }> }>(MY_APPLICATIONS_QUERY).catch(() => null);
+      if (myRes) setMyApplication(myRes.myApplications?.find((a) => a.issueId === issueId) ?? null);
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not apply."); }
+    finally { setIsWorking(false); }
+  };
+
+  const withdraw = async (applicationId: string) => {
+    setIsWorking(true); setError(null); setNotice(null);
+    try {
+      await graphqlRequest(WITHDRAW_APPLICATION, { id: applicationId });
+      setNotice("Application withdrawn.");
+      setMyApplication(null);
+      await load();
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not withdraw application."); }
+    finally { setIsWorking(false); }
+  };
+
+  const reject = async (applicationId: string) => {
+    setIsWorking(true); setError(null); setNotice(null);
+    try {
+      await graphqlRequest(REJECT_APPLICATION, { id: applicationId });
+      setNotice("Applicant rejected.");
+      await load();
+      if (isClient) {
+        const res = await graphqlRequest<ApplicationResponse>(APPLICATIONS_QUERY, { issueId }).catch(() => null);
+        if (res?.applications) setApplications(res.applications);
+      }
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not reject applicant."); }
+    finally { setIsWorking(false); }
+  };
+
+  const startEditing = () => {
+    if (!issue) return;
+    setEditTitle(issue.title);
+    setEditDescription(issue.description);
+    setEditCategory(issue.category);
+    setEditBounty(issue.bountyAmount);
+    setIsEditing(true);
+  };
+
+  const updateTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsWorking(true); setError(null); setNotice(null);
+    try {
+      await graphqlRequest(UPDATE_ISSUE, {
+        input: {
+          id: issueId,
+          title: editTitle.trim(),
+          description: editDescription.trim(),
+          category: editCategory,
+          bountyAmount: String(editBounty),
+        },
+      });
+      setNotice("Task updated successfully.");
+      setIsEditing(false);
+      await load();
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not update task."); }
     finally { setIsWorking(false); }
   };
 
@@ -499,56 +589,126 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
               {/* TAB 1: OVERVIEW */}
               {activeTab === "overview" && (
                 <>
-                  <section className="card">
-                    <div className="card-h">
-                      <h2>Task Description &amp; Requirements</h2>
-                      <span className="badge b-info" style={{ marginLeft: "auto" }}>
-                        {CATEGORY_LABELS[issue.category] ?? issue.category}
-                      </span>
-                    </div>
-                    <div className="card-b">
-                      <div style={{ whiteSpace: "pre-wrap", color: "var(--ink-2)", lineHeight: 1.65 }}>
-                        {issue.description}
+                  {isEditing ? (
+                    <section className="card">
+                      <div className="card-h">
+                        <h2>Edit Bounty</h2>
+                        <button type="button" className="btn btn-o btn-sm" onClick={() => setIsEditing(false)}>
+                          Cancel
+                        </button>
                       </div>
-
-                      {issue.attachments?.length ? (
-                        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", marginTop: 12 }}>
-                          {issue.attachments.map((att) => (
-                            <Image
-                              key={att.id}
-                              src={att.fileUrl}
-                              alt={att.fileName}
-                              width={480}
-                              height={270}
-                              unoptimized
-                              style={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: 6, border: "1px solid var(--line)" }}
+                      <div className="card-b">
+                        <form onSubmit={updateTask} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, fontWeight: 500 }}>
+                            Title
+                            <input
+                              type="text"
+                              className="inp"
+                              value={editTitle}
+                              onChange={(e) => setEditTitle(e.target.value)}
+                              required
                             />
+                          </label>
+                          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, fontWeight: 500 }}>
+                            Category
+                            <select
+                              className="inp"
+                              value={editCategory}
+                              onChange={(e) => setEditCategory(e.target.value)}
+                            >
+                              {Object.keys(CATEGORY_LABELS).map((cat) => (
+                                <option key={cat} value={cat}>
+                                  {CATEGORY_LABELS[cat] ?? cat}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, fontWeight: 500 }}>
+                            Bounty Amount ({issue.token.symbol})
+                            <input
+                              type="number"
+                              className="inp"
+                              value={editBounty}
+                              onChange={(e) => setEditBounty(Number(e.target.value))}
+                              min={1}
+                              required
+                            />
+                          </label>
+                          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, fontWeight: 500 }}>
+                            Description
+                            <textarea
+                              className="inp"
+                              style={{ minHeight: 120 }}
+                              value={editDescription}
+                              onChange={(e) => setEditDescription(e.target.value)}
+                              required
+                            />
+                          </label>
+                          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 8 }}>
+                            <button type="button" className="btn btn-o" onClick={() => setIsEditing(false)}>
+                              Cancel
+                            </button>
+                            <button type="submit" className="btn btn-p" disabled={isWorking}>
+                              Save changes
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    </section>
+                  ) : (
+                    <section className="card">
+                      <div className="card-h">
+                        <h2>Task Description &amp; Requirements</h2>
+                        <span className="badge b-info" style={{ marginLeft: "auto" }}>
+                          {CATEGORY_LABELS[issue.category] ?? issue.category}
+                        </span>
+                      </div>
+                      <div className="card-b">
+                        <div style={{ whiteSpace: "pre-wrap", color: "var(--ink-2)", lineHeight: 1.65 }}>
+                          {issue.description}
+                        </div>
+
+                        {issue.attachments?.length ? (
+                          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", marginTop: 12 }}>
+                            {issue.attachments.map((att) => (
+                              <Image
+                                key={att.id}
+                                src={att.fileUrl}
+                                alt={att.fileName}
+                                width={480}
+                                height={270}
+                                unoptimized
+                                style={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: 6, border: "1px solid var(--line)" }}
+                              />
+                            ))}
+                          </div>
+                        ) : null}
+
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+                          {issue.requiredSkills.map((skill) => (
+                            <span key={skill} className="tag">
+                              {skill}
+                            </span>
                           ))}
                         </div>
-                      ) : null}
 
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
-                        {issue.requiredSkills.map((skill) => (
-                          <span key={skill} className="tag">
-                            {skill}
-                          </span>
-                        ))}
+                        <div style={{ display: "flex", gap: 16, fontSize: "12.5px", color: "var(--ink-3)", marginTop: 8, paddingTop: 12, borderTop: "1px solid var(--line)" }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Eye className="ico" style={{ width: 14, height: 14 }} /> {issue.viewCount} views</span>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Users className="ico" style={{ width: 14, height: 14 }} /> {issue.applicationCount ?? applications.length} applicants</span>
+                          <span>Posted on {new Date(issue.createdAt).toLocaleDateString()}</span>
+                        </div>
                       </div>
-
-                      <div style={{ display: "flex", gap: 16, fontSize: "12.5px", color: "var(--ink-3)", marginTop: 8, paddingTop: 12, borderTop: "1px solid var(--line)" }}>
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Eye className="ico" style={{ width: 14, height: 14 }} /> {issue.viewCount} views</span>
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Users className="ico" style={{ width: 14, height: 14 }} /> {issue.applicationCount ?? applications.length} applicants</span>
-                        <span>Posted on {new Date(issue.createdAt).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                  </section>
+                    </section>
+                  )}
 
                   {/* Client: Review Applicants */}
                   {isClient && (issue.status === "OPEN" || issue.status === "AWAITING_FUNDING") && applications.length > 0 && (
                     <section className="card">
                       <div className="card-h">
                         <h2>Review Applicants</h2>
-                        <span className="badge b-open" style={{ marginLeft: "auto" }}>{applications.length} pending</span>
+                        <span className="badge b-open" style={{ marginLeft: "auto" }}>
+                          {applications.filter((a) => a.status === "PENDING").length} pending
+                        </span>
                       </div>
                       <div className="card-b">
                         {issue.status === "OPEN" && (
@@ -602,20 +762,37 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                                 <span className="mono" style={{ fontSize: 12, color: "var(--ink-3)" }}>
                                   {app.developer.reputationScore} rep
                                 </span>
+                                {app.status === "REJECTED" && (
+                                  <span className="badge b-closed" style={{ fontSize: 11 }}>Rejected</span>
+                                )}
+                                {app.status === "WITHDRAWN" && (
+                                  <span className="badge b-closed" style={{ fontSize: 11 }}>Withdrawn</span>
+                                )}
                               </div>
                               <p style={{ margin: "4px 0 0 0", fontSize: 13, color: "var(--ink-2)" }}>
                                 {app.message || "No cover letter provided."}
                               </p>
                             </div>
                             {app.status === "PENDING" && issue.status === "OPEN" && issue.viewerCapabilities?.canSelect && (
-                              <button
-                                type="button"
-                                className="btn btn-p btn-sm"
-                                disabled={isWorking}
-                                onClick={() => void assign(app.id)}
-                              >
-                                Select developer
-                              </button>
+                              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                                <button
+                                  type="button"
+                                  className="btn btn-p btn-sm"
+                                  disabled={isWorking}
+                                  onClick={() => void assign(app.id)}
+                                >
+                                  Select developer
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-o btn-sm"
+                                  style={{ color: "var(--err, #ef4444)", borderColor: "var(--err, #ef4444)" }}
+                                  disabled={isWorking}
+                                  onClick={() => void reject(app.id)}
+                                >
+                                  Reject
+                                </button>
+                              </div>
                             )}
                           </div>
                         ))}
@@ -913,9 +1090,14 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
 
                   {/* Actions for Client */}
                   {isClient && issue.status === "OPEN" && (
-                    <Button variant="outline" className="w-full" disabled={isWorking} onClick={() => void cancel()}>
-                      Cancel bounty
-                    </Button>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <Button variant="outline" className="w-full" disabled={isWorking} onClick={startEditing}>
+                        Edit bounty
+                      </Button>
+                      <Button variant="outline" className="w-full" disabled={isWorking} onClick={() => void cancel()}>
+                        Cancel bounty
+                      </Button>
+                    </div>
                   )}
 
                   {/* Actions for Developer */}
@@ -928,19 +1110,71 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                     />
                   )}
 
-                  {user && !isClient && !isAdmin && issue.status === "OPEN" && (
-                    <form onSubmit={apply} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                      <textarea
-                        className="inp"
-                        style={{ height: 68, padding: 8, fontSize: 12.5 }}
-                        value={applicationText}
-                        onChange={(e) => setApplicationText(e.target.value)}
-                        placeholder="Why are you a good fit? (optional)"
-                      />
-                      <button type="submit" className="btn btn-p" disabled={isWorking}>
-                        <MessageSquare className="ico" style={{ width: 14, height: 14 }} /> Apply to this task
-                      </button>
-                    </form>
+                  {user && !isClient && !isAdmin && (
+                    <>
+                      {myApplication && myApplication.status === "PENDING" && (
+                        <div
+                          style={{
+                            padding: 12,
+                            background: "var(--surface-2)",
+                            borderRadius: 6,
+                            border: "1px solid var(--line)",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 8,
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--brand)" }}>
+                              Applied
+                            </span>
+                            <span className="badge b-open">Pending review</span>
+                          </div>
+                          {myApplication.message && (
+                            <p style={{ margin: 0, fontSize: 12.5, color: "var(--ink-2)" }}>{myApplication.message}</p>
+                          )}
+                          {issue.status === "OPEN" && (
+                            <button
+                              type="button"
+                              className="btn btn-o btn-sm"
+                              style={{ alignSelf: "flex-start", marginTop: 4 }}
+                              disabled={isWorking}
+                              onClick={() => void withdraw(myApplication.id)}
+                            >
+                              Withdraw application
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {myApplication && myApplication.status === "REJECTED" && (
+                        <div
+                          style={{
+                            padding: 12,
+                            background: "var(--surface-2)",
+                            borderRadius: 6,
+                            border: "1px solid var(--line)",
+                          }}
+                        >
+                          <span className="badge b-closed">Application not selected</span>
+                        </div>
+                      )}
+
+                      {issue.status === "OPEN" && (!myApplication || myApplication.status === "WITHDRAWN") && (
+                        <form onSubmit={apply} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          <textarea
+                            className="inp"
+                            style={{ height: 68, padding: 8, fontSize: 12.5 }}
+                            value={applicationText}
+                            onChange={(e) => setApplicationText(e.target.value)}
+                            placeholder="Why are you a good fit? (optional)"
+                          />
+                          <button type="submit" className="btn btn-p" disabled={isWorking || Boolean(issue.viewerCapabilities && !issue.viewerCapabilities.canApply)}>
+                            <MessageSquare className="ico" style={{ width: 14, height: 14 }} /> Apply to this task
+                          </button>
+                        </form>
+                      )}
+                    </>
                   )}
 
                   {canChat && issue.status === "IN_PROGRESS" && issue.viewerCapabilities?.canDispute && actionOf("raiseDispute") && (

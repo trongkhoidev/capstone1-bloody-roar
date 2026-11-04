@@ -166,31 +166,79 @@ export async function distributeEthFromTreasury(
   };
 }
 
-if ((import.meta as unknown as { main?: boolean }).main) {
-  const defaultBaseRpc = "https://sepolia.base.org";
-  const rpcUrl =
-    process.env.RPC_URL &&
-    !process.env.RPC_URL.includes("127.0.0.1") &&
-    !process.env.RPC_URL.includes("localhost")
-      ? process.env.RPC_URL
-      : defaultBaseRpc;
-  const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
-    chainId: BASE_SEPOLIA_CHAIN_ID,
-    name: "base-sepolia",
-  });
-  inspectTreasury(provider).then((res) => {
-    console.log("=== Demo Treasury Status ===");
-    console.log(`Treasury Address:     ${res.treasuryAddress}`);
-    console.log(`Current ETH Balance:  ${res.treasuryEthBalance} ETH`);
-    console.log(`Current USDC Balance: ${res.treasuryUsdcBalance} USDC`);
-    console.log(`Total ETH Needed:     ${res.totalEthNeeded} ETH`);
-    console.log(`Total USDC Needed:    ${res.totalUsdcNeeded} USDC`);
-    console.log(`Planned Recipients:   ${res.distributionsPlanned.length} wallets`);
-    if (!res.isFunded && ethers.utils.parseEther(res.totalEthNeeded).gt(0)) {
-      console.log(`\nCẦN NGƯỜI DÙNG: nạp ${res.totalEthNeeded} ETH và ${res.totalUsdcNeeded} USDC vào ${res.treasuryAddress} trên Base Sepolia`);
+export const LOCAL_MOCK_USDC = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+
+export async function fundLocalWallets(
+  provider: providers.JsonRpcProvider,
+  keysPath: string = KEYS_PATH
+): Promise<{ fundedCount: number; mintedUsdcCount: number }> {
+  if (!fs.existsSync(keysPath)) {
+    throw new Error(`Keys store not found at ${keysPath}. Run wallets.ts first.`);
+  }
+
+  const keys = JSON.parse(fs.readFileSync(keysPath, "utf-8")) as WalletStore;
+  const token = new ethers.Contract(
+    LOCAL_MOCK_USDC,
+    ["function mint(address to, uint256 amount) external"],
+    provider.getSigner(0)
+  );
+
+  let funded = 0;
+  let minted = 0;
+  const ethHex = "0x56bc75e2d63100000"; // 100 ETH
+  const mintAmount = ethers.utils.parseUnits("50000", 6);
+
+  for (const entry of Object.values(keys)) {
+    await provider.send("hardhat_setBalance", [entry.address, ethHex]);
+    funded++;
+    if (entry.persona === "client" || entry.persona === "both" || entry.role === "admin") {
+      const tx = await token.mint(entry.address, mintAmount);
+      await tx.wait();
+      minted++;
     }
-  }).catch((err) => {
-    console.error("Fund check error:", err);
-    process.exit(1);
-  });
+  }
+
+  console.log(`Local funding complete: ${funded} wallets funded with 100 ETH, ${minted} wallets minted 50,000 mUSDC`);
+  return { fundedCount: funded, mintedUsdcCount: minted };
+}
+
+if ((import.meta as unknown as { main?: boolean }).main) {
+  const isLocal = process.env.CHAIN_ID === "31337";
+  if (isLocal) {
+    const rpcUrl = process.env.RPC_URL || "http://127.0.0.1:8545";
+    const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+    fundLocalWallets(provider)
+      .then(() => process.exit(0))
+      .catch((err) => {
+        console.error("Local fund error:", err);
+        process.exit(1);
+      });
+  } else {
+    const defaultBaseRpc = "https://sepolia.base.org";
+    const rpcUrl =
+      process.env.RPC_URL &&
+      !process.env.RPC_URL.includes("127.0.0.1") &&
+      !process.env.RPC_URL.includes("localhost")
+        ? process.env.RPC_URL
+        : defaultBaseRpc;
+    const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
+      chainId: BASE_SEPOLIA_CHAIN_ID,
+      name: "base-sepolia",
+    });
+    inspectTreasury(provider).then((res) => {
+      console.log("=== Demo Treasury Status ===");
+      console.log(`Treasury Address:     ${res.treasuryAddress}`);
+      console.log(`Current ETH Balance:  ${res.treasuryEthBalance} ETH`);
+      console.log(`Current USDC Balance: ${res.treasuryUsdcBalance} USDC`);
+      console.log(`Total ETH Needed:     ${res.totalEthNeeded} ETH`);
+      console.log(`Total USDC Needed:    ${res.totalUsdcNeeded} USDC`);
+      console.log(`Planned Recipients:   ${res.distributionsPlanned.length} wallets`);
+      if (!res.isFunded && ethers.utils.parseEther(res.totalEthNeeded).gt(0)) {
+        console.log(`\nCẦN NGƯỜI DÙNG: nạp ${res.totalEthNeeded} ETH và ${res.totalUsdcNeeded} USDC vào ${res.treasuryAddress} trên Base Sepolia`);
+      }
+    }).catch((err) => {
+      console.error("Fund check error:", err);
+      process.exit(1);
+    });
+  }
 }

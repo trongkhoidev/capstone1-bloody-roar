@@ -49,6 +49,8 @@ export const ROLE_DEFINITIONS: WalletDef[] = [
 export const WALLETS_DIR = path.resolve(process.cwd(), "demo-wallets");
 export const KEYS_PATH = path.join(WALLETS_DIR, "keys.json");
 export const DOC_PATH = path.resolve(process.cwd(), "docs/demo/WALLETS.md");
+export const HARDHAT_ADMIN_ADDRESS = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC";
+export const HARDHAT_ADMIN_KEY = "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a";
 
 export function loadOrCreateWallets(
   keysPath: string = KEYS_PATH,
@@ -67,6 +69,15 @@ export function loadOrCreateWallets(
 
   const updated: WalletStore = {};
   for (const def of ROLE_DEFINITIONS) {
+    if (process.env.CHAIN_ID === "31337" && def.role === "admin") {
+      updated[def.role] = {
+        role: def.role,
+        address: HARDHAT_ADMIN_ADDRESS,
+        privateKey: HARDHAT_ADMIN_KEY,
+        persona: def.persona,
+      };
+      continue;
+    }
     const prev = existing[def.role];
     if (prev && prev.address && prev.privateKey) {
       updated[def.role] = {

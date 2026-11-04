@@ -8,7 +8,7 @@ import { gqlRequest } from "./lib/gql";
 import { connectDemoSocket, emitAck } from "./lib/socket";
 import { executePreparedCalls, signAndSubmitFunding, type PreparedCall } from "./lib/chain";
 import { executeSafeTransaction, type SafeTxData } from "./lib/safe";
-import { KEYS_PATH, type WalletStore } from "./wallets";
+import { KEYS_PATH, loadOrCreateWallets, type WalletStore } from "./wallets";
 import {
   CONTENT_DIR,
   type ChatRoomContent,
@@ -36,11 +36,12 @@ export class DemoPopulator {
   private token84532Id?: string;
 
   constructor(options: PopulateOptions = {}) {
-    this.options = options;
+    this.options = { baseUrl: process.env.BASE_URL || "http://localhost:4001", ...options };
     if (!fs.existsSync(KEYS_PATH)) {
-      throw new Error(`Keys store not found at ${KEYS_PATH}. Run wallets.ts first.`);
+      this.keys = loadOrCreateWallets();
+    } else {
+      this.keys = JSON.parse(fs.readFileSync(KEYS_PATH, "utf-8")) as WalletStore;
     }
-    this.keys = JSON.parse(fs.readFileSync(KEYS_PATH, "utf-8")) as WalletStore;
     this.state = loadState();
 
     this.profiles = JSON.parse(
@@ -70,7 +71,7 @@ export class DemoPopulator {
     pngBuffer: Buffer,
     filename: string
   ): Promise<string> {
-    const baseUrl = this.options.baseUrl || "http://localhost:4100";
+    const baseUrl = this.options.baseUrl || process.env.BASE_URL || "http://localhost:4001";
     const initRes = await fetch(`${baseUrl}/api/uploads`, {
       method: "POST",
       headers: {
@@ -187,22 +188,31 @@ export class DemoPopulator {
     return { updatedCount: count };
   }
 
+  private async ensureTargetTokenId(): Promise<string> {
+    if (this.token84532Id) return this.token84532Id;
+    const targetChainId = Number(process.env.CHAIN_ID || 84532);
+    const session = await this.getSession("user01");
+    const tokensRes = await gqlRequest<{ tokens: Array<{ id: string; chainId: number; symbol: string; isActive?: boolean }> }>(
+      `query { tokens { id chainId symbol isActive } }`,
+      {},
+      { cookie: session.cookie, ip: session.ip, baseUrl: this.options.baseUrl }
+    );
+    const token = targetChainId === 31337
+      ? tokensRes.tokens.find((t) => t.chainId === 31337 && t.isActive)
+      : tokensRes.tokens.find((t) => t.chainId === 84532 && t.symbol === "USDC");
+    if (!token) throw new Error(`Token for chain ${targetChainId} not found in database`);
+    this.token84532Id = token.id;
+    return token.id;
+  }
+
   // WAVE 2: Create 150 issues across 9 categories (20% attachments, 40 criteria)
   public async runWave2(): Promise<{ createdIssuesCount: number }> {
     console.log("=== Wave 2: Issues (150 issues across 9 categories) ===");
     let count = 0;
 
-    // Discover USDC token ID for chain 84532 if not cached
-    if (!this.token84532Id && !this.options.dryRun) {
-      const session = await this.getSession("user01");
-      const tokensRes = await gqlRequest<{ tokens: Array<{ id: string; chainId: number; symbol: string }> }>(
-        `query { tokens { id chainId symbol } }`,
-        {},
-        { cookie: session.cookie, ip: session.ip, baseUrl: this.options.baseUrl }
-      );
-      const token = tokensRes.tokens.find((t) => t.chainId === 84532 && t.symbol === "USDC");
-      if (!token) throw new Error("USDC token for chain 84532 not found in database");
-      this.token84532Id = token.id;
+    // Discover token ID for target chain if not cached
+    if (!this.options.dryRun) {
+      await this.ensureTargetTokenId();
     }
 
     for (const item of this.issues) {
@@ -230,7 +240,7 @@ export class DemoPopulator {
             title: item.title,
             description: item.description,
             category: item.category,
-            bountyAmount: item.bountyAmount,
+            bountyAmount: item.bountyAmount.toString(),
             tokenId: this.token84532Id,
             requiredSkills: item.requiredSkills,
             difficulty: item.difficulty,
@@ -403,14 +413,14 @@ export class DemoPopulator {
       const metadata = this.state.issueMetadata[issueKey];
       const clientRole = metadata?.clientRole || "user01";
 
-      // 0 to 5 applicants per issue
-      const numApplicants = (i % 6);
+      // 0 to 5 applicants per issue (ensure issues 1..45 have applicants for reservations)
+      const numApplicants = i <= 45 ? 1 + (i % 4) : (i % 6);
       for (let a = 0; a < numApplicants; a++) {
         appIdx++;
         const appKey = `app_${String(appIdx).padStart(4, "0")}`;
         const devRole = devRoles[(i + a) % devRoles.length]!;
 
-        if (this.state.applications[appKey]) {
+        if (this.state.applications[appKey] && !this.options.dryRun) {
           applied++;
           continue;
         }
@@ -509,10 +519,69 @@ export class DemoPopulator {
       if (!this.state.reservations[issueKey]) {
         const clientSession = await this.getSession(clientRole);
 
-        // Find an application for this issue
-        const appKey = Object.keys(this.state.applications).find((k) => k.startsWith(`app_`));
-        const appId = this.state.applications[appKey || ""];
+        // Find a pending application for this issue
+        const appsRes = await gqlRequest<{ applications: Array<{ id: string; status: string }> }>(
+          `query GetApps($issueId: String!) {
+            applications(issueId: $issueId) {
+              id
+              status
+            }
+          }`,
+          { issueId },
+          { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
+        ).catch(() => null);
+        let pendingApp = appsRes?.applications?.find((a) => a.status === "PENDING");
+        if (!pendingApp) {
+          for (let d = 11; d <= 32; d++) {
+            const candidateRole = `user${String(d).padStart(2, "0")}`;
+            const devSession = await this.getSession(candidateRole);
+            const appRes = await gqlRequest<{ applyToIssue: { id: string } }>(
+              `mutation Apply($input: ApplyToIssueInput!) {
+                applyToIssue(input: $input) { id }
+              }`,
+              {
+                input: {
+                  issueId,
+                  message: "Sẵn sàng nhận và triển khai ngay nhiệm vụ theo cam kết chất lượng.",
+                },
+              },
+              { cookie: devSession.cookie, ip: devSession.ip, baseUrl: this.options.baseUrl }
+            ).catch(() => null);
+            if (appRes) {
+              pendingApp = { id: appRes.applyToIssue.id, status: "PENDING" };
+              break;
+            }
+          }
+        }
+        const appId = pendingApp?.id;
         if (!appId) continue;
+
+        // Ensure issue has at least one approved test criteria for selectDeveloper
+        const tcRes = await gqlRequest<{ createTestCase: { id: string } }>(
+          `mutation AddCase($input: CreateTestCaseInput!) {
+            createTestCase(input: $input) { id }
+          }`,
+          {
+            input: {
+              issueId,
+              title: "Nghiệm thu hoàn tất chức năng",
+              description: "Đảm bảo tính năng hoạt động đúng theo đặc tả",
+              given: "Môi trường và dữ liệu khởi tạo sẵn",
+              when: "Thực thi tính năng theo hướng dẫn",
+              then: "Kết quả trả về chính xác không phát sinh lỗi",
+            },
+          },
+          { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
+        ).catch(() => null);
+        if (tcRes) {
+          await gqlRequest(
+            `mutation ApproveCase($input: UpdateTestCaseInput!) {
+              updateTestCase(input: $input) { id isApproved }
+            }`,
+            { input: { id: tcRes.createTestCase.id, isApproved: true } },
+            { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
+          ).catch(() => null);
+        }
 
         const deadline = new Date(Date.now() + 5 * 24 * 3600 * 1000).toISOString();
         try {
@@ -567,7 +636,7 @@ export class DemoPopulator {
         const clientSession = await this.getSession(clientRole);
         try {
           const resDetail = await gqlRequest<{
-            fundingReservation: {
+            reservation: {
               id: string;
               chainId: number;
               contractAddress: string;
@@ -576,10 +645,11 @@ export class DemoPopulator {
               termsHash: string;
               amountRaw: string;
               deliveryDeadline: string;
+              developerWallet: string;
             };
           }>(
-            `query GetRes($id: ID!) {
-              fundingReservation(id: $id) {
+            `query GetRes($issueId: ID!) {
+              reservation(issueId: $issueId) {
                 id
                 chainId
                 contractAddress
@@ -588,17 +658,28 @@ export class DemoPopulator {
                 termsHash
                 amountRaw
                 deliveryDeadline
+                developerWallet
               }
             }`,
-            { id: resObj.id },
+            { issueId },
             { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
           );
 
-          const devEntry = this.keys[devRole]!;
+          if (!resDetail.reservation) {
+            console.warn(`No active reservation found for ${issueKey}`);
+            continue;
+          }
+
+          const devWallet = resDetail.reservation.developerWallet;
+          const matchedDevRole = Object.entries(this.keys).find(([_, v]) => v.address.toLowerCase() === devWallet.toLowerCase())?.[0];
+          if (matchedDevRole) {
+            resObj.developerRole = matchedDevRole;
+          }
+
           const calls = await signAndSubmitFunding(
             clientSession.wallet,
-            resDetail.fundingReservation,
-            devEntry.address,
+            resDetail.reservation,
+            devWallet,
             clientSession,
             this.options.baseUrl
           );
@@ -644,25 +725,31 @@ export class DemoPopulator {
       const issueId = this.state.issues[room.issueKey];
       if (!issueId && !this.options.dryRun) continue;
 
-      const clientSession = await this.getSession(room.clientRole);
-      const devSession = await this.getSession(room.developerRole);
+      const issueDef = this.issues.find((i) => i.key === room.issueKey);
+      const clientRole = issueDef?.clientRole || this.state.issueMetadata[room.issueKey]?.clientRole || room.clientRole;
+      const devRole = this.state.reservations[room.issueKey]?.developerRole || room.developerRole;
+
+      const clientSession = await this.getSession(clientRole);
+      const devSession = await this.getSession(devRole);
 
       try {
         const clientSocket = await connectDemoSocket(clientSession.cookie, clientSession.ip, this.options.baseUrl);
         const devSocket = await connectDemoSocket(devSession.cookie, devSession.ip, this.options.baseUrl);
 
         // Join room
-        await emitAck(clientSocket, "task:join", { taskId: issueId });
-        await emitAck(devSocket, "task:join", { taskId: issueId });
+        await emitAck(clientSocket, "task:join", issueId);
+        await emitAck(devSocket, "task:join", issueId);
 
         for (const msg of room.messages) {
-          const senderSocket = msg.senderRole === room.clientRole ? clientSocket : devSocket;
+          const isClientMsg = msg.senderRole === room.clientRole || msg.senderRole === clientRole;
+          const senderSocket = isClientMsg ? clientSocket : devSocket;
           await emitAck(senderSocket, "message:send", {
-            taskId: issueId,
-            text: msg.text,
+            issueId,
+            content: msg.text,
+            type: "TEXT",
           });
           // Small delay to respect rate limit (10 msgs per 10s)
-          await sleep(1100);
+          await sleep(250);
         }
 
         clientSocket.disconnect();
@@ -693,15 +780,21 @@ export class DemoPopulator {
       const issueId = this.state.issues[issueKey];
       if (!issueId && !this.options.dryRun) continue;
 
-      const resObj = this.state.reservations[issueKey];
-      const devRole = resObj?.developerRole || `user${String(11 + (s % 22)).padStart(2, "0")}`;
-      const clientRole = this.state.issueMetadata[issueKey]?.clientRole || "user01";
+      if (this.state.submissions[issueKey]) {
+        submitted++;
+        if (s <= 5) revised++;
+        continue;
+      }
 
       if (this.options.dryRun) {
         submitted++;
         if (s <= 5) revised++;
         continue;
       }
+
+      const resObj = this.state.reservations[issueKey];
+      const devRole = resObj?.developerRole || `user${String(11 + (s % 22)).padStart(2, "0")}`;
+      const clientRole = this.state.issueMetadata[issueKey]?.clientRole || "user01";
 
       const devSession = await this.getSession(devRole);
       try {
@@ -720,8 +813,30 @@ export class DemoPopulator {
 
         const subId = draftRes.createSubmissionDraft.id;
 
+        const prepRes = await gqlRequest<{ prepareSubmitWork: PreparedCall }>(
+          `mutation PrepSubmit($id: ID!) {
+            prepareSubmitWork(submissionId: $id) {
+              intentId
+              contractAddress
+              data
+              value
+            }
+          }`,
+          { id: subId },
+          { cookie: devSession.cookie, ip: devSession.ip, baseUrl: this.options.baseUrl }
+        );
+
+        await executePreparedCalls(
+          devSession.wallet,
+          [prepRes.prepareSubmitWork],
+          devSession,
+          `Submit work for ${issueKey}`,
+          this.options.baseUrl
+        );
+
         // 5 issues get requestChanges then resubmitted
         if (s <= 5) {
+          await sleep(2000);
           const clientSession = await this.getSession(clientRole);
           await gqlRequest(
             `mutation ReqChanges($id: ID!, $notes: String!) {
@@ -731,7 +846,9 @@ export class DemoPopulator {
             }`,
             { id: subId, notes: "Cần bổ sung thêm test case cho edge case concurrency." },
             { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
-          ).catch(() => {});
+          ).catch((err) => {
+            console.warn(`requestChanges warning for ${issueKey}:`, err);
+          });
           revised++;
         }
 
@@ -739,7 +856,7 @@ export class DemoPopulator {
         submitted++;
         saveState(this.state);
       } catch (err) {
-        console.warn(`Submission draft error for ${issueKey}:`, err);
+        console.warn(`Submission error for ${issueKey}:`, err);
       }
     }
 
@@ -797,6 +914,114 @@ export class DemoPopulator {
           console.warn(`Release on-chain skipped/failed for ${issueKey}:`, err);
         }
       }
+
+      if (i >= 17 && i <= 21) {
+        const clientSession = await this.getSession(clientRole);
+        const devSession = await this.getSession(devRole);
+        try {
+          const prop = await gqlRequest<{ prepareProposeSettlement: PreparedCall }>(
+            `mutation($id: ID!, $bps: Int!) { prepareProposeSettlement(issueId: $id, clientBps: $bps) { intentId contractAddress data value } }`,
+            { id: issueId, bps: 5000 },
+            { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
+          );
+          await executePreparedCalls(clientSession.wallet, [prop.prepareProposeSettlement], clientSession, `Propose settlement ${issueKey}`, this.options.baseUrl);
+          await sleep(3500);
+
+          const acc = await gqlRequest<{ prepareAcceptSettlement: PreparedCall }>(
+            `mutation($id: ID!) { prepareAcceptSettlement(issueId: $id) { intentId contractAddress data value } }`,
+            { id: issueId },
+            { cookie: devSession.cookie, ip: devSession.ip, baseUrl: this.options.baseUrl }
+          );
+          await executePreparedCalls(devSession.wallet, [acc.prepareAcceptSettlement], devSession, `Accept settlement ${issueKey}`, this.options.baseUrl);
+          settlements++;
+        } catch (err) {
+          console.warn(`Settlement failed for ${issueKey}:`, err);
+        }
+      }
+
+      if (i >= 22 && i <= 28) {
+        const clientSession = await this.getSession(clientRole);
+        const devSession = await this.getSession(devRole);
+        const isLocal = (process.env.CHAIN_ID || "31337") === "31337";
+        try {
+          const ev = await gqlRequest<{ createEvidenceManifest: { id: string } }>(
+            `mutation($issue: ID!, $stmt: String!) { createEvidenceManifest(issueId: $issue, statement: $stmt) { id } }`,
+            { issue: issueId, stmt: "San pham khong dat tieu chuan yeu cau trong mo ta." },
+            { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
+          );
+          const raise = await gqlRequest<{ prepareRaiseDispute: PreparedCall }>(
+            `mutation($issue: ID!, $man: ID!) { prepareRaiseDispute(issueId: $issue, manifestId: $man) { intentId contractAddress data value } }`,
+            { issue: issueId, man: ev.createEvidenceManifest.id },
+            { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
+          );
+          await executePreparedCalls(clientSession.wallet, [raise.prepareRaiseDispute], clientSession, `Raise dispute ${issueKey}`, this.options.baseUrl);
+          disputes++;
+          await sleep(3000);
+
+          if (i >= 24 && isLocal) {
+            const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL || "http://127.0.0.1:8545");
+            const cEv = await gqlRequest<{ createEvidenceManifest: { id: string } }>(
+              `mutation($issue: ID!, $stmt: String!) { createEvidenceManifest(issueId: $issue, statement: $stmt) { id } }`,
+              { issue: issueId, stmt: "Da hoan thanh dung yeu cau va test day du." },
+              { cookie: devSession.cookie, ip: devSession.ip, baseUrl: this.options.baseUrl }
+            );
+            const cRes = await gqlRequest<{ prepareSubmitCounterpartyEvidence: PreparedCall }>(
+              `mutation($issue: ID!, $man: ID!) { prepareSubmitCounterpartyEvidence(issueId: $issue, manifestId: $man) { intentId contractAddress data value } }`,
+              { issue: issueId, man: cEv.createEvidenceManifest.id },
+              { cookie: devSession.cookie, ip: devSession.ip, baseUrl: this.options.baseUrl }
+            );
+            await executePreparedCalls(devSession.wallet, [cRes.prepareSubmitCounterpartyEvidence], devSession, `Counter evidence ${issueKey}`, this.options.baseUrl);
+            await sleep(3000);
+
+            await provider.send("evm_increaseTime", [73 * 3600]);
+            await provider.send("evm_mine", []);
+
+            const adminSession = await this.getSession("admin");
+            const draftInit = await gqlRequest<{ draftRuling: { decisionHash: string; safeTransactionJson: string } }>(
+              `mutation($id: ID!, $kind: RulingDraftKind!, $bps: Int!, $rat: String!) { draftRuling(issueId: $id, kind: $kind, clientBps: $bps, rationale: $rat) { decisionHash safeTransactionJson } }`,
+              { id: issueId, kind: "INITIAL", bps: 3000, rat: "Bang chung phan anh dung mot phan thuc te." },
+              { cookie: adminSession.cookie, ip: adminSession.ip, baseUrl: this.options.baseUrl }
+            );
+            const safeTxInit = JSON.parse(draftInit.draftRuling.safeTransactionJson).transactions[0];
+            const arbSigner = adminSession.wallet.provider ? adminSession.wallet : adminSession.wallet.connect(provider);
+            const arbTx1 = await arbSigner.sendTransaction({ to: safeTxInit.to, data: safeTxInit.data, gasLimit: 500000 });
+            await arbTx1.wait(1);
+            await sleep(3000);
+
+            if (i >= 26) {
+              const chal = await gqlRequest<{ prepareChallengeRuling: PreparedCall }>(
+                `mutation($id: ID!) { prepareChallengeRuling(issueId: $id) { intentId contractAddress data value } }`,
+                { id: issueId },
+                { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
+              );
+              await executePreparedCalls(clientSession.wallet, [chal.prepareChallengeRuling], clientSession, `Challenge ruling ${issueKey}`, this.options.baseUrl);
+              await sleep(3000);
+
+              const draftFinal = await gqlRequest<{ draftRuling: { decisionHash: string; safeTransactionJson: string } }>(
+                `mutation($id: ID!, $kind: RulingDraftKind!, $bps: Int!, $rat: String!) { draftRuling(issueId: $id, kind: $kind, clientBps: $bps, rationale: $rat) { decisionHash safeTransactionJson } }`,
+                { id: issueId, kind: "FINAL", bps: 6000, rat: "Phan quyet cuoi cung phan chia 60% client 40% dev." },
+                { cookie: adminSession.cookie, ip: adminSession.ip, baseUrl: this.options.baseUrl }
+              );
+              const safeTxFinal = JSON.parse(draftFinal.draftRuling.safeTransactionJson).transactions[0];
+              const arbTx2 = await arbSigner.sendTransaction({ to: safeTxFinal.to, data: safeTxFinal.data, gasLimit: 500000 });
+              await arbTx2.wait(1);
+
+              await provider.send("evm_increaseTime", [25 * 3600]);
+              await provider.send("evm_mine", []);
+
+              const fin = await gqlRequest<{ prepareFinalizeRuling: PreparedCall }>(
+                `mutation($id: ID!) { prepareFinalizeRuling(issueId: $id) { intentId contractAddress data value } }`,
+                { id: issueId },
+                { cookie: adminSession.cookie, ip: adminSession.ip, baseUrl: this.options.baseUrl }
+              );
+              await executePreparedCalls(adminSession.wallet, [fin.prepareFinalizeRuling], adminSession, `Finalize ruling ${issueKey}`, this.options.baseUrl);
+              await sleep(3000);
+            }
+          }
+        } catch (err) {
+          console.warn(`Dispute workflow failed for ${issueKey}:`, err);
+        }
+      }
     }
 
     return { releases, settlements, disputes };
@@ -847,6 +1072,7 @@ export class DemoPopulator {
     try {
       const spamSession = await this.getSession("spammer");
       const adminSession = await this.getSession("admin");
+      const tokenId = await this.ensureTargetTokenId();
 
       for (let s = 1; s <= 2; s++) {
         const spamRes = await gqlRequest<{ createIssue: { id: string } }>(
@@ -860,8 +1086,8 @@ export class DemoPopulator {
               title: `Free Crypto Giveaway Click Link Here Spam #${s}`,
               description: "Promotional spam advertisement content violating terms of service. Free tokens giveaway.",
               category: "OTHER",
-              bountyAmount: 0.5,
-              tokenId: this.token84532Id,
+              bountyAmount: "0.5",
+              tokenId,
             },
           },
           { cookie: spamSession.cookie, ip: spamSession.ip, baseUrl: this.options.baseUrl }
@@ -881,17 +1107,17 @@ export class DemoPopulator {
       }
 
       // Admin bans the spammer user
-      const spamUser = await gqlRequest<{ userByAddress: { id: string } }>(
-        `query GetUser($address: String!) {
-          userByAddress(walletAddress: $address) {
+      const spamUser = await gqlRequest<{ me: { id: string } }>(
+        `query {
+          me {
             id
           }
         }`,
-        { address: spamSession.address },
-        { cookie: adminSession.cookie, ip: adminSession.ip, baseUrl: this.options.baseUrl }
+        {},
+        { cookie: spamSession.cookie, ip: spamSession.ip, baseUrl: this.options.baseUrl }
       );
 
-      if (spamUser.userByAddress?.id) {
+      if (spamUser.me?.id) {
         await gqlRequest(
           `mutation Ban($input: BanUserInput!) {
             banUser(input: $input) {
@@ -901,7 +1127,7 @@ export class DemoPopulator {
           }`,
           {
             input: {
-              userId: spamUser.userByAddress.id,
+              userId: spamUser.me.id,
               reason: "Tài khoản liên tục đăng tin quảng cáo spam lừa đảo",
             },
           },

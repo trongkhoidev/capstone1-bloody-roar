@@ -34,35 +34,21 @@ export async function runVerification(options: { dryRun?: boolean } = {}): Promi
     };
   }
 
-  // Count metrics from database
-  const [
-    usersCount,
-    issuesCount,
-    commentsCount,
-    applicationsCount,
-    reservationsCount,
-    chatRoomsCount,
-    submissionsCount,
-    reviewsCount,
-    bannedUsersCount,
-    findingsCount,
-    stuckIntentsCount,
-  ] = await Promise.all([
-    prisma.user.count({ where: { role: { in: ["CLIENT", "DEVELOPER"] }, isBanned: false } }),
-    prisma.issue.count(),
-    prisma.issueComment.count(),
-    prisma.application.count(),
-    prisma.fundingReservation.count(),
-    prisma.message
-      .groupBy({ by: ["issueId"], _count: { id: true } })
-      .then((res) => res.length)
-      .catch(() => 0),
-    prisma.submission.count(),
-    prisma.review.count(),
-    prisma.user.count({ where: { isBanned: true } }),
-    prisma.reconciliationFinding.count({ where: { resolvedAt: null } }).catch(() => 0),
-    prisma.transactionIntent.count({ where: { status: "FAILED" } }).catch(() => 0),
-  ]);
+  // Count metrics from database sequentially to avoid pooler session limits
+  const usersCount = await prisma.user.count({ where: { role: { in: ["CLIENT", "DEVELOPER"] }, isBanned: false } });
+  const issuesCount = await prisma.issue.count();
+  const commentsCount = await prisma.issueComment.count();
+  const applicationsCount = await prisma.application.count();
+  const reservationsCount = await prisma.fundingReservation.count();
+  const chatRoomsCount = await prisma.message
+    .groupBy({ by: ["issueId"], _count: { id: true } })
+    .then((res) => res.length)
+    .catch(() => 0);
+  const submissionsCount = await prisma.submission.count();
+  const reviewsCount = await prisma.review.count();
+  const bannedUsersCount = await prisma.user.count({ where: { isBanned: true } });
+  const findingsCount = await prisma.reconciliationFinding.count({ where: { resolvedAt: null } }).catch(() => 0);
+  const stuckIntentsCount = await prisma.transactionIntent.count({ where: { status: "FAILED" } }).catch(() => 0);
 
   const metrics = [
     { item: "Ví người dùng có profile", actual: usersCount, target: 40, passed: usersCount >= 40 },

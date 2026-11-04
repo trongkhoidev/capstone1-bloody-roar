@@ -6,7 +6,7 @@ export type { Socket };
 export async function connectDemoSocket(
   cookie: string,
   ip?: string,
-  baseUrl = "http://localhost:4100"
+  baseUrl = process.env.BASE_URL || "http://localhost:4001"
 ): Promise<Socket> {
   const token = cookie.includes("=") ? cookie.slice(cookie.indexOf("=") + 1) : cookie;
   const extraHeaders: Record<string, string> = {};

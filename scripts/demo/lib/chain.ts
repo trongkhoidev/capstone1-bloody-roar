@@ -28,26 +28,29 @@ export async function executePreparedCalls(
   calls: PreparedCall[],
   session: UserSession,
   purpose: string,
-  baseUrl = "http://localhost:4100"
+  baseUrl = process.env.BASE_URL || "http://localhost:4001"
 ): Promise<string[]> {
-  const provider = wallet.provider;
-  if (provider) {
+  const rpcUrl = process.env.RPC_URL || ((process.env.CHAIN_ID || "31337") === "31337" ? "http://127.0.0.1:8545" : "https://sepolia.base.org");
+  const signer = wallet.provider ? wallet : wallet.connect(new ethers.providers.JsonRpcProvider(rpcUrl));
+  const provider = signer.provider;
+  if (provider && process.env.CHAIN_ID !== "31337") {
     await assertBaseSepolia(provider);
   }
 
   const hashes: string[] = [];
   for (const call of calls) {
-    const tx = await wallet.sendTransaction({
+    const tx = await signer.sendTransaction({
       to: call.contractAddress,
       data: call.data,
-      value: ethers.BigNumber.from(call.value),
+      value: ethers.BigNumber.from(call.value || 0),
     });
 
     // Record submission to server
     await gqlRequest(
-      `mutation RecordTx($intentId: String!, $txHash: String!) {
+      `mutation RecordTx($intentId: ID!, $txHash: String!) {
         recordTransactionSubmitted(intentId: $intentId, txHash: $txHash) {
-          success
+          id
+          status
         }
       }`,
       { intentId: call.intentId, txHash: tx.hash },
@@ -82,7 +85,7 @@ export async function signAndSubmitFunding(
   reservation: FundingReservationData,
   developerAddress: string,
   session: UserSession,
-  baseUrl = "http://localhost:4100"
+  baseUrl = process.env.BASE_URL || "http://localhost:4001"
 ): Promise<PreparedCall[]> {
   const nonceBytes = crypto.getRandomValues(new Uint8Array(16));
   const nonce = BigInt(`0x${Array.from(nonceBytes, (byte) => byte.toString(16).padStart(2, "0")).join("")}`);
@@ -117,10 +120,25 @@ export async function signAndSubmitFunding(
     ) => Promise<string>;
   })._signTypedData(typed.domain, { FundingIntent: [...typed.types.FundingIntent] }, message);
 
-  const res = await gqlRequest<{ submitFundingIntent: { calls: PreparedCall[] } }>(
-    `mutation SubmitIntent($input: SubmitFundingIntentInput!) {
-      submitFundingIntent(input: $input) {
-        calls {
+  await gqlRequest<{ submitFundingIntent: { id: string } }>(
+    `mutation SubmitIntent($reservationId: ID!, $signature: String!, $nonce: String!, $intentExpiry: String!) {
+      submitFundingIntent(reservationId: $reservationId, signature: $signature, nonce: $nonce, intentExpiry: $intentExpiry) {
+        id
+      }
+    }`,
+    {
+      reservationId: reservation.id,
+      signature,
+      nonce: nonce.toString(),
+      intentExpiry: expiry.toISOString(),
+    },
+    { cookie: session.cookie, ip: session.ip, baseUrl }
+  );
+
+  const prepRes = await gqlRequest<{ prepareEscrowDeposit: { steps: PreparedCall[] } }>(
+    `mutation PrepareDeposit($id: ID!) {
+      prepareEscrowDeposit(reservationId: $id) {
+        steps {
           intentId
           contractAddress
           data
@@ -128,16 +146,9 @@ export async function signAndSubmitFunding(
         }
       }
     }`,
-    {
-      input: {
-        reservationId: reservation.id,
-        signature,
-        nonce: nonce.toString(),
-        intentExpiry: expiry.toISOString(),
-      },
-    },
+    { id: reservation.id },
     { cookie: session.cookie, ip: session.ip, baseUrl }
   );
 
-  return res.submitFundingIntent.calls;
+  return prepRes.prepareEscrowDeposit.steps;
 }

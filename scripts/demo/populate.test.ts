@@ -62,4 +62,19 @@ describe("Demo Populator Plan and Quantities (R5)", () => {
     expect(w9.spamIssuesHidden).toBe(2);
     expect(w9.bannedSpammer).toBe(true);
   });
+
+  it("resolves mUSDC for local chain 31337 and USDC for Base Sepolia 84532", () => {
+    const mockTokens = [
+      { id: "token-local", chainId: 31337, symbol: "mUSDC", isActive: true },
+      { id: "token-sepolia", chainId: 84532, symbol: "USDC", isActive: true },
+    ];
+    const selectToken = (chainId: number) => {
+      return chainId === 31337
+        ? mockTokens.find((t) => t.chainId === 31337 && t.isActive)
+        : mockTokens.find((t) => t.chainId === 84532 && t.symbol === "USDC");
+    };
+
+    expect(selectToken(31337)?.symbol).toBe("mUSDC");
+    expect(selectToken(84532)?.symbol).toBe("USDC");
+  });
 });

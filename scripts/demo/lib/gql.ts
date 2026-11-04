@@ -14,7 +14,7 @@ export async function gqlRequest<T = Record<string, unknown>>(
     baseUrl?: string | undefined;
   } = {}
 ): Promise<T> {
-  const baseUrl = options.baseUrl || "http://localhost:4100";
+  const baseUrl = options.baseUrl || process.env.BASE_URL || "http://localhost:4001";
   const url = `${baseUrl}/api/graphql`;
 
   // Random delay between 300ms and 800ms to stay well below rate limit
@@ -27,26 +27,28 @@ export async function gqlRequest<T = Record<string, unknown>>(
   if (options.cookie) headers["cookie"] = options.cookie;
   if (options.ip) headers["x-forwarded-for"] = options.ip;
 
-  let res = await fetch(url, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ query, variables }),
-  });
-
-  // Retry on temporary 429, 502, 503
-  for (let attempt = 0; (res.status === 429 || res.status >= 500) && attempt < 5; attempt++) {
-    const retryAfter = Number(res.headers.get("retry-after") ?? "2");
-    await sleep(Math.max(retryAfter * 1000, 2000));
-    res = await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ query, variables }),
-    });
+  let res: Response | null = null;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ query, variables }),
+      });
+      if (res.status === 429 || res.status === 404 || res.status >= 500) {
+        const retryAfter = Number(res.headers.get("retry-after") ?? "2");
+        await sleep(Math.max(retryAfter * 1000, 2000));
+        continue;
+      }
+      break;
+    } catch {
+      await sleep(2000);
+    }
   }
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`GraphQL HTTP ${res.status}: ${text}`);
+  if (!res || !res.ok) {
+    const text = res ? await res.text() : "Network error";
+    throw new Error(`GraphQL HTTP ${res?.status ?? "ERR"}: ${text}`);
   }
 
   const json = (await res.json()) as GraphQLResponse<T>;

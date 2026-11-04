@@ -50,7 +50,8 @@ export const WALLETS_DIR = path.resolve(process.cwd(), "demo-wallets");
 export const KEYS_PATH = path.join(WALLETS_DIR, "keys.json");
 export const DOC_PATH = path.resolve(process.cwd(), "docs/demo/WALLETS.md");
 export const HARDHAT_ADMIN_ADDRESS = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC";
-export const HARDHAT_ADMIN_KEY = "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a";
+// Hardhat #2 from the public test mnemonic: arbiter on-chain and in ADMIN_WALLETS.
+const HARDHAT_MNEMONIC = "test test test test test test test test test test test junk";
 
 export function loadOrCreateWallets(
   keysPath: string = KEYS_PATH,
@@ -73,7 +74,7 @@ export function loadOrCreateWallets(
       updated[def.role] = {
         role: def.role,
         address: HARDHAT_ADMIN_ADDRESS,
-        privateKey: HARDHAT_ADMIN_KEY,
+        privateKey: ethers.Wallet.fromMnemonic(HARDHAT_MNEMONIC, "m/44'/60'/0'/0/2").privateKey,
         persona: def.persona,
       };
       continue;

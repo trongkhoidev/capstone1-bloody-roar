@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Check, Pencil, Sparkles, X } from "lucide-react";
-import { graphqlRequest } from "@/lib/graphql-client";
+import { graphqlRequest, GraphQLRequestError } from "@/lib/graphql-client";
 import { Button } from "@/components/ui/button";
 
 type TestCase = {
@@ -24,6 +24,9 @@ type TestCaseDraft = Pick<TestCase, "title" | "description" | "given" | "when" |
 const TEST_CASES_QUERY = `query TaskTestCases($issueId: String!) { testCases(issueId: $issueId) { id title description given when then isEdgeCase priority source isApproved clientNotes } }`;
 const GENERATE_TEST_CASES = `mutation GenerateTestCases($issueId: String!) { generateTestCases(issueId: $issueId) { id title description given when then isEdgeCase priority source isApproved clientNotes } }`;
 const UPDATE_TEST_CASE = `mutation UpdateTestCase($input: UpdateTestCaseInput!) { updateTestCase(input: $input) { id title description given when then isEdgeCase priority source isApproved clientNotes } }`;
+const CREATE_TEST_CASE = `mutation CreateTestCase($input: CreateTestCaseInput!) { createTestCase(input: $input) { id title description given when then isEdgeCase priority source isApproved clientNotes } }`;
+const DELETE_TEST_CASE = `mutation DeleteTestCase($id: ID!) { deleteTestCase(id: $id) }`;
+const emptyDraft: TestCaseDraft = { title: "", description: "", given: "", when: "", then: "", priority: "NORMAL", isEdgeCase: false };
 const fieldClass = "w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-2.5 py-2 text-xs leading-5 outline-none focus:border-[hsl(var(--primary)/0.5)]";
 
 export function TestCasePanel({ issueId, owner, issueStatus }: { issueId: string; owner: boolean; issueStatus: string }) {
@@ -33,6 +36,8 @@ export function TestCasePanel({ issueId, owner, issueStatus }: { issueId: string
   const [savingId, setSavingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<TestCaseDraft | null>(null);
+  const [manual, setManual] = useState<TestCaseDraft>(emptyDraft);
+  const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -50,8 +55,26 @@ export function TestCasePanel({ issueId, owner, issueStatus }: { issueId: string
       const result = await graphqlRequest<{ generateTestCases: TestCase[] }>(GENERATE_TEST_CASES, { issueId });
       setTestCases(result.generateTestCases);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not generate acceptance criteria.");
+      setError(reason instanceof GraphQLRequestError && reason.code === "AI_UNAVAILABLE" ? "AI chưa bật, hãy thêm tiêu chí thủ công" : reason instanceof Error ? reason.message : "Could not generate acceptance criteria.");
     } finally { setGenerating(false); }
+  };
+
+  const create = async () => {
+    setCreating(true); setError(null);
+    try {
+      const result = await graphqlRequest<{ createTestCase: TestCase }>(CREATE_TEST_CASE, { input: { issueId, ...manual } });
+      setTestCases((current) => [...current, result.createTestCase]); setManual(emptyDraft);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not create criterion."); }
+    finally { setCreating(false); }
+  };
+
+  const remove = async (id: string) => {
+    setSavingId(id); setError(null);
+    try {
+      await graphqlRequest(DELETE_TEST_CASE, { id });
+      setTestCases((current) => current.filter((item) => item.id !== id));
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not delete criterion."); }
+    finally { setSavingId(null); }
   };
 
   const approve = async (testCase: TestCase) => {
@@ -86,6 +109,12 @@ export function TestCasePanel({ issueId, owner, issueStatus }: { issueId: string
         {owner && issueStatus === "OPEN" && <Button size="sm" variant="outline" disabled={generating} onClick={() => void generate()}><Sparkles className="mr-2 h-4 w-4" />{generating ? "Generating…" : testCases.length ? "Regenerate drafts" : "Generate with AI"}</Button>}
       </div>
 
+      {owner && issueStatus === "OPEN" && <form className="mt-4 space-y-2" onSubmit={(event) => { event.preventDefault(); void create(); }}>
+        <input className={fieldClass} aria-label="New criterion title" placeholder="Title" required minLength={4} maxLength={160} value={manual.title} onChange={(event) => setManual({ ...manual, title: event.target.value })} />
+        <textarea className={fieldClass} aria-label="New criterion description" placeholder="Description" required minLength={8} maxLength={1000} value={manual.description} onChange={(event) => setManual({ ...manual, description: event.target.value })} />
+        <div className="grid gap-2 sm:grid-cols-3">{(["given", "when", "then"] as const).map((field) => <textarea key={field} className={fieldClass} aria-label={`New criterion ${field}`} placeholder={field} required minLength={4} maxLength={1000} value={manual[field]} onChange={(event) => setManual({ ...manual, [field]: event.target.value })} />)}</div>
+        <div className="flex gap-2"><select className={fieldClass} aria-label="New criterion priority" value={manual.priority} onChange={(event) => setManual({ ...manual, priority: event.target.value as TestCaseDraft["priority"] })}><option value="CRITICAL">Critical</option><option value="NORMAL">Normal</option><option value="LOW">Low</option></select><Button type="submit" size="sm" disabled={creating}>Add criterion</Button></div>
+      </form>}
       {error && <p role="alert" className="mt-3 rounded-md bg-[hsl(var(--destructive)/0.08)] p-2.5 text-xs text-[hsl(var(--destructive))]">{error}</p>}
       {testCases.length === 0 ? <p className="mt-4 rounded-lg bg-[hsl(var(--background-secondary))] p-4 text-sm text-[hsl(var(--foreground-muted))]">No acceptance criteria have been added yet.</p> : <div className="mt-4 divide-y divide-[hsl(var(--border))]">
         {testCases.map((testCase) => {
@@ -95,7 +124,7 @@ export function TestCasePanel({ issueId, owner, issueStatus }: { issueId: string
               <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-semibold">{testCase.title}</h3><span className="rounded-full bg-[hsl(var(--background-secondary))] px-2 py-0.5 text-[10px] text-[hsl(var(--foreground-muted))]">{testCase.priority.toLowerCase()}{testCase.isEdgeCase ? " · edge case" : ""}</span><span className={`rounded-full px-2 py-0.5 text-[10px] ${testCase.isApproved ? "bg-[var(--ok-bg)] text-[var(--ok)]" : "bg-[var(--warn-bg)] text-[var(--warn)]"}`}>{testCase.isApproved ? "Approved" : "Draft"}</span></div>
                 {!editing && <p className="mt-1 text-xs leading-5 text-[hsl(var(--foreground-muted))]">{testCase.description}</p>}
               </div>
-              {owner && issueStatus === "OPEN" && !editing && <div className="flex shrink-0 gap-1"><Button type="button" size="sm" variant="ghost" aria-label={`Edit ${testCase.title}`} onClick={() => { setEditingId(testCase.id); setDraft({ title: testCase.title, description: testCase.description, given: testCase.given, when: testCase.when, then: testCase.then, isEdgeCase: testCase.isEdgeCase, priority: testCase.priority }); }}><Pencil className="h-3.5 w-3.5" /></Button>{!testCase.isApproved && <Button type="button" size="sm" variant="outline" disabled={savingId === testCase.id} onClick={() => void approve(testCase)}><Check className="mr-1 h-3.5 w-3.5" />Approve</Button>}</div>}
+              {owner && issueStatus === "OPEN" && !editing && <div className="flex shrink-0 gap-1"><Button type="button" size="sm" variant="ghost" aria-label={`Edit ${testCase.title}`} onClick={() => { setEditingId(testCase.id); setDraft({ title: testCase.title, description: testCase.description, given: testCase.given, when: testCase.when, then: testCase.then, isEdgeCase: testCase.isEdgeCase, priority: testCase.priority }); }}><Pencil className="h-3.5 w-3.5" /></Button><Button type="button" size="sm" variant="ghost" disabled={savingId === testCase.id} onClick={() => void remove(testCase.id)}>Delete</Button>{!testCase.isApproved && <Button type="button" size="sm" variant="outline" disabled={savingId === testCase.id} onClick={() => void approve(testCase)}><Check className="mr-1 h-3.5 w-3.5" />Approve</Button>}</div>}
             </div>
 
             {editing ? <div className="mt-3 space-y-2">

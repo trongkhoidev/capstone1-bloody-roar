@@ -1,4 +1,4 @@
-import { IssueStatus, TestCasePriority, TestCaseSource, UserRole } from "@bloody-roar/database";
+import { IssueStatus, TestCasePriority, TestCaseSource } from "@bloody-roar/database";
 import type { AILog, Prisma, TestCase as TestCaseModel } from "@bloody-roar/database";
 import { z } from "zod";
 import { builder } from "../../builder";
@@ -90,7 +90,6 @@ builder.mutationField("generateTestCases", (t) =>
     args: { issueId: t.arg.string({ required: true }) },
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
-      if (user.role !== UserRole.CLIENT) throw gqlError("Only client accounts can generate acceptance criteria", "CLIENT_ROLE_REQUIRED");
       aiRateLimit(user);
 
       const issue = await ctx.db.issue.findUnique({

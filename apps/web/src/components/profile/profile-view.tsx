@@ -105,7 +105,7 @@ export function ProfileView() {
             <Field label={t("aboutYou")}><textarea className="min-h-32 w-full rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--background-secondary))] px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]" maxLength={200} value={bio} onChange={(event) => setBio(event.target.value)} placeholder={t("bioPlaceholder")} /></Field>
             <Field label={t("skillsComma")}><Input value={skillsText} onChange={(event) => setSkillsText(event.target.value)} placeholder="TypeScript, Solidity, UI design" /></Field>
             <Field label={t("locationLabel")}><Input maxLength={80} value={location} onChange={(event) => setLocation(event.target.value)} placeholder={t("locationPlaceholder")} /></Field>
-            {profile?.role !== "ADMIN" && <Field label={t("accountRole")}><select value={role} onChange={(event) => setRole(event.target.value as "CLIENT" | "DEVELOPER")} className="block w-full rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--background-secondary))] px-3 py-2.5 text-sm"><option value="DEVELOPER">{t("developerRole")}</option><option value="CLIENT">{t("clientRole")}</option></select><span className="mt-1 block text-xs text-[hsl(var(--foreground-muted))]">{t("switchRoles")}</span></Field>}
+            {profile?.role !== "ADMIN" && <Field label="Nhãn hiển thị"><select value={role} onChange={(event) => setRole(event.target.value as "CLIENT" | "DEVELOPER")} className="block w-full rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--background-secondary))] px-3 py-2.5 text-sm"><option value="DEVELOPER">{t("developerRole")}</option><option value="CLIENT">{t("clientRole")}</option></select><span className="mt-1 block text-xs text-[hsl(var(--foreground-muted))]">Không ảnh hưởng quyền</span></Field>}
             <Button type="submit" isLoading={saving}><Save className="mr-2 h-4 w-4" />{t("saveProfile")}</Button>
           </>}
         </form>
@@ -116,7 +116,7 @@ export function ProfileView() {
             <div className="mt-3 flex items-center justify-between text-sm"><span className="text-[hsl(var(--foreground-muted))]">{t("reputation")}</span><strong>{(profile?.reputationScore ?? authUser.reputationScore).toFixed(1)} / 5</strong></div>
             <div className="mt-2 flex items-center justify-between text-sm"><span className="text-[hsl(var(--foreground-muted))]">{t("completedTasks")}</span><strong>{profile?.completedTaskCount ?? authUser.completedTaskCount}</strong></div>
           </div>
-          {profile?.role === "DEVELOPER" && <div className="glass rounded-xl p-5">
+          {profile && profile.role !== "ADMIN" && <div className="glass rounded-xl p-5">
             <div className="flex items-center gap-2 font-semibold"><ShieldCheck className="h-4 w-4 text-[hsl(var(--ring))]" />{t("verifiableCredentials")}</div>
             {profile.attestations.length ? <div className="mt-3 space-y-3">{profile.attestations.map((attestation) => <article key={attestation.attestationUid} className="rounded-lg border border-[hsl(var(--border))] p-3">
               <div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold">{attestation.type.replaceAll("_", " ")}</span><span className={`rounded-full px-2 py-0.5 text-[10px] ${attestation.revokedAt ? "bg-[hsl(var(--destructive)/0.1)] text-[hsl(var(--destructive))]" : "bg-[hsl(var(--success)/0.1)] text-[hsl(var(--success))]"}`}>{attestation.revokedAt ? "Revoked" : "Active"}</span></div>

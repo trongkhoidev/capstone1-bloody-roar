@@ -798,7 +798,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                   )}
 
                   <TestCasePanel issueId={issue.id} owner={isClient} issueStatus={issue.status} />
-                  <IssueComments issueId={issue.id} />
+                  <IssueComments issueId={issue.id} ownerId={issue.clientId} />
                 </>
               )}
 
@@ -1036,12 +1036,12 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                         <dd className="mono">BR-{issue.id.slice(0, 12)}</dd>
                         <dt>Total Locked</dt>
                         <dd className="mono" style={{ color: "var(--gold)", fontWeight: 600 }}>
-                          {issue.bountyAmount.toLocaleString()} USDC
+                          {issue.bountyAmount.toLocaleString()} {issue.token.symbol}
                         </dd>
                         <dt>Developer Net (97.5%)</dt>
-                        <dd className="mono">{devShare} USDC</dd>
+                        <dd className="mono">{devShare} {issue.token.symbol}</dd>
                         <dt>Platform Fee (2.5%)</dt>
-                        <dd className="mono">{platformFee} USDC</dd>
+                        <dd className="mono">{platformFee} {issue.token.symbol}</dd>
                         <dt>Review Timeout</dt>
                         <dd className="mono">+7 days after delivery deadline</dd>
                         <dt>Dispute Window</dt>

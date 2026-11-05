@@ -11,7 +11,7 @@ const { verifyJWT, prisma, tx } = vi.hoisted(() => {
   const prisma = {
     ...tx,
     aILog: { create: vi.fn(() => Promise.resolve()) },
-    notification: { create: vi.fn() },
+    notification: { create: vi.fn(), findFirst: vi.fn(async () => null) },
     $transaction: vi.fn((run: (client: typeof tx) => unknown) => run(tx)),
   };
   return { verifyJWT: vi.fn(), prisma, tx };

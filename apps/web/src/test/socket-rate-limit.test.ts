@@ -11,7 +11,7 @@ const { verifyJWT, prisma, tx } = vi.hoisted(() => {
   const prisma = {
     ...tx,
     aILog: { create: vi.fn(() => Promise.resolve()) },
-    notification: { create: vi.fn() },
+    notification: { create: vi.fn(), findFirst: vi.fn().mockResolvedValue(null) },
     $transaction: vi.fn((run: (client: typeof tx) => unknown) => run(tx)),
   };
   return { verifyJWT: vi.fn(), prisma, tx };
@@ -92,6 +92,17 @@ describe("socket message:send rate limit", () => {
     expect(callbacks.slice(0, 10).every((callback) => callback.mock.calls[0]?.length === 0)).toBe(true);
     expect(callbacks[10]).toHaveBeenCalledWith("Too many messages, slow down");
     expect(tx.message.create).toHaveBeenCalledTimes(10);
+  });
+});
+
+describe("message notifications", () => {
+  it("does not create another notification for an unread message on the same issue", async () => {
+    const send = connectSocket();
+    asUser("notification-user");
+    prisma.notification.findFirst.mockResolvedValueOnce({ id: "existing" });
+    await send({}, vi.fn());
+    expect(prisma.notification.findFirst).toHaveBeenCalledWith({ where: { userId: "dev-1", type: "MESSAGE_RECEIVED", isRead: false, link: "/issues/issue-1" } });
+    expect(prisma.notification.create).not.toHaveBeenCalled();
   });
 });
 

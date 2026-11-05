@@ -392,7 +392,8 @@ export function registerSocketHandlers(
         const recipientId = issue.clientId === user.id ? issue.developerId : issue.clientId;
         if (recipientId) {
           try {
-            await createNotification(prisma, {
+            const unread = await prisma.notification.findFirst({ where: { userId: recipientId, type: NotificationType.MESSAGE_RECEIVED, isRead: false, link: `/issues/${issueId}` } });
+            if (!unread) await createNotification(prisma, {
               userId: recipientId,
               actorId: user.id,
               type: NotificationType.MESSAGE_RECEIVED,

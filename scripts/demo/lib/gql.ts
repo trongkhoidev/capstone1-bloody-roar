@@ -28,7 +28,7 @@ export async function gqlRequest<T = Record<string, unknown>>(
   if (options.ip) headers["x-forwarded-for"] = options.ip;
 
   let res: Response | null = null;
-  for (let attempt = 0; attempt < 8; attempt++) {
+  for (let attempt = 0; attempt < 15; attempt++) {
     try {
       res = await fetch(url, {
         method: "POST",
@@ -37,12 +37,12 @@ export async function gqlRequest<T = Record<string, unknown>>(
       });
       if (res.status === 429 || res.status === 404 || res.status >= 500) {
         const retryAfter = Number(res.headers.get("retry-after") ?? "2");
-        await sleep(Math.max(retryAfter * 1000, 2000));
+        await sleep(Math.max(retryAfter * 1000, 2500));
         continue;
       }
       break;
     } catch {
-      await sleep(2000);
+      await sleep(2500);
     }
   }
 

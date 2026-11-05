@@ -2,6 +2,11 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 export const CONTENT_DIR = path.resolve(process.cwd(), "scripts/demo/content");
+export const HARDHAT_CONTENT_DIR = path.resolve(process.cwd(), "scripts/demo/content/hardhat");
+
+export function getContentDir(): string {
+  return process.env.DEMO_ACCOUNTS === "hardhat" ? HARDHAT_CONTENT_DIR : CONTENT_DIR;
+}
 
 export interface ProfileContent {
   role: string;
@@ -9,6 +14,8 @@ export interface ProfileContent {
   bio: string;
   skills: string[];
   githubUsername: string;
+  location?: string;
+  displayRole?: "CLIENT" | "DEVELOPER";
 }
 
 export interface IssueContent {
@@ -439,22 +446,536 @@ export function generateChatRooms(issuesCount = 35): ChatRoomContent[] {
   return rooms;
 }
 
-export function writeAllContent(): void {
-  if (!fs.existsSync(CONTENT_DIR)) {
-    fs.mkdirSync(CONTENT_DIR, { recursive: true });
+// 5. Hardhat Profiles (46 profiles for hh04..hh49)
+export function generateHardhatProfiles(): ProfileContent[] {
+  const names = [
+    // 23 displayRole CLIENT (#4–#26)
+    "Trần Hải Đăng", "Sarah Jenkins", "Nguyễn Nhật Nam", "Marcus Thorne", "Lê Hoàng Yến",
+    "Aiden Gallagher", "Phạm Minh Khôi", "Chloe Zhao", "Đỗ Quốc Bảo", "Liam O'Connor",
+    "Vũ Thuỳ Dương", "Elena Vasquez", "Hoàng Gia Bách", "Julian Sterling", "Bùi Phương Linh",
+    "Naoki Tanaka", "Đặng Tuấn Anh", "Maya Lin", "Lý Trường Giang", "Oscar Lindqvist",
+    "Trịnh Kim Ngân", "Siddharth Mehta", "Vương Đình Trọng",
+    // 23 displayRole DEVELOPER (#27–#49)
+    "Phan Quốc Huy", "Viktor Novak", "Đoàn Minh Trí", "Hannah Schmidt", "Ngô Đức Thịnh",
+    "Mateo Rossi", "Lâm Tuấn Kiệt", "Freja Nielsen", "Tạ Hoàng Long", "Kenji Fujimoto",
+    "Trương Vĩnh Phúc", "Devon Castillo", "Hồ Thanh Bình", "Priya Patel", "Nguyễn Quang Sáng",
+    "Gabriel Santos", "Dương Văn Thắng", "Lucas Meyer", "Châu Quốc Dũng", "Zainab Al-Fassi",
+    "Lê Trọng Nghĩa", "Dmitri Volkov", "Hoàng Đức Nam" // #49 spammer
+  ];
+
+  const locations = [
+    "Hà Nội, Việt Nam", "TP. Hồ Chí Minh, Việt Nam", "Đà Nẵng, Việt Nam", "Singapore",
+    "San Francisco, CA, USA", "Berlin, Germany", "Tokyo, Japan", "London, UK",
+    "Sydney, Australia", "Seoul, South Korea", "Toronto, Canada", "Amsterdam, Netherlands"
+  ];
+
+  const skillPools: Record<string, string[]> = {
+    client: ["Product Management", "Requirements Spec", "System Architecture", "Agile Leadership", "Acceptance QA", "DeFi Strategy"],
+    developer: ["TypeScript", "Solidity", "Next.js", "React", "Node.js", "PostgreSQL", "Docker", "GraphQL", "Tailwind CSS", "Ethers.js", "Hardhat", "Foundry", "Go", "Python"],
+  };
+
+  const bios = [
+    "Product Owner & DeFi Strategist focusing on decentralized marketplaces, trustless escrow, and on-chain arbitration.",
+    "Senior Fullstack & Blockchain Engineer with 7+ years building high-throughput payment bridges and smart contracts.",
+    "Smart Contract Security Auditor and Solidity enthusiast. Focused on gas optimization, reentrancy prevention, and formal verification.",
+    "Frontend Specialist & UI/UX Craftsman creating pixel-perfect, accessible Web3 applications with Next.js and Tailwind.",
+    "DevOps & Infrastructure Architect specializing in Kubernetes, automated CI/CD pipelines, and high-availability PostgreSQL.",
+    "Data Scientist & AI Researcher building recommendation systems, NLP moderation pipelines, and anomaly detection models.",
+    "Backend Core Engineer passionate about strict TypeScript, microservices, GraphQL Yoga, and real-time Socket.IO.",
+    "QA Lead & Verification Engineer ensuring comprehensive BDD acceptance criteria coverage and regression resilience."
+  ];
+
+  const profiles: ProfileContent[] = [];
+  for (let i = 4; i <= 49; i++) {
+    const id = String(i).padStart(2, "0");
+    const role = `hh${id}`;
+    const nameIndex = i - 4;
+    const name = names[nameIndex] || `User ${id}`;
+    const displayRole: "CLIENT" | "DEVELOPER" = i <= 26 ? "CLIENT" : "DEVELOPER";
+    const personaPool = displayRole === "CLIENT" ? skillPools.client! : skillPools.developer!;
+    const skills = personaPool.slice(0, 3 + (i % 4));
+    const bio = bios[nameIndex % bios.length]!;
+    const location = locations[nameIndex % locations.length]!;
+    const githubUsername = `hh-demo-${displayRole.toLowerCase()}-${id}`;
+    profiles.push({ role, name, bio, skills, githubUsername, location, displayRole });
   }
 
-  const profiles = generateProfiles();
-  const issues = generateIssues();
-  const comments = generateComments(150);
-  const chatRooms = generateChatRooms(35);
+  return profiles;
+}
 
-  fs.writeFileSync(path.join(CONTENT_DIR, "profiles.json"), JSON.stringify(profiles, null, 2), "utf-8");
-  fs.writeFileSync(path.join(CONTENT_DIR, "issues.json"), JSON.stringify(issues, null, 2), "utf-8");
-  fs.writeFileSync(path.join(CONTENT_DIR, "comments.json"), JSON.stringify(comments, null, 2), "utf-8");
-  fs.writeFileSync(path.join(CONTENT_DIR, "chat.json"), JSON.stringify(chatRooms, null, 2), "utf-8");
+// 6. Hardhat Issues (200 issues across 9 categories, >= 2 testCases, bounties 20–2000 mUSDC)
+export function generateHardhatIssues(): IssueContent[] {
+  const categories: IssueContent["category"][] = [
+    "BUG_FIX", "FEATURE", "SMART_CONTRACT", "AUDIT", "UI_UX",
+    "DATA_SCIENCE", "DEVOPS", "DOCUMENTATION", "OTHER"
+  ];
 
-  console.log(`Generated demo content in ${CONTENT_DIR}:`);
+  const allRoles = Array.from({ length: 45 }, (_, i) => `hh${String(i + 4).padStart(2, "0")}`); // hh04..hh48
+
+  const templates: Record<string, Array<{ title: string; desc: string; skills: string[]; codeSnippet?: string }>> = {
+    BUG_FIX: [
+      {
+        title: "Khắc phục lỗi làm tròn sai số khi chia settlement 50/50",
+        desc: "Hàm tính toán chia settlement clientBps đang bị sai lệch 1 wei ở các khoản tiền lẻ do ép kiểu BigInt sang Number trước khi tính toán. Cần áp dụng chuẩn math precision không làm tròn non-zero wei.",
+        skills: ["Solidity", "BigInt", "TypeScript"],
+        codeSnippet: "```solidity\n// Current bug: uint256 clientShare = (amount * clientBps) / 10000;\n// Expected: strictly checked invariant clientShare + devShare + fee == amount\n```"
+      },
+      {
+        title: "Fix WebSocket connection leak on rapid room join and leave",
+        desc: "Rapidly switching between arbitration chat rooms causes memory leak in Socket.IO adapter. Socket listeners are not detached on unmount, resulting in duplicate notification emissions.",
+        skills: ["Node.js", "Socket.IO", "React", "Memory Profiling"],
+        codeSnippet: "```typescript\nsocket.on('task:message', handleMsg);\n// Cleanup function missing socket.off in useEffect\n```"
+      },
+      {
+        title: "Sửa lỗi transaction intent bị kẹt ở trạng thái SUBMITTED khi RPC timeout",
+        desc: "Khi local node hoặc RPC trả về timeout, transaction intent vẫn ở trạng thái SUBMITTED thay vì chuyển FAILED sau expiry window. Cần bổ sung worker sweep job kiểm tra tx confirmation.",
+        skills: ["PostgreSQL", "Prisma", "Worker", "Indexer"],
+      },
+      {
+        title: "Resolve race condition in developer reservation lock under high concurrency",
+        desc: "Concurrent requests to selectDeveloper on the same bounty produce PostgreSQL serialization error 40P01. Need row-level locking (`SELECT ... FOR UPDATE`) on the target reservation.",
+        skills: ["PostgreSQL", "Prisma", "Transactions"],
+      },
+      {
+        title: "Khắc phục lỗi upload file ảnh avatar vượt quá giới hạn 5MB không báo lỗi rõ ràng",
+        desc: "Endpoint `/api/uploads` trả về HTTP 500 thay vì 413 Payload Too Large khi người dùng upload file quá dung lượng quy định. Cần validate header Content-Length và parse multipart stream an toàn.",
+        skills: ["Next.js", "Zod", "API Security"],
+      }
+    ],
+    FEATURE: [
+      {
+        title: "Tích hợp EIP-2612 permit signature cho việc cấp quyền nạp mUSDC không tốn gas",
+        desc: "Xây dựng luồng permit 1-click cho phép client phê duyệt mUSDC và nạp escrow trong cùng một transaction intent, giảm thao tác approve truyền thống.",
+        skills: ["Solidity", "EIP-2612", "Ethers.js", "Next.js"],
+        codeSnippet: "```solidity\nfunction depositWithPermit(\n    string calldata escrowId, uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s\n) external;\n```"
+      },
+      {
+        title: "Xây dựng hệ thống thông báo realtime qua WebSocket cho sự kiện Escrow",
+        desc: "Người dùng nhận thông báo ngay lập tức trên thanh Navbar khi có đơn ứng tuyển mới, khi client nạp tiền, hoặc khi phán quyết ban đầu được ban hành bởi trọng tài.",
+        skills: ["Socket.IO", "React", "Tailwind CSS", "Zustand"],
+      },
+      {
+        title: "Phát triển công cụ preview Markdown kèm hỗ trợ Mermaid diagram cho mô tả task",
+        desc: "Cho phép client vẽ sơ đồ kiến trúc hệ thống trực tiếp trong bài đăng nhiệm vụ bằng cú pháp Mermaid, render trực quan cho developer trước khi ứng tuyển.",
+        skills: ["Markdown", "Mermaid.js", "React", "Next.js"],
+      },
+      {
+        title: "Implement automated CSV export for project earnings and transaction ledger",
+        desc: "Developer and clients can export complete accounting statements including transaction hashes, block numbers, fee deductions, and counterpart wallet addresses.",
+        skills: ["TypeScript", "CSV Generation", "Stream API"],
+      },
+      {
+        title: "Thêm tính năng bookmark và theo dõi danh sách bounty yêu thích",
+        desc: "Cho phép developer đánh dấu các bài toán quan tâm để nhận thông báo khi có bình luận mới hoặc khi thời hạn ứng tuyển sắp kết thúc.",
+        skills: ["Next.js", "GraphQL", "Prisma"],
+      }
+    ],
+    SMART_CONTRACT: [
+      {
+        title: "Viết hợp đồng TimeLockController điều phối Safe arbiter nâng cấp parameters",
+        desc: "Triển khai module quản trị phi tập trung đảm bảo mọi thay đổi về phí nền tảng 2.5% hoặc thời hạn tranh chấp 72h phải trải qua cửa sổ delay 48 giờ trên chain.",
+        skills: ["Solidity", "Timelock", "Safe", "Foundry"],
+        codeSnippet: "```solidity\ncontract BloodyRoarTimelock is TimelockController {\n    uint256 public constant MIN_DELAY = 2 days;\n}\n```"
+      },
+      {
+        title: "Tối ưu hóa gas cho hàm batchClaim bằng cách đóng gói storage layout",
+        desc: "Khi developer claim tiền từ nhiều task hoàn tất cùng lúc, hàm batchClaim tiêu tốn 120k gas. Cần pack struct và tận dụng transient storage nếu khả thi.",
+        skills: ["Solidity", "Gas Optimization", "Yul", "EVM"],
+      },
+      {
+        title: "Xây dựng module Staking bảo chứng uy tín cho các bài toán giá trị cao (>1000 USDC)",
+        desc: "Yêu cầu developer khóa tạm thời một lượng token staking trước khi nhận task lớn nhằm đảm bảo trách nhiệm bàn giao đúng tiến độ cam kết.",
+        skills: ["Solidity", "ERC-20", "Escrow", "Hardhat"],
+      },
+      {
+        title: "Add emergency pause and circuit breaker pattern controlled by 2-of-3 Safe",
+        desc: "Implement circuit breaker to pause new deposits during abnormal volatility while allowing pending dispute resolutions and claims to continue unhindered.",
+        skills: ["Solidity", "Pausable", "OpenZeppelin", "Security"],
+      },
+      {
+        title: "Triển khai ERC-1271 contract signature verification cho Safe multi-sig",
+        desc: "Hỗ trợ xác thực chữ ký off-chain của Safe multi-sig wallet khi ký các manifest bằng chứng tranh chấp và funding intents.",
+        skills: ["ERC-1271", "Safe SDK", "Cryptography", "Solidity"],
+      }
+    ],
+    AUDIT: [
+      {
+        title: "Đánh giá an toàn reentrancy trên toàn bộ external calls trong BloodyRoarEscrow",
+        desc: "Kiểm tra kỹ lưỡng mô hình Checks-Effects-Interactions ở các hàm release, settle, và claimFunds. Đảm bảo SafeERC20 wrapper không mở ra vector tấn công tái nhập.",
+        skills: ["Security Audit", "Slither", "Foundry", "Reentrancy"],
+        codeSnippet: "```solidity\n// Verify that state changes precede token transfers in all resolution paths\n```"
+      },
+      {
+        title: "Audit time-lock boundary edge cases in 7-day review timeout and challenge window",
+        desc: "Conduct formal verification on review timeout timestamps. Verify that boundary condition `block.timestamp >= deadline + 7 days` is immune to miner timestamp manipulation.",
+        skills: ["Security Audit", "Formal Verification", "Slither"],
+      },
+      {
+        title: "Kiểm tra bảo mật API upload và chống path traversal attack",
+        desc: "Rà soát toàn bộ middleware xử lý file tĩnh tại `/api/uploads`. Đảm bảo file extension, content-type sniffing và sanitization tên file ngăn chặn thực thi mã độc.",
+        skills: ["AppSec", "Penetration Testing", "Node.js"],
+      },
+      {
+        title: "Audit GraphQL query depth and rate limiting against denial of service",
+        desc: "Verify that nested relation queries (e.g. issues -> applications -> user -> postedIssues) cannot trigger CPU starvation or database connection exhaustion.",
+        skills: ["GraphQL Yoga", "Security", "Rate Limiting"],
+      },
+      {
+        title: "Đánh giá an toàn của ThirdwebAuth SIWE session cookie và replay prevention",
+        desc: "Kiểm tra tính duy nhất của nonce, thời gian hết hạn cookie, cờ HttpOnly, SameSite=Lax, và khả năng thu hồi phiên đăng nhập khi ví bị xâm phạm.",
+        skills: ["SIWE", "Web3 Security", "Authentication"],
+      }
+    ],
+    UI_UX: [
+      {
+        title: "Thiết kế responsive modal timeline tranh chấp theo chuẩn Claude Design",
+        desc: "Xây dựng giao diện xem tiến trình tranh chấp gồm 4 giai đoạn: EVIDENCE_PERIOD, INITIAL_RULING, CHALLENGE và FINAL_RULING kèm đồng hồ đếm ngược trực quan.",
+        skills: ["Next.js", "Tailwind CSS", "Framer Motion", "UI/UX"],
+      },
+      {
+        title: "Xây dựng dark mode theme hoàn chỉnh với high contrast typography",
+        desc: "Áp dụng bảng màu obsidian, blood-red và chrome-gold theo thiết kế BloodyRoar. Đảm bảo độ tương phản WCAG 2.1 AA trên mọi màn hình di động.",
+        skills: ["CSS Variables", "Tailwind CSS", "Accessibility"],
+      },
+      {
+        title: "Optimize marketplace filter bar with multi-category selection and URL state",
+        desc: "Cải thiện bộ lọc marketplace: cho phép chọn nhiều danh mục, thanh trượt khoảng bounty, lọc theo kỹ năng và tự động đồng bộ hóa với URL search params.",
+        skills: ["React", "useSearchParams", "Next.js"],
+      },
+      {
+        title: "Bổ sung keyboard shortcuts cho việc điều hướng và duyệt danh sách task",
+        desc: "Thêm phím tắt (J/K để chuyển task, Enter để mở chi tiết, Esc để đóng modal, / để tìm kiếm) nâng cao trải nghiệm power user.",
+        skills: ["React", "Accessibility", "Keyboard UX"],
+      },
+      {
+        title: "Thiết kế trang thống kê uy tín và huy hiệu thành tích của Developer",
+        desc: "Hiển thị biểu đồ radar năng lực kỹ năng, điểm đánh giá trung bình 5 sao, tỷ lệ bàn giao đúng hạn và tổng giá trị USDC đã tích lũy.",
+        skills: ["Recharts", "UI/UX", "Next.js"],
+      }
+    ],
+    DATA_SCIENCE: [
+      {
+        title: "Xây dựng thuật toán xếp hạng uy tín developer dựa trên PageRank và lịch sử task",
+        desc: "Tính toán điểm uy tín tổng hợp kết hợp đánh giá từ client, độ khó của nhiệm vụ đã hoàn thành, và độ tin cậy của các bên từng hợp tác trong mạng lưới.",
+        skills: ["Python", "Algorithms", "NetworkX", "Data Science"],
+      },
+      {
+        title: "Phát hiện hành vi gian lận và thông đồng đẩy giá bounty bất thường",
+        desc: "Áp dụng mô hình clustering và anomaly detection để phát hiện các cặp client-developer tạo giao dịch ảo nhằm tăng điểm uy tín phi thực tế.",
+        skills: ["Machine Learning", "Scikit-Learn", "Anomaly Detection"],
+      },
+      {
+        title: "Phân tích dự đoán thời gian hoàn thành task dựa trên độ phức tạp và category",
+        desc: "Huấn luyện mô hình hồi quy ước tính số ngày cần thiết để giải quyết bài toán, giúp client đặt deadline thực tế hơn khi đăng tin tuyển dụng.",
+        skills: ["Python", "Pandas", "Regression Models"],
+      },
+      {
+        title: "Xây dựng hệ thống gợi ý bài toán phù hợp với sở trường của từng Developer",
+        desc: "Tạo vector embedding từ hồ sơ kỹ năng của developer và mô tả bài đăng, tính cosine similarity để hiển thị danh sách Recommended Bounties.",
+        skills: ["Vector Embeddings", "FastAPI", "Information Retrieval"],
+      },
+      {
+        title: "Tự động trích xuất kỹ năng bắt buộc từ mô tả bài toán bằng LLM",
+        desc: "Xử lý văn bản tự nhiên để tự động gắn thẻ tags kỹ năng (ví dụ: Solidity, Ethers.js, Next.js) khi khách hàng nhập mô tả tự do.",
+        skills: ["NLP", "LLM", "Prompt Engineering"],
+      }
+    ],
+    DEVOPS: [
+      {
+        title: "Thiết lập pipeline GitHub Actions tự động kiểm tra typecheck, lint và e2e backend",
+        desc: "Cấu hình CI chạy tuần tự `bun run typecheck`, `bun run lint` và `bun run test:e2e:backend` trên môi trường Linux Ubuntu sạch trước khi cho phép merge PR.",
+        skills: ["GitHub Actions", "CI/CD", "DevOps"],
+        codeSnippet: "```yaml\nname: Verification Gate\non: [pull_request]\njobs:\n  check:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: oven-sh/setup-bun@v2\n      - run: bun run typecheck && bun run lint\n```"
+      },
+      {
+        title: "Cấu hình Prometheus và Grafana dashboard giám sát độ trễ RPC và worker queue",
+        desc: "Thu thập metrics về số block đã scan, thời gian xử lý mỗi batch event, tỷ lệ lỗi RPC connection và dung lượng connection pool của PostgreSQL.",
+        skills: ["Prometheus", "Grafana", "Monitoring", "Docker"],
+      },
+      {
+        title: "Tối ưu hóa Docker multi-stage build cho Next.js 14 standalone container",
+        desc: "Giảm kích thước Docker production image từ 1.2GB xuống dưới 150MB bằng cách dùng alpine base image và chỉ copy static assets cùng standalone server.",
+        skills: ["Docker", "Alpine", "Container Optimization"],
+      },
+      {
+        title: "Thiết lập môi trường local staging hoàn chỉnh với docker-compose",
+        desc: "Tạo script 1-lệnh dựng cụm PostgreSQL, Hardhat node, Redis, Worker và Web server phục vụ cho việc kiểm thử tự động của cả team.",
+        skills: ["Docker Compose", "Bash", "Local Dev"],
+      },
+      {
+        title: "Bảo vệ endpoint GraphQL chống tấn công DDoS với Cloudflare WAF",
+        desc: "Cấu hình rate limiting dựa trên IP, kiểm tra header Origin, chặn bot tự động quét lỗ hổng và giám sát lưu lượng bất thường vào cổng 4000.",
+        skills: ["Cloudflare", "WAF", "Network Security"],
+      }
+    ],
+    DOCUMENTATION: [
+      {
+        title: "Biên soạn tài liệu toàn diện về chu trình Escrow Flow từ Reservation đến Settlement",
+        desc: "Viết hướng dẫn chi tiết kèm sơ đồ sequence diagram minh họa từng bước: chọn ứng viên, nạp ký quỹ, nộp kết quả, yêu cầu sửa và thanh toán.",
+        skills: ["Technical Writing", "Mermaid", "Documentation"],
+      },
+      {
+        title: "Soạn thảo hướng dẫn tích hợp SDK BloodyRoar cho ứng dụng bên thứ ba",
+        desc: "Tài liệu hóa các hàm SDK: khởi tạo client, đăng nhập SIWE, tạo transaction intent, lắng nghe webhook realtime và tra cứu trạng thái ký quỹ.",
+        skills: ["OpenAPI", "SDK Docs", "Markdown"],
+      },
+      {
+        title: "Xây dựng sổ tay quy trình giải quyết tranh chấp công bằng cho Trọng tài",
+        desc: "Quy định rõ tiêu chí đánh giá bằng chứng, khung tỷ lệ phân chia phán quyết (clientBps), thời hạn đối tụng 72 giờ và quy chế thách thức phán quyết.",
+        skills: ["Legal Tech", "Dispute Resolution", "Guidelines"],
+      },
+      {
+        title: "Document complete local development workflow with Hardhat and PostgreSQL",
+        desc: "Cung cấp cẩm nang chi tiết cho kỹ sư mới: khởi động môi trường local, cấu hình biến môi trường, sinh dữ liệu demo và debug indexer.",
+        skills: ["Developer Guide", "Markdown", "Onboarding"],
+      },
+      {
+        title: "Biên tập bộ câu hỏi thường gặp (FAQ) về biểu phí và an toàn tài sản ký quỹ",
+        desc: "Giải thích minh bạch về cách tính phí nền tảng 2.5%, cơ chế bảo vệ tiền đặt cọc khi developer không bàn giao và quyền lợi của các bên tham gia.",
+        skills: ["Content Writing", "FAQ", "Customer Support"],
+      }
+    ],
+    OTHER: [
+      {
+        title: "Nghiên cứu tích hợp Layer 2 Arbitrum và Optimism cho chi phí giao dịch thấp",
+        desc: "Đánh giá tính khả thi kỹ thuật của việc mở rộng hợp đồng BloodyRoar sang các L2 rollups hàng đầu để tiết kiệm tối đa gas cho người dùng.",
+        skills: ["Research", "Layer 2", "Rollups", "EVM"],
+      },
+      {
+        title: "Tổ chức chương trình Bug Bounty cộng đồng cho các Smart Contract Core",
+        desc: "Thiết lập thể lệ trao thưởng từ 500 đến 10.000 USDC cho các lỗ hổng nghiêm trọng được phát hiện trước khi triển khai Mainnet.",
+        skills: ["Bug Bounty", "Community", "Security"],
+      },
+      {
+        title: "Đánh giá hiệu năng và độ ổn định của Bun runtime so với Node 20",
+        desc: "Thực hiện bài kiểm thử tải trọng (load testing) đo lường throughput, mức tiêu thụ RAM và thời gian khởi động cold start giữa 2 runtime.",
+        skills: ["Benchmarking", "Bun", "Node.js", "Performance"],
+      },
+      {
+        title: "Xây dựng bộ quy chuẩn đạo đức và nguyên tắc giải quyết bất đồng kỹ thuật",
+        desc: "Đưa ra các tiêu chuẩn khách quan giúp client và developer dễ dàng tìm được tiếng nói chung khi đánh giá nghiệm thu sản phẩm phần mềm.",
+        skills: ["Governance", "Standards", "Ethics"],
+      },
+      {
+        title: "Tối ưu hóa Lighthouse SEO và OpenGraph metadata cho bài đăng bounty",
+        desc: "Đảm bảo trang chi tiết bài toán đạt 100 điểm Lighthouse SEO, hiển thị thẻ preview đẹp mắt khi chia sẻ liên kết trên Telegram, Twitter và Discord.",
+        skills: ["SEO", "OpenGraph", "Web Vitals"],
+      }
+    ]
+  };
+
+  const bountyScale = [30, 50, 75, 100, 150, 200, 280, 400, 600, 850, 1200, 1500, 2000];
+  const difficulties: IssueContent["difficulty"][] = ["Easy", "Medium", "Hard", "Expert"];
+  const timeEstimates = ["2 days", "3 days", "5 days", "1 week", "2 weeks"];
+  const deliveryDaysList = [2, 3, 5, 7, 14];
+
+  const issues: IssueContent[] = [];
+  let count = 0;
+
+  for (let i = 1; i <= 200; i++) {
+    count++;
+    const key = `issue_${String(count).padStart(3, "0")}`;
+    const cat = categories[(count - 1) % categories.length]!;
+    const tmpls = templates[cat]!;
+    const tmpl = tmpls[(count - 1) % tmpls.length]!;
+
+    // Distribute clientRole across all 45 user roles (proving equal client/dev permissions)
+    const clientRole = allRoles[(count - 1) % allRoles.length]!;
+
+    const bounty = bountyScale[(count - 1) % bountyScale.length]!;
+    const difficulty = difficulties[(count - 1) % difficulties.length]!;
+    const timeEst = timeEstimates[(count - 1) % timeEstimates.length]!;
+    const deliveryDays = deliveryDaysList[(count - 1) % deliveryDaysList.length]!;
+    const hasAttachment = count % 5 === 0;
+
+    let desc = `${tmpl.desc}\n\nRepository: https://github.com/bloody-roar-demo/task-${count}\nAcceptance Criteria: Toàn bộ tiêu chí nghiệm thu bên dưới phải pass 100% trước khi bàn giao.`;
+    if (tmpl.codeSnippet) {
+      desc += `\n\nTham khảo đoạn mã liên quan:\n${tmpl.codeSnippet}`;
+    }
+
+    // Every issue has at least 2 test cases!
+    const testCases: IssueContent["testCases"] = [
+      {
+        title: `Tiêu chí kiểm thử chức năng chính cho task #${count}`,
+        description: "Kiểm tra luồng xử lý chuẩn theo đặc tả yêu cầu, trả về kết quả chính xác.",
+        given: "Môi trường test và database đã được khởi tạo sạch",
+        when: "Thực thi tính năng theo đúng tham số đầu vào quy định",
+        then: "Kết quả trả về HTTP 200 OK và dữ liệu cập nhật chính xác trên DB",
+        priority: "CRITICAL",
+        isEdgeCase: false,
+      },
+      {
+        title: `Tiêu chí kiểm thử ngoại lệ và biên lỗi #${count}`,
+        description: "Đảm bảo hệ thống bắt lỗi chuẩn khi dữ liệu đầu vào không hợp lệ hoặc xảy ra tranh chấp tài nguyên.",
+        given: "Dữ liệu đầu vào sai định dạng hoặc tài khoản không đủ quyền hạn",
+        when: "Gửi yêu cầu thực thi thao tác nghiệp vụ",
+        then: "Hệ thống trả về mã lỗi thích hợp và không làm thay đổi trạng thái dữ liệu",
+        priority: "NORMAL",
+        isEdgeCase: true,
+      },
+    ];
+
+    if (count % 3 === 0) {
+      testCases.push({
+        title: `Tiêu chí kiểm thử hiệu năng và đồng thời #${count}`,
+        description: "Kiểm tra khả năng chịu tải và chống race condition khi có 10 requests cùng lúc.",
+        given: "10 kết nối đồng thời cùng gửi thao tác",
+        when: "Tất cả requests được gửi đi cùng một thời điểm",
+        then: "Chỉ request hợp lệ đầu tiên được chấp nhận, 9 requests sau nhận mã lỗi xung đột an toàn",
+        priority: "NORMAL",
+        isEdgeCase: true,
+      });
+    }
+
+    issues.push({
+      key,
+      clientRole,
+      title: `${tmpl.title} (Hardhat #${count})`,
+      description: desc,
+      category: cat,
+      bountyAmount: bounty,
+      difficulty,
+      timeEstimate: timeEst,
+      deliveryDays,
+      githubRepo: `https://github.com/bloody-roar-demo/task-${count}`,
+      requiredSkills: tmpl.skills,
+      hasAttachment,
+      testCases,
+    });
+  }
+
+  return issues;
+}
+
+// 7. Hardhat Comments (800 comments with replies distributed across issues)
+export function generateHardhatComments(issuesCount = 200): CommentContent[] {
+  const commentTemplates = [
+    "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn?",
+    "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h.",
+    "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không?",
+    "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng.",
+    "Does this task require gas optimization benchmarks before and after changes?",
+    "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không?",
+    "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng.",
+    "Great initiative! Happy to collaborate on the smart contract security audit part.",
+    "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn?",
+    "I can optimize the query execution plan with an index on composite columns."
+  ];
+
+  const replyTemplates = [
+    "Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS.",
+    "Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core.",
+    "Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé.",
+    "Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé.",
+    "Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow."
+  ];
+
+  const allRoles = Array.from({ length: 46 }, (_, i) => `hh${String(i + 4).padStart(2, "0")}`); // hh04..hh49
+  const comments: CommentContent[] = [];
+  let count = 0;
+
+  // 600 top-level comments
+  for (let i = 0; i < 600; i++) {
+    count++;
+    const issueIndex = (i % issuesCount) + 1;
+    const authorRole = allRoles[i % allRoles.length]!;
+    const body = commentTemplates[i % commentTemplates.length]!;
+    comments.push({
+      key: `comment_${String(count).padStart(3, "0")}`,
+      issueIndex,
+      authorRole,
+      body: `${body} (Ref #${count})`,
+      isReply: false,
+    });
+  }
+
+  // 200 replies
+  for (let i = 0; i < 200; i++) {
+    count++;
+    const issueIndex = (i % issuesCount) + 1;
+    const authorRole = allRoles[(i + 5) % allRoles.length]!;
+    const body = replyTemplates[i % replyTemplates.length]!;
+    comments.push({
+      key: `comment_${String(count).padStart(3, "0")}`,
+      issueIndex,
+      authorRole,
+      body: `@dev ${body} (Reply #${i + 1})`,
+      isReply: true,
+    });
+  }
+
+  return comments;
+}
+
+// 8. Hardhat Chat Rooms (50 rooms for the funded tasks)
+export function generateHardhatChatRooms(issuesCount = 50): ChatRoomContent[] {
+  const allRoles = Array.from({ length: 45 }, (_, i) => `hh${String(i + 4).padStart(2, "0")}`);
+  const rooms: ChatRoomContent[] = [];
+
+  for (let r = 1; r <= issuesCount; r++) {
+    const issueKey = `issue_${String(r).padStart(3, "0")}`;
+    const clientRole = allRoles[(r - 1) % allRoles.length]!;
+    const devRole = allRoles[(r + 10) % allRoles.length]!;
+
+    const messages: ChatMessageContent[] = [
+      { senderRole: clientRole, text: "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công." },
+      { senderRole: devRole, text: "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy." },
+      { senderRole: devRole, text: "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng." },
+      { senderRole: clientRole, text: "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé." },
+      { senderRole: devRole, text: "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local." },
+      { senderRole: devRole, text: "Mình gửi kèm file log kết quả benchmark và test run nhé.", hasFile: true },
+      { senderRole: clientRole, text: "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi." },
+      { senderRole: devRole, text: "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain." },
+      { senderRole: devRole, text: "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!" },
+      { senderRole: clientRole, text: "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!" },
+    ];
+
+    // Intentionally inject contact info into 3 rooms (for AI Guard redaction demonstration)
+    if (r === 1) {
+      messages.push({ senderRole: devRole, text: "Nếu cần trao đổi gấp bạn có thể nhắn tin qua số 0912345678 nhé!" });
+    } else if (r === 2) {
+      messages.push({ senderRole: clientRole, text: "Bạn gửi bản thiết kế vào email client.support@demo-portal.fake giúp mình." });
+    } else if (r === 3) {
+      messages.push({ senderRole: devRole, text: "Call qua điện thoại 0988776655 để sync nhanh 5 phút được không bạn?" });
+    }
+
+    messages.push(
+      { senderRole: clientRole, text: "Code clean, format chuẩn theo eslint và prettier của dự án.", isEdited: true },
+      { senderRole: devRole, text: "Tin nhắn này gửi nhầm.", isDeleted: true },
+      { senderRole: devRole, text: "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!" }
+    );
+
+    rooms.push({
+      roomIndex: r,
+      issueKey,
+      clientRole,
+      developerRole: devRole,
+      messages,
+    });
+  }
+
+  return rooms;
+}
+
+export function writeAllContent(targetDir?: string): void {
+  const dir = targetDir || getContentDir();
+  const isHardhat = dir === HARDHAT_CONTENT_DIR || process.env.DEMO_ACCOUNTS === "hardhat";
+
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  const profiles = isHardhat ? generateHardhatProfiles() : generateProfiles();
+  const issues = isHardhat ? generateHardhatIssues() : generateIssues();
+  const comments = isHardhat ? generateHardhatComments(200) : generateComments(150);
+  const chatRooms = isHardhat ? generateHardhatChatRooms(50) : generateChatRooms(35);
+
+  fs.writeFileSync(path.join(dir, "profiles.json"), JSON.stringify(profiles, null, 2), "utf-8");
+  fs.writeFileSync(path.join(dir, "issues.json"), JSON.stringify(issues, null, 2), "utf-8");
+  fs.writeFileSync(path.join(dir, "comments.json"), JSON.stringify(comments, null, 2), "utf-8");
+  fs.writeFileSync(path.join(dir, "chat.json"), JSON.stringify(chatRooms, null, 2), "utf-8");
+
+  console.log(`Generated demo content in ${dir}:`);
   console.log(`- profiles.json: ${profiles.length} profiles`);
   console.log(`- issues.json:   ${issues.length} issues`);
   console.log(`- comments.json: ${comments.length} comments`);
@@ -462,5 +983,6 @@ export function writeAllContent(): void {
 }
 
 if ((import.meta as unknown as { main?: boolean }).main) {
-  writeAllContent();
+  const customDir = process.argv[2];
+  writeAllContent(customDir);
 }

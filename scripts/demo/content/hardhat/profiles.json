@@ -1,0 +1,667 @@
+[
+  {
+    "role": "hh04",
+    "name": "Trần Hải Đăng",
+    "bio": "Product Owner & DeFi Strategist focusing on decentralized marketplaces, trustless escrow, and on-chain arbitration.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture"
+    ],
+    "githubUsername": "hh-demo-client-04",
+    "location": "Hà Nội, Việt Nam",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh05",
+    "name": "Sarah Jenkins",
+    "bio": "Senior Fullstack & Blockchain Engineer with 7+ years building high-throughput payment bridges and smart contracts.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture",
+      "Agile Leadership"
+    ],
+    "githubUsername": "hh-demo-client-05",
+    "location": "TP. Hồ Chí Minh, Việt Nam",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh06",
+    "name": "Nguyễn Nhật Nam",
+    "bio": "Smart Contract Security Auditor and Solidity enthusiast. Focused on gas optimization, reentrancy prevention, and formal verification.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture",
+      "Agile Leadership",
+      "Acceptance QA"
+    ],
+    "githubUsername": "hh-demo-client-06",
+    "location": "Đà Nẵng, Việt Nam",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh07",
+    "name": "Marcus Thorne",
+    "bio": "Frontend Specialist & UI/UX Craftsman creating pixel-perfect, accessible Web3 applications with Next.js and Tailwind.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture",
+      "Agile Leadership",
+      "Acceptance QA",
+      "DeFi Strategy"
+    ],
+    "githubUsername": "hh-demo-client-07",
+    "location": "Singapore",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh08",
+    "name": "Lê Hoàng Yến",
+    "bio": "DevOps & Infrastructure Architect specializing in Kubernetes, automated CI/CD pipelines, and high-availability PostgreSQL.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture"
+    ],
+    "githubUsername": "hh-demo-client-08",
+    "location": "San Francisco, CA, USA",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh09",
+    "name": "Aiden Gallagher",
+    "bio": "Data Scientist & AI Researcher building recommendation systems, NLP moderation pipelines, and anomaly detection models.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture",
+      "Agile Leadership"
+    ],
+    "githubUsername": "hh-demo-client-09",
+    "location": "Berlin, Germany",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh10",
+    "name": "Phạm Minh Khôi",
+    "bio": "Backend Core Engineer passionate about strict TypeScript, microservices, GraphQL Yoga, and real-time Socket.IO.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture",
+      "Agile Leadership",
+      "Acceptance QA"
+    ],
+    "githubUsername": "hh-demo-client-10",
+    "location": "Tokyo, Japan",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh11",
+    "name": "Chloe Zhao",
+    "bio": "QA Lead & Verification Engineer ensuring comprehensive BDD acceptance criteria coverage and regression resilience.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture",
+      "Agile Leadership",
+      "Acceptance QA",
+      "DeFi Strategy"
+    ],
+    "githubUsername": "hh-demo-client-11",
+    "location": "London, UK",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh12",
+    "name": "Đỗ Quốc Bảo",
+    "bio": "Product Owner & DeFi Strategist focusing on decentralized marketplaces, trustless escrow, and on-chain arbitration.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture"
+    ],
+    "githubUsername": "hh-demo-client-12",
+    "location": "Sydney, Australia",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh13",
+    "name": "Liam O'Connor",
+    "bio": "Senior Fullstack & Blockchain Engineer with 7+ years building high-throughput payment bridges and smart contracts.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture",
+      "Agile Leadership"
+    ],
+    "githubUsername": "hh-demo-client-13",
+    "location": "Seoul, South Korea",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh14",
+    "name": "Vũ Thuỳ Dương",
+    "bio": "Smart Contract Security Auditor and Solidity enthusiast. Focused on gas optimization, reentrancy prevention, and formal verification.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture",
+      "Agile Leadership",
+      "Acceptance QA"
+    ],
+    "githubUsername": "hh-demo-client-14",
+    "location": "Toronto, Canada",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh15",
+    "name": "Elena Vasquez",
+    "bio": "Frontend Specialist & UI/UX Craftsman creating pixel-perfect, accessible Web3 applications with Next.js and Tailwind.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture",
+      "Agile Leadership",
+      "Acceptance QA",
+      "DeFi Strategy"
+    ],
+    "githubUsername": "hh-demo-client-15",
+    "location": "Amsterdam, Netherlands",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh16",
+    "name": "Hoàng Gia Bách",
+    "bio": "DevOps & Infrastructure Architect specializing in Kubernetes, automated CI/CD pipelines, and high-availability PostgreSQL.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture"
+    ],
+    "githubUsername": "hh-demo-client-16",
+    "location": "Hà Nội, Việt Nam",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh17",
+    "name": "Julian Sterling",
+    "bio": "Data Scientist & AI Researcher building recommendation systems, NLP moderation pipelines, and anomaly detection models.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture",
+      "Agile Leadership"
+    ],
+    "githubUsername": "hh-demo-client-17",
+    "location": "TP. Hồ Chí Minh, Việt Nam",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh18",
+    "name": "Bùi Phương Linh",
+    "bio": "Backend Core Engineer passionate about strict TypeScript, microservices, GraphQL Yoga, and real-time Socket.IO.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture",
+      "Agile Leadership",
+      "Acceptance QA"
+    ],
+    "githubUsername": "hh-demo-client-18",
+    "location": "Đà Nẵng, Việt Nam",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh19",
+    "name": "Naoki Tanaka",
+    "bio": "QA Lead & Verification Engineer ensuring comprehensive BDD acceptance criteria coverage and regression resilience.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture",
+      "Agile Leadership",
+      "Acceptance QA",
+      "DeFi Strategy"
+    ],
+    "githubUsername": "hh-demo-client-19",
+    "location": "Singapore",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh20",
+    "name": "Đặng Tuấn Anh",
+    "bio": "Product Owner & DeFi Strategist focusing on decentralized marketplaces, trustless escrow, and on-chain arbitration.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture"
+    ],
+    "githubUsername": "hh-demo-client-20",
+    "location": "San Francisco, CA, USA",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh21",
+    "name": "Maya Lin",
+    "bio": "Senior Fullstack & Blockchain Engineer with 7+ years building high-throughput payment bridges and smart contracts.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture",
+      "Agile Leadership"
+    ],
+    "githubUsername": "hh-demo-client-21",
+    "location": "Berlin, Germany",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh22",
+    "name": "Lý Trường Giang",
+    "bio": "Smart Contract Security Auditor and Solidity enthusiast. Focused on gas optimization, reentrancy prevention, and formal verification.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture",
+      "Agile Leadership",
+      "Acceptance QA"
+    ],
+    "githubUsername": "hh-demo-client-22",
+    "location": "Tokyo, Japan",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh23",
+    "name": "Oscar Lindqvist",
+    "bio": "Frontend Specialist & UI/UX Craftsman creating pixel-perfect, accessible Web3 applications with Next.js and Tailwind.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture",
+      "Agile Leadership",
+      "Acceptance QA",
+      "DeFi Strategy"
+    ],
+    "githubUsername": "hh-demo-client-23",
+    "location": "London, UK",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh24",
+    "name": "Trịnh Kim Ngân",
+    "bio": "DevOps & Infrastructure Architect specializing in Kubernetes, automated CI/CD pipelines, and high-availability PostgreSQL.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture"
+    ],
+    "githubUsername": "hh-demo-client-24",
+    "location": "Sydney, Australia",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh25",
+    "name": "Siddharth Mehta",
+    "bio": "Data Scientist & AI Researcher building recommendation systems, NLP moderation pipelines, and anomaly detection models.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture",
+      "Agile Leadership"
+    ],
+    "githubUsername": "hh-demo-client-25",
+    "location": "Seoul, South Korea",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh26",
+    "name": "Vương Đình Trọng",
+    "bio": "Backend Core Engineer passionate about strict TypeScript, microservices, GraphQL Yoga, and real-time Socket.IO.",
+    "skills": [
+      "Product Management",
+      "Requirements Spec",
+      "System Architecture",
+      "Agile Leadership",
+      "Acceptance QA"
+    ],
+    "githubUsername": "hh-demo-client-26",
+    "location": "Toronto, Canada",
+    "displayRole": "CLIENT"
+  },
+  {
+    "role": "hh27",
+    "name": "Phan Quốc Huy",
+    "bio": "QA Lead & Verification Engineer ensuring comprehensive BDD acceptance criteria coverage and regression resilience.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js",
+      "React",
+      "Node.js",
+      "PostgreSQL"
+    ],
+    "githubUsername": "hh-demo-developer-27",
+    "location": "Amsterdam, Netherlands",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh28",
+    "name": "Viktor Novak",
+    "bio": "Product Owner & DeFi Strategist focusing on decentralized marketplaces, trustless escrow, and on-chain arbitration.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js"
+    ],
+    "githubUsername": "hh-demo-developer-28",
+    "location": "Hà Nội, Việt Nam",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh29",
+    "name": "Đoàn Minh Trí",
+    "bio": "Senior Fullstack & Blockchain Engineer with 7+ years building high-throughput payment bridges and smart contracts.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js",
+      "React"
+    ],
+    "githubUsername": "hh-demo-developer-29",
+    "location": "TP. Hồ Chí Minh, Việt Nam",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh30",
+    "name": "Hannah Schmidt",
+    "bio": "Smart Contract Security Auditor and Solidity enthusiast. Focused on gas optimization, reentrancy prevention, and formal verification.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js",
+      "React",
+      "Node.js"
+    ],
+    "githubUsername": "hh-demo-developer-30",
+    "location": "Đà Nẵng, Việt Nam",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh31",
+    "name": "Ngô Đức Thịnh",
+    "bio": "Frontend Specialist & UI/UX Craftsman creating pixel-perfect, accessible Web3 applications with Next.js and Tailwind.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js",
+      "React",
+      "Node.js",
+      "PostgreSQL"
+    ],
+    "githubUsername": "hh-demo-developer-31",
+    "location": "Singapore",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh32",
+    "name": "Mateo Rossi",
+    "bio": "DevOps & Infrastructure Architect specializing in Kubernetes, automated CI/CD pipelines, and high-availability PostgreSQL.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js"
+    ],
+    "githubUsername": "hh-demo-developer-32",
+    "location": "San Francisco, CA, USA",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh33",
+    "name": "Lâm Tuấn Kiệt",
+    "bio": "Data Scientist & AI Researcher building recommendation systems, NLP moderation pipelines, and anomaly detection models.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js",
+      "React"
+    ],
+    "githubUsername": "hh-demo-developer-33",
+    "location": "Berlin, Germany",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh34",
+    "name": "Freja Nielsen",
+    "bio": "Backend Core Engineer passionate about strict TypeScript, microservices, GraphQL Yoga, and real-time Socket.IO.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js",
+      "React",
+      "Node.js"
+    ],
+    "githubUsername": "hh-demo-developer-34",
+    "location": "Tokyo, Japan",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh35",
+    "name": "Tạ Hoàng Long",
+    "bio": "QA Lead & Verification Engineer ensuring comprehensive BDD acceptance criteria coverage and regression resilience.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js",
+      "React",
+      "Node.js",
+      "PostgreSQL"
+    ],
+    "githubUsername": "hh-demo-developer-35",
+    "location": "London, UK",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh36",
+    "name": "Kenji Fujimoto",
+    "bio": "Product Owner & DeFi Strategist focusing on decentralized marketplaces, trustless escrow, and on-chain arbitration.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js"
+    ],
+    "githubUsername": "hh-demo-developer-36",
+    "location": "Sydney, Australia",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh37",
+    "name": "Trương Vĩnh Phúc",
+    "bio": "Senior Fullstack & Blockchain Engineer with 7+ years building high-throughput payment bridges and smart contracts.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js",
+      "React"
+    ],
+    "githubUsername": "hh-demo-developer-37",
+    "location": "Seoul, South Korea",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh38",
+    "name": "Devon Castillo",
+    "bio": "Smart Contract Security Auditor and Solidity enthusiast. Focused on gas optimization, reentrancy prevention, and formal verification.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js",
+      "React",
+      "Node.js"
+    ],
+    "githubUsername": "hh-demo-developer-38",
+    "location": "Toronto, Canada",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh39",
+    "name": "Hồ Thanh Bình",
+    "bio": "Frontend Specialist & UI/UX Craftsman creating pixel-perfect, accessible Web3 applications with Next.js and Tailwind.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js",
+      "React",
+      "Node.js",
+      "PostgreSQL"
+    ],
+    "githubUsername": "hh-demo-developer-39",
+    "location": "Amsterdam, Netherlands",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh40",
+    "name": "Priya Patel",
+    "bio": "DevOps & Infrastructure Architect specializing in Kubernetes, automated CI/CD pipelines, and high-availability PostgreSQL.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js"
+    ],
+    "githubUsername": "hh-demo-developer-40",
+    "location": "Hà Nội, Việt Nam",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh41",
+    "name": "Nguyễn Quang Sáng",
+    "bio": "Data Scientist & AI Researcher building recommendation systems, NLP moderation pipelines, and anomaly detection models.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js",
+      "React"
+    ],
+    "githubUsername": "hh-demo-developer-41",
+    "location": "TP. Hồ Chí Minh, Việt Nam",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh42",
+    "name": "Gabriel Santos",
+    "bio": "Backend Core Engineer passionate about strict TypeScript, microservices, GraphQL Yoga, and real-time Socket.IO.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js",
+      "React",
+      "Node.js"
+    ],
+    "githubUsername": "hh-demo-developer-42",
+    "location": "Đà Nẵng, Việt Nam",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh43",
+    "name": "Dương Văn Thắng",
+    "bio": "QA Lead & Verification Engineer ensuring comprehensive BDD acceptance criteria coverage and regression resilience.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js",
+      "React",
+      "Node.js",
+      "PostgreSQL"
+    ],
+    "githubUsername": "hh-demo-developer-43",
+    "location": "Singapore",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh44",
+    "name": "Lucas Meyer",
+    "bio": "Product Owner & DeFi Strategist focusing on decentralized marketplaces, trustless escrow, and on-chain arbitration.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js"
+    ],
+    "githubUsername": "hh-demo-developer-44",
+    "location": "San Francisco, CA, USA",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh45",
+    "name": "Châu Quốc Dũng",
+    "bio": "Senior Fullstack & Blockchain Engineer with 7+ years building high-throughput payment bridges and smart contracts.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js",
+      "React"
+    ],
+    "githubUsername": "hh-demo-developer-45",
+    "location": "Berlin, Germany",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh46",
+    "name": "Zainab Al-Fassi",
+    "bio": "Smart Contract Security Auditor and Solidity enthusiast. Focused on gas optimization, reentrancy prevention, and formal verification.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js",
+      "React",
+      "Node.js"
+    ],
+    "githubUsername": "hh-demo-developer-46",
+    "location": "Tokyo, Japan",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh47",
+    "name": "Lê Trọng Nghĩa",
+    "bio": "Frontend Specialist & UI/UX Craftsman creating pixel-perfect, accessible Web3 applications with Next.js and Tailwind.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js",
+      "React",
+      "Node.js",
+      "PostgreSQL"
+    ],
+    "githubUsername": "hh-demo-developer-47",
+    "location": "London, UK",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh48",
+    "name": "Dmitri Volkov",
+    "bio": "DevOps & Infrastructure Architect specializing in Kubernetes, automated CI/CD pipelines, and high-availability PostgreSQL.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js"
+    ],
+    "githubUsername": "hh-demo-developer-48",
+    "location": "Sydney, Australia",
+    "displayRole": "DEVELOPER"
+  },
+  {
+    "role": "hh49",
+    "name": "Hoàng Đức Nam",
+    "bio": "Data Scientist & AI Researcher building recommendation systems, NLP moderation pipelines, and anomaly detection models.",
+    "skills": [
+      "TypeScript",
+      "Solidity",
+      "Next.js",
+      "React"
+    ],
+    "githubUsername": "hh-demo-developer-49",
+    "location": "Seoul, South Korea",
+    "displayRole": "DEVELOPER"
+  }
+]

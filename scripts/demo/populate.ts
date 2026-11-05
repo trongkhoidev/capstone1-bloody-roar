@@ -8,9 +8,10 @@ import { gqlRequest } from "./lib/gql";
 import { connectDemoSocket, emitAck } from "./lib/socket";
 import { executePreparedCalls, signAndSubmitFunding, type PreparedCall } from "./lib/chain";
 import { executeSafeTransaction, type SafeTxData } from "./lib/safe";
-import { KEYS_PATH, loadOrCreateWallets, type WalletStore } from "./wallets";
+import { getDefaultKeysPath, isHardhatMode, KEYS_PATH, loadOrCreateWallets, type WalletStore } from "./wallets";
 import {
   CONTENT_DIR,
+  getContentDir,
   type ChatRoomContent,
   type CommentContent,
   type IssueContent,
@@ -36,25 +37,27 @@ export class DemoPopulator {
   private token84532Id?: string;
 
   constructor(options: PopulateOptions = {}) {
-    this.options = { baseUrl: process.env.BASE_URL || "http://localhost:4001", ...options };
-    if (!fs.existsSync(KEYS_PATH)) {
-      this.keys = loadOrCreateWallets();
+    this.options = { baseUrl: process.env.BASE_URL || "http://localhost:4000", ...options };
+    const keysPath = getDefaultKeysPath();
+    if (!fs.existsSync(keysPath)) {
+      this.keys = loadOrCreateWallets(keysPath);
     } else {
-      this.keys = JSON.parse(fs.readFileSync(KEYS_PATH, "utf-8")) as WalletStore;
+      this.keys = JSON.parse(fs.readFileSync(keysPath, "utf-8")) as WalletStore;
     }
     this.state = loadState();
 
+    const contentDir = getContentDir();
     this.profiles = JSON.parse(
-      fs.readFileSync(path.join(CONTENT_DIR, "profiles.json"), "utf-8")
+      fs.readFileSync(path.join(contentDir, "profiles.json"), "utf-8")
     ) as ProfileContent[];
     this.issues = JSON.parse(
-      fs.readFileSync(path.join(CONTENT_DIR, "issues.json"), "utf-8")
+      fs.readFileSync(path.join(contentDir, "issues.json"), "utf-8")
     ) as IssueContent[];
     this.comments = JSON.parse(
-      fs.readFileSync(path.join(CONTENT_DIR, "comments.json"), "utf-8")
+      fs.readFileSync(path.join(contentDir, "comments.json"), "utf-8")
     ) as CommentContent[];
     this.chatRooms = JSON.parse(
-      fs.readFileSync(path.join(CONTENT_DIR, "chat.json"), "utf-8")
+      fs.readFileSync(path.join(contentDir, "chat.json"), "utf-8")
     ) as ChatRoomContent[];
   }
 
@@ -67,11 +70,12 @@ export class DemoPopulator {
   // Helper to upload a PNG file using 2-step presigned/local upload flow
   private async uploadPng(
     session: UserSession,
-    purpose: "AVATAR" | "ISSUE_ATTACHMENT" | "DELIVERY" | "EVIDENCE",
+    purpose: "AVATAR" | "ISSUE_IMAGE" | "DELIVERY" | "EVIDENCE",
     pngBuffer: Buffer,
-    filename: string
-  ): Promise<string> {
-    const baseUrl = this.options.baseUrl || process.env.BASE_URL || "http://localhost:4001";
+    filename: string,
+    issueId?: string
+  ): Promise<{ attachmentId: string; fileUrl: string }> {
+    const baseUrl = this.options.baseUrl || process.env.BASE_URL || "http://localhost:4000";
     const initRes = await fetch(`${baseUrl}/api/uploads`, {
       method: "POST",
       headers: {
@@ -80,26 +84,33 @@ export class DemoPopulator {
         "x-forwarded-for": session.ip,
       },
       body: JSON.stringify({
-        filename,
-        mimeType: "image/png",
-        sizeBytes: pngBuffer.length,
+        fileName: filename,
+        fileType: "image/png",
+        fileSize: pngBuffer.length,
         purpose,
+        ...(issueId ? { issueId } : {}),
       }),
     });
 
     if (!initRes.ok) {
-      throw new Error(`Upload init failed: HTTP ${initRes.status}`);
+      const errText = await initRes.text();
+      throw new Error(`Upload init failed: HTTP ${initRes.status} - ${errText}`);
     }
 
-    const { uploadId, uploadUrl } = (await initRes.json()) as {
-      uploadId: string;
+    const { attachmentId, uploadUrl, fileUrl } = (await initRes.json()) as {
+      attachmentId: string;
       uploadUrl: string;
+      fileUrl: string;
     };
 
     // Upload the binary payload
     const putRes = await fetch(uploadUrl, {
       method: "PUT",
-      headers: { "content-type": "image/png" },
+      headers: {
+        "content-type": "image/png",
+        cookie: session.cookie,
+        "x-forwarded-for": session.ip,
+      },
       body: pngBuffer,
     });
 
@@ -115,20 +126,19 @@ export class DemoPopulator {
         cookie: session.cookie,
         "x-forwarded-for": session.ip,
       },
-      body: JSON.stringify({ uploadId }),
+      body: JSON.stringify({ attachmentId }),
     });
 
     if (!completeRes.ok) {
       throw new Error(`Upload complete failed: HTTP ${completeRes.status}`);
     }
 
-    const completed = (await completeRes.json()) as { fileId?: string; id?: string };
-    return completed.fileId || completed.id || uploadId;
+    return { attachmentId, fileUrl };
   }
 
-  // WAVE 1: Update 40 user profiles and upload avatars
+  // WAVE 1: Update user profiles and upload avatars
   public async runWave1(): Promise<{ updatedCount: number }> {
-    console.log("=== Wave 1: Profiles & Avatars (40 wallets) ===");
+    console.log(`=== Wave 1: Profiles & Avatars (${this.profiles.length} wallets) ===`);
     let count = 0;
 
     for (const p of this.profiles) {
@@ -154,8 +164,8 @@ export class DemoPopulator {
 
       let avatarUrl: string | undefined;
       try {
-        const fileId = await this.uploadPng(session, "AVATAR", avatarBuffer, `${p.role}-avatar.png`);
-        avatarUrl = `/api/uploads/${fileId}`;
+        const uploadResult = await this.uploadPng(session, "AVATAR", avatarBuffer, `${p.role}-avatar.png`);
+        avatarUrl = uploadResult.fileUrl;
       } catch (err) {
         console.warn(`Avatar upload skipped for ${p.role}:`, err);
       }
@@ -174,6 +184,8 @@ export class DemoPopulator {
             bio: p.bio,
             skills: p.skills,
             avatar: avatarUrl,
+            ...(p.location ? { location: p.location } : {}),
+            ...(p.displayRole ? { role: p.displayRole } : {}),
           },
         },
         { cookie: session.cookie, ip: session.ip, baseUrl: this.options.baseUrl }
@@ -182,7 +194,7 @@ export class DemoPopulator {
       this.state.profilesUpdated[p.role] = true;
       saveState(this.state);
       count++;
-      console.log(`Updated profile for ${p.role}: ${p.name} (${count}/40)`);
+      console.log(`Updated profile for ${p.role}: ${p.name} (${count}/${this.profiles.length})`);
     }
 
     return { updatedCount: count };
@@ -191,7 +203,8 @@ export class DemoPopulator {
   private async ensureTargetTokenId(): Promise<string> {
     if (this.token84532Id) return this.token84532Id;
     const targetChainId = Number(process.env.CHAIN_ID || 84532);
-    const session = await this.getSession("user01");
+    const authRole = isHardhatMode() ? "hh04" : "user01";
+    const session = await this.getSession(authRole);
     const tokensRes = await gqlRequest<{ tokens: Array<{ id: string; chainId: number; symbol: string; isActive?: boolean }> }>(
       `query { tokens { id chainId symbol isActive } }`,
       {},
@@ -205,9 +218,9 @@ export class DemoPopulator {
     return token.id;
   }
 
-  // WAVE 2: Create 150 issues across 9 categories (20% attachments, 40 criteria)
+  // WAVE 2: Create issues across 9 categories
   public async runWave2(): Promise<{ createdIssuesCount: number }> {
-    console.log("=== Wave 2: Issues (150 issues across 9 categories) ===");
+    console.log(`=== Wave 2: Issues (${this.issues.length} issues across 9 categories) ===`);
     let count = 0;
 
     // Discover token ID for target chain if not cached
@@ -264,14 +277,14 @@ export class DemoPopulator {
       if (item.hasAttachment) {
         try {
           const imgBuffer = createColorPng(120, 80, 50, 120, 200);
-          const fileId = await this.uploadPng(session, "ISSUE_ATTACHMENT", imgBuffer, `${item.key}-preview.png`);
+          const uploadResult = await this.uploadPng(session, "ISSUE_IMAGE", imgBuffer, `${item.key}-preview.png`);
           await gqlRequest(
-            `mutation AttachFile($issueId: ID!, $fileId: ID!) {
-              attachIssueFile(issueId: $issueId, fileId: $fileId) {
+            `mutation AttachFile($issueId: ID!, $attachmentId: ID!) {
+              attachIssueFile(issueId: $issueId, attachmentId: $attachmentId) {
                 id
               }
             }`,
-            { issueId, fileId },
+            { issueId, attachmentId: uploadResult.attachmentId },
             { cookie: session.cookie, ip: session.ip, baseUrl: this.options.baseUrl }
           ).catch(() => {});
         } catch {
@@ -328,17 +341,17 @@ export class DemoPopulator {
 
       saveState(this.state);
       count++;
-      if (count % 15 === 0) {
-        console.log(`Created ${count}/150 issues...`);
+      if (count % 20 === 0) {
+        console.log(`Created ${count}/${this.issues.length} issues...`);
       }
     }
 
     return { createdIssuesCount: count };
   }
 
-  // WAVE 3: Post 500 comments (100 replies) and record views
+  // WAVE 3: Comments and replies
   public async runWave3(): Promise<{ commentsCount: number }> {
-    console.log("=== Wave 3: Comments (500 comments with 100 replies) ===");
+    console.log(`=== Wave 3: Comments (${this.comments.length} comments) ===`);
     let count = 0;
 
     for (const c of this.comments) {
@@ -394,31 +407,43 @@ export class DemoPopulator {
     return { commentsCount: count };
   }
 
-  // WAVE 4: 350 applications, 15 withdraws, 20 rejects
+  // WAVE 4: Applications
   public async runWave4(): Promise<{ appliedCount: number; withdrawnCount: number; rejectedCount: number }> {
-    console.log("=== Wave 4: Applications (350 applications, 15 withdraws, 20 rejects) ===");
+    const isHardhat = isHardhatMode();
+    const targetApps = isHardhat ? 600 : 350;
+    const targetWithdraws = isHardhat ? 20 : 15;
+    const targetRejects = isHardhat ? 20 : 20;
+    const issuesLimit = isHardhat ? 200 : 150;
+
+    console.log(`=== Wave 4: Applications (${targetApps} applications, ${targetWithdraws} withdraws, ${targetRejects} rejects) ===`);
     let applied = 0;
     let withdrawn = 0;
     let rejected = 0;
 
-    const devRoles = Array.from({ length: 22 }, (_, i) => `user${String(i + 11).padStart(2, "0")}`);
+    const devRoles = isHardhat
+      ? Object.keys(this.keys).filter((k) => k.startsWith("hh"))
+      : Array.from({ length: 22 }, (_, i) => `user${String(i + 11).padStart(2, "0")}`);
 
-    // Generate ~350 applications distributed across issues
     let appIdx = 0;
-    for (let i = 1; i <= 150; i++) {
+    for (let i = 1; i <= issuesLimit; i++) {
+      if (applied >= targetApps) break;
       const issueKey = `issue_${String(i).padStart(3, "0")}`;
       const issueId = this.state.issues[issueKey];
       if (!issueId && !this.options.dryRun) continue;
 
       const metadata = this.state.issueMetadata[issueKey];
-      const clientRole = metadata?.clientRole || "user01";
+      const clientRole = metadata?.clientRole || (isHardhat ? "hh04" : "user01");
+      const candidatePool = devRoles.filter((r) => r !== clientRole);
 
-      // 0 to 5 applicants per issue (ensure issues 1..45 have applicants for reservations)
-      const numApplicants = i <= 45 ? 1 + (i % 4) : (i % 6);
+      const numApplicants = isHardhat
+        ? (i <= 60 ? 3 + (i % 2) : 2 + (i % 3))
+        : (i <= 45 ? 1 + (i % 4) : (i % 6));
+
       for (let a = 0; a < numApplicants; a++) {
+        if (applied >= targetApps) break;
         appIdx++;
         const appKey = `app_${String(appIdx).padStart(4, "0")}`;
-        const devRole = devRoles[(i + a) % devRoles.length]!;
+        const devRole = candidatePool[(i + a) % candidatePool.length]!;
 
         if (this.state.applications[appKey] && !this.options.dryRun) {
           applied++;
@@ -427,8 +452,8 @@ export class DemoPopulator {
 
         if (this.options.dryRun) {
           applied++;
-          if (appIdx <= 15) withdrawn++;
-          if (appIdx > 15 && appIdx <= 35) rejected++;
+          if (appIdx <= targetWithdraws) withdrawn++;
+          if (appIdx > targetWithdraws && appIdx <= targetWithdraws + targetRejects) rejected++;
           continue;
         }
 
@@ -453,8 +478,8 @@ export class DemoPopulator {
         this.state.applications[appKey] = appId;
         applied++;
 
-        // 15 withdraws
-        if (withdrawn < 15 && appIdx <= 20) {
+        // Withdraws
+        if (withdrawn < targetWithdraws && appIdx <= targetWithdraws) {
           await gqlRequest(
             `mutation Withdraw($id: ID!) {
               withdrawApplication(id: $id) {
@@ -468,8 +493,8 @@ export class DemoPopulator {
           withdrawn++;
         }
 
-        // 20 rejects by client
-        if (rejected < 20 && appIdx > 20 && appIdx <= 45) {
+        // Rejections by client
+        if (rejected < targetRejects && appIdx > targetWithdraws && appIdx <= targetWithdraws + targetRejects) {
           const clientSession = await this.getSession(clientRole);
           await gqlRequest(
             `mutation Reject($id: ID!) {
@@ -485,6 +510,9 @@ export class DemoPopulator {
         }
 
         saveState(this.state);
+        if (applied % 50 === 0) {
+          console.log(`Submitted ${applied}/${targetApps} applications...`);
+        }
       }
     }
 
@@ -492,26 +520,34 @@ export class DemoPopulator {
     return { appliedCount: applied, withdrawnCount: withdrawn, rejectedCount: rejected };
   }
 
-  // WAVE 5: selectDeveloper for 45 issues (35 funded, 4 cancelled, 3 expired)
+  // WAVE 5: selectDeveloper and escrow deposits (60 selected, 50 funded, 5 awaiting, 5 cancelled in hardhat mode)
   public async runWave5(): Promise<{ selectedCount: number; fundedCount: number; cancelledCount: number }> {
-    console.log("=== Wave 5: Reservations & Escrow Deposits (45 selected, 35 funded, 4 cancelled) ===");
+    const isHardhat = isHardhatMode();
+    const totalReservations = isHardhat ? 60 : 45;
+    const fundedTarget = isHardhat ? 50 : 35;
+    const awaitingTarget = isHardhat ? 5 : 6;
+    const cancelledTarget = isHardhat ? 5 : 4;
+
+    console.log(`=== Wave 5: Reservations & Escrow Deposits (${totalReservations} selected, ${fundedTarget} funded, ${cancelledTarget} cancelled) ===`);
     let selected = 0;
     let funded = 0;
     let cancelled = 0;
 
-    for (let r = 1; r <= 45; r++) {
+    for (let r = 1; r <= totalReservations; r++) {
       const issueKey = `issue_${String(r).padStart(3, "0")}`;
       const issueId = this.state.issues[issueKey];
       if (!issueId && !this.options.dryRun) continue;
 
       const metadata = this.state.issueMetadata[issueKey];
-      const clientRole = metadata?.clientRole || "user01";
-      const devRole = `user${String(11 + (r % 22)).padStart(2, "0")}`;
+      const clientRole = metadata?.clientRole || (isHardhat ? "hh04" : "user01");
+      const devRole = isHardhat
+        ? `hh${String(4 + ((r * 3) % 46)).padStart(2, "0")}`
+        : `user${String(11 + (r % 22)).padStart(2, "0")}`;
 
       if (this.options.dryRun) {
         selected++;
-        if (r <= 35) funded++;
-        if (r > 35 && r <= 39) cancelled++;
+        if (r <= fundedTarget) funded++;
+        if (r > fundedTarget + awaitingTarget && r <= fundedTarget + awaitingTarget + cancelledTarget) cancelled++;
         continue;
       }
 
@@ -532,8 +568,10 @@ export class DemoPopulator {
         ).catch(() => null);
         let pendingApp = appsRes?.applications?.find((a) => a.status === "PENDING");
         if (!pendingApp) {
-          for (let d = 11; d <= 32; d++) {
-            const candidateRole = `user${String(d).padStart(2, "0")}`;
+          const candidateRoles = isHardhat
+            ? Object.keys(this.keys).filter((k) => k.startsWith("hh") && k !== clientRole)
+            : Array.from({ length: 22 }, (_, d) => `user${String(d + 11).padStart(2, "0")}`).filter((k) => k !== clientRole);
+          for (const candidateRole of candidateRoles) {
             const devSession = await this.getSession(candidateRole);
             const appRes = await gqlRequest<{ applyToIssue: { id: string } }>(
               `mutation Apply($input: ApplyToIssueInput!) {
@@ -610,8 +648,8 @@ export class DemoPopulator {
 
       const resObj = this.state.reservations[issueKey]!;
 
-      // 4 cancelled reservations
-      if (r > 35 && r <= 39 && resObj.status === "AWAITING_FUNDING") {
+      // Cancelled reservations
+      if (r > fundedTarget + awaitingTarget && r <= fundedTarget + awaitingTarget + cancelledTarget && resObj.status === "AWAITING_FUNDING") {
         const clientSession = await this.getSession(clientRole);
         try {
           await gqlRequest(
@@ -631,8 +669,8 @@ export class DemoPopulator {
         }
       }
 
-      // 35 funded on-chain
-      if (r <= 35 && resObj.status === "AWAITING_FUNDING") {
+      // Funded on-chain
+      if (r <= fundedTarget && resObj.status === "AWAITING_FUNDING") {
         const clientSession = await this.getSession(clientRole);
         try {
           const resDetail = await gqlRequest<{
@@ -693,6 +731,9 @@ export class DemoPopulator {
             this.options.baseUrl
           );
 
+          // Allow worker indexer to index EscrowDeposited event
+          await sleep(2000);
+
           resObj.status = "FUNDED";
           funded++;
         } catch (err) {
@@ -706,9 +747,9 @@ export class DemoPopulator {
     return { selectedCount: selected, fundedCount: funded, cancelledCount: cancelled };
   }
 
-  // WAVE 6: Task chat in 35 rooms (files, replies, edits, deletes, contact info)
+  // WAVE 6: Task chat in rooms (files, replies, text)
   public async runWave6(): Promise<{ roomsProcessed: number }> {
-    console.log("=== Wave 6: Realtime Chat (35 rooms) ===");
+    console.log(`=== Wave 6: Realtime Chat (${this.chatRooms.length} rooms) ===`);
     let processed = 0;
 
     for (const room of this.chatRooms) {
@@ -743,11 +784,35 @@ export class DemoPopulator {
         for (const msg of room.messages) {
           const isClientMsg = msg.senderRole === room.clientRole || msg.senderRole === clientRole;
           const senderSocket = isClientMsg ? clientSocket : devSocket;
-          await emitAck(senderSocket, "message:send", {
-            issueId,
-            content: msg.text,
-            type: "TEXT",
-          });
+          const senderSession = isClientMsg ? clientSession : devSession;
+
+          if ((msg as { hasFile?: boolean }).hasFile) {
+            try {
+              const imgBuffer = createColorPng(64, 64, 40, 140, 210);
+              const { fileUrl } = await this.uploadPng(senderSession, "ISSUE_IMAGE", imgBuffer, "benchmark-log.png");
+              await emitAck(senderSocket, "message:send", {
+                issueId,
+                content: msg.text,
+                type: "FILE",
+                fileUrl,
+                fileName: "benchmark-log.png",
+                fileSize: imgBuffer.length,
+                fileMime: "image/png",
+              });
+            } catch {
+              await emitAck(senderSocket, "message:send", {
+                issueId,
+                content: msg.text,
+                type: "TEXT",
+              });
+            }
+          } else {
+            await emitAck(senderSocket, "message:send", {
+              issueId,
+              content: msg.text,
+              type: "TEXT",
+            });
+          }
           // Small delay to respect rate limit (10 msgs per 10s)
           await sleep(250);
         }
@@ -769,32 +834,36 @@ export class DemoPopulator {
     return { roomsProcessed: processed };
   }
 
-  // WAVE 7: Submissions (28 submitted, 5 requestChanges)
+  // WAVE 7: Submissions (40 submissions in hardhat mode, 10 requestChanges then resubmitted)
   public async runWave7(): Promise<{ submittedCount: number; revisedCount: number }> {
-    console.log("=== Wave 7: Submissions (28 submissions, 5 requestChanges) ===");
+    const isHardhat = isHardhatMode();
+    const targetSubmissions = isHardhat ? 40 : 28;
+    const targetRevisions = isHardhat ? 10 : 5;
+
+    console.log(`=== Wave 7: Submissions (${targetSubmissions} submissions, ${targetRevisions} requestChanges) ===`);
     let submitted = 0;
     let revised = 0;
 
-    for (let s = 1; s <= 28; s++) {
+    for (let s = 1; s <= targetSubmissions; s++) {
       const issueKey = `issue_${String(s).padStart(3, "0")}`;
       const issueId = this.state.issues[issueKey];
       if (!issueId && !this.options.dryRun) continue;
 
       if (this.state.submissions[issueKey]) {
         submitted++;
-        if (s <= 5) revised++;
+        if (s <= targetRevisions) revised++;
         continue;
       }
 
       if (this.options.dryRun) {
         submitted++;
-        if (s <= 5) revised++;
+        if (s <= targetRevisions) revised++;
         continue;
       }
 
       const resObj = this.state.reservations[issueKey];
-      const devRole = resObj?.developerRole || `user${String(11 + (s % 22)).padStart(2, "0")}`;
-      const clientRole = this.state.issueMetadata[issueKey]?.clientRole || "user01";
+      const devRole = resObj?.developerRole || (isHardhat ? "hh15" : `user${String(11 + (s % 22)).padStart(2, "0")}`);
+      const clientRole = this.state.issueMetadata[issueKey]?.clientRole || (isHardhat ? "hh04" : "user01");
 
       const devSession = await this.getSession(devRole);
       try {
@@ -834,9 +903,10 @@ export class DemoPopulator {
           this.options.baseUrl
         );
 
-        // 5 issues get requestChanges then resubmitted
-        if (s <= 5) {
-          await sleep(2000);
+        await sleep(1500);
+
+        // Issues get requestChanges then resubmitted
+        if (s <= targetRevisions) {
           const clientSession = await this.getSession(clientRole);
           await gqlRequest(
             `mutation ReqChanges($id: ID!, $notes: String!) {
@@ -850,6 +920,48 @@ export class DemoPopulator {
             console.warn(`requestChanges warning for ${issueKey}:`, err);
           });
           revised++;
+
+          await sleep(1500);
+
+          // Dev submits revision
+          const revDraftRes = await gqlRequest<{ createSubmissionDraft: { id: string } }>(
+            `mutation Draft($issue: ID!, $description: String!) {
+              createSubmissionDraft(issueId: $issue, description: $description) {
+                id
+              }
+            }`,
+            {
+              issue: issueId,
+              description: `Bản nộp đã chỉnh sửa: Bổ sung 5 test case concurrency và xử lý lỗi bộ nhớ.`,
+            },
+            { cookie: devSession.cookie, ip: devSession.ip, baseUrl: this.options.baseUrl }
+          ).catch(() => null);
+
+          if (revDraftRes) {
+            const revPrep = await gqlRequest<{ prepareSubmitWork: PreparedCall }>(
+              `mutation PrepSubmit($id: ID!) {
+                prepareSubmitWork(submissionId: $id) {
+                  intentId
+                  contractAddress
+                  data
+                  value
+                }
+              }`,
+              { id: revDraftRes.createSubmissionDraft.id },
+              { cookie: devSession.cookie, ip: devSession.ip, baseUrl: this.options.baseUrl }
+            ).catch(() => null);
+
+            if (revPrep) {
+              await executePreparedCalls(
+                devSession.wallet,
+                [revPrep.prepareSubmitWork],
+                devSession,
+                `Resubmit work for ${issueKey}`,
+                this.options.baseUrl
+              ).catch(() => {});
+              await sleep(1500);
+            }
+          }
         }
 
         this.state.submissions[issueKey] = subId;
@@ -863,35 +975,72 @@ export class DemoPopulator {
     return { submittedCount: submitted, revisedCount: revised };
   }
 
-  // WAVE 8: Escrow Outcomes (release >= 16, settlement >= 4, dispute >= 5, missed delivery 2)
+  // WAVE 8: Escrow Outcomes
   public async runWave8(): Promise<{ releases: number; settlements: number; disputes: number }> {
-    console.log("=== Wave 8: Escrow Outcomes (Release >= 16, Settlement >= 4, Dispute >= 5) ===");
+    const isHardhat = isHardhatMode();
+    const releaseTarget = isHardhat ? 25 : 16;
+    const settlementStart = releaseTarget + 1;
+    const settlementEnd = isHardhat ? 31 : 21;
+    const openDisputeStart = settlementEnd + 1;
+    const openDisputeEnd = isHardhat ? 35 : 23;
+    const initRulingStart = openDisputeEnd + 1;
+    const initRulingEnd = isHardhat ? 38 : 25;
+    const finalRulingStart = initRulingEnd + 1;
+    const finalRulingEnd = isHardhat ? 41 : 28;
+    const missedDeliveryStart = isHardhat ? 42 : 29;
+    const missedDeliveryEnd = isHardhat ? 43 : 30;
+    const reviewTimeoutStart = isHardhat ? 44 : 31;
+    const reviewTimeoutEnd = isHardhat ? 45 : 32;
+
+    console.log(`=== Wave 8: Escrow Outcomes (${releaseTarget} Releases, ${settlementEnd - settlementStart + 1} Settlements, 4 Open Disputes, 3 Initial Rulings, 3 Finalized, 2 Refunds, 2 Review-Timeouts) ===`);
     let releases = 0;
     let settlements = 0;
     let disputes = 0;
 
-    for (let i = 1; i <= 35; i++) {
+    if (this.options.dryRun) {
+      return { releases: releaseTarget, settlements: settlementEnd - settlementStart + 1, disputes: 10 };
+    }
+
+    // 1. Release funds for issues 1..releaseTarget
+    for (let i = 1; i <= releaseTarget; i++) {
       const issueKey = `issue_${String(i).padStart(3, "0")}`;
       const issueId = this.state.issues[issueKey];
-      if (!issueId && !this.options.dryRun) continue;
+      if (!issueId) continue;
 
-      const clientRole = this.state.issueMetadata[issueKey]?.clientRole || "user01";
-      const devRole = this.state.reservations[issueKey]?.developerRole || "user11";
+      const clientRole = this.state.issueMetadata[issueKey]?.clientRole || (isHardhat ? "hh04" : "user01");
+      const devRole = this.state.reservations[issueKey]?.developerRole || (isHardhat ? "hh11" : "user11");
+      const clientSession = await this.getSession(clientRole);
+      const devSession = await this.getSession(devRole);
 
-      if (this.options.dryRun) {
-        if (i <= 16) releases++;
-        else if (i <= 20) settlements++;
-        else if (i <= 25) disputes++;
-        continue;
-      }
+      try {
+        const relRes = await gqlRequest<{ prepareReleaseFunds: PreparedCall }>(
+          `mutation Rel($id: ID!) {
+            prepareReleaseFunds(issueId: $id) {
+              intentId
+              contractAddress
+              data
+              value
+            }
+          }`,
+          { id: issueId },
+          { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
+        );
 
-      // Release for issues 1..16
-      if (i <= 16) {
-        const clientSession = await this.getSession(clientRole);
+        await executePreparedCalls(
+          clientSession.wallet,
+          [relRes.prepareReleaseFunds],
+          clientSession,
+          `Release escrow for ${issueKey}`,
+          this.options.baseUrl
+        );
+        releases++;
+        await sleep(2000);
+
+        // Developer claims claimable balance
         try {
-          const relRes = await gqlRequest<{ prepareReleaseFunds: PreparedCall }>(
-            `mutation Rel($id: ID!) {
-              prepareReleaseFunds(issueId: $id) {
+          const claimRes = await gqlRequest<{ prepareClaim: PreparedCall }>(
+            `mutation Claim($id: ID!) {
+              prepareClaim(issueId: $id) {
                 intentId
                 contractAddress
                 data
@@ -899,127 +1048,284 @@ export class DemoPopulator {
               }
             }`,
             { id: issueId },
-            { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
+            { cookie: devSession.cookie, ip: devSession.ip, baseUrl: this.options.baseUrl }
           );
-
           await executePreparedCalls(
-            clientSession.wallet,
-            [relRes.prepareReleaseFunds],
-            clientSession,
-            `Release escrow for ${issueKey}`,
+            devSession.wallet,
+            [claimRes.prepareClaim],
+            devSession,
+            `Claim funds for ${issueKey}`,
             this.options.baseUrl
           );
-          releases++;
+          await sleep(1500);
         } catch (err) {
-          console.warn(`Release on-chain skipped/failed for ${issueKey}:`, err);
+          console.warn(`Claim error for ${issueKey}:`, err);
+        }
+      } catch (err) {
+        console.warn(`Release on-chain skipped/failed for ${issueKey}:`, err);
+      }
+    }
+
+    // 2. Propose and accept settlements for issues settlementStart..settlementEnd
+    for (let i = settlementStart; i <= settlementEnd; i++) {
+      const issueKey = `issue_${String(i).padStart(3, "0")}`;
+      const issueId = this.state.issues[issueKey];
+      if (!issueId) continue;
+
+      const clientRole = this.state.issueMetadata[issueKey]?.clientRole || (isHardhat ? "hh04" : "user01");
+      const devRole = this.state.reservations[issueKey]?.developerRole || (isHardhat ? "hh11" : "user11");
+      const clientSession = await this.getSession(clientRole);
+      const devSession = await this.getSession(devRole);
+
+      try {
+        const prop = await gqlRequest<{ prepareProposeSettlement: PreparedCall }>(
+          `mutation($id: ID!, $bps: Int!) { prepareProposeSettlement(issueId: $id, clientBps: $bps) { intentId contractAddress data value } }`,
+          { id: issueId, bps: 5000 },
+          { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
+        );
+        await executePreparedCalls(clientSession.wallet, [prop.prepareProposeSettlement], clientSession, `Propose settlement ${issueKey}`, this.options.baseUrl);
+        await sleep(2000);
+
+        const acc = await gqlRequest<{ prepareAcceptSettlement: PreparedCall }>(
+          `mutation($id: ID!) { prepareAcceptSettlement(issueId: $id) { intentId contractAddress data value } }`,
+          { id: issueId },
+          { cookie: devSession.cookie, ip: devSession.ip, baseUrl: this.options.baseUrl }
+        );
+        await executePreparedCalls(devSession.wallet, [acc.prepareAcceptSettlement], devSession, `Accept settlement ${issueKey}`, this.options.baseUrl);
+        await sleep(1500);
+        settlements++;
+      } catch (err) {
+        console.warn(`Settlement failed for ${issueKey}:`, err);
+      }
+    }
+
+    // 3. Open disputes for issues openDisputeStart..openDisputeEnd (leave in DISPUTED)
+    for (let i = openDisputeStart; i <= openDisputeEnd; i++) {
+      const issueKey = `issue_${String(i).padStart(3, "0")}`;
+      const issueId = this.state.issues[issueKey];
+      if (!issueId) continue;
+
+      const clientRole = this.state.issueMetadata[issueKey]?.clientRole || (isHardhat ? "hh04" : "user01");
+      const clientSession = await this.getSession(clientRole);
+
+      try {
+        const ev = await gqlRequest<{ createEvidenceManifest: { id: string } }>(
+          `mutation($issue: ID!, $stmt: String!) { createEvidenceManifest(issueId: $issue, statement: $stmt) { id } }`,
+          { issue: issueId, stmt: "Sản phẩm bàn giao không đạt tiêu chuẩn kỹ thuật yêu cầu trong mô tả." },
+          { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
+        );
+        const raise = await gqlRequest<{ prepareRaiseDispute: PreparedCall }>(
+          `mutation($issue: ID!, $man: ID!) { prepareRaiseDispute(issueId: $issue, manifestId: $man) { intentId contractAddress data value } }`,
+          { issue: issueId, man: ev.createEvidenceManifest.id },
+          { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
+        );
+        await executePreparedCalls(clientSession.wallet, [raise.prepareRaiseDispute], clientSession, `Raise dispute ${issueKey}`, this.options.baseUrl);
+        await sleep(2000);
+        disputes++;
+      } catch (err) {
+        console.warn(`Open dispute failed for ${issueKey}:`, err);
+      }
+    }
+
+    // 4. Disputes with initial ruling and final ruling
+    for (let i = initRulingStart; i <= finalRulingEnd; i++) {
+      const issueKey = `issue_${String(i).padStart(3, "0")}`;
+      const issueId = this.state.issues[issueKey];
+      if (!issueId) continue;
+
+      const clientRole = this.state.issueMetadata[issueKey]?.clientRole || (isHardhat ? "hh04" : "user01");
+      const devRole = this.state.reservations[issueKey]?.developerRole || (isHardhat ? "hh11" : "user11");
+      const clientSession = await this.getSession(clientRole);
+      const devSession = await this.getSession(devRole);
+
+      try {
+        const ev = await gqlRequest<{ createEvidenceManifest: { id: string } }>(
+          `mutation($issue: ID!, $stmt: String!) { createEvidenceManifest(issueId: $issue, statement: $stmt) { id } }`,
+          { issue: issueId, stmt: "Sản phẩm không đạt tiêu chuẩn yêu cầu trong mô tả." },
+          { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
+        );
+        const raise = await gqlRequest<{ prepareRaiseDispute: PreparedCall }>(
+          `mutation($issue: ID!, $man: ID!) { prepareRaiseDispute(issueId: $issue, manifestId: $man) { intentId contractAddress data value } }`,
+          { issue: issueId, man: ev.createEvidenceManifest.id },
+          { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
+        );
+        await executePreparedCalls(clientSession.wallet, [raise.prepareRaiseDispute], clientSession, `Raise dispute ${issueKey}`, this.options.baseUrl);
+        await sleep(2000);
+        disputes++;
+
+        const cEv = await gqlRequest<{ createEvidenceManifest: { id: string } }>(
+          `mutation($issue: ID!, $stmt: String!) { createEvidenceManifest(issueId: $issue, statement: $stmt) { id } }`,
+          { issue: issueId, stmt: "Đã hoàn thành đúng yêu cầu và test đầy đủ." },
+          { cookie: devSession.cookie, ip: devSession.ip, baseUrl: this.options.baseUrl }
+        );
+        const cRes = await gqlRequest<{ prepareSubmitCounterpartyEvidence: PreparedCall }>(
+          `mutation($issue: ID!, $man: ID!) { prepareSubmitCounterpartyEvidence(issueId: $issue, manifestId: $man) { intentId contractAddress data value } }`,
+          { issue: issueId, man: cEv.createEvidenceManifest.id },
+          { cookie: devSession.cookie, ip: devSession.ip, baseUrl: this.options.baseUrl }
+        );
+        await executePreparedCalls(devSession.wallet, [cRes.prepareSubmitCounterpartyEvidence], devSession, `Counter evidence ${issueKey}`, this.options.baseUrl);
+        await sleep(2000);
+      } catch (err) {
+        console.warn(`Dispute prep failed for ${issueKey}:`, err);
+      }
+    }
+
+    // Advance EVM time past 72h evidence window to post Initial Rulings
+    const isLocal = (process.env.CHAIN_ID || "31337") === "31337";
+    if (isLocal) {
+      const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL || "http://127.0.0.1:8545");
+      console.log("Advancing EVM time by 73 hours for Initial Rulings...");
+      await provider.send("evm_increaseTime", [73 * 3600]);
+      await provider.send("evm_mine", []);
+      await sleep(1000);
+
+      const adminSession = await this.getSession("admin");
+      const arbSigner = adminSession.wallet.provider ? adminSession.wallet : adminSession.wallet.connect(provider);
+
+      // Post initial rulings for all 6 issues (initRulingStart..finalRulingEnd)
+      for (let i = initRulingStart; i <= finalRulingEnd; i++) {
+        const issueKey = `issue_${String(i).padStart(3, "0")}`;
+        const issueId = this.state.issues[issueKey];
+        if (!issueId) continue;
+
+        try {
+          const draftInit = await gqlRequest<{ draftRuling: { decisionHash: string; safeTransactionJson: string } }>(
+            `mutation($id: ID!, $kind: RulingDraftKind!, $bps: Int!, $rat: String!) {
+              draftRuling(issueId: $id, kind: $kind, clientBps: $bps, rationale: $rat) { decisionHash safeTransactionJson }
+            }`,
+            { id: issueId, kind: "INITIAL", bps: 3000, rat: "Bằng chứng phản ánh đúng một phần thực tế của dự án." },
+            { cookie: adminSession.cookie, ip: adminSession.ip, baseUrl: this.options.baseUrl }
+          );
+          const safeTxInit = JSON.parse(draftInit.draftRuling.safeTransactionJson).transactions[0];
+          const arbTx1 = await arbSigner.sendTransaction({ to: safeTxInit.to, data: safeTxInit.data, gasLimit: 500000 });
+          await arbTx1.wait(1);
+          await sleep(2000);
+        } catch (err) {
+          console.warn(`Initial ruling failed for ${issueKey}:`, err);
         }
       }
 
-      if (i >= 17 && i <= 21) {
+      // For finalRulingStart..finalRulingEnd, challenge ruling and draft final ruling
+      for (let i = finalRulingStart; i <= finalRulingEnd; i++) {
+        const issueKey = `issue_${String(i).padStart(3, "0")}`;
+        const issueId = this.state.issues[issueKey];
+        if (!issueId) continue;
+
+        const clientRole = this.state.issueMetadata[issueKey]?.clientRole || (isHardhat ? "hh04" : "user01");
         const clientSession = await this.getSession(clientRole);
-        const devSession = await this.getSession(devRole);
+
         try {
-          const prop = await gqlRequest<{ prepareProposeSettlement: PreparedCall }>(
-            `mutation($id: ID!, $bps: Int!) { prepareProposeSettlement(issueId: $id, clientBps: $bps) { intentId contractAddress data value } }`,
-            { id: issueId, bps: 5000 },
+          const chal = await gqlRequest<{ prepareChallengeRuling: PreparedCall }>(
+            `mutation($id: ID!) { prepareChallengeRuling(issueId: $id) { intentId contractAddress data value } }`,
+            { id: issueId },
             { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
           );
-          await executePreparedCalls(clientSession.wallet, [prop.prepareProposeSettlement], clientSession, `Propose settlement ${issueKey}`, this.options.baseUrl);
-          await sleep(3500);
+          await executePreparedCalls(clientSession.wallet, [chal.prepareChallengeRuling], clientSession, `Challenge ruling ${issueKey}`, this.options.baseUrl);
+          await sleep(2000);
 
-          const acc = await gqlRequest<{ prepareAcceptSettlement: PreparedCall }>(
-            `mutation($id: ID!) { prepareAcceptSettlement(issueId: $id) { intentId contractAddress data value } }`,
+          const draftFinal = await gqlRequest<{ draftRuling: { decisionHash: string; safeTransactionJson: string } }>(
+            `mutation($id: ID!, $kind: RulingDraftKind!, $bps: Int!, $rat: String!) {
+              draftRuling(issueId: $id, kind: $kind, clientBps: $bps, rationale: $rat) { decisionHash safeTransactionJson }
+            }`,
+            { id: issueId, kind: "FINAL", bps: 6000, rat: "Phán quyết cuối cùng phân chia 60% client và 40% dev." },
+            { cookie: adminSession.cookie, ip: adminSession.ip, baseUrl: this.options.baseUrl }
+          );
+          const safeTxFinal = JSON.parse(draftFinal.draftRuling.safeTransactionJson).transactions[0];
+          const arbTx2 = await arbSigner.sendTransaction({ to: safeTxFinal.to, data: safeTxFinal.data, gasLimit: 500000 });
+          await arbTx2.wait(1);
+          await sleep(2000);
+        } catch (err) {
+          console.warn(`Challenge/Final ruling failed for ${issueKey}:`, err);
+        }
+      }
+
+      // Advance EVM time past 24h challenge cooling-off window to finalize rulings
+      console.log("Advancing EVM time by 25 hours to finalize rulings...");
+      await provider.send("evm_increaseTime", [25 * 3600]);
+      await provider.send("evm_mine", []);
+      await sleep(1000);
+
+      for (let i = finalRulingStart; i <= finalRulingEnd; i++) {
+        const issueKey = `issue_${String(i).padStart(3, "0")}`;
+        const issueId = this.state.issues[issueKey];
+        if (!issueId) continue;
+
+        try {
+          const fin = await gqlRequest<{ prepareFinalizeRuling: PreparedCall }>(
+            `mutation($id: ID!) { prepareFinalizeRuling(issueId: $id) { intentId contractAddress data value } }`,
+            { id: issueId },
+            { cookie: adminSession.cookie, ip: adminSession.ip, baseUrl: this.options.baseUrl }
+          );
+          await executePreparedCalls(adminSession.wallet, [fin.prepareFinalizeRuling], adminSession, `Finalize ruling ${issueKey}`, this.options.baseUrl);
+          await sleep(2000);
+        } catch (err) {
+          console.warn(`Finalize ruling failed for ${issueKey}:`, err);
+        }
+      }
+
+      // Missed delivery refund (issues missedDeliveryStart..missedDeliveryEnd)
+      console.log("Advancing EVM time by 25 hours for missed-delivery refund...");
+      await provider.send("evm_increaseTime", [25 * 3600]);
+      await provider.send("evm_mine", []);
+      await sleep(1000);
+
+      for (let i = missedDeliveryStart; i <= missedDeliveryEnd; i++) {
+        const issueKey = `issue_${String(i).padStart(3, "0")}`;
+        const issueId = this.state.issues[issueKey];
+        if (!issueId) continue;
+
+        const clientRole = this.state.issueMetadata[issueKey]?.clientRole || (isHardhat ? "hh04" : "user01");
+        const clientSession = await this.getSession(clientRole);
+
+        try {
+          const refRes = await gqlRequest<{ prepareClaimMissedDeliveryRefund: PreparedCall }>(
+            `mutation($id: ID!) { prepareClaimMissedDeliveryRefund(issueId: $id) { intentId contractAddress data value } }`,
+            { id: issueId },
+            { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
+          );
+          await executePreparedCalls(
+            clientSession.wallet,
+            [refRes.prepareClaimMissedDeliveryRefund],
+            clientSession,
+            `Claim missed-delivery refund ${issueKey}`,
+            this.options.baseUrl
+          );
+          await sleep(2000);
+        } catch (err) {
+          console.warn(`Missed delivery refund failed for ${issueKey}:`, err);
+        }
+      }
+
+      // Review timeout (issues reviewTimeoutStart..reviewTimeoutEnd)
+      console.log("Advancing EVM time by 170 hours for review timeout...");
+      await provider.send("evm_increaseTime", [170 * 3600]);
+      await provider.send("evm_mine", []);
+      await sleep(1000);
+
+      for (let i = reviewTimeoutStart; i <= reviewTimeoutEnd; i++) {
+        const issueKey = `issue_${String(i).padStart(3, "0")}`;
+        const issueId = this.state.issues[issueKey];
+        if (!issueId) continue;
+
+        const devRole = this.state.reservations[issueKey]?.developerRole || (isHardhat ? "hh11" : "user11");
+        const devSession = await this.getSession(devRole);
+
+        try {
+          const toRes = await gqlRequest<{ prepareClaimReviewTimeout: PreparedCall }>(
+            `mutation($id: ID!) { prepareClaimReviewTimeout(issueId: $id) { intentId contractAddress data value } }`,
             { id: issueId },
             { cookie: devSession.cookie, ip: devSession.ip, baseUrl: this.options.baseUrl }
           );
-          await executePreparedCalls(devSession.wallet, [acc.prepareAcceptSettlement], devSession, `Accept settlement ${issueKey}`, this.options.baseUrl);
-          settlements++;
-        } catch (err) {
-          console.warn(`Settlement failed for ${issueKey}:`, err);
-        }
-      }
-
-      if (i >= 22 && i <= 28) {
-        const clientSession = await this.getSession(clientRole);
-        const devSession = await this.getSession(devRole);
-        const isLocal = (process.env.CHAIN_ID || "31337") === "31337";
-        try {
-          const ev = await gqlRequest<{ createEvidenceManifest: { id: string } }>(
-            `mutation($issue: ID!, $stmt: String!) { createEvidenceManifest(issueId: $issue, statement: $stmt) { id } }`,
-            { issue: issueId, stmt: "San pham khong dat tieu chuan yeu cau trong mo ta." },
-            { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
+          await executePreparedCalls(
+            devSession.wallet,
+            [toRes.prepareClaimReviewTimeout],
+            devSession,
+            `Claim review timeout ${issueKey}`,
+            this.options.baseUrl
           );
-          const raise = await gqlRequest<{ prepareRaiseDispute: PreparedCall }>(
-            `mutation($issue: ID!, $man: ID!) { prepareRaiseDispute(issueId: $issue, manifestId: $man) { intentId contractAddress data value } }`,
-            { issue: issueId, man: ev.createEvidenceManifest.id },
-            { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
-          );
-          await executePreparedCalls(clientSession.wallet, [raise.prepareRaiseDispute], clientSession, `Raise dispute ${issueKey}`, this.options.baseUrl);
-          disputes++;
-          await sleep(3000);
-
-          if (i >= 24 && isLocal) {
-            const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL || "http://127.0.0.1:8545");
-            const cEv = await gqlRequest<{ createEvidenceManifest: { id: string } }>(
-              `mutation($issue: ID!, $stmt: String!) { createEvidenceManifest(issueId: $issue, statement: $stmt) { id } }`,
-              { issue: issueId, stmt: "Da hoan thanh dung yeu cau va test day du." },
-              { cookie: devSession.cookie, ip: devSession.ip, baseUrl: this.options.baseUrl }
-            );
-            const cRes = await gqlRequest<{ prepareSubmitCounterpartyEvidence: PreparedCall }>(
-              `mutation($issue: ID!, $man: ID!) { prepareSubmitCounterpartyEvidence(issueId: $issue, manifestId: $man) { intentId contractAddress data value } }`,
-              { issue: issueId, man: cEv.createEvidenceManifest.id },
-              { cookie: devSession.cookie, ip: devSession.ip, baseUrl: this.options.baseUrl }
-            );
-            await executePreparedCalls(devSession.wallet, [cRes.prepareSubmitCounterpartyEvidence], devSession, `Counter evidence ${issueKey}`, this.options.baseUrl);
-            await sleep(3000);
-
-            await provider.send("evm_increaseTime", [73 * 3600]);
-            await provider.send("evm_mine", []);
-
-            const adminSession = await this.getSession("admin");
-            const draftInit = await gqlRequest<{ draftRuling: { decisionHash: string; safeTransactionJson: string } }>(
-              `mutation($id: ID!, $kind: RulingDraftKind!, $bps: Int!, $rat: String!) { draftRuling(issueId: $id, kind: $kind, clientBps: $bps, rationale: $rat) { decisionHash safeTransactionJson } }`,
-              { id: issueId, kind: "INITIAL", bps: 3000, rat: "Bang chung phan anh dung mot phan thuc te." },
-              { cookie: adminSession.cookie, ip: adminSession.ip, baseUrl: this.options.baseUrl }
-            );
-            const safeTxInit = JSON.parse(draftInit.draftRuling.safeTransactionJson).transactions[0];
-            const arbSigner = adminSession.wallet.provider ? adminSession.wallet : adminSession.wallet.connect(provider);
-            const arbTx1 = await arbSigner.sendTransaction({ to: safeTxInit.to, data: safeTxInit.data, gasLimit: 500000 });
-            await arbTx1.wait(1);
-            await sleep(3000);
-
-            if (i >= 26) {
-              const chal = await gqlRequest<{ prepareChallengeRuling: PreparedCall }>(
-                `mutation($id: ID!) { prepareChallengeRuling(issueId: $id) { intentId contractAddress data value } }`,
-                { id: issueId },
-                { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
-              );
-              await executePreparedCalls(clientSession.wallet, [chal.prepareChallengeRuling], clientSession, `Challenge ruling ${issueKey}`, this.options.baseUrl);
-              await sleep(3000);
-
-              const draftFinal = await gqlRequest<{ draftRuling: { decisionHash: string; safeTransactionJson: string } }>(
-                `mutation($id: ID!, $kind: RulingDraftKind!, $bps: Int!, $rat: String!) { draftRuling(issueId: $id, kind: $kind, clientBps: $bps, rationale: $rat) { decisionHash safeTransactionJson } }`,
-                { id: issueId, kind: "FINAL", bps: 6000, rat: "Phan quyet cuoi cung phan chia 60% client 40% dev." },
-                { cookie: adminSession.cookie, ip: adminSession.ip, baseUrl: this.options.baseUrl }
-              );
-              const safeTxFinal = JSON.parse(draftFinal.draftRuling.safeTransactionJson).transactions[0];
-              const arbTx2 = await arbSigner.sendTransaction({ to: safeTxFinal.to, data: safeTxFinal.data, gasLimit: 500000 });
-              await arbTx2.wait(1);
-
-              await provider.send("evm_increaseTime", [25 * 3600]);
-              await provider.send("evm_mine", []);
-
-              const fin = await gqlRequest<{ prepareFinalizeRuling: PreparedCall }>(
-                `mutation($id: ID!) { prepareFinalizeRuling(issueId: $id) { intentId contractAddress data value } }`,
-                { id: issueId },
-                { cookie: adminSession.cookie, ip: adminSession.ip, baseUrl: this.options.baseUrl }
-              );
-              await executePreparedCalls(adminSession.wallet, [fin.prepareFinalizeRuling], adminSession, `Finalize ruling ${issueKey}`, this.options.baseUrl);
-              await sleep(3000);
-            }
-          }
+          await sleep(2000);
         } catch (err) {
-          console.warn(`Dispute workflow failed for ${issueKey}:`, err);
+          console.warn(`Review timeout claim failed for ${issueKey}:`, err);
         }
       }
     }
@@ -1027,28 +1333,44 @@ export class DemoPopulator {
     return { releases, settlements, disputes };
   }
 
-  // WAVE 9: Reviews >= 14, Spammer 2 issues, Admin moderation (hide & ban)
+  // WAVE 9: Reviews for completed tasks & Admin moderation (hide & ban)
   public async runWave9(): Promise<{ reviewsCount: number; spamIssuesHidden: number; bannedSpammer: boolean }> {
-    console.log("=== Wave 9: Reviews >= 14 & Admin Moderation ===");
+    const isHardhat = isHardhatMode();
+    const completedIndices = isHardhat
+      ? [
+          ...Array.from({ length: 25 }, (_, i) => i + 1), // 1..25 releases
+          ...Array.from({ length: 6 }, (_, i) => i + 26), // 26..31 settlements
+          ...Array.from({ length: 3 }, (_, i) => i + 39), // 39..41 finalized rulings
+        ]
+      : Array.from({ length: 14 }, (_, i) => i + 1);
+
+    console.log(`=== Wave 9: Reviews (${completedIndices.length} completed tasks) & Admin Moderation ===`);
     let reviewsCount = 0;
     let spamIssuesHidden = 0;
     let bannedSpammer = false;
 
     if (this.options.dryRun) {
-      return { reviewsCount: 14, spamIssuesHidden: 2, bannedSpammer: true };
+      return { reviewsCount: completedIndices.length, spamIssuesHidden: 2, bannedSpammer: true };
     }
 
-    // Submit reviews for issues 1..14
-    for (let i = 1; i <= 14; i++) {
+    // Submit reviews for completed tasks
+    for (const i of completedIndices) {
       const issueKey = `issue_${String(i).padStart(3, "0")}`;
       const issueId = this.state.issues[issueKey];
-      if (!issueId && !this.options.dryRun) continue;
+      if (!issueId) continue;
 
-      const clientRole = this.state.issueMetadata[issueKey]?.clientRole || "user01";
+      const clientRole = this.state.issueMetadata[issueKey]?.clientRole || (isHardhat ? "hh04" : "user01");
       const clientSession = await this.getSession(clientRole);
 
       try {
         const rating = 4 + (i % 2); // 4 or 5 stars
+        const reviewComments = [
+          "Developer làm việc rất chuyên nghiệp, code sạch và bàn giao đúng thời hạn. Rất hài lòng!",
+          "Chất lượng giải pháp xuất sắc, phản hồi nhanh chóng và hỗ trợ rất nhiệt tình.",
+          "Giao hàng đúng tiến độ, viết unit test đầy đủ và tài liệu kiến trúc rõ ràng.",
+          "Kỹ sư xử lý bài toán hiệu quả, giao tiếp chuẩn mực và nghiệm thu rất thuận lợi.",
+        ];
+        const comment = reviewComments[i % reviewComments.length];
         await gqlRequest(
           `mutation Rev($issueId: ID!, $rating: Int!, $comment: String) {
             submitReview(issueId: $issueId, rating: $rating, comment: $comment) {
@@ -1058,13 +1380,17 @@ export class DemoPopulator {
           {
             issueId,
             rating,
-            comment: "Developer làm việc chuyên nghiệp, code sạch và giao hàng đúng hạn.",
+            comment,
           },
           { cookie: clientSession.cookie, ip: clientSession.ip, baseUrl: this.options.baseUrl }
         );
         reviewsCount++;
-      } catch (err) {
-        console.warn(`Review skipped for ${issueKey}:`, err);
+      } catch (err: any) {
+        if (err?.message?.includes("Bài toán đã có đánh giá")) {
+          reviewsCount++;
+        } else {
+          console.warn(`Review skipped for ${issueKey}:`, err);
+        }
       }
     }
 

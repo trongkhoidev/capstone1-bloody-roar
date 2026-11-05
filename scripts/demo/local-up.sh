@@ -6,32 +6,53 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LOG="$ROOT/demo-wallets/logs"
-PORTS=(4000 4001 4011 4012 4019 4100 4101 4300 8545)
-mkdir -p "$LOG"
+PORTS=(4000 4300 8545)
+PID_DIR="$ROOT/demo-wallets/pids"
+mkdir -p "$LOG" "$PID_DIR"
 cd "$ROOT"
 
+remember() {
+  local name="$1" pid="$2" started
+  started=$(ps -p "$pid" -o lstart=) || return 1
+  printf '%s\n%s\n' "$pid" "$started" > "$PID_DIR/$name.pid"
+}
+
+stop_tree() {
+  local pid="$1" child
+  for child in $(pgrep -P "$pid" || true); do stop_tree "$child"; done
+  kill "$pid" 2>/dev/null || ! kill -0 "$pid" 2>/dev/null
+}
+
 stop_all() {
-  echo "▸ Tắt tiến trình cũ (port ${PORTS[*]})"
-  # Cha của các server (bun run --cwd …) không giữ port nên phải bắt theo lệnh.
-  pkill -f "hardhat node" 2>/dev/null || true
-  pkill -f "apps/worker" 2>/dev/null || true
-  pkill -f "apps/web dev" 2>/dev/null || true
-  pkill -f "tests/e2e/run-local" 2>/dev/null || true
-  for p in "${PORTS[@]}"; do
-    pids=$(lsof -ti "tcp:$p" -sTCP:LISTEN 2>/dev/null || true)
-    [ -n "$pids" ] && kill $pids 2>/dev/null || true
+  local file pid started current
+  echo "▸ Tắt tiến trình demo đã ghi nhận"
+  for file in "$PID_DIR"/*.pid; do
+    [ -f "$file" ] || continue
+    pid=$(sed -n '1p' "$file"); started=$(sed -n '2p' "$file")
+    [[ "$pid" =~ ^[0-9]+$ ]] || { echo "PID không hợp lệ: $file" >&2; return 1; }
+    current=$(ps -p "$pid" -o lstart= 2>/dev/null || true)
+    if [ -z "$current" ] && kill -0 "$pid" 2>/dev/null; then
+      echo "Không thể xác minh tiến trình demo $pid" >&2; return 1
+    fi
+    if [ -n "$current" ] && [ "$current" = "$started" ]; then
+      stop_tree "$pid" || { echo "Không thể dừng tiến trình demo $pid" >&2; return 1; }
+    fi
+    rm -f "$file"
   done
-  for _ in {1..20}; do
-    busy=""
+}
+
+check_ports() {
+  local p i
+  for i in {1..20}; do
+    local busy=""
     for p in "${PORTS[@]}"; do lsof -ti "tcp:$p" -sTCP:LISTEN >/dev/null 2>&1 && busy="$busy $p"; done
     [ -z "$busy" ] && return 0
-    sleep 0.5
+    sleep 0.25
   done
-  echo "  Còn giữ port:$busy → kill -9"
-  for p in $busy; do kill -9 $(lsof -ti "tcp:$p" -sTCP:LISTEN) 2>/dev/null || true; done
-  for p in $busy; do
+  for p in "${PORTS[@]}"; do
     if lsof -ti "tcp:$p" -sTCP:LISTEN >/dev/null 2>&1; then
-      echo "  Không thể giải phóng port $p" >&2; return 1
+      echo "Port $p đang được sử dụng; hãy dừng tiến trình đó trước khi khởi động demo." >&2
+      return 1
     fi
   done
 }
@@ -43,10 +64,14 @@ wait_for() { # $1 tên, $2 lệnh kiểm, $3 giây
 
 stop_all
 [ "${1:-}" = "down" ] && { echo "Đã tắt hết."; exit 0; }
+check_ports
 
 echo "▸ Hardhat node :8545"
-(cd apps/contracts && nohup bun x hardhat node --hostname 127.0.0.1 --port 8545 >"$LOG/hardhat.log" 2>&1 &)
+(cd apps/contracts && exec nohup bun x hardhat node --hostname 127.0.0.1 --port 8545 </dev/null >"$LOG/hardhat.log" 2>&1) &
+remember hardhat "$!"
+disown
 wait_for "Hardhat" "curl -sf -X POST 127.0.0.1:8545 -H 'content-type: application/json' -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_chainId\"}'" 60
+remember hardhat-listener "$(lsof -ti tcp:8545 -sTCP:LISTEN)"
 
 echo "▸ Deploy MockUSDC + BloodyRoarEscrow"
 bun run contracts:deploy >"$LOG/deploy.log" 2>&1 || { tail -20 "$LOG/deploy.log"; exit 1; }
@@ -67,13 +92,19 @@ if (m.token.toLowerCase() !== "0x5fbdb2315678afecb367f032d93f642f64180aa3") cons
 '
 
 echo "▸ Worker :4300"
-nohup bun run worker:start >"$LOG/worker.log" 2>&1 &
+nohup bun run worker:start </dev/null >"$LOG/worker.log" 2>&1 &
+remember worker "$!"
+disown
 wait_for "Worker" "lsof -ti tcp:4300 -sTCP:LISTEN" 60
+remember worker-listener "$(lsof -ti tcp:4300 -sTCP:LISTEN)"
 
 echo "▸ Web :4000 (xoá cache .next cũ vì 2 server từng ghi chung)"
 rm -rf apps/web/.next
-PORT=4000 NEXT_PUBLIC_APP_URL=http://localhost:4000 nohup bun run dev >"$LOG/web.log" 2>&1 &
+PORT=4000 NEXT_PUBLIC_APP_URL=http://localhost:4000 nohup bun run dev </dev/null >"$LOG/web.log" 2>&1 &
+remember web "$!"
+disown
 wait_for "Web" "curl -sf localhost:4000/api/health" 180
+remember web-listener "$(lsof -ti tcp:4000 -sTCP:LISTEN)"
 curl -s -o /dev/null localhost:4000/ || true # biên dịch sẵn trang chủ
 
 cat <<EOF
@@ -85,3 +116,8 @@ Xong. Mở http://localhost:4000
   Tắt      bash scripts/demo/local-up.sh down
 Lưu ý: chain mới tinh. Escrow cũ trong DB (địa chỉ khác) không còn trên chain.
 EOF
+
+if [ "${1:-}" = "stay" ] || [ "${1:-}" = "--daemon" ] || [ -n "${LOCAL_UP_DAEMON:-}" ]; then
+  echo "▸ Giữ tiến trình chạy nền..."
+  exec tail -f /dev/null
+fi

@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import { ethers, type BigNumber, type Contract, type providers } from "./lib/ethers";
 import { appendLedger } from "./lib/ledger";
-import { KEYS_PATH, ROLE_DEFINITIONS, type WalletStore } from "./wallets";
+import { getDefaultKeysPath, isHardhatMode, KEYS_PATH, ROLE_DEFINITIONS, type WalletStore } from "./wallets";
 
 export const BASE_SEPOLIA_CHAIN_ID = 84532;
 export const CANONICAL_USDC = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
@@ -170,7 +170,7 @@ export const LOCAL_MOCK_USDC = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
 export async function fundLocalWallets(
   provider: providers.JsonRpcProvider,
-  keysPath: string = KEYS_PATH
+  keysPath: string = getDefaultKeysPath()
 ): Promise<{ fundedCount: number; mintedUsdcCount: number }> {
   if (!fs.existsSync(keysPath)) {
     throw new Error(`Keys store not found at ${keysPath}. Run wallets.ts first.`);
@@ -185,6 +185,46 @@ export async function fundLocalWallets(
 
   let funded = 0;
   let minted = 0;
+  const isHardhat = isHardhatMode() || keysPath.includes("hardhat");
+  const processedAddresses = new Set<string>();
+
+  if (isHardhat) {
+    const ethHex = "0x56bc75e2d63100000"; // 100 ETH
+    for (const [role, entry] of Object.entries(keys)) {
+      const addr = entry.address.toLowerCase();
+      if (processedAddresses.has(addr)) continue;
+      processedAddresses.add(addr);
+
+      // Extract index from role (hh04 -> 4)
+      const numMatch = role.match(/^hh(\d+)$/);
+      const index = numMatch ? parseInt(numMatch[1]!, 10) : -1;
+
+      if (index >= 20 && index <= 49) {
+        // #20–#49: secondary users, fund with 100 ETH
+        await provider.send("hardhat_setBalance", [entry.address, ethHex]);
+        funded++;
+      }
+
+      // Mint mUSDC on-chain: 50,000 for #4–#19, 5,000 for #20–#49
+      let mintUnits = "0";
+      if (index >= 4 && index <= 19) {
+        mintUnits = "50000";
+      } else if (index >= 20 && index <= 49) {
+        mintUnits = "5000";
+      } else if (role === "admin") {
+        mintUnits = "50000";
+      }
+
+      if (mintUnits !== "0") {
+        const tx = await token.mint(entry.address, ethers.utils.parseUnits(mintUnits, 6));
+        await tx.wait();
+        minted++;
+      }
+    }
+    console.log(`Hardhat funding complete: ${funded} secondary wallets funded with 100 ETH, ${minted} wallets minted mUSDC`);
+    return { fundedCount: funded, mintedUsdcCount: minted };
+  }
+
   const ethHex = "0x56bc75e2d63100000"; // 100 ETH
   const mintAmount = ethers.utils.parseUnits("50000", 6);
 

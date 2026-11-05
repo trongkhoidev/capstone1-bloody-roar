@@ -29,6 +29,11 @@ stop_all() {
   done
   echo "  Còn giữ port:$busy → kill -9"
   for p in $busy; do kill -9 $(lsof -ti "tcp:$p" -sTCP:LISTEN) 2>/dev/null || true; done
+  for p in $busy; do
+    if lsof -ti "tcp:$p" -sTCP:LISTEN >/dev/null 2>&1; then
+      echo "  Không thể giải phóng port $p" >&2; return 1
+    fi
+  done
 }
 
 wait_for() { # $1 tên, $2 lệnh kiểm, $3 giây

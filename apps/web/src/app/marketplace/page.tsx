@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     "Duyệt danh sách bài toán kỹ thuật cần giải quyết. Tiền thưởng ký quỹ thông minh trên blockchain Base Sepolia.",
 };
 
-export default function MarketplacePage() {
-  return <MarketplaceView />;
+export default async function MarketplacePage({ searchParams }: { searchParams: Promise<{ skills?: string; search?: string }> }) {
+  const params = await searchParams;
+  return <MarketplaceView initialSearch={params.search || params.skills || ""} />;
 }

@@ -439,7 +439,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   };
 
   const cancel = async () => {
-    if (!window.confirm("Cancel this open bounty?")) return;
+    if (!window.confirm("Cancel this open bounty? This cannot be undone. Funded bounties cannot be cancelled here; funds must be handled through escrow.")) return;
     setIsWorking(true); setError(null);
     try { await graphqlRequest(CANCEL_MUTATION, { id: issueId }); await load(); }
     catch (reason) { setError(reason instanceof Error ? reason.message : "Could not cancel bounty."); }

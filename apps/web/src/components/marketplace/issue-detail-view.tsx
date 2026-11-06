@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import Link from "next/link";
 import Image from "next/image";
@@ -13,6 +13,7 @@ import { ChatRoom } from "@/components/chat/chat-room";
 import { TestCasePanel } from "@/components/issues/test-case-panel";
 import { IssueComments } from "@/components/marketplace/issue-comments";
 import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
 import { AuthRequiredPanel } from "@/components/auth/auth-required-panel";
 import { useUiPreferences } from "@/lib/ui-preferences";
 import { MarketplaceEmpty } from "./marketplace-empty";
@@ -25,6 +26,8 @@ import { PLATFORM_FEE_BPS } from "@bloody-roar/shared/constants";
 
 // Date input value (YYYY-MM-DD) seven days out; the contract deadline is the end of that day in UTC.
 const defaultDeliveryDeadline = () => new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
+
+const UNREAD_QUERY = `query UnreadMessages($issueId: String!) { unreadMessageCount(issueId: $issueId) }`;
 
 const ISSUE_QUERY = `
   query IssueDetail($id: ID!) {
@@ -237,6 +240,30 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
       .catch(() => undefined);
     return () => { active = false; };
   }, [canChat, issueId]);
+
+  // Unread badge on the Bounty Chat tab: seed from the server once, then count realtime messages while another tab is open.
+  const [chatUnread, setChatUnread] = useState(0);
+  const unreadSeeded = useRef(false);
+  const chatTabOpen = activeTab === "chat";
+  const chatEnabled = canChat && Boolean(issue?.developerId);
+  const viewerId = user?.id;
+  useEffect(() => {
+    if (!chatEnabled) return;
+    if (chatTabOpen) { setChatUnread(0); return; }
+    let active = true;
+    if (!unreadSeeded.current) {
+      unreadSeeded.current = true;
+      void graphqlRequest<{ unreadMessageCount: number }>(UNREAD_QUERY, { issueId })
+        .then((result) => { if (active) setChatUnread(result.unreadMessageCount); })
+        .catch(() => undefined);
+    }
+    const client = io({ transports: ["websocket", "polling"], withCredentials: true });
+    client.on("connect", () => client.emit("task:join", issueId, () => undefined));
+    client.on("message:new", (message: { issueId: string; senderId: string }) => {
+      if (active && message.issueId === issueId && message.senderId !== viewerId) setChatUnread((count) => count + 1);
+    });
+    return () => { active = false; client.disconnect(); };
+  }, [chatEnabled, chatTabOpen, issueId, viewerId]);
 
   // Each on-chain step is recorded against its intent before its receipt is awaited (see sendPreparedCalls).
   const recordTx = async (intentId: string, txHash: string) => {
@@ -554,6 +581,9 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                 onClick={() => setActiveTab("chat")}
               >
                 Bounty Chat
+                {chatUnread > 0 && (
+                  <span className="tab-badge" aria-label={`${chatUnread} unread messages`}>{chatUnread > 99 ? "99+" : chatUnread}</span>
+                )}
               </button>
             )}
             <button
@@ -589,18 +619,18 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                       </div>
                       <div className="card-b">
                         <form onSubmit={updateTask} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, fontWeight: 500 }}>
-                            Title
+                          <FormField label="Title" required>
                             <input
                               type="text"
                               className="inp"
                               value={editTitle}
+                              maxLength={120}
+                              placeholder="e.g. Fix reentrancy in StakingVault.withdraw()"
                               onChange={(e) => setEditTitle(e.target.value)}
                               required
                             />
-                          </label>
-                          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, fontWeight: 500 }}>
-                            Category
+                          </FormField>
+                          <FormField label="Category">
                             <select
                               className="inp"
                               value={editCategory}
@@ -612,9 +642,8 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                                 </option>
                               ))}
                             </select>
-                          </label>
-                          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, fontWeight: 500 }}>
-                            Bounty Amount ({issue.token.symbol})
+                          </FormField>
+                          <FormField label={`Bounty amount (${issue.token.symbol})`} required>
                             <input
                               type="number"
                               className="inp"
@@ -623,17 +652,18 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                               min={1}
                               required
                             />
-                          </label>
-                          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, fontWeight: 500 }}>
-                            Description
+                          </FormField>
+                          <FormField label="Description" hint="Markdown supported. Describe the problem and the acceptance criteria." required>
                             <textarea
                               className="inp"
-                              style={{ minHeight: 120 }}
+                              rows={6}
+                              minLength={30}
+                              maxLength={5000}
                               value={editDescription}
                               onChange={(e) => setEditDescription(e.target.value)}
                               required
                             />
-                          </label>
+                          </FormField>
                           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 8 }}>
                             <button type="button" className="btn btn-o" onClick={() => setIsEditing(false)}>
                               Cancel
@@ -810,28 +840,37 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                           Submit your pull request link and verification notes. The client will review against the contract terms.
                         </p>
                         <form onSubmit={submitDelivery} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                          <textarea
-                            className="inp"
-                            style={{ height: 90, padding: 10, resize: "vertical" }}
-                            value={deliveryDescription}
-                            onChange={(e) => setDeliveryDescription(e.target.value)}
-                            placeholder="Summary of changes and test instructions..."
-                          />
-                          <input
-                            type="url"
-                            className="inp"
-                            value={pullRequestUrl}
-                            onChange={(e) => setPullRequestUrl(e.target.value)}
-                            placeholder="https://github.com/org/repo/pull/123"
-                          />
-                          <input
-                            className="inp"
-                            value={commitSha}
-                            onChange={(e) => setCommitSha(e.target.value)}
-                            placeholder="Mã commit (không bắt buộc)"
-                          />
-                          <label style={{ fontSize: 12 }}>
-                            Attach files (optional)
+                          <FormField label="Summary of changes" hint="What changed and how the client can verify it.">
+                            <textarea
+                              className="inp"
+                              rows={4}
+                              maxLength={4000}
+                              value={deliveryDescription}
+                              onChange={(e) => setDeliveryDescription(e.target.value)}
+                              placeholder="e.g. Added a reentrancy guard to withdraw(). Run `bun run contracts:test` to verify."
+                            />
+                          </FormField>
+                          <div className="two">
+                            <FormField label="Pull request URL">
+                              <input
+                                type="url"
+                                className="inp"
+                                value={pullRequestUrl}
+                                onChange={(e) => setPullRequestUrl(e.target.value)}
+                                placeholder="https://github.com/org/repo/pull/123"
+                              />
+                            </FormField>
+                            <FormField label="Commit SHA (optional)">
+                              <input
+                                className="inp"
+                                value={commitSha}
+                                onChange={(e) => setCommitSha(e.target.value)}
+                                maxLength={64}
+                                placeholder="e.g. 9fceb02"
+                              />
+                            </FormField>
+                          </div>
+                          <FormField label="Attach files (optional)" hint="Up to 50 MB each.">
                             <input
                               type="file"
                               multiple
@@ -847,7 +886,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                               }}
                             />
                             {deliveryFiles.length > 0 && <span className="mut"> {deliveryFiles.length} file(s) attached</span>}
-                          </label>
+                          </FormField>
                           {uploadStatus && <p className="mut" style={{ fontSize: 12 }}>{uploadStatus}</p>}
                           <button
                             type="submit"
@@ -916,13 +955,16 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
 
                             {isClient && issue.status === "IN_PROGRESS" && issue.viewerCapabilities?.canRelease && actionOf("releaseFunds") && (sub.status === "SUBMITTED" || sub.status === "UNDER_REVIEW") && (
                               <div style={{ borderTop: "1px solid var(--line)", paddingTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
-                                <textarea
-                                  className="inp"
-                                  style={{ height: 60, padding: 8 }}
-                                  value={reviewNotes}
-                                  onChange={(e) => setReviewNotes(e.target.value)}
-                                  placeholder="Review notes or requested fixes..."
-                                />
+                                <FormField label="Review notes" hint="Shown to the developer. Be specific when requesting changes.">
+                                  <textarea
+                                    className="inp"
+                                    rows={3}
+                                    maxLength={2000}
+                                    value={reviewNotes}
+                                    onChange={(e) => setReviewNotes(e.target.value)}
+                                    placeholder="e.g. Looks good, but please add a test for the zero-balance case."
+                                  />
+                                </FormField>
                                 <div style={{ display: "flex", gap: 8 }}>
                                   <button
                                     type="button"
@@ -976,7 +1018,9 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                     })}
                     {issue.viewerCapabilities?.canSubmitEvidence && (
                       <form onSubmit={submitCounterpartyEvidence} style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%" }}>
-                        <textarea className="inp" rows={3} minLength={10} maxLength={5000} required value={counterStatement} onChange={(e) => setCounterStatement(e.target.value)} placeholder="Counterparty evidence statement (at least 10 characters)" />
+                        <FormField label="Your statement" hint="At least 10 characters. Be specific and factual." required>
+                          <textarea className="inp" rows={4} minLength={10} maxLength={5000} required value={counterStatement} onChange={(e) => setCounterStatement(e.target.value)} placeholder="Explain your side of the dispute and what the evidence shows." />
+                        </FormField>
                         <button type="submit" className="btn btn-o btn-sm" disabled={isWorking || counterStatement.trim().length < 10}>Submit counterparty evidence</button>
                       </form>
                     )}
@@ -987,12 +1031,14 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                 <section className="card">
                   <div className="card-h"><h2>Review the developer</h2></div>
                   <form onSubmit={submitReview} className="card-b" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <label style={{ fontSize: 12 }}>Rating
-                      <select className="inp" value={reviewRating} onChange={(e) => setReviewRating(Number(e.target.value))} style={{ height: 32, marginLeft: 8, fontSize: 12 }}>
-                        {[5, 4, 3, 2, 1].map((stars) => <option key={stars} value={stars}>{stars} stars</option>)}
+                    <FormField label="Rating">
+                      <select className="inp" value={reviewRating} onChange={(e) => setReviewRating(Number(e.target.value))}>
+                        {[5, 4, 3, 2, 1].map((stars) => <option key={stars} value={stars}>{stars} {stars === 1 ? "star" : "stars"}</option>)}
                       </select>
-                    </label>
-                    <textarea className="inp" rows={3} maxLength={2000} value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} placeholder="Optional comment" />
+                    </FormField>
+                    <FormField label="Comment (optional)">
+                      <textarea className="inp" rows={3} maxLength={2000} value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} placeholder="How was working with this developer? Quality, communication, speed." />
+                    </FormField>
                     <button type="submit" className="btn btn-p btn-sm" disabled={isWorking}>Submit review</button>
                   </form>
                 </section>
@@ -1161,13 +1207,16 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
 
                       {issue.status === "OPEN" && (!myApplication || myApplication.status === "WITHDRAWN") && (
                         <form onSubmit={apply} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                          <textarea
-                            className="inp"
-                            style={{ height: 68, padding: 8, fontSize: 12.5 }}
-                            value={applicationText}
-                            onChange={(e) => setApplicationText(e.target.value)}
-                            placeholder="Why are you a good fit? (optional)"
-                          />
+                          <FormField label="Cover note (optional)">
+                            <textarea
+                              className="inp"
+                              rows={3}
+                              maxLength={1000}
+                              value={applicationText}
+                              onChange={(e) => setApplicationText(e.target.value)}
+                              placeholder="Relevant experience, how you would approach it, your timeline."
+                            />
+                          </FormField>
                           <button type="submit" className="btn btn-p" disabled={isWorking || Boolean(issue.viewerCapabilities && !issue.viewerCapabilities.canApply)}>
                             <MessageSquare className="ico" style={{ width: 14, height: 14 }} /> Apply to this task
                           </button>
@@ -1188,17 +1237,19 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
 
                   {showDisputeForm && (
                     <form onSubmit={raiseDispute} style={{ display: "flex", flexDirection: "column", gap: 8, borderTop: "1px solid var(--line)", paddingTop: 10 }}>
-                      <textarea
-                        className="inp"
-                        style={{ height: 70, padding: 8, fontSize: 12 }}
-                        value={disputeReason}
-                        onChange={(e) => setDisputeReason(e.target.value)}
-                        required
-                        minLength={20}
-                        placeholder="State dispute reason clearly..."
-                      />
-                      <label style={{ fontSize: 12 }}>
-                        Evidence files (optional)
+                      <FormField label="Reason for dispute" hint="At least 20 characters. An arbiter will read this." required>
+                        <textarea
+                          className="inp"
+                          rows={4}
+                          value={disputeReason}
+                          onChange={(e) => setDisputeReason(e.target.value)}
+                          required
+                          minLength={20}
+                          maxLength={5000}
+                          placeholder="What was agreed, what was delivered, and why it does not meet the terms."
+                        />
+                      </FormField>
+                      <FormField label="Evidence files (optional)">
                         <input
                           type="file"
                           multiple
@@ -1214,7 +1265,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                           }}
                         />
                         {evidenceFiles.length > 0 && <span className="mut"> {evidenceFiles.length} file(s) attached</span>}
-                      </label>
+                      </FormField>
                       <button type="submit" className="btn btn-bad btn-sm" disabled={isWorking}>
                         Confirm dispute
                       </button>

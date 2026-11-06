@@ -97,7 +97,7 @@ export const ISSUE_INCLUDE = {
   client: true,
   developer: true,
   attachments: { where: { purpose: "ISSUE_IMAGE", status: "ATTACHED", fileMime: { startsWith: "image/" } } },
-  _count: { select: { applications: true } },
+  _count: { select: { applications: { where: { status: { not: "WITHDRAWN" } } } } },
 } satisfies Prisma.IssueInclude;
 
 /** Shape của 1 dòng Issue sau khi include relations */
@@ -166,8 +166,8 @@ export const IssueRef = builder.prismaObject("Issue", {
       resolve: (issue) => issue.developer,
     }),
     applicationCount: t.int({
-      description: "Number of applications",
-      select: { _count: { select: { applications: true } } },
+      description: "Number of active (non-withdrawn) applications",
+      select: { _count: { select: { applications: { where: { status: { not: "WITHDRAWN" } } } } } },
       resolve: (issue) => issue._count.applications,
     }),
     attachments: t.field({

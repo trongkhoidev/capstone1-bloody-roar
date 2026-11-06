@@ -13,7 +13,8 @@ describe("session verification", () => {
   it("propagates database failures instead of treating the token as invalid", async () => {
     authenticate.mockResolvedValue({ address: "0x123" });
     findSession.mockRejectedValue(new Error("database unavailable"));
-    const { verifyJWT } = await import("@/lib/auth");
-    await expect(verifyJWT("token")).rejects.toThrow("database unavailable");
+    const { verifySessionJWT, verifyJWT } = await import("@/lib/auth");
+    await expect(verifySessionJWT("token")).rejects.toThrow("database unavailable");
+    await expect(verifyJWT("token")).resolves.toBeNull();
   });
 });

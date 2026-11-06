@@ -82,6 +82,11 @@ export function thirdwebAuth(): ThirdwebAuth {
  * DB for revocation using the `refreshHash` of the token.
  */
 export async function verifyJWT(token: string) {
+  return verifySessionJWT(token).catch(() => null);
+}
+
+// Session restoration must distinguish an unavailable database from an invalid token.
+export async function verifySessionJWT(token: string) {
   const auth = thirdwebAuth();
   let authUser: Awaited<ReturnType<typeof auth.authenticate>>;
   try {

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { AUTH_COOKIE_NAME, tokenFromRequest, toPublicAuthUser, verifyJWT } from "@/lib/auth";
+import { AUTH_COOKIE_NAME, tokenFromRequest, toPublicAuthUser, verifySessionJWT } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const token = tokenFromRequest(request);
-  const user = token ? await verifyJWT(token) : null;
+  const user = token ? await verifySessionJWT(token) : null;
   if (!user) {
     const response = NextResponse.json(
       { user: null },

@@ -3,7 +3,7 @@
 import { uploadFile } from "@/lib/upload";
 import { useEffect, useState } from "react";
 import { GitBranch, MapPin, Save, ShieldCheck } from "lucide-react";
-import { graphqlRequest } from "@/lib/graphql-client";
+import { graphqlRequest, GraphQLRequestError } from "@/lib/graphql-client";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ type Profile = { id: string; name?: string | null; avatar?: string | null; bio?:
 
 export function ProfileView() {
   const authUser = useAuthStore((state) => state.user);
+  const authUserId = authUser?.id;
   const authStatus = useAuthStore((state) => state.status);
   const { language, t, theme } = useUiPreferences();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -29,6 +30,7 @@ export function ProfileView() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [notice, setNotice] = useState<string | null>(null);
 
   // The server stores the avatar when the upload completes; the view then reloads the stored URL.
@@ -44,7 +46,7 @@ export function ProfileView() {
   };
 
   useEffect(() => {
-    if (!authUser) { setLoading(false); return; }
+    if (!authUserId) { setLoading(false); return; }
     let active = true;
     void graphqlRequest<{ me: Profile | null }>(ME_QUERY)
       .then(({ me }) => {
@@ -55,7 +57,7 @@ export function ProfileView() {
       .catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : "Could not load your profile."); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [authUser]);
+  }, [authUserId]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -64,7 +66,7 @@ export function ProfileView() {
   }, []);
 
   const save = async (event: React.FormEvent) => {
-    event.preventDefault(); setSaving(true); setError(null); setNotice(null);
+    event.preventDefault(); setSaving(true); setError(null); setFieldErrors({}); setNotice(null);
     try {
       const result = await graphqlRequest<{ updateProfile: Profile }>(UPDATE_PROFILE, { input: {
         name: name.trim() || null, avatar: avatar.trim() || null, bio: bio.trim() || null,
@@ -75,7 +77,15 @@ export function ProfileView() {
       setProfile((current) => current ? { ...current, ...result.updateProfile } : result.updateProfile);
       useAuthStore.setState((state) => state.user ? { user: { ...state.user, ...result.updateProfile } } : state);
       setNotice("Profile saved.");
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not save profile."); }
+    } catch (reason) {
+      const details = reason instanceof GraphQLRequestError && reason.code === "BAD_USER_INPUT" ? reason.details : null;
+      const fields = details && typeof details === "object" && "fieldErrors" in details ? details.fieldErrors : null;
+      if (fields && typeof fields === "object" && !Array.isArray(fields)) {
+        const entries = Object.entries(fields).filter((entry): entry is [string, string[]] => Array.isArray(entry[1]) && entry[1].every((message: unknown) => typeof message === "string"));
+        if (entries.length) setFieldErrors(Object.fromEntries(entries));
+        if (!entries.length || entries.some(([field]) => !["name", "avatar", "bio", "skills", "location", "role"].includes(field))) setError(reason instanceof Error ? reason.message : "Could not save profile.");
+      } else setError(reason instanceof Error ? reason.message : "Could not save profile.");
+    }
     finally { setSaving(false); }
   };
 
@@ -99,13 +109,13 @@ export function ProfileView() {
       <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
         <form onSubmit={save} className="space-y-5 glass rounded-xl p-5 sm:p-7 animate-fade-in">
           {loading ? <div className="h-64 animate-pulse rounded-xl bg-[hsl(var(--muted))]" /> : <>
-            <Field label={t("displayName")}><Input maxLength={50} value={name} onChange={(event) => setName(event.target.value)} placeholder={t("namePlaceholder")} /></Field>
-            <Field label={t("avatarUrl")}><Input type="url" maxLength={500} value={avatar} onChange={(event) => setAvatar(event.target.value)} placeholder="https://…" />
+            <Field label={t("displayName")} error={fieldErrors.name}><Input maxLength={50} value={name} onChange={(event) => setName(event.target.value)} placeholder={t("namePlaceholder")} /></Field>
+            <Field label={t("avatarUrl")} error={fieldErrors.avatar}><Input type="url" maxLength={500} value={avatar} onChange={(event) => setAvatar(event.target.value)} placeholder="https://…" />
               <input type="file" accept="image/*" style={{ display: "block", marginTop: 6, fontSize: 12 }} disabled={saving} onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadAvatar(file); event.target.value = ""; }} /></Field>
-            <Field label={t("aboutYou")}><textarea className="min-h-32 w-full rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--background-secondary))] px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]" maxLength={200} value={bio} onChange={(event) => setBio(event.target.value)} placeholder={t("bioPlaceholder")} /></Field>
-            <Field label={t("skillsComma")}><Input value={skillsText} onChange={(event) => setSkillsText(event.target.value)} placeholder="TypeScript, Solidity, UI design" /></Field>
-            <Field label={t("locationLabel")}><Input maxLength={80} value={location} onChange={(event) => setLocation(event.target.value)} placeholder={t("locationPlaceholder")} /></Field>
-            {profile?.role !== "ADMIN" && <Field label="Nhãn hiển thị"><select value={role} onChange={(event) => setRole(event.target.value as "CLIENT" | "DEVELOPER")} className="block w-full rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--background-secondary))] px-3 py-2.5 text-sm"><option value="DEVELOPER">{t("developerRole")}</option><option value="CLIENT">{t("clientRole")}</option></select><span className="mt-1 block text-xs text-[hsl(var(--foreground-muted))]">Không ảnh hưởng quyền</span></Field>}
+            <Field label={t("aboutYou")} error={fieldErrors.bio}><textarea className="min-h-32 w-full rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--background-secondary))] px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]" maxLength={200} value={bio} onChange={(event) => setBio(event.target.value)} placeholder={t("bioPlaceholder")} /></Field>
+            <Field label={t("skillsComma")} error={fieldErrors.skills}><Input value={skillsText} onChange={(event) => setSkillsText(event.target.value)} placeholder="TypeScript, Solidity, UI design" /></Field>
+            <Field label={t("locationLabel")} error={fieldErrors.location}><Input maxLength={80} value={location} onChange={(event) => setLocation(event.target.value)} placeholder={t("locationPlaceholder")} /></Field>
+            {profile?.role !== "ADMIN" && <Field label="Nhãn hiển thị" error={fieldErrors.role}><select value={role} onChange={(event) => setRole(event.target.value as "CLIENT" | "DEVELOPER")} className="block w-full rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--background-secondary))] px-3 py-2.5 text-sm"><option value="DEVELOPER">{t("developerRole")}</option><option value="CLIENT">{t("clientRole")}</option></select><span className="mt-1 block text-xs text-[hsl(var(--foreground-muted))]">Không ảnh hưởng quyền</span></Field>}
             <Button type="submit" isLoading={saving}><Save className="mr-2 h-4 w-4" />{t("saveProfile")}</Button>
           </>}
         </form>
@@ -137,6 +147,6 @@ export function ProfileView() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="block"><span className="mb-1.5 block text-sm font-medium">{label}</span>{children}</label>;
+function Field({ label, children, error }: { label: string; children: React.ReactNode; error?: string[] | undefined }) {
+  return <label className="block"><span className="mb-1.5 block text-sm font-medium">{label}</span>{children}{error?.map((message) => <span key={message} role="alert" className="mt-1 block text-sm text-[hsl(var(--destructive))]">{message}</span>)}</label>;
 }

@@ -18,6 +18,8 @@ import type { IssueItem } from "./issue-card";
 import { sendPreparedCalls } from "@/lib/web3/send-prepared";
 import { signFundingIntent } from "@/lib/web3/funding-intent";
 import { uploadFile } from "@/lib/upload";
+import { formatTokenAmount, splitPayout } from "@bloody-roar/shared/money";
+import { PLATFORM_FEE_BPS } from "@bloody-roar/shared/constants";
 
 // Date input value (YYYY-MM-DD) seven days out; the contract deadline is the end of that day in UTC.
 const defaultDeliveryDeadline = () => new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
@@ -25,7 +27,7 @@ const defaultDeliveryDeadline = () => new Date(Date.now() + 7 * 86_400_000).toIS
 const ISSUE_QUERY = `
   query IssueDetail($id: ID!) {
     issue(id: $id) {
-      id title description category status bountyAmount { formatted } requiredSkills difficulty timeEstimate
+      id title description category status bountyAmount { formatted raw decimals } requiredSkills difficulty timeEstimate
       expiresAt viewCount applicationCount createdAt clientId developerId
       viewerCapabilities { canApply canSelect canFund canSubmit canRelease canRequestChanges canDispute canProposeSettlement canRevokeSettlement canAcceptSettlement canSubmitEvidence canChallengeRuling canFinalizeRuling canFinalizeArbiterTimeoutSplit canClaimMissedDeliveryRefund canClaimReviewTimeout }
       escrow { availableActions { action reasonDisabled } }
@@ -94,10 +96,10 @@ type PreparedStep = { intentId: string; method: string; contractAddress: string;
 type ReservationRow = { id: string; status: string; chainId: number; contractAddress: string; tokenAddress: string; escrowKey: string; termsHash: string; amountRaw: string; deliveryDeadline: string; clientWallet: string; developerWallet: string };
 
 type ViewerCapabilities = { canApply?: boolean; canSelect: boolean; canFund: boolean; canSubmit: boolean; canRelease: boolean; canRequestChanges: boolean; canDispute: boolean; canProposeSettlement: boolean; canRevokeSettlement: boolean; canAcceptSettlement: boolean; canSubmitEvidence: boolean; canChallengeRuling: boolean; canFinalizeRuling: boolean; canFinalizeArbiterTimeoutSplit: boolean; canClaimMissedDeliveryRefund: boolean; canClaimReviewTimeout: boolean };
-type IssueDetail = IssueItem & { clientId: string; developerId?: string | null; developer?: IssueItem["client"] | null; viewerCapabilities?: ViewerCapabilities | null; escrow?: { availableActions: Array<{ action: string; reasonDisabled: string | null }> } | null };
+type IssueDetail = IssueItem & { bountyRaw: string; bountyDecimals: number; clientId: string; developerId?: string | null; developer?: IssueItem["client"] | null; viewerCapabilities?: ViewerCapabilities | null; escrow?: { availableActions: Array<{ action: string; reasonDisabled: string | null }> } | null };
 type Application = { id: string; status: string; message?: string | null; createdAt: string; developer: IssueItem["client"] & { skills?: string[] } };
 
-type DetailResponse = { issue: (Omit<IssueDetail, "bountyAmount"> & { bountyAmount: { formatted: string } }) | null };
+type DetailResponse = { issue: (Omit<IssueDetail, "bountyAmount" | "bountyRaw" | "bountyDecimals"> & { bountyAmount: { formatted: string; raw: string; decimals: number } }) | null };
 
 type ApplicationResponse = { applications: Application[] };
 type Submission = { id: string; status: string; description?: string | null; pullRequestUrl?: string | null; submittedAt: string; reviewedAt?: string | null; reviewNotes?: string | null; developer: { name?: string | null; walletAddress: string } };
@@ -148,7 +150,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     try {
       const result = await graphqlRequest<DetailResponse>(ISSUE_QUERY, { id: issueId });
       if (result.issue) {
-        setIssue({ ...result.issue, bountyAmount: Number(result.issue.bountyAmount.formatted) });
+        setIssue({ ...result.issue, bountyAmount: Number(result.issue.bountyAmount.formatted), bountyRaw: result.issue.bountyAmount.raw, bountyDecimals: result.issue.bountyAmount.decimals });
       } else {
         setIssue(null);
         setError("Không tìm thấy bài toán.");
@@ -476,8 +478,9 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     );
   }
 
-  const devShare = (issue.bountyAmount * 0.975).toFixed(2);
-  const platformFee = (issue.bountyAmount * 0.025).toFixed(2);
+  const payout = splitPayout(BigInt(issue.bountyRaw), PLATFORM_FEE_BPS);
+  const devShare = formatTokenAmount(payout.developer, issue.bountyDecimals);
+  const platformFee = formatTokenAmount(payout.fee, issue.bountyDecimals);
 
   const statusBadgeClass =
     issue.status === "OPEN"

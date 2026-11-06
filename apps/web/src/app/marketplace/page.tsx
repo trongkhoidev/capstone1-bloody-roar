@@ -12,5 +12,5 @@ export const metadata: Metadata = {
 
 export default async function MarketplacePage({ searchParams }: { searchParams: Promise<{ skills?: string; search?: string }> }) {
   const params = await searchParams;
-  return <MarketplaceView initialSearch={params.search || params.skills || ""} />;
+  return <MarketplaceView key={JSON.stringify([params.search, params.skills])} initialSearch={params.search || ""} initialSkill={params.skills} />;
 }

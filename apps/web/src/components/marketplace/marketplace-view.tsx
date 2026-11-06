@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { graphqlRequest } from "@/lib/graphql-client";
 import { MarketplaceFilterBar, type FilterState } from "./filter-bar";
 import { IssueCard } from "./issue-card";
@@ -75,10 +74,10 @@ function localFilter(issues: IssueItem[], filters: FilterState) {
     });
 }
 
-export function MarketplaceView({ initialSearch = "" }: { initialSearch?: string }) {
+export function MarketplaceView({ initialSearch = "", initialSkill }: { initialSearch?: string; initialSkill?: string | undefined }) {
   const { theme } = useUiPreferences();
   
-  const [filters, setFilters] = useState<FilterState>({ search: initialSearch, category: "", status: "", sortBy: "NEWEST" });
+  const [filters, setFilters] = useState<FilterState>({ search: initialSearch, selectedSkill: initialSkill, category: "", status: "", sortBy: "NEWEST" });
   const [issues, setIssues] = useState<IssueItem[]>([]);
   const [dataSource, setDataSource] = useState<DataSource>("loading");
   const [isLoading, setIsLoading] = useState(true);
@@ -183,9 +182,6 @@ export function MarketplaceView({ initialSearch = "" }: { initialSearch?: string
                     locked in escrow
                   </p>
                 </div>
-                <Link href="/issues/create" className="btn btn-p hidden sm:inline-flex">
-                  Post a bounty
-                </Link>
               </div>
 
               <MarketplaceFilterBar

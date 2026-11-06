@@ -28,7 +28,7 @@ const rows: Row[] = [
   { name: "unlinkGithub", decl: "", args: "", ret: obj, vars: () => ({}), allowed: true },
   { name: "updateProfile", decl: "$input: UpdateProfileInput!", args: "input: $input", ret: obj, vars: () => ({ input: { bio: "Outsider bio" } }), allowed: true },
   { name: "markNotificationRead", decl: "$id: ID!", args: "id: $id", ret: obj, vars: (_f, x) => ({ id: x.notificationId }), outsider: ["NOT_FOUND"] },
-  { name: "markAllNotificationsRead", decl: "", args: "", ret: "", vars: () => ({}), allowed: true },
+  { name: "markAllNotificationsRead", decl: "$ids: [String!]!", args: "ids: $ids", ret: "", vars: () => ({ ids: [] }), allowed: true },
   // Bài toán, ứng tuyển, bài nộp
   { name: "createIssue", decl: "$input: CreateIssueInput!", args: "input: $input", ret: obj, vars: (f) => ({ input: { title: "Outsider bounty title", description: "Outsider bounty description, long enough.", category: "BUG_FIX", bountyAmount: "100", tokenId: f.token.id } }), allowed: true },
   { name: "updateIssue", decl: "$input: UpdateIssueInput!", args: "input: $input", ret: obj, vars: (f) => ({ input: { id: f.issueId, title: "Outsider edit attempt" } }), outsider: ["FORBIDDEN"] },

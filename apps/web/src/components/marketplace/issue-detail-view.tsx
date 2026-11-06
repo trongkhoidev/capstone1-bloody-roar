@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import Link from "next/link";
 import Image from "next/image";
+import { issueStatus } from "@/lib/issue-status";
+import { canWriteIssueChat } from "@/lib/chat-access";
 import { ArrowLeft, Eye, MessageSquare, ShieldCheck, Users, ExternalLink, Clock } from "lucide-react";
 import { graphqlRequest } from "@/lib/graphql-client";
 import { useAuthStore } from "@/lib/store/use-auth-store";
@@ -144,9 +146,8 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const [editCategory, setEditCategory] = useState("BUG_FIX");
   const [editBounty, setEditBounty] = useState<number>(0);
 
+  // Refreshes in place; the full-page loader and error reset happen only when the issue id changes (see effect below).
   const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
     try {
       const result = await graphqlRequest<DetailResponse>(ISSUE_QUERY, { id: issueId });
       if (result.issue) {
@@ -162,7 +163,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     }
   }, [issueId]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { setIsLoading(true); setError(null); void load(); }, [load]);
 
   // Live refresh: the server emits escrow:invalidate to the task room when a confirmed transaction changes the escrow.
   useEffect(() => {
@@ -482,16 +483,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const devShare = formatTokenAmount(payout.developer, issue.bountyDecimals);
   const platformFee = formatTokenAmount(payout.fee, issue.bountyDecimals);
 
-  const statusBadgeClass =
-    issue.status === "OPEN"
-      ? "b-open"
-      : issue.status === "IN_PROGRESS"
-      ? "b-prog"
-      : issue.status === "COMPLETED"
-      ? "b-open"
-      : issue.status === "DISPUTED"
-      ? "b-bad"
-      : "b-mut";
+  const statusInfo = issueStatus(issue.status);
 
   return (
     <div className={`br ${theme === "dark" ? "dark" : ""}`}>
@@ -510,9 +502,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
             <div>
               <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                 <h1 className="h1" style={{ fontSize: 24 }}>{issue.title}</h1>
-                <span className={`badge ${statusBadgeClass}`}>
-                  {issue.status.replaceAll("_", " ")}
-                </span>
+                <span className={`badge ${statusInfo.badge}`}>{statusInfo.label}</span>
               </div>
               <p className="sub">
                 Client <b>{issue.client.name || "Client"}</b> ·{" "}
@@ -578,9 +568,9 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
           </div>
 
           {/* Notices & Banners */}
-          {notice && <div className="banner bn-info"><div><b>Notice:</b> {notice}</div></div>}
+          {notice && <div className="banner bn-info" style={{ gridTemplateColumns: "minmax(0,1fr) auto" }}><div><b>Notice:</b> {notice}</div><button type="button" aria-label="Dismiss" onClick={() => setNotice(null)} style={{ cursor: "pointer" }}>✕</button></div>}
           {chainPending && <div className="banner bn-info"><div>Đang chờ chain xác nhận</div></div>}
-          {error && <div className="banner bn-bad"><div><b>Error:</b> {error}</div></div>}
+          {error && <div className="banner bn-bad" style={{ gridTemplateColumns: "minmax(0,1fr) auto" }}><div><b>Error:</b> {error}</div><button type="button" aria-label="Dismiss" onClick={() => setError(null)} style={{ cursor: "pointer" }}>✕</button></div>}
 
           {/* Main 2-column Grid */}
           <div className="cols">
@@ -1019,8 +1009,17 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                     <ChatRoom
                       issueId={issue.id}
                       issueTitle={issue.title}
-                      readOnly={Boolean(isAdmin || issue.status !== "IN_PROGRESS")}
+                      readOnly={!user || !canWriteIssueChat({ clientId: issue.clientId, developerId: issue.developerId ?? null, status: issue.status }, user)}
                     />
+                  </div>
+                </section>
+              )}
+
+              {activeTab === "chat" && canChat && !issue.developerId && (
+                <section className="card">
+                  <div className="card-h"><h2>Bounty Room</h2></div>
+                  <div className="card-b" style={{ color: "var(--ink-2)" }}>
+                    {isClient ? "The room opens once you select a developer from the applicants." : "The room opens once the client selects you."}
                   </div>
                 </section>
               )}
@@ -1070,7 +1069,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                 <div className="esc-top">
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span className="lab" style={{ color: "var(--gold)" }}>Escrow Bounty</span>
-                    <span className={`badge ${statusBadgeClass}`}>{issue.status.replaceAll("_", " ")}</span>
+                    <span className={`badge ${statusInfo.badge}`}>{statusInfo.label}</span>
                   </div>
                   <div style={{ display: "flex", gap: 6, alignItems: "baseline", marginTop: 6 }}>
                     <span className="big mono">{issue.bountyAmount.toLocaleString()}</span>

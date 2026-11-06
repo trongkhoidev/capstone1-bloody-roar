@@ -5,6 +5,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { issueStatus, type IssueStatusKey } from "../../lib/issue-status";
 import { shortenAddress } from "../../lib/web3/client";
 
 export interface IssueItem {
@@ -12,7 +13,7 @@ export interface IssueItem {
   title: string;
   description: string;
   category: string;
-  status: "OPEN" | "AWAITING_FUNDING" | "ASSIGNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "DISPUTED";
+  status: IssueStatusKey;
   bountyAmount: number;
   token: {
     symbol: string;
@@ -62,21 +63,8 @@ export function IssueCard({ issue, onSkillClick }: IssueCardProps) {
     return `${diffDays}d ago`;
   };
 
-  const getStatusBadge = (status: IssueItem["status"]) => {
-    switch (status) {
-      case "OPEN":
-        return <span className="badge b-open">Open</span>;
-      case "ASSIGNED":
-      case "IN_PROGRESS":
-        return <span className="badge b-prog">In progress</span>;
-      case "COMPLETED":
-        return <span className="badge b-mut">Completed</span>;
-      case "DISPUTED":
-        return <span className="badge b-bad">Disputed</span>;
-      default:
-        return <span className="badge b-mut">{status}</span>;
-    }
-  };
+  const status = issueStatus(issue.status);
+  const cover = issue.attachments?.find((att) => att.fileMime.startsWith("image/"));
 
   const clientInitials = (issue.client.name || issue.client.walletAddress.slice(2, 4)).toUpperCase().slice(0, 2);
 
@@ -117,7 +105,7 @@ export function IssueCard({ issue, onSkillClick }: IssueCardProps) {
         <div>
           {/* Top category & tags bar */}
           <div className="s-top flex items-center gap-2 mb-1 flex-wrap text-xs text-[var(--ink-3)]">
-            {getStatusBadge(issue.status)}
+            <span className={`badge ${status.badge}`}>{status.label}</span>
             <span className="badge b-info font-medium">{issue.category}</span>
             {issue.difficulty && (
               <span className="badge b-mut font-medium">{issue.difficulty}</span>
@@ -136,6 +124,12 @@ export function IssueCard({ issue, onSkillClick }: IssueCardProps) {
               {issue.title}
             </Link>
           </h2>
+
+          {cover && (
+            // Plain img: uploads are served from this app's own origin, which next/image would reject.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={cover.fileUrl} alt={cover.fileName} loading="lazy" className="mt-2 h-32 w-full max-w-sm rounded-md border border-[var(--line)] object-cover" />
+          )}
 
           {/* Excerpt description */}
           <p className="s-ex mt-1 text-[var(--ink-2)] text-[13.5px] line-clamp-2">

@@ -1338,8 +1338,12 @@ select.inp {
 }
 
 .banner b {
-  display: block;
   color: var(--ink);
+}
+
+/* Banners without an icon: the text must span the full width, not the 20px icon column. */
+.banner > :only-child {
+  grid-column: 1 / -1;
 }
 
 .bn-warn {

@@ -27,6 +27,7 @@ export interface AuthUser {
 export type AuthStatus =
   | "idle"
   | "restoring"
+  | "session_error"
   | "connecting"
   | "requesting_nonce"
   | "signing"
@@ -104,7 +105,7 @@ export const useAuthStore = create<AuthState>()(
               if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 1000));
             }
           }
-          if (get().status === "restoring") set({ status: "idle", error: null });
+          if (get().status === "restoring") set({ status: "session_error", error: null });
         })().finally(() => { restorePromise = null; });
         return restorePromise;
       },

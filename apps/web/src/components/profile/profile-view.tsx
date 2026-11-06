@@ -48,9 +48,11 @@ export function ProfileView() {
   useEffect(() => {
     if (!authUserId) { setLoading(false); return; }
     let active = true;
+    setLoading(true); setError(null); setNotice(null); setFieldErrors({});
     void graphqlRequest<{ me: Profile | null }>(ME_QUERY)
       .then(({ me }) => {
-        if (!active || !me) return;
+        if (!active || useAuthStore.getState().user?.id !== authUserId) return;
+        if (!me || me.id !== authUserId) throw new Error("Could not load your profile.");
         setProfile(me); setName(me.name ?? ""); setAvatar(me.avatar ?? ""); setBio(me.bio ?? ""); setSkillsText(me.skills.join(", ")); setLocation(me.location ?? ""); setRole(me.role === "CLIENT" ? "CLIENT" : "DEVELOPER");
         useAuthStore.setState((state) => state.user ? { user: { ...state.user, ...me } } : state);
       })
@@ -74,6 +76,7 @@ export function ProfileView() {
         ...(profile?.role === "ADMIN" ? {} : { role }),
         skills: [...new Set(skillsText.split(",").map((skill) => skill.trim()).filter(Boolean))].slice(0, 30),
       } });
+      if (useAuthStore.getState().user?.id !== authUserId) return;
       setProfile((current) => current ? { ...current, ...result.updateProfile } : result.updateProfile);
       useAuthStore.setState((state) => state.user ? { user: { ...state.user, ...result.updateProfile } } : state);
       setNotice("Profile saved.");
@@ -99,6 +102,7 @@ export function ProfileView() {
 
   if (authStatus === "restoring") return <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8"><div className="h-64 animate-pulse rounded-xl bg-[hsl(var(--card))]" /></main>;
   if (!authUser) return <main className="mx-auto max-w-4xl px-4 py-16"><AuthRequiredPanel title="Build your Bloody-Roar profile" description="Connect your wallet to add your skills, GitHub verification, and the information clients see before selecting a developer." actionLabel="Connect wallet to edit profile" /></main>;
+  if (profile?.id !== authUserId) return <main className="mx-auto max-w-5xl px-4 py-8">{!loading && error ? <p role="alert">{error}</p> : <div className="h-64 animate-pulse rounded-xl bg-[hsl(var(--card))]" />}</main>;
 
   return (
     <div className={`br min-h-screen py-8 ${theme === "dark" ? "dark" : ""}`}>

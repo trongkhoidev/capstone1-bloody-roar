@@ -23,7 +23,7 @@ import { auditHash } from "../ai/hash";
 import { AILogStatus, NotificationType, Prisma } from "@bloody-roar/database";
 import { guardMessage } from "../ai/guard/service";
 import { scanAndMask } from "../ai/guard/scanner";
-import { createNotification } from "../lib/services/notifications";
+import { emitNotification } from "../lib/services/notifications";
 import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE_BYTES } from "@bloody-roar/shared";
 import { getS3Storage, localUploadPath } from "../lib/storage";
 
@@ -284,81 +284,102 @@ export function registerSocketHandlers(
           ? auditHash(content)
           : undefined;
         const startedAt = Date.now();
-        let message: StoredMessage;
+        let message!: StoredMessage;
         let alreadyPersisted = false;
-        try {
-          message = await prisma.$transaction(
-            async (tx) => {
-              const currentIssue = await tx.issue.findUnique({
-                where: { id: issueId },
-                select: { clientId: true, developerId: true, status: true },
-              });
-              if (!currentIssue || !canWriteIssueChat(currentIssue, user)) {
-                throw new Error("Task state changed before the message was saved");
-              }
-              if (replyToId) {
-                const replyTarget = await tx.message.findFirst({
-                  where: { id: replyToId, issueId, isDeleted: false },
-                  select: { id: true },
+        let notification: Awaited<ReturnType<typeof prisma.notification.create>> | null = null;
+        for (let attempt = 0; ; attempt++) {
+          try {
+            message = await prisma.$transaction(
+              async (tx) => {
+                const currentIssue = await tx.issue.findUnique({
+                  where: { id: issueId },
+                  select: { clientId: true, developerId: true, status: true },
                 });
-                if (!replyTarget) throw new Error("The message you are replying to was not found");
-              }
-              if (clientMessageId) {
-                const duplicate = await tx.message.findFirst({
-                  where: { clientMessageId, senderId: user.id, issueId },
-                  include: { attachments: true },
-                });
-                if (duplicate) {
-                  alreadyPersisted = true;
-                  return duplicate;
+                if (!currentIssue || !canWriteIssueChat(currentIssue, user)) {
+                  throw new Error("Task state changed before the message was saved");
                 }
-              }
-              const dispute = await tx.dispute.findUnique({ where: { issueId }, select: { raisedAt: true } });
-              const created = await tx.message.create({
-                data: {
-                  content: guard.content,
-                  type,
-                  issueId,
-                  senderId: user.id,
-                  clientMessageId: clientMessageId || null,
-                  replyToId: replyToId || null,
-                  wasModified,
-                  afterDispute: Boolean(dispute?.raisedAt && dispute.raisedAt <= new Date()),
-                  ...(originalHash ? { originalHash } : {}),
-                },
-              });
-
-              if (type === "FILE" && fileUrl && fileName && fileSize != null && fileMime) {
-                await tx.attachment.create({
+                if (replyToId) {
+                  const replyTarget = await tx.message.findFirst({
+                    where: { id: replyToId, issueId, isDeleted: false },
+                    select: { id: true },
+                  });
+                  if (!replyTarget) throw new Error("The message you are replying to was not found");
+                }
+                if (clientMessageId) {
+                  const duplicate = await tx.message.findFirst({
+                    where: { clientMessageId, senderId: user.id, issueId },
+                    include: { attachments: true },
+                  });
+                  if (duplicate) {
+                    alreadyPersisted = true;
+                    return duplicate;
+                  }
+                }
+                const dispute = await tx.dispute.findUnique({ where: { issueId }, select: { raisedAt: true } });
+                const created = await tx.message.create({
                   data: {
-                    messageId: created.id,
-                    uploaderId: user.id,
-                    fileName: fileNameScan.content,
-                    fileUrl,
-                    fileSize,
-                    fileMime,
+                    content: guard.content,
+                    type,
+                    issueId,
+                    senderId: user.id,
+                    clientMessageId: clientMessageId || null,
+                    replyToId: replyToId || null,
+                    wasModified,
+                    afterDispute: Boolean(dispute?.raisedAt && dispute.raisedAt <= new Date()),
+                    ...(originalHash ? { originalHash } : {}),
                   },
                 });
-              }
 
-              return tx.message.findUniqueOrThrow({
-                where: { id: created.id },
-                include: { attachments: true },
-              });
-            },
-            { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-          );
-        } catch (error) {
-          const isSerializationConflict =
-            error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034";
-          if (!isSerializationConflict || !clientMessageId) throw error;
-          const duplicate = await prisma.message.findFirst({
-            where: { clientMessageId, senderId: user.id, issueId },
-            include: { attachments: true },
-          });
-          if (!duplicate) throw error;
-          message = duplicate;
-          alreadyPersisted = true;
+                if (type === "FILE" && fileUrl && fileName && fileSize != null && fileMime) {
+                  await tx.attachment.create({
+                    data: {
+                      messageId: created.id,
+                      uploaderId: user.id,
+                      fileName: fileNameScan.content,
+                      fileUrl,
+                      fileSize,
+                      fileMime,
+                    },
+                  });
+                }
+
+                const recipientId = currentIssue.clientId === user.id ? currentIssue.developerId : currentIssue.clientId;
+                if (recipientId) {
+                  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${recipientId}), hashtext(${issueId}))::text`;
+                  // A fresh ID prevents a delayed read of the old notification hiding this message.
+                  await tx.notification.updateMany({ where: { userId: recipientId, type: NotificationType.MESSAGE_RECEIVED, isRead: false, link: `/issues/${issueId}` }, data: { isRead: true } });
+                  notification = await tx.notification.create({ data: {
+                    userId: recipientId, actorId: user.id, type: NotificationType.MESSAGE_RECEIVED,
+                    title: `Tin nhắn mới trong “${issue.title}”`,
+                    body: type === "FILE" ? `${user.name || "Thành viên"} đã gửi một tệp.` : guard.content.slice(0, 180),
+                    link: `/issues/${issueId}`, data: { issueId, messageId: created.id },
+                  } });
+                }
+
+                return tx.message.findUniqueOrThrow({
+                  where: { id: created.id },
+                  include: { attachments: true },
+                });
+              },
+              { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+            );
+            break;
+          } catch (error) {
+            const isSerializationConflict =
+              error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034";
+            if (!isSerializationConflict) throw error;
+            const duplicate = clientMessageId ? await prisma.message.findFirst({
+              where: { clientMessageId, senderId: user.id, issueId }, include: { attachments: true },
+            }) : null;
+            if (duplicate) {
+              message = duplicate;
+              alreadyPersisted = true;
+              break;
+            }
+            if (attempt >= 2) throw error;
+            notification = null;
+            alreadyPersisted = false;
+          }
         }
 
         if (alreadyPersisted) {
@@ -389,29 +410,7 @@ export function registerSocketHandlers(
 
         io.to(roomName).emit("message:new", toMessagePayload(message, user));
 
-        const recipientId = issue.clientId === user.id ? issue.developerId : issue.clientId;
-        if (recipientId) {
-          try {
-            const unread = await prisma.notification.findFirst({ where: { userId: recipientId, type: NotificationType.MESSAGE_RECEIVED, isRead: false, link: `/issues/${issueId}` } });
-            if (!unread) await createNotification(prisma, {
-              userId: recipientId,
-              actorId: user.id,
-              type: NotificationType.MESSAGE_RECEIVED,
-              title: `Tin nhắn mới trong “${issue.title}”`,
-              body:
-                type === "FILE"
-                  ? `${user.name || "Thành viên"} đã gửi một tệp.`
-                  : guard.content.slice(0, 180),
-              link: `/issues/${issueId}`,
-              data: { issueId, messageId: message.id },
-            });
-          } catch (notificationError) {
-            log.warn(
-              { error: notificationError, issueId },
-              "Failed to create message notification",
-            );
-          }
-        }
+        if (notification) emitNotification(notification);
 
         callback?.();
       } catch (error) {

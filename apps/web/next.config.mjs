@@ -1,5 +1,9 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants.js";
+
+/** @param {string} phase @returns {import('next').NextConfig} */
+const nextConfig = (phase) => ({
+  // Keep development assets separate from production builds.
+  distDir: phase === PHASE_DEVELOPMENT_SERVER ? ".next-dev" : ".next",
   // Use standalone output for Docker deployment (Sprint 4)
   // output: "standalone",
 
@@ -46,6 +50,6 @@ const nextConfig = {
     };
     return config;
   },
-};
+});
 
 export default nextConfig;

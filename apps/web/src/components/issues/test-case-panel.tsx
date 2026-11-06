@@ -11,7 +11,7 @@ type TestCase = {
   description: string;
   given: string;
   when: string;
-  then: string;
+  bddThen: string;
   isEdgeCase: boolean;
   priority: "CRITICAL" | "NORMAL" | "LOW";
   source?: "AI" | "MANUAL" | null;
@@ -19,12 +19,12 @@ type TestCase = {
   clientNotes?: string | null;
 };
 
-type TestCaseDraft = Pick<TestCase, "title" | "description" | "given" | "when" | "then" | "isEdgeCase" | "priority">;
+type TestCaseDraft = Pick<TestCase, "title" | "description" | "given" | "when" | "isEdgeCase" | "priority"> & { then: string };
 
-const TEST_CASES_QUERY = `query TaskTestCases($issueId: String!) { testCases(issueId: $issueId) { id title description given when then isEdgeCase priority source isApproved clientNotes } }`;
-const GENERATE_TEST_CASES = `mutation GenerateTestCases($issueId: String!) { generateTestCases(issueId: $issueId) { id title description given when then isEdgeCase priority source isApproved clientNotes } }`;
-const UPDATE_TEST_CASE = `mutation UpdateTestCase($input: UpdateTestCaseInput!) { updateTestCase(input: $input) { id title description given when then isEdgeCase priority source isApproved clientNotes } }`;
-const CREATE_TEST_CASE = `mutation CreateTestCase($input: CreateTestCaseInput!) { createTestCase(input: $input) { id title description given when then isEdgeCase priority source isApproved clientNotes } }`;
+const TEST_CASES_QUERY = `query TaskTestCases($issueId: String!) { testCases(issueId: $issueId) { id title description given when bddThen: then isEdgeCase priority source isApproved clientNotes } }`;
+const GENERATE_TEST_CASES = `mutation GenerateTestCases($issueId: String!) { generateTestCases(issueId: $issueId) { id title description given when bddThen: then isEdgeCase priority source isApproved clientNotes } }`;
+const UPDATE_TEST_CASE = `mutation UpdateTestCase($input: UpdateTestCaseInput!) { updateTestCase(input: $input) { id title description given when bddThen: then isEdgeCase priority source isApproved clientNotes } }`;
+const CREATE_TEST_CASE = `mutation CreateTestCase($input: CreateTestCaseInput!) { createTestCase(input: $input) { id title description given when bddThen: then isEdgeCase priority source isApproved clientNotes } }`;
 const DELETE_TEST_CASE = `mutation DeleteTestCase($id: ID!) { deleteTestCase(id: $id) }`;
 const emptyDraft: TestCaseDraft = { title: "", description: "", given: "", when: "", then: "", priority: "NORMAL", isEdgeCase: false };
 const fieldClass = "w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-2.5 py-2 text-xs leading-5 outline-none focus:border-[hsl(var(--primary)/0.5)]";
@@ -39,12 +39,13 @@ export function TestCasePanel({ issueId, owner, issueStatus }: { issueId: string
   const [manual, setManual] = useState<TestCaseDraft>(emptyDraft);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     let active = true;
     void graphqlRequest<{ testCases: TestCase[] }>(TEST_CASES_QUERY, { issueId })
       .then((result) => { if (active) setTestCases(result.testCases); })
-      .catch((reason) => { if (active && owner) setError(reason instanceof Error ? reason.message : "Could not load acceptance criteria."); })
+      .catch(() => { if (active) { setLoadFailed(true); setError("Could not load acceptance criteria. Please refresh and try again."); } })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [issueId, owner]);
@@ -100,7 +101,7 @@ export function TestCasePanel({ issueId, owner, issueStatus }: { issueId: string
   };
 
   if (loading) return <section className="h-24 animate-pulse rounded-xl bg-[hsl(var(--muted))]" aria-label="Loading acceptance criteria" />;
-  if (!owner && testCases.length === 0) return null;
+  if (!owner && testCases.length === 0 && !loadFailed) return null;
 
   return (
     <section className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5 sm:p-6" aria-labelledby="test-case-heading">
@@ -116,7 +117,7 @@ export function TestCasePanel({ issueId, owner, issueStatus }: { issueId: string
         <div className="flex gap-2"><select className={fieldClass} aria-label="New criterion priority" value={manual.priority} onChange={(event) => setManual({ ...manual, priority: event.target.value as TestCaseDraft["priority"] })}><option value="CRITICAL">Critical</option><option value="NORMAL">Normal</option><option value="LOW">Low</option></select><Button type="submit" size="sm" disabled={creating}>Add criterion</Button></div>
       </form>}
       {error && <p role="alert" className="mt-3 rounded-md bg-[hsl(var(--destructive)/0.08)] p-2.5 text-xs text-[hsl(var(--destructive))]">{error}</p>}
-      {testCases.length === 0 ? <p className="mt-4 rounded-lg bg-[hsl(var(--background-secondary))] p-4 text-sm text-[hsl(var(--foreground-muted))]">No acceptance criteria have been added yet.</p> : <div className="mt-4 divide-y divide-[hsl(var(--border))]">
+      {testCases.length === 0 && !loadFailed ? <p className="mt-4 rounded-lg bg-[hsl(var(--background-secondary))] p-4 text-sm text-[hsl(var(--foreground-muted))]">No acceptance criteria have been added yet.</p> : testCases.length > 0 ? <div className="mt-4 divide-y divide-[hsl(var(--border))]">
         {testCases.map((testCase) => {
           const editing = editingId === testCase.id && draft;
           return <article key={testCase.id} className="py-4 first:pt-0 last:pb-0">
@@ -124,7 +125,7 @@ export function TestCasePanel({ issueId, owner, issueStatus }: { issueId: string
               <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-semibold">{testCase.title}</h3><span className="rounded-full bg-[hsl(var(--background-secondary))] px-2 py-0.5 text-[10px] text-[hsl(var(--foreground-muted))]">{testCase.priority.toLowerCase()}{testCase.isEdgeCase ? " · edge case" : ""}</span><span className={`rounded-full px-2 py-0.5 text-[10px] ${testCase.isApproved ? "bg-[var(--ok-bg)] text-[var(--ok)]" : "bg-[var(--warn-bg)] text-[var(--warn)]"}`}>{testCase.isApproved ? "Approved" : "Draft"}</span></div>
                 {!editing && <p className="mt-1 text-xs leading-5 text-[hsl(var(--foreground-muted))]">{testCase.description}</p>}
               </div>
-              {owner && issueStatus === "OPEN" && !editing && <div className="flex shrink-0 gap-1"><Button type="button" size="sm" variant="ghost" aria-label={`Edit ${testCase.title}`} onClick={() => { setEditingId(testCase.id); setDraft({ title: testCase.title, description: testCase.description, given: testCase.given, when: testCase.when, then: testCase.then, isEdgeCase: testCase.isEdgeCase, priority: testCase.priority }); }}><Pencil className="h-3.5 w-3.5" /></Button><Button type="button" size="sm" variant="ghost" disabled={savingId === testCase.id} onClick={() => void remove(testCase.id)}>Delete</Button>{!testCase.isApproved && <Button type="button" size="sm" variant="outline" disabled={savingId === testCase.id} onClick={() => void approve(testCase)}><Check className="mr-1 h-3.5 w-3.5" />Approve</Button>}</div>}
+              {owner && issueStatus === "OPEN" && !editing && <div className="flex shrink-0 gap-1"><Button type="button" size="sm" variant="ghost" aria-label={`Edit ${testCase.title}`} onClick={() => { setEditingId(testCase.id); setDraft({ title: testCase.title, description: testCase.description, given: testCase.given, when: testCase.when, then: testCase.bddThen, isEdgeCase: testCase.isEdgeCase, priority: testCase.priority }); }}><Pencil className="h-3.5 w-3.5" /></Button><Button type="button" size="sm" variant="ghost" disabled={savingId === testCase.id} onClick={() => void remove(testCase.id)}>Delete</Button>{!testCase.isApproved && <Button type="button" size="sm" variant="outline" disabled={savingId === testCase.id} onClick={() => void approve(testCase)}><Check className="mr-1 h-3.5 w-3.5" />Approve</Button>}</div>}
             </div>
 
             {editing ? <div className="mt-3 space-y-2">
@@ -132,10 +133,10 @@ export function TestCasePanel({ issueId, owner, issueStatus }: { issueId: string
               <textarea className={fieldClass} aria-label="Criterion description" rows={2} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} />
               <div className="grid gap-2 sm:grid-cols-3"><textarea className={fieldClass} aria-label="Given" placeholder="Given" rows={3} value={draft.given} onChange={(event) => setDraft({ ...draft, given: event.target.value })} /><textarea className={fieldClass} aria-label="When" placeholder="When" rows={3} value={draft.when} onChange={(event) => setDraft({ ...draft, when: event.target.value })} /><textarea className={fieldClass} aria-label="Then" placeholder="Then" rows={3} value={draft.then} onChange={(event) => setDraft({ ...draft, then: event.target.value })} /></div>
               <div className="flex flex-wrap items-center justify-between gap-3"><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={draft.isEdgeCase} onChange={(event) => setDraft({ ...draft, isEdgeCase: event.target.checked })} />Edge case</label><div className="flex gap-2"><select className={fieldClass} aria-label="Priority" value={draft.priority} onChange={(event) => setDraft({ ...draft, priority: event.target.value as TestCaseDraft["priority"] })}><option value="CRITICAL">Critical</option><option value="NORMAL">Normal</option><option value="LOW">Low</option></select><Button type="button" size="sm" variant="ghost" onClick={() => { setEditingId(null); setDraft(null); }}><X className="mr-1 h-3.5 w-3.5" />Cancel</Button><Button type="button" size="sm" disabled={savingId === testCase.id} onClick={() => void save(testCase.id)}>Save review</Button></div></div>
-            </div> : <dl className="mt-3 grid gap-2 sm:grid-cols-3"><Criterion label="Given" value={testCase.given} /><Criterion label="When" value={testCase.when} /><Criterion label="Then" value={testCase.then} /></dl>}
+            </div> : <dl className="mt-3 grid gap-2 sm:grid-cols-3"><Criterion label="Given" value={testCase.given} /><Criterion label="When" value={testCase.when} /><Criterion label="Then" value={testCase.bddThen} /></dl>}
           </article>;
         })}
-      </div>}
+      </div> : null}
       {owner && testCases.some((item) => item.source === "AI") && <p className="mt-4 border-t border-[hsl(var(--border))] pt-3 text-[10px] leading-4 text-[hsl(var(--foreground-subtle))]">AI-generated drafts are suggestions, not verified tests. Review and approve them before sharing as agreed scope.</p>}
     </section>
   );

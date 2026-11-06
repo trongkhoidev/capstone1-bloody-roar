@@ -120,7 +120,9 @@ export async function executeSafeTransaction(
   provider: providers.JsonRpcProvider,
   purpose: string
 ): Promise<string> {
-  await assertBaseSepolia(provider);
+  if (process.env.CHAIN_ID !== "31337") {
+    await assertBaseSepolia(provider);
+  }
 
   const safeContract = new ethers.Contract(safeAddress, SAFE_EXEC_ABI, provider);
   const nonce: BigNumber = await safeContract.nonce();

@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BriefcaseBusiness, CircleDollarSign, ClipboardList, Clock3, Plus } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { ArrowRight, BriefcaseBusiness, CircleDollarSign, ClipboardList, Clock3 } from "lucide-react";
 import { graphqlRequest } from "@/lib/graphql-client";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { Button } from "@/components/ui/button";
+import { issueStatus } from "@/lib/issue-status";
 import { Badge } from "@/components/ui/badge";
 import { AuthRequiredPanel } from "@/components/auth/auth-required-panel";
 import { useUiPreferences } from "@/lib/ui-preferences";
@@ -35,15 +37,18 @@ type DashboardRaw = {
 };
 type Tab = "all" | "posted" | "working" | "applications";
 
-const STATUS_LABELS: Record<string, string> = { OPEN: "Open", IN_PROGRESS: "In progress", COMPLETED: "Completed", CANCELLED: "Cancelled", DISPUTED: "Disputed", PENDING: "Pending", ACCEPTED: "Accepted", REJECTED: "Not selected", WITHDRAWN: "Withdrawn" };
-const statusVariant = (status: string) => status === "OPEN" ? "success" : status === "IN_PROGRESS" ? "warning" : status === "DISPUTED" ? "danger" : "secondary";
+const APPLICATION_LABELS: Record<string, string> = { PENDING: "Pending", ACCEPTED: "Accepted", REJECTED: "Not selected", WITHDRAWN: "Withdrawn" };
+const statusLabel = (status: string) => APPLICATION_LABELS[status] ?? issueStatus(status).label;
+const statusVariant = (status: string) => issueStatus(status).variant;
 
 export function DashboardView() {
   const user = useAuthStore((state) => state.user);
   const authStatus = useAuthStore((state) => state.status);
   const { theme } = useUiPreferences();
   const [data, setData] = useState<DashboardData | null>(null);
-  const [tab, setTab] = useState<Tab>("all");
+  const queryTab = useSearchParams().get("tab");
+  const [tab, setTab] = useState<Tab>(queryTab === "bounties" ? "posted" : "all");
+  useEffect(() => { setTab(queryTab === "bounties" ? "posted" : "all"); }, [queryTab]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [claimable, setClaimable] = useState<string>("0");
@@ -100,6 +105,7 @@ export function DashboardView() {
   return (
     <div className={`br min-h-screen ${theme === "dark" ? "dark" : ""}`}>
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <div id="wallet">
         {BigInt(claimable) > 0n && (
           <section className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[hsl(var(--border))] p-4">
             <p className="text-sm">Available to withdraw: <strong>{formatRaw(claimable)} USDC</strong></p>
@@ -107,9 +113,9 @@ export function DashboardView() {
             {claimNotice && <p role="status" className="w-full text-xs text-[hsl(var(--success))]">{claimNotice}</p>}
           </section>
         )}
+        </div>
         <div className="flex flex-wrap items-end justify-between gap-4 animate-fade-in">
           <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">Workspace</p><h1 className="mt-1 font-outfit text-3xl font-bold text-[var(--ink)]">Dashboard</h1><p className="mt-1 text-sm text-[var(--ink-3)]">Track the work you posted and the tasks you applied for.</p></div>
-          <Button asChild className="btn btn-p"><Link href="/issues/create"><Plus className="mr-2 h-4 w-4" />Post a bounty</Link></Button>
         </div>
 
       {data && <section className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-5 animate-fade-in">
@@ -130,9 +136,9 @@ export function DashboardView() {
         </div>
 
         {loading ? <div className="space-y-3 p-6">{[0, 1, 2].map((key) => <div key={key} className="h-16 animate-pulse rounded-lg bg-[hsl(var(--muted))]" />)}</div> : tab === "applications" ? (
-          <div className="divide-y divide-[hsl(var(--border))]">{(data?.myApplications ?? []).map((application) => <Link key={application.id} href={`/issues/${application.issue.id}`} className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 transition hover:bg-[hsl(var(--background-secondary))] sm:px-6"><div className="min-w-0"><p className="truncate font-medium">{application.issue.title}</p><p className="mt-1 text-xs text-[hsl(var(--foreground-muted))]">Client: {application.issue.client.name || "Wallet user"} · Applied {new Date(application.createdAt).toLocaleDateString()}</p></div><div className="flex items-center gap-3"><Badge variant={statusVariant(application.status) as never}>{STATUS_LABELS[application.status] ?? application.status}</Badge><span className="text-sm font-semibold text-[hsl(var(--success))]">{application.issue.bountyAmount.toLocaleString()} {application.issue.token.symbol}</span><ArrowRight className="h-4 w-4 text-[hsl(var(--foreground-subtle))]" /></div></Link>)}{(data?.myApplications.length ?? 0) === 0 && <EmptyState title="No applications yet" text="Browse open tasks and send your first application." />}</div>
+          <div className="divide-y divide-[hsl(var(--border))]">{(data?.myApplications ?? []).map((application) => <Link key={application.id} href={`/issues/${application.issue.id}`} className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 transition hover:bg-[hsl(var(--background-secondary))] sm:px-6"><div className="min-w-0"><p className="truncate font-medium">{application.issue.title}</p><p className="mt-1 text-xs text-[hsl(var(--foreground-muted))]">Client: {application.issue.client.name || "Wallet user"} · Applied {new Date(application.createdAt).toLocaleDateString()}</p></div><div className="flex items-center gap-3"><Badge variant={statusVariant(application.status) as never}>{statusLabel(application.status)}</Badge><span className="text-sm font-semibold text-[hsl(var(--success))]">{application.issue.bountyAmount.toLocaleString()} {application.issue.token.symbol}</span><ArrowRight className="h-4 w-4 text-[hsl(var(--foreground-subtle))]" /></div></Link>)}{(data?.myApplications.length ?? 0) === 0 && <EmptyState title="No applications yet" text="Browse open tasks and send your first application." />}</div>
         ) : (
-          <div className="divide-y divide-[hsl(var(--border))]">{tasks.map((task) => <Link key={task.id} href={`/issues/${task.id}`} className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 transition hover:bg-[hsl(var(--background-secondary))] sm:px-6"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="truncate font-medium">{task.title}</p><Badge variant={statusVariant(task.status) as never}>{STATUS_LABELS[task.status] ?? task.status}</Badge></div><p className="mt-1 text-xs text-[hsl(var(--foreground-muted))]">{task.category.replaceAll("_", " ")} · Updated {new Date(task.updatedAt).toLocaleDateString()}</p></div><div className="flex items-center gap-3"><span className="text-sm font-semibold text-[hsl(var(--success))]">{task.bountyAmount.toLocaleString()} {task.token.symbol}</span><ArrowRight className="h-4 w-4 text-[hsl(var(--foreground-subtle))]" /></div></Link>)}{!tasks.length && <EmptyState title="No tasks here yet" text="Create a bounty or apply for a task from the marketplace." />}</div>
+          <div className="divide-y divide-[hsl(var(--border))]">{tasks.map((task) => <Link key={task.id} href={`/issues/${task.id}`} className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 transition hover:bg-[hsl(var(--background-secondary))] sm:px-6"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="truncate font-medium">{task.title}</p><Badge variant={statusVariant(task.status) as never}>{statusLabel(task.status)}</Badge></div><p className="mt-1 text-xs text-[hsl(var(--foreground-muted))]">{task.category.replaceAll("_", " ")} · Updated {new Date(task.updatedAt).toLocaleDateString()}</p></div><div className="flex items-center gap-3"><span className="text-sm font-semibold text-[hsl(var(--success))]">{task.bountyAmount.toLocaleString()} {task.token.symbol}</span><ArrowRight className="h-4 w-4 text-[hsl(var(--foreground-subtle))]" /></div></Link>)}{!tasks.length && <EmptyState title="No tasks here yet" text="Create a bounty or apply for a task from the marketplace." />}</div>
         )}
       </section>
     </main>

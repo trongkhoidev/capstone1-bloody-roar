@@ -87,6 +87,12 @@ async function main() {
   console.log(`  arbiter Safe:  ${arbiterSafe}`);
   console.log(`  fee recipient: ${feeRecipient}`);
 
+  if (isLocal) {
+    // In local runs, advance deployer nonce by 1 so the newly deployed escrow gets a distinct
+    // address from previous runs (avoiding collision with historical projection checkpoints in DB).
+    await (await deployer.sendTransaction({ to: deployer.address, value: 0 })).wait();
+  }
+
   const EscrowFactory = await ethers.getContractFactory("BloodyRoarEscrow");
   const escrow = await EscrowFactory.deploy(tokenAddress, ownerSafe, arbiterSafe, feeRecipient);
   await escrow.waitForDeployment();

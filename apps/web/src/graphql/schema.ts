@@ -41,6 +41,7 @@ import "./modules/notification/notification.module";
 import "./modules/analytics/analytics.module";
 import "./modules/admin/admin.module";
 import "./modules/review/review.module";
+import "./modules/skill/skill.module";
 
 // Build and export the schema
 export const schema = builder.toSchema();

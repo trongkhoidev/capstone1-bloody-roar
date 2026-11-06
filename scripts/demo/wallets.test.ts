@@ -53,4 +53,25 @@ describe("Demo Wallets Store (R1)", () => {
       }
     }
   });
+
+  it("maps admin role to Hardhat #2 arbiter when CHAIN_ID is 31337", () => {
+    const origChainId = process.env.CHAIN_ID;
+    const tmpDir2 = path.resolve(process.cwd(), "demo-wallets-test-tmp-local");
+    const tmpKeys2 = path.join(tmpDir2, "keys.json");
+    const tmpDoc2 = path.join(tmpDir2, "WALLETS.md");
+    try {
+      process.env.CHAIN_ID = "31337";
+      const store = loadOrCreateWallets(tmpKeys2, tmpDoc2);
+      expect(store["admin"]?.address.toLowerCase()).toBe("0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC".toLowerCase());
+    } finally {
+      if (origChainId !== undefined) {
+        process.env.CHAIN_ID = origChainId;
+      } else {
+        delete process.env.CHAIN_ID;
+      }
+      if (fs.existsSync(tmpDir2)) {
+        fs.rmSync(tmpDir2, { recursive: true, force: true });
+      }
+    }
+  });
 });

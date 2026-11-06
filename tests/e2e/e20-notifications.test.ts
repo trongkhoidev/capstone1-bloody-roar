@@ -34,7 +34,8 @@ test("E20: notifications page with a cursor, count unread, and mark one or all a
   expect(marked.data?.markNotificationRead).toMatchObject({ id: target.id, isRead: true });
   expect(await unread(f.client)).toBe(unreadBefore - (target.isRead ? 0 : 1));
 
-  const all = await gqlAs(f.client, `mutation { markAllNotificationsRead }`);
+  const snapshot = await gqlAs(f.client, `query { unreadNotificationIds }`);
+  const all = await gqlAs(f.client, `mutation($ids: [String!]!) { markAllNotificationsRead(ids: $ids) }`, { ids: snapshot.data?.unreadNotificationIds });
   expect(all.errors).toBeUndefined();
   expect(all.data?.markAllNotificationsRead as number).toBeGreaterThanOrEqual(0);
   expect(await unread(f.client)).toBe(0);

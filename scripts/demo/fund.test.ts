@@ -2,13 +2,14 @@
 import { describe, expect, it } from "bun:test";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { ethers } from "./lib/ethers";
+import { ethers, type providers } from "./lib/ethers";
 import { appendLedger, readLedger, type LedgerEntry } from "./lib/ledger";
 import {
   assertBaseSepolia,
   assertNotForbidden,
   BASE_SEPOLIA_CHAIN_ID,
   FORBIDDEN_PUBLIC_DEPLOYER,
+  fundLocalWallets,
   getTargetEthForRole,
 } from "./fund";
 
@@ -61,6 +62,52 @@ describe("Fund and Gas Distribution Logic (R2)", () => {
     } finally {
       if (fs.existsSync(tmpLedger)) {
         fs.rmSync(path.dirname(tmpLedger), { recursive: true, force: true });
+      }
+    }
+  });
+
+  it("funds local wallets via hardhat_setBalance and mints mUSDC for clients", async () => {
+    const sentCalls: Array<{ method: string; params: unknown[] }> = [];
+    const mintCalls: Array<{ to?: string }> = [];
+
+    const mockProvider = {
+      resolveName: async (n: string) => n,
+      getNetwork: async () => ({ chainId: 31337 }),
+      send: async (method: string, params: unknown[]) => {
+        sentCalls.push({ method, params });
+        return true;
+      },
+      getSigner: () => ({
+        _isSigner: true,
+        provider: mockProvider,
+        getAddress: async () => "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        estimateGas: async () => ethers.BigNumber.from(21000),
+        sendTransaction: async (tx: { to?: string }) => {
+          mintCalls.push(tx);
+          return { wait: async () => ({ status: 1, logs: [] }) };
+        },
+      }),
+    } as unknown as providers.JsonRpcProvider;
+
+    const tmpKeys = path.resolve(process.cwd(), "demo-wallets-test-tmp/keys.json");
+    fs.mkdirSync(path.dirname(tmpKeys), { recursive: true });
+    fs.writeFileSync(
+      tmpKeys,
+      JSON.stringify({
+        user01: { role: "user01", address: "0x1111111111111111111111111111111111111111", privateKey: "0x01", persona: "client" },
+        dev01: { role: "dev01", address: "0x2222222222222222222222222222222222222222", privateKey: "0x02", persona: "developer" },
+      })
+    );
+
+    try {
+      const res = await fundLocalWallets(mockProvider, tmpKeys);
+      expect(res.fundedCount).toBe(2);
+      expect(res.mintedUsdcCount).toBe(1);
+      expect(sentCalls.filter((c) => c.method === "hardhat_setBalance").length).toBe(2);
+      expect(mintCalls.length).toBe(1);
+    } finally {
+      if (fs.existsSync(tmpKeys)) {
+        fs.rmSync(path.dirname(tmpKeys), { recursive: true, force: true });
       }
     }
   });

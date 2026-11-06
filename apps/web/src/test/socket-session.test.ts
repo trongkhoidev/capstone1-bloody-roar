@@ -4,6 +4,8 @@ import type { Server } from "socket.io";
 const { verifyJWT, prisma, tx } = vi.hoisted(() => {
   const tx = {
     issue: { findUnique: vi.fn() },
+    $queryRaw: vi.fn().mockResolvedValue([]),
+    notification: { create: vi.fn(), updateMany: vi.fn().mockResolvedValue({ count: 0 }) },
     message: { create: vi.fn(), findUniqueOrThrow: vi.fn() },
     attachment: { create: vi.fn() },
     dispute: { findUnique: vi.fn(async () => null) },
@@ -11,7 +13,6 @@ const { verifyJWT, prisma, tx } = vi.hoisted(() => {
   const prisma = {
     ...tx,
     aILog: { create: vi.fn(() => Promise.resolve()) },
-    notification: { create: vi.fn() },
     $transaction: vi.fn((run: (client: typeof tx) => unknown) => run(tx)),
   };
   return { verifyJWT: vi.fn(), prisma, tx };

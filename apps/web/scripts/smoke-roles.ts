@@ -93,7 +93,7 @@ async function run() {
     const created = await gql(client.cookie, mutation, { input });
     check("client can create issue", !!created.data?.createIssue?.id, JSON.stringify(created.errors ?? ""));
     const devCreate = await gql(dev.cookie, mutation, { input });
-    check("developer cannot create issue", devCreate.errors?.[0]?.extensions?.code === "CLIENT_ROLE_REQUIRED");
+    check("developer can also create issue (same permissions)", !!devCreate.data?.createIssue?.id, JSON.stringify(devCreate.errors ?? ""));
     const issueId = created.data?.createIssue?.id;
     if (issueId) {
       const applied = await gql(dev.cookie, `mutation { applyToIssue(input: { issueId: "${issueId}", message: "smoke" }) { id } }`);

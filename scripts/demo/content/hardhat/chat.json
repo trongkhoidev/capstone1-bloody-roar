@@ -1,0 +1,3164 @@
+[
+  {
+    "roomIndex": 1,
+    "issueKey": "issue_001",
+    "clientRole": "hh04",
+    "developerRole": "hh15",
+    "messages": [
+      {
+        "senderRole": "hh04",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh04",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh04",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh04",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Nếu cần trao đổi gấp bạn có thể nhắn tin qua số 0912345678 nhé!"
+      },
+      {
+        "senderRole": "hh04",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 2,
+    "issueKey": "issue_002",
+    "clientRole": "hh05",
+    "developerRole": "hh16",
+    "messages": [
+      {
+        "senderRole": "hh05",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh16",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh16",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh05",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh16",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh16",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh05",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh16",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh16",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh05",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh05",
+        "text": "Bạn gửi bản thiết kế vào email client.support@demo-portal.fake giúp mình."
+      },
+      {
+        "senderRole": "hh05",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh16",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh16",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 3,
+    "issueKey": "issue_003",
+    "clientRole": "hh06",
+    "developerRole": "hh17",
+    "messages": [
+      {
+        "senderRole": "hh06",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh06",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh06",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh06",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Call qua điện thoại 0988776655 để sync nhanh 5 phút được không bạn?"
+      },
+      {
+        "senderRole": "hh06",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 4,
+    "issueKey": "issue_004",
+    "clientRole": "hh07",
+    "developerRole": "hh18",
+    "messages": [
+      {
+        "senderRole": "hh07",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh18",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh18",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh07",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh18",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh18",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh07",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh18",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh18",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh07",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh07",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh18",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh18",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 5,
+    "issueKey": "issue_005",
+    "clientRole": "hh08",
+    "developerRole": "hh19",
+    "messages": [
+      {
+        "senderRole": "hh08",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh19",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh19",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh08",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh19",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh19",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh08",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh19",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh19",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh08",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh08",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh19",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh19",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 6,
+    "issueKey": "issue_006",
+    "clientRole": "hh09",
+    "developerRole": "hh20",
+    "messages": [
+      {
+        "senderRole": "hh09",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh20",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh20",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh09",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh20",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh20",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh09",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh20",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh20",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh09",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh09",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh20",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh20",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 7,
+    "issueKey": "issue_007",
+    "clientRole": "hh10",
+    "developerRole": "hh21",
+    "messages": [
+      {
+        "senderRole": "hh10",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh21",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh21",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh10",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh21",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh21",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh10",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh21",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh21",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh10",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh10",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh21",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh21",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 8,
+    "issueKey": "issue_008",
+    "clientRole": "hh11",
+    "developerRole": "hh22",
+    "messages": [
+      {
+        "senderRole": "hh11",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh22",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh22",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh11",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh22",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh22",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh11",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh22",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh22",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh11",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh11",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh22",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh22",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 9,
+    "issueKey": "issue_009",
+    "clientRole": "hh12",
+    "developerRole": "hh23",
+    "messages": [
+      {
+        "senderRole": "hh12",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh23",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh23",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh12",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh23",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh23",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh12",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh23",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh23",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh12",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh12",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh23",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh23",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 10,
+    "issueKey": "issue_010",
+    "clientRole": "hh13",
+    "developerRole": "hh24",
+    "messages": [
+      {
+        "senderRole": "hh13",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh24",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh24",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh13",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh24",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh24",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh13",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh24",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh24",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh13",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh13",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh24",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh24",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 11,
+    "issueKey": "issue_011",
+    "clientRole": "hh14",
+    "developerRole": "hh25",
+    "messages": [
+      {
+        "senderRole": "hh14",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh25",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh25",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh14",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh25",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh25",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh14",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh25",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh25",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh14",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh14",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh25",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh25",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 12,
+    "issueKey": "issue_012",
+    "clientRole": "hh15",
+    "developerRole": "hh26",
+    "messages": [
+      {
+        "senderRole": "hh15",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh26",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh26",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh26",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh26",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh26",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh26",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh26",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh26",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 13,
+    "issueKey": "issue_013",
+    "clientRole": "hh16",
+    "developerRole": "hh27",
+    "messages": [
+      {
+        "senderRole": "hh16",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh27",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh27",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh16",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh27",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh27",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh16",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh27",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh27",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh16",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh16",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh27",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh27",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 14,
+    "issueKey": "issue_014",
+    "clientRole": "hh17",
+    "developerRole": "hh28",
+    "messages": [
+      {
+        "senderRole": "hh17",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh28",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh28",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh28",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh28",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh28",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh28",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh28",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh28",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 15,
+    "issueKey": "issue_015",
+    "clientRole": "hh18",
+    "developerRole": "hh29",
+    "messages": [
+      {
+        "senderRole": "hh18",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh29",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh29",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh18",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh29",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh29",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh18",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh29",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh29",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh18",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh18",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh29",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh29",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 16,
+    "issueKey": "issue_016",
+    "clientRole": "hh19",
+    "developerRole": "hh30",
+    "messages": [
+      {
+        "senderRole": "hh19",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh30",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh30",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh19",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh30",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh30",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh19",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh30",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh30",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh19",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh19",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh30",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh30",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 17,
+    "issueKey": "issue_017",
+    "clientRole": "hh20",
+    "developerRole": "hh31",
+    "messages": [
+      {
+        "senderRole": "hh20",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh31",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh31",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh20",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh31",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh31",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh20",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh31",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh31",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh20",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh20",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh31",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh31",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 18,
+    "issueKey": "issue_018",
+    "clientRole": "hh21",
+    "developerRole": "hh32",
+    "messages": [
+      {
+        "senderRole": "hh21",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh32",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh32",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh21",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh32",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh32",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh21",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh32",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh32",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh21",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh21",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh32",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh32",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 19,
+    "issueKey": "issue_019",
+    "clientRole": "hh22",
+    "developerRole": "hh33",
+    "messages": [
+      {
+        "senderRole": "hh22",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh33",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh33",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh22",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh33",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh33",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh22",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh33",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh33",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh22",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh22",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh33",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh33",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 20,
+    "issueKey": "issue_020",
+    "clientRole": "hh23",
+    "developerRole": "hh34",
+    "messages": [
+      {
+        "senderRole": "hh23",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh34",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh34",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh23",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh34",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh34",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh23",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh34",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh34",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh23",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh23",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh34",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh34",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 21,
+    "issueKey": "issue_021",
+    "clientRole": "hh24",
+    "developerRole": "hh35",
+    "messages": [
+      {
+        "senderRole": "hh24",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh35",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh35",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh24",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh35",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh35",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh24",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh35",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh35",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh24",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh24",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh35",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh35",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 22,
+    "issueKey": "issue_022",
+    "clientRole": "hh25",
+    "developerRole": "hh36",
+    "messages": [
+      {
+        "senderRole": "hh25",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh36",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh36",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh25",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh36",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh36",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh25",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh36",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh36",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh25",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh25",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh36",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh36",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 23,
+    "issueKey": "issue_023",
+    "clientRole": "hh26",
+    "developerRole": "hh37",
+    "messages": [
+      {
+        "senderRole": "hh26",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh37",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh37",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh26",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh37",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh37",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh26",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh37",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh37",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh26",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh26",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh37",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh37",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 24,
+    "issueKey": "issue_024",
+    "clientRole": "hh27",
+    "developerRole": "hh38",
+    "messages": [
+      {
+        "senderRole": "hh27",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh38",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh38",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh27",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh38",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh38",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh27",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh38",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh38",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh27",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh27",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh38",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh38",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 25,
+    "issueKey": "issue_025",
+    "clientRole": "hh28",
+    "developerRole": "hh39",
+    "messages": [
+      {
+        "senderRole": "hh28",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh39",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh39",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh28",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh39",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh39",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh28",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh39",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh39",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh28",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh28",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh39",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh39",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 26,
+    "issueKey": "issue_026",
+    "clientRole": "hh29",
+    "developerRole": "hh40",
+    "messages": [
+      {
+        "senderRole": "hh29",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh40",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh40",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh29",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh40",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh40",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh29",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh40",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh40",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh29",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh29",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh40",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh40",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 27,
+    "issueKey": "issue_027",
+    "clientRole": "hh30",
+    "developerRole": "hh41",
+    "messages": [
+      {
+        "senderRole": "hh30",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh41",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh41",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh30",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh41",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh41",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh30",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh41",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh41",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh30",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh30",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh41",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh41",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 28,
+    "issueKey": "issue_028",
+    "clientRole": "hh31",
+    "developerRole": "hh42",
+    "messages": [
+      {
+        "senderRole": "hh31",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh42",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh42",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh31",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh42",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh42",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh31",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh42",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh42",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh31",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh31",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh42",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh42",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 29,
+    "issueKey": "issue_029",
+    "clientRole": "hh32",
+    "developerRole": "hh43",
+    "messages": [
+      {
+        "senderRole": "hh32",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh43",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh43",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh32",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh43",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh43",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh32",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh43",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh43",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh32",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh32",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh43",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh43",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 30,
+    "issueKey": "issue_030",
+    "clientRole": "hh33",
+    "developerRole": "hh44",
+    "messages": [
+      {
+        "senderRole": "hh33",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh44",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh44",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh33",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh44",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh44",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh33",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh44",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh44",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh33",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh33",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh44",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh44",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 31,
+    "issueKey": "issue_031",
+    "clientRole": "hh34",
+    "developerRole": "hh45",
+    "messages": [
+      {
+        "senderRole": "hh34",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh45",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh45",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh34",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh45",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh45",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh34",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh45",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh45",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh34",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh34",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh45",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh45",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 32,
+    "issueKey": "issue_032",
+    "clientRole": "hh35",
+    "developerRole": "hh46",
+    "messages": [
+      {
+        "senderRole": "hh35",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh46",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh46",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh35",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh46",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh46",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh35",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh46",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh46",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh35",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh35",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh46",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh46",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 33,
+    "issueKey": "issue_033",
+    "clientRole": "hh36",
+    "developerRole": "hh47",
+    "messages": [
+      {
+        "senderRole": "hh36",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh47",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh47",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh36",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh47",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh47",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh36",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh47",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh47",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh36",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh36",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh47",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh47",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 34,
+    "issueKey": "issue_034",
+    "clientRole": "hh37",
+    "developerRole": "hh48",
+    "messages": [
+      {
+        "senderRole": "hh37",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh48",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh48",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh37",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh48",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh48",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh37",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh48",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh48",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh37",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh37",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh48",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh48",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 35,
+    "issueKey": "issue_035",
+    "clientRole": "hh38",
+    "developerRole": "hh04",
+    "messages": [
+      {
+        "senderRole": "hh38",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh04",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh04",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh38",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh04",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh04",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh38",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh04",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh04",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh38",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh38",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh04",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh04",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 36,
+    "issueKey": "issue_036",
+    "clientRole": "hh39",
+    "developerRole": "hh05",
+    "messages": [
+      {
+        "senderRole": "hh39",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh05",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh05",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh39",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh05",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh05",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh39",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh05",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh05",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh39",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh39",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh05",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh05",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 37,
+    "issueKey": "issue_037",
+    "clientRole": "hh40",
+    "developerRole": "hh06",
+    "messages": [
+      {
+        "senderRole": "hh40",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh06",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh06",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh40",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh06",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh06",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh40",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh06",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh06",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh40",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh40",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh06",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh06",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 38,
+    "issueKey": "issue_038",
+    "clientRole": "hh41",
+    "developerRole": "hh07",
+    "messages": [
+      {
+        "senderRole": "hh41",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh07",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh07",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh41",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh07",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh07",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh41",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh07",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh07",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh41",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh41",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh07",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh07",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 39,
+    "issueKey": "issue_039",
+    "clientRole": "hh42",
+    "developerRole": "hh08",
+    "messages": [
+      {
+        "senderRole": "hh42",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh08",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh08",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh42",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh08",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh08",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh42",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh08",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh08",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh42",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh42",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh08",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh08",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 40,
+    "issueKey": "issue_040",
+    "clientRole": "hh43",
+    "developerRole": "hh09",
+    "messages": [
+      {
+        "senderRole": "hh43",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh09",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh09",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh43",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh09",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh09",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh43",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh09",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh09",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh43",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh43",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh09",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh09",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 41,
+    "issueKey": "issue_041",
+    "clientRole": "hh44",
+    "developerRole": "hh10",
+    "messages": [
+      {
+        "senderRole": "hh44",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh10",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh10",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh44",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh10",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh10",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh44",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh10",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh10",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh44",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh44",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh10",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh10",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 42,
+    "issueKey": "issue_042",
+    "clientRole": "hh45",
+    "developerRole": "hh11",
+    "messages": [
+      {
+        "senderRole": "hh45",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh11",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh11",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh45",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh11",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh11",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh45",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh11",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh11",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh45",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh45",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh11",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh11",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 43,
+    "issueKey": "issue_043",
+    "clientRole": "hh46",
+    "developerRole": "hh12",
+    "messages": [
+      {
+        "senderRole": "hh46",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh12",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh12",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh46",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh12",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh12",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh46",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh12",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh12",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh46",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh46",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh12",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh12",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 44,
+    "issueKey": "issue_044",
+    "clientRole": "hh47",
+    "developerRole": "hh13",
+    "messages": [
+      {
+        "senderRole": "hh47",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh13",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh13",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh47",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh13",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh13",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh47",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh13",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh13",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh47",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh47",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh13",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh13",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 45,
+    "issueKey": "issue_045",
+    "clientRole": "hh48",
+    "developerRole": "hh14",
+    "messages": [
+      {
+        "senderRole": "hh48",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh14",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh14",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh48",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh14",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh14",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh48",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh14",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh14",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh48",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh48",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh14",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh14",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 46,
+    "issueKey": "issue_046",
+    "clientRole": "hh04",
+    "developerRole": "hh15",
+    "messages": [
+      {
+        "senderRole": "hh04",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh04",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh04",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh04",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh04",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh15",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 47,
+    "issueKey": "issue_047",
+    "clientRole": "hh05",
+    "developerRole": "hh16",
+    "messages": [
+      {
+        "senderRole": "hh05",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh16",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh16",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh05",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh16",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh16",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh05",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh16",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh16",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh05",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh05",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh16",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh16",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 48,
+    "issueKey": "issue_048",
+    "clientRole": "hh06",
+    "developerRole": "hh17",
+    "messages": [
+      {
+        "senderRole": "hh06",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh06",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh06",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh06",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh06",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh17",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 49,
+    "issueKey": "issue_049",
+    "clientRole": "hh07",
+    "developerRole": "hh18",
+    "messages": [
+      {
+        "senderRole": "hh07",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh18",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh18",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh07",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh18",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh18",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh07",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh18",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh18",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh07",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh07",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh18",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh18",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  },
+  {
+    "roomIndex": 50,
+    "issueKey": "issue_050",
+    "clientRole": "hh08",
+    "developerRole": "hh19",
+    "messages": [
+      {
+        "senderRole": "hh08",
+        "text": "Chào bạn, mình đã duyệt đơn và ký quỹ tiền thưởng on-chain thành công."
+      },
+      {
+        "senderRole": "hh19",
+        "text": "Cảm ơn bạn! Mình đã nhận được thông báo ký quỹ và bắt đầu clone repo về máy."
+      },
+      {
+        "senderRole": "hh19",
+        "text": "Mình đã tái hiện được vấn đề và chuẩn bị viết unit test kiểm chứng."
+      },
+      {
+        "senderRole": "hh08",
+        "text": "Tuyệt vời, nhớ chú ý kiểm tra cả trường hợp concurrency và edge case nhé."
+      },
+      {
+        "senderRole": "hh19",
+        "text": "Đã thêm các test case cần thiết và chạy pass 100% trên môi trường local."
+      },
+      {
+        "senderRole": "hh19",
+        "text": "Mình gửi kèm file log kết quả benchmark và test run nhé.",
+        "hasFile": true
+      },
+      {
+        "senderRole": "hh08",
+        "text": "Log chi tiết lắm, bạn có thể tạo submission draft và nộp lên hệ thống được rồi."
+      },
+      {
+        "senderRole": "hh19",
+        "text": "Đã tạo draft submission và chuẩn bị gọi prepareSubmitWork on-chain."
+      },
+      {
+        "senderRole": "hh19",
+        "text": "Đã gửi giao dịch delivery on-chain thành công, nhờ bạn review nghiệm thu nhé!"
+      },
+      {
+        "senderRole": "hh08",
+        "text": "Mình đang pull code về kiểm tra lần cuối. Kết quả rất tốt và đúng hạn!"
+      },
+      {
+        "senderRole": "hh08",
+        "text": "Code clean, format chuẩn theo eslint và prettier của dự án.",
+        "isEdited": true
+      },
+      {
+        "senderRole": "hh19",
+        "text": "Tin nhắn này gửi nhầm.",
+        "isDeleted": true
+      },
+      {
+        "senderRole": "hh19",
+        "text": "Cảm ơn bạn đã review nhanh và hỗ trợ nhiệt tình!"
+      }
+    ]
+  }
+]

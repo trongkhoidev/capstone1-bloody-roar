@@ -4,14 +4,15 @@
 
 | Thông tin | Nội dung |
 | --- | --- |
-| Học phần | Capstone Project 1 — CMU-SE 450 |
-| Nhóm | C1SE.42 |
+| Tên đề tài | Bloody-Roar – Nền tảng bounty phi tập trung có escrow on-chain |
+| Học phần | Capstone Project 1 — CMU-SE 450 (phiếu đăng ký ghi CMU-SE 451; cần xác nhận, xem [PROJECT_SPRINT_PLAN.md](PROJECT_SPRINT_PLAN.md) mục 7) |
+| Nhóm | C1SE.42 (tài liệu khác ghi C1SE.25; cần xác nhận) |
 | Đơn vị | International School, Duy Tan University |
-| Thành viên | Kiên, Khôi, Hiếu, Hân, Trâm |
-| Giảng viên hướng dẫn | [CẦN BỔ SUNG] |
-| Thời gian thực hiện | 10 tuần, ngày bắt đầu và kết thúc [CẦN BỔ SUNG] |
+| Thành viên | Năm người, xem mục "Thông tin nhóm" bên dưới |
+| Giảng viên hướng dẫn | Le Kim Hoang, xem mục "Thông tin nhóm" bên dưới |
+| Thời gian thực hiện | 10 tuần; 18/08/2026 – 30/10/2026 theo phiếu đăng ký. Lịch hiện hành: mục 11.1 |
 | Phiên bản | 2.0 |
-| Ngày cập nhật | 19/09/2026 |
+| Ngày cập nhật | 19/09/2026 (bổ sung theo mẫu CMU-SE 450: 05/11/2026) |
 | MVP chain | Base Sepolia |
 | Settlement token | Một ERC-20 tương thích USDC, chính xác 6 decimals |
 | Contract address | Chưa deployment; tài liệu không công bố địa chỉ |
@@ -19,6 +20,40 @@
 > **Trạng thái tài liệu.** Đây là đề xuất sản phẩm độc lập bằng tiếng Việt; các phần mô tả architecture và contract flow tuân theo `Bloody_Roar_Proposal_Revised.docx`. Các nhận định về phần mềm đã có trên upstream được đối chiếu với nhánh `main` tại commit [`33aed2e1028d9fd89bb6d62b47a3df65ea1cb328`](https://github.com/trongkhoidev/capstone1-bloody-roar/commit/33aed2e1028d9fd89bb6d62b47a3df65ea1cb328). Solidity Escrow và deployment tooling của revision được triển khai và test ở local branch riêng; chúng chưa có trên upstream và chưa được deployment lên Base Sepolia. Backend integration, database Projection, Indexer, cloud deployment, monitoring và public-chain deployment được mô tả như **Target — not implemented** trừ khi có bằng chứng repository riêng.
 
 > **Quy ước thuật ngữ.** Các domain và engineering terms giữ nguyên bằng tiếng Anh, gồm `Client`, `Developer`, `Issue`, `Application`, `Funding Reservation`, `Escrow`, `Transaction Intent`, `Chain Event`, `Projection`, `Submission`, `Settlement`, `Dispute`, `Ruling`, `state machine`, `invariant`, `frontend`, `backend`, `Indexer`, `deployment` và `multisig Safe`. Phần diễn giải còn lại dùng tiếng Việt tự nhiên.
+
+## Thông tin nhóm
+
+| Họ và tên | Vai trò chính | Phạm vi kỹ thuật |
+| --- | --- | --- |
+| Nguyễn Trọng Khôi | Scrum Master, Backend Lead & AI Engineer | Kiến trúc backend, worker/Indexer, hạ tầng, điều phối kỹ thuật |
+| Nguyễn Hữu Tâm Kiên | Smart Contract Engineer, hỗ trợ backend | Solidity, kiểm thử và bảo mật contract, Safe, tích hợp escrow |
+| Đỗ Văn Hiếu | Backend Engineer, hỗ trợ frontend | GraphQL, Prisma, xác thực, marketplace, tích hợp backend |
+| Đoàn Thị Ngọc Hân | UI/UX Designer & QA Engineer | UX/UI, kịch bản E2E, accessibility, kiểm thử nghiệm thu |
+| Nguyễn Thị Bảo Trâm | UI/UX Designer & Test Engineer | Component frontend, design token, kiểm thử giao diện |
+
+Mỗi người đảm nhận nhiều hơn một việc. Phân công chi tiết xem mục 12. MSSV và email của từng thành viên nằm trong phiếu đăng ký môn học. Tài liệu này không ghi chúng vì repository công khai.
+
+**Giảng viên hướng dẫn:** Le Kim Hoang, Faculty Mentor, International School, Duy Tan University. Khoa/Bộ môn: Information Technology. Email: lekimhoang@dtu.edu.vn (theo `Capstone_Proposal_Final.md`, mục 3). Cần xác nhận lại với giảng viên. Không có đồng hướng dẫn từ doanh nghiệp.
+
+## Đối chiếu với mẫu CMU-SE 450
+
+| Mục mẫu | Nằm ở đâu trong tài liệu này | Ghi chú |
+| --- | --- | --- |
+| 1. Tên đề tài | Bảng đầu trang | |
+| 2. Thành viên | Thông tin nhóm | MSSV và email không đưa vào repository công khai |
+| 3. Giảng viên hướng dẫn | Thông tin nhóm | |
+| 4. Vấn đề cần giải quyết | Mục 2, 3 | Chưa có số liệu khảo sát người dùng |
+| 5. Khảo sát giải pháp hiện có | Mục 4.5 | Còn thiếu cơ chế giữ tiền của Algora, OnlyDust và Superteam Earn |
+| 6. Mục tiêu và phạm vi | Mục 5, 6 | |
+| 7. Tính năng và yêu cầu | Mục 8 | Đánh số FR và NFR |
+| 8. Ràng buộc và giả định | Mục 13 | |
+| 9. Người dùng và bên liên quan | Mục 3 | |
+| 10. Công nghệ | Mục 9.7 | |
+| 11. Phương pháp và kế hoạch | Mục 11, 11.1 | |
+| 12. Kiến trúc hệ thống | Mục 9, Hình 1–2 | |
+| 13. Rủi ro và biện pháp | Mục 14 | |
+| 14. Sản phẩm bàn giao | Mục 6.1 | |
+| 15. Tài liệu tham khảo | Mục 17 | Theo kiểu IEEE |
 
 ## 1. Tóm tắt đề xuất
 
@@ -45,6 +80,8 @@ Trong giao dịch freelance, hai bên thường phải chấp nhận một trong
 - chi phí trung gian có thể không phù hợp với công việc giá trị nhỏ.
 
 Bloody-Roar không đặt mục tiêu loại bỏ mọi yếu tố tin cậy. Sản phẩm chuyển việc giữ và phân phối tiền sang smart contract, đồng thời công khai các rules về deadline, release, refund và `Ruling`. Những phần còn phụ thuộc vào con người, như đánh giá chất lượng sản phẩm hoặc review evidence, được mô tả rõ thay vì gắn nhãn “trustless”.
+
+**Vì sao nhóm chọn vấn đề này.** Bài toán có đối tượng cụ thể là freelancer và khách hàng phần mềm, có rủi ro tài chính rõ ràng, và nằm trong phạm vi Software Engineering và bảo mật ứng dụng mà nhóm đang học. Đề tài cũng cho cả nhóm đi qua toàn bộ chuỗi công việc, từ thiết kế, backend và smart contract đến kiểm thử.
 
 ## 3. Người dùng và nhu cầu
 
@@ -79,14 +116,17 @@ Socket.IO cung cấp chat theo room gắn với `Issue`. Tin nhắn được lư
 
 Khi một bên mở `Dispute`, các exit thông thường bị đóng băng. `Arbiter Safe` đăng initial `Ruling` gồm payout ratio và decision hash. Một challenge hợp lệ trong notice window yêu cầu final `Ruling`; nếu arbiter không hành động sau challenge, contract phải cung cấp permissionless timeout exit. AI, nếu được sử dụng, chỉ hỗ trợ tổng hợp và đề xuất; AI không ký transaction và không quyết định việc chuyển tiền.
 
-### 4.5 So sánh định hướng
+### 4.5 Khảo sát giải pháp hiện có
 
-| Nhóm giải pháp | Ưu điểm | Khoảng trống Bloody-Roar hướng tới |
+| Sản phẩm | Cách giải quyết theo tài liệu dự án | Khác biệt với Bloody-Roar |
 | --- | --- | --- |
-| Marketplace tập trung | Trải nghiệm quen thuộc, có hệ thống tìm việc và hỗ trợ | Quy tắc giữ tiền và phân xử phụ thuộc vào một nhà vận hành |
-| Thanh toán trực tiếp | Đơn giản, ít thành phần | Không bảo vệ đồng thời cả hai bên trước `Submission` |
-| Marketplace dùng blockchain | Dòng tiền có thể kiểm tra on-chain | Thường phức tạp với người dùng và vẫn cần quy trình xử lý chất lượng công việc |
-| Bloody-Roar | Kết hợp marketplace, chat và escrow do ví kiểm soát | Phải chứng minh trải nghiệm sử dụng, an toàn smart contract và tính khả thi của cơ chế phân xử |
+| Upwork, Fiverr, Freelancer (sàn tập trung) | Sàn giữ tiền như người trung gian và trả cho lập trình viên khi xong việc. Sàn là bên quyết định khi có tranh chấp. Tài liệu nội bộ ghi phí 10–20%, chưa có nguồn. | Luật giữ tiền nằm trong smart contract công khai, không phụ thuộc một bên. Tranh chấp xử lý theo quy tắc và thời hạn đã công bố, có `Arbiter Safe`. |
+| TalentLayer (giao thức cho marketplace dịch vụ) | Có sẵn reputation, review và hiệu ứng mạng cho các marketplace xây trên nó. Tài liệu đánh giá giao thức này là "opinionated": phải xây trên giao thức của họ và mất quyền kiểm soát (`RESEARCH.md` mục 3.2). | Bloody-Roar tự thiết kế contract. TalentLayer chỉ được xem xét cho v2 nếu cần hiệu ứng mạng. |
+| Gitcoin Passport (chống tài khoản giả, không phải sàn) | Xác minh danh tính qua nhiều "stamp" và chấm điểm để chống Sybil (`RESEARCH.md` mục 4.2). | Bloody-Roar dùng GitHub OAuth ở MVP. Gitcoin Passport là kế hoạch v2 (`RESEARCH.md` mục 4.3). |
+| Algora, OnlyDust (bounty gắn repo GitHub) | Tài liệu dự án không mô tả cơ chế giữ và trả tiền. Chỉ có mẫu giao diện: bounty gắn repo GitHub, hiển thị trạng thái PR ngay trong phòng làm việc (`plan/UI_REDESIGN_SPEC.md` mục 1.2). | Chưa đối chiếu được. Cần khảo sát cơ chế tiền trước khi nộp. |
+| Superteam Earn (danh sách bounty) | Tài liệu dự án chỉ có mẫu giao diện: danh sách bounty hiển thị tiền, hạn, số ứng viên và kỹ năng (`plan/UI_REDESIGN_SPEC.md` mục 1.2). | Chưa đối chiếu được cơ chế tiền. Cần khảo sát trước khi nộp. |
+
+Nguồn là các tài liệu trong repository, liệt kê ở mục 17 [9]–[11]. Tài liệu dự án chưa mô tả cách Algora, OnlyDust và Superteam Earn giữ và trả tiền. Đây là khoảng trống cần lấp trước khi nộp.
 
 So sánh này nêu vị trí sản phẩm, không khẳng định ưu thế định lượng khi chưa có nghiên cứu người dùng hoặc dữ liệu vận hành.
 
@@ -121,7 +161,17 @@ So sánh này nêu vị trí sản phẩm, không khẳng định ưu thế đ�
 | Cung cấp trao đổi theo công việc | Chỉ thành viên hợp lệ truy cập phòng chat; tin nhắn được lưu và tải lại |
 | Tạo bản MVP có thể đánh giá | Có hướng dẫn thiết lập, môi trường demo, báo cáo test và danh sách giới hạn còn lại |
 
-Sản phẩm bàn giao dự kiến gồm mã nguồn monorepo, giao diện web, GraphQL API, Socket.IO service, schema và migration PostgreSQL, smart contract cùng bộ test, script deployment có kiểm soát, tài liệu API/thiết lập và báo cáo kiểm thử. Địa chỉ contract hoặc URL production chỉ được công bố khi có bằng chứng triển khai tương ứng.
+### 6.1 Sản phẩm bàn giao
+
+- **Ứng dụng:** giao diện web, GraphQL API và Socket.IO service, chạy được trên môi trường demo.
+- **Source code:** monorepo gồm schema và migration PostgreSQL, smart contract cùng bộ test, script deployment có kiểm soát.
+- **Tài liệu kỹ thuật:** tài liệu API và thiết lập, báo cáo kiểm thử, tài liệu kiến trúc (mục 9).
+- **Video demo:** chưa có trong kế hoạch v2.0. Cần quyết định trước khi nộp.
+- **Báo cáo cuối kỳ:** nêu rõ phần đã làm, phần chưa làm và bằng chứng tương ứng (mục 15).
+
+Địa chỉ contract hoặc URL production chỉ được công bố khi có bằng chứng triển khai tương ứng.
+
+**Tiến độ đo được ngày 04/11/2026:** bộ test contract đạt 35 test (chạy trên `main`, ghi trong [TEAM_EVIDENCE.md](management/TEAM_EVIDENCE.md)). Kịch bản E2E S1–S10 báo cáo đạt ngày 03/11 và chưa được chạy lại ([báo cáo](plan/ROLE_FLOW_E2E_2026-11-03.md)).
 
 ## 7. Numbered lifecycle use cases
 
@@ -194,15 +244,15 @@ Một participant có thể gọi `proposeSettlement` với Client payout ratio 
 
 ### 8.2 Yêu cầu phi chức năng
 
-- **An toàn:** áp dụng kiểm soát truy cập, checks-effects-interactions, chống reentrancy và chuyển token an toàn; không ghi log secret.
-- **Nhất quán:** PostgreSQL là query `Projection`; blockchain là authority cho funds và `Escrow` lifecycle.
-- **Numeric safety:** token values, ratios và deadlines dùng integer hoặc decimal string; không dùng JavaScript floating-point.
-- **Khả năng kiểm thử:** unit test, integration test, fuzz/invariant test và E2E test bao phủ các flow chính và failure case.
-- **Khả năng truy cập:** các luồng cốt lõi dùng được bằng bàn phím, có nhãn và trạng thái lỗi rõ ràng.
-- **Khả năng vận hành:** có health check, structured log, environment configuration và reproducible deployment process.
-- **Hiệu năng:** danh sách `Issue` dùng pagination; thao tác mạng chậm có pending state, bounded retry và thông báo dễ hiểu.
-- **Riêng tư:** file và bằng chứng không công khai mặc định; chỉ lưu tối thiểu dữ liệu cần thiết on-chain.
-- **Realtime safety:** Socket.IO chỉ phát `{ escrowId, projectionVersion }` để invalidate cache; Client phải refetch canonical GraphQL state. Mất socket message chỉ ảnh hưởng freshness, không ảnh hưởng funds hoặc lifecycle correctness.
+- **NFR-01 — An toàn:** áp dụng kiểm soát truy cập, checks-effects-interactions, chống reentrancy và chuyển token an toàn; không ghi log secret.
+- **NFR-02 — Nhất quán:** PostgreSQL là query `Projection`; blockchain là authority cho funds và `Escrow` lifecycle.
+- **NFR-03 — Numeric safety:** token values, ratios và deadlines dùng integer hoặc decimal string; không dùng JavaScript floating-point.
+- **NFR-04 — Khả năng kiểm thử:** unit test, integration test, fuzz/invariant test và E2E test bao phủ các flow chính và failure case.
+- **NFR-05 — Khả năng truy cập:** các luồng cốt lõi dùng được bằng bàn phím, có nhãn và trạng thái lỗi rõ ràng.
+- **NFR-06 — Khả năng vận hành:** có health check, structured log, environment configuration và reproducible deployment process.
+- **NFR-07 — Hiệu năng:** danh sách `Issue` dùng pagination; thao tác mạng chậm có pending state, bounded retry và thông báo dễ hiểu.
+- **NFR-08 — Riêng tư:** file và bằng chứng không công khai mặc định; chỉ lưu tối thiểu dữ liệu cần thiết on-chain.
+- **NFR-09 — Realtime safety:** Socket.IO chỉ phát `{ escrowId, projectionVersion }` để invalidate cache; Client phải refetch canonical GraphQL state. Mất socket message chỉ ảnh hưởng freshness, không ảnh hưởng funds hoặc lifecycle correctness.
 
 ## 9. Trạng thái hiện tại và kiến trúc mục tiêu
 
@@ -302,6 +352,24 @@ Target topology gồm một single-replica Railway web service cho Next.js, Grap
 
 *Figure 11. Contract deployment, verification, and Safe role handover.*
 
+### 9.7 Công nghệ đang dùng và mục tiêu
+
+Cột "Đang có" phản ánh khai báo trong `package.json` trên `main`. Đó không phải bằng chứng ứng dụng đã chạy đúng.
+
+| Lớp | Đang có trên `main` | Mục tiêu theo kế hoạch backend |
+| --- | --- | --- |
+| Frontend | Next.js 14 (App Router), React 18, Radix UI, TanStack Query, Zustand, React Hook Form với Zod, Vitest, Testing Library, Playwright | Nối vào API đã đóng băng ở M2 |
+| API | GraphQL Yoga, Pothos với plugin Prisma, server tùy chỉnh `apps/web/server.ts` | Module escrow, `PreparedCall`, `TransactionIntent` (M1–M4) |
+| Realtime | Socket.IO (server và client) | Chỉ phát `{ escrowId, projectionVersion }` để làm mới cache |
+| Dữ liệu | PostgreSQL, Prisma (`packages/database`), `pg` trong worker | ChainEvent, ProjectionCheckpoint, EscrowProjection (migration M1) |
+| Smart contract | Hardhat, OpenZeppelin Contracts, ethers với typechain, hardhat-verify, solidity-coverage | Deploy Base Sepolia có guard và verify (M1); Safe 2-of-3 (QĐ-07) |
+| Backend on-chain | viem trong `packages/shared` | viem cho backend (QĐ-09). Thirdweb và ethers chỉ ở phía ví frontend |
+| Đăng nhập và ví | Thirdweb Auth, Thirdweb SDK và wallets | Xác minh chữ ký ví, tạo session, bảo vệ resolver (FR-01) |
+| Lưu trữ file | `@aws-sdk/client-s3`, presigned URL | Supabase Storage, bucket riêng tư, dùng S3-compatible API (QĐ-28) |
+| Worker | `apps/worker` với pg và Pino, đang xây dựng | Indexer, scheduler, reconciler (M2–M4) |
+| Công cụ | Bun workspaces, TypeScript 5.5, ESLint, Prettier, Pino | Health check và structured log (mục 9.6) |
+| Hạ tầng | Có `Dockerfile` và `railway.json`. Chưa xác minh deploy | Railway cho web và worker, Supabase, Alchemy RPC Base Sepolia (M5) |
+
 ## 10. Thuật ngữ sử dụng
 
 | Thuật ngữ | Nghĩa trong dự án |
@@ -335,6 +403,20 @@ Nhóm áp dụng Scrum theo sprint hai tuần. Product Backlog là nguồn theo 
 
 Mỗi sprint gồm lập kế hoạch, cập nhật hằng ngày, review và retrospective. Pull request cần mô tả phạm vi, bằng chứng test và giới hạn còn lại; thay đổi liên quan đến tiền phải có review chéo.
 
+### 11.1 Lịch theo tuần (hiện hành)
+
+Bảng sprint ở trên là kế hoạch ban đầu, từ 18/08 đến 30/10/2026. Từ cuối tháng 9, nhóm tái lập lịch theo mốc M0–M6 trong [`BACKEND_EXECUTION_PLAN.md`](plan/BACKEND_EXECUTION_PLAN.md). Bảng dưới đây là lịch hiện hành.
+
+| Tuần | Mốc | Thời gian | Người phụ trách chính | Tiêu chí hoàn thành |
+| --- | --- | --- | --- | --- |
+| 1 | M0. Nền móng và dọn nợ | 28/09 – 04/10 | Khôi, Kiên, Hiếu, Hân | CI xanh, proposal đã sửa, Safe đã tạo, admin đăng nhập được |
+| 2 | M1. Data model, deploy contract, plumbing | 05/10 – 11/10 | Hiếu, Khôi, Kiên, Hân | Contract có địa chỉ đã verify, migration chạy sạch từ đầu |
+| 3 | M2. Indexer và luồng fund | 12/10 – 18/10 | Khôi, Hiếu, Kiên, Hân | E2E từ đăng bài đến `IN_PROGRESS` trên chain local, đóng băng GraphQL SDL v1 |
+| 4 | M3. Giao hàng, release, timeout, claim, settlement | 19/10 – 25/10 | Hiếu, Khôi, Hân | E2E cho release, refund, review timeout và settlement |
+| 5 | M4. Dispute, ruling, Safe | 26/10 – 01/11 | Hiếu, Kiên, Khôi, Hân | E2E cho ruling và arbiter timeout, diễn tập Safe ký thật |
+| 6 | M5. Vận hành, deploy, nghiệm thu backend | 02/11 – 08/11 | Khôi, Hân, Trâm, Kiên, Hiếu | Checklist Definition of Done (mục 1 của kế hoạch backend) |
+| 7 | M6. AI v1 (có thể cắt) | 09/11 – 15/11 | Chưa ghi trong kế hoạch | Theo [`AI_STRATEGY_V1_V2.md`](plan/AI_STRATEGY_V1_V2.md) mục 4 |
+
 ## 12. Phân công trách nhiệm
 
 | Thành viên | Trách nhiệm chính dự kiến |
@@ -347,14 +429,21 @@ Mỗi sprint gồm lập kế hoạch, cập nhật hằng ngày, review và ret
 
 Phân công có thể thay đổi theo năng lực và tiến độ; quyền sở hữu một hạng mục không thay thế yêu cầu review và tiêu chí chấp nhận.
 
-## 13. Nguồn lực, giả định và ràng buộc
+## 13. Ràng buộc và giả định
 
-- Nhóm có năm thành viên và thời gian học phần 10 tuần.
-- Base Sepolia được dùng làm môi trường blockchain thử nghiệm; chưa có quyết định triển khai mainnet.
+### 13.1 Ràng buộc
+
+- Nhóm có năm thành viên, làm việc bán thời gian trong 10 tuần học phần.
+- Base Sepolia là môi trường blockchain thử nghiệm. Chưa có quyết định triển khai mainnet.
 - Dự án ưu tiên công cụ mã nguồn mở và gói miễn phí, nhưng không cam kết chi phí bằng 0.
 - Phí RPC, lưu trữ, database, hosting, tên miền và dịch vụ AI cần được xác nhận trước deployment.
 - Token thử nghiệm, địa chỉ contract, multisig Safe và thông tin người hướng dẫn chỉ được ghi khi có nguồn xác thực.
-- Tiến độ phụ thuộc vào khả năng truy cập ví thử nghiệm, RPC, dịch vụ lưu trữ và môi trường database.
+
+### 13.2 Giả định
+
+- Người dùng có ví tương thích EVM (MetaMask hoặc WalletConnect) và biết ký giao dịch.
+- Base Sepolia, RPC và faucet đủ khả dụng trong thời gian phát triển và demo.
+- Tiến độ phụ thuộc vào khả năng truy cập ví thử nghiệm, RPC, dịch vụ lưu trữ và môi trường database. Nếu một dịch vụ gián đoạn, mục 14 nêu biện pháp ứng phó.
 
 ## 14. Rủi ro và biện pháp giảm thiểu
 
@@ -394,11 +483,24 @@ Phạm vi MVP đủ để chứng minh ý tưởng nếu nhóm ưu tiên core fl
 
 ## 17. Tài liệu tham khảo
 
-1. [Repository Bloody-Roar tại mốc audit](https://github.com/trongkhoidev/capstone1-bloody-roar/tree/33aed2e1028d9fd89bb6d62b47a3df65ea1cb328)
-2. [OpenZeppelin Contracts v5](https://docs.openzeppelin.com/contracts/5.x/)
-3. [Solidity documentation](https://docs.soliditylang.org/)
-4. [Base Sepolia network information](https://docs.base.org/network-information/)
-5. [GraphQL specification](https://spec.graphql.org/)
-6. [Socket.IO documentation](https://socket.io/docs/v4/)
-7. [Prisma documentation](https://www.prisma.io/docs)
-8. [OWASP Application Security Verification Standard](https://owasp.org/www-project-application-security-verification-standard/)
+[1] Bloody-Roar, "Repository tại mốc audit (commit 33aed2e)," GitHub. [Online]. Available: https://github.com/trongkhoidev/capstone1-bloody-roar/tree/33aed2e1028d9fd89bb6d62b47a3df65ea1cb328
+
+[2] OpenZeppelin, "OpenZeppelin Contracts 5.x documentation." [Online]. Available: https://docs.openzeppelin.com/contracts/5.x/
+
+[3] Solidity, "Solidity documentation." [Online]. Available: https://docs.soliditylang.org/
+
+[4] Base, "Base Sepolia network information." [Online]. Available: https://docs.base.org/network-information/
+
+[5] GraphQL Foundation, "GraphQL specification." [Online]. Available: https://spec.graphql.org/
+
+[6] Socket.IO, "Socket.IO documentation, v4." [Online]. Available: https://socket.io/docs/v4/
+
+[7] Prisma, "Prisma documentation." [Online]. Available: https://www.prisma.io/docs
+
+[8] OWASP, "Application Security Verification Standard." [Online]. Available: https://owasp.org/www-project-application-security-verification-standard/
+
+[9] Bloody-Roar, "Tài liệu nghiên cứu công nghệ (RESEARCH)." docs/RESEARCH.md, trong repository.
+
+[10] Bloody-Roar, "Tài liệu mô tả dự án." docs/documentation_bloody-roar.md, trong repository.
+
+[11] Bloody-Roar, "Đặc tả thiết kế lại giao diện (UI redesign spec)." docs/plan/UI_REDESIGN_SPEC.md, trong repository.

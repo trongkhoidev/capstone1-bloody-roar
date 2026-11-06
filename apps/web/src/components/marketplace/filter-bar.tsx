@@ -6,6 +6,7 @@
 import React, { useState } from "react";
 import { Search, Filter as FilterIcon, ChevronDown, ChevronUp } from "lucide-react";
 import { useUiPreferences } from "@/lib/ui-preferences";
+import { ISSUE_STATUS } from "@/lib/issue-status";
 
 export type SortOption = "NEWEST" | "HIGHEST_BOUNTY" | "MOST_VIEWED" | "DEADLINE";
 
@@ -39,9 +40,7 @@ const CATEGORIES = [
 
 const STATUSES = [
   { id: "", label: "Any status" },
-  { id: "OPEN", label: "Open" },
-  { id: "IN_PROGRESS", label: "In progress" },
-  { id: "COMPLETED", label: "Completed" },
+  ...(["OPEN", "AWAITING_FUNDING", "IN_PROGRESS", "COMPLETED", "DISPUTED"] as const).map((id) => ({ id, label: ISSUE_STATUS[id].label })),
 ];
 
 export function MarketplaceFilterBar({

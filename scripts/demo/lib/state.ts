@@ -15,8 +15,13 @@ export interface DemoState {
 }
 
 export const STATE_PATH = path.resolve(process.cwd(), "demo-wallets/state.json");
+export const STATE_HARDHAT_PATH = path.resolve(process.cwd(), "demo-wallets/state-hardhat.json");
 
-export function loadState(statePath: string = STATE_PATH): DemoState {
+export function getDefaultStatePath(): string {
+  return process.env.DEMO_ACCOUNTS === "hardhat" ? STATE_HARDHAT_PATH : STATE_PATH;
+}
+
+export function loadState(statePath: string = getDefaultStatePath()): DemoState {
   if (fs.existsSync(statePath)) {
     try {
       const raw = fs.readFileSync(statePath, "utf-8");
@@ -39,7 +44,7 @@ export function loadState(statePath: string = STATE_PATH): DemoState {
   };
 }
 
-export function saveState(state: DemoState, statePath: string = STATE_PATH): void {
+export function saveState(state: DemoState, statePath: string = getDefaultStatePath()): void {
   const dir = path.dirname(statePath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true, mode: 0o700 });

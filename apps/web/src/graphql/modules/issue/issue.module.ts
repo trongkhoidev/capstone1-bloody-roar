@@ -97,7 +97,7 @@ export const ISSUE_INCLUDE = {
   client: true,
   developer: true,
   attachments: { where: { purpose: "ISSUE_IMAGE", status: "ATTACHED", fileMime: { startsWith: "image/" } } },
-  _count: { select: { applications: true } },
+  _count: { select: { applications: { where: { status: { not: "WITHDRAWN" } } } } },
 } satisfies Prisma.IssueInclude;
 
 /** Shape của 1 dòng Issue sau khi include relations */
@@ -166,8 +166,8 @@ export const IssueRef = builder.prismaObject("Issue", {
       resolve: (issue) => issue.developer,
     }),
     applicationCount: t.int({
-      description: "Number of applications",
-      select: { _count: { select: { applications: true } } },
+      description: "Number of active (non-withdrawn) applications",
+      select: { _count: { select: { applications: { where: { status: { not: "WITHDRAWN" } } } } } },
       resolve: (issue) => issue._count.applications,
     }),
     attachments: t.field({
@@ -384,6 +384,13 @@ builder.queryField("issues", (t) =>
     resolve: async (_root, args, ctx) => {
       const q = parseOrThrow(IssuesQuerySchema, args);
 
+      // Prisma's scalar-list `has` does not support case-insensitive matching.
+      const skillIds = q.skill ? await ctx.db.$queryRaw<Array<{ id: string }>>`
+        SELECT id FROM issues WHERE EXISTS (
+          SELECT 1 FROM unnest("requiredSkills") AS skill WHERE lower(skill) = lower(${q.skill})
+        )
+      ` : null;
+
       // Build where clause (homepage chỉ hiển thị task đã publish)
       const where: Prisma.IssueWhereInput = {
         isDraft: false,
@@ -398,7 +405,7 @@ builder.queryField("issues", (t) =>
               },
             }
           : {}),
-        ...(q.skill ? { requiredSkills: { has: q.skill } } : {}),
+        ...(skillIds ? { id: { in: skillIds.map((row) => row.id) } } : {}),
         ...(q.search
           ? {
               OR: [
@@ -430,7 +437,7 @@ builder.queryField("issues", (t) =>
       const cursorId = q.after ? decodeCursor(q.after) : null;
       if (cursorId) {
         const cursorIssue = await ctx.db.issue.findFirst({
-          where: { id: cursorId, ...where },
+          where: { AND: [where, { id: cursorId }] },
           select: { id: true },
         });
         if (!cursorIssue)
@@ -787,6 +794,8 @@ builder.mutationField("attachIssueFile", (t) => t.field({
           !attachment.fileMime.toLowerCase().startsWith("image/") || attachment.messageId || (attachment.issueId && attachment.issueId !== issueId))
         throw gqlError("Tệp đính kèm không hợp lệ", "INVALID_ATTACHMENT");
       if (attachment.issueId === issueId) return attachment;
+      if ((await tx.attachment.count({ where: { issueId, purpose: "ISSUE_IMAGE", status: "ATTACHED" } })) >= 4)
+        throw gqlError("Tối đa 4 ảnh cho mỗi bài toán", "TOO_MANY_ATTACHMENTS");
       const moved = await tx.attachment.updateMany({ where: { id: attachmentId, uploaderId: user.id, purpose: "ISSUE_IMAGE", status: "ATTACHED", issueId: null, messageId: null }, data: { issueId } });
       if (!moved.count) throw gqlError("Tệp vừa được gắn vào nơi khác", "INVALID_ATTACHMENT");
       return tx.attachment.findUniqueOrThrow({ where: { id: attachmentId } });

@@ -20,6 +20,7 @@ node_modules/
 
 # Next.js build output
 .next/
+.next-dev/
 out/
 apps/web/public/uploads/
 apps/web/.uploads/
@@ -87,3 +88,4 @@ docs/TESTING_GUIDE.md
 DOCKER_SETUP_GUIDE.md
 tanstack-react-query-5.51.21.tgz
 
+.env.bak

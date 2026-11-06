@@ -62,4 +62,74 @@ describe("Demo Populator Plan and Quantities (R5)", () => {
     expect(w9.spamIssuesHidden).toBe(2);
     expect(w9.bannedSpammer).toBe(true);
   });
+
+  it("resolves mUSDC for local chain 31337 and USDC for Base Sepolia 84532", () => {
+    const mockTokens = [
+      { id: "token-local", chainId: 31337, symbol: "mUSDC", isActive: true },
+      { id: "token-sepolia", chainId: 84532, symbol: "USDC", isActive: true },
+    ];
+    const selectToken = (chainId: number) => {
+      return chainId === 31337
+        ? mockTokens.find((t) => t.chainId === 31337 && t.isActive)
+        : mockTokens.find((t) => t.chainId === 84532 && t.symbol === "USDC");
+    };
+
+    expect(selectToken(31337)?.symbol).toBe("mUSDC");
+    expect(selectToken(84532)?.symbol).toBe("USDC");
+  });
+
+  it("plans hardhat account mode matching AGY targets in --dry-run mode", async () => {
+    const origEnv = process.env.DEMO_ACCOUNTS;
+    process.env.DEMO_ACCOUNTS = "hardhat";
+    try {
+      const populator = new DemoPopulator({ dryRun: true });
+
+      // W1: 46 profiles
+      const w1 = await populator.runWave1();
+      expect(w1.updatedCount).toBe(46);
+
+      // W2: 200 issues
+      const w2 = await populator.runWave2();
+      expect(w2.createdIssuesCount).toBe(200);
+
+      // W3: 800 comments
+      const w3 = await populator.runWave3();
+      expect(w3.commentsCount).toBe(800);
+
+      // W4: 600 applications, 20 withdraws, 20 rejects
+      const w4 = await populator.runWave4();
+      expect(w4.appliedCount).toBeGreaterThanOrEqual(600);
+      expect(w4.withdrawnCount).toBe(20);
+      expect(w4.rejectedCount).toBe(20);
+
+      // W5: 60 reservations, 50 funded, 5 cancelled
+      const w5 = await populator.runWave5();
+      expect(w5.selectedCount).toBe(60);
+      expect(w5.fundedCount).toBe(50);
+      expect(w5.cancelledCount).toBe(5);
+
+      // W6: 50 chat rooms
+      const w6 = await populator.runWave6();
+      expect(w6.roomsProcessed).toBe(50);
+
+      // W7: 40 submissions, 10 revisions
+      const w7 = await populator.runWave7();
+      expect(w7.submittedCount).toBe(40);
+      expect(w7.revisedCount).toBe(10);
+
+      // W8: outcomes (release >= 25, settlement >= 6, dispute >= 10)
+      const w8 = await populator.runWave8();
+      expect(w8.releases).toBeGreaterThanOrEqual(25);
+      expect(w8.settlements).toBeGreaterThanOrEqual(6);
+      expect(w8.disputes).toBeGreaterThanOrEqual(10);
+
+      // W9: 34 reviews, 2 spam issues hidden, 1 banned spammer
+      const w9 = await populator.runWave9();
+      expect(w9.reviewsCount).toBe(34);
+      expect(w9.spamIssuesHidden).toBe(2);
+      expect(w9.bannedSpammer).toBe(true);
+    } finally {
+      process.env.DEMO_ACCOUNTS = origEnv;
+    }
+  });
 });

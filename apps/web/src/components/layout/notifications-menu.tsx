@@ -7,11 +7,11 @@ import { graphqlRequest } from "@/lib/graphql-client";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { io } from "socket.io-client";
 
-const NOTIFICATIONS_QUERY = `query Notifications { unreadNotificationCount notifications(first: 20) { id type title body isRead link createdAt } }`;
+const NOTIFICATIONS_QUERY = `query Notifications { unreadNotificationCount unreadNotificationIds notifications(first: 20) { id type title body isRead link createdAt } }`;
 const MARK_READ = `mutation MarkNotificationRead($id: ID!) { markNotificationRead(id: $id) { id isRead } }`;
-const MARK_ALL_READ = `mutation MarkAllNotificationsRead { markAllNotificationsRead }`;
+const MARK_ALL_READ = `mutation MarkAllNotificationsRead($ids: [String!]!) { markAllNotificationsRead(ids: $ids) }`;
 type Notification = { id: string; type: string; title: string; body: string; isRead: boolean; link?: string | null; createdAt: string };
-type NotificationData = { unreadNotificationCount: number; notifications: Notification[] };
+type NotificationData = { unreadNotificationCount: number; unreadNotificationIds: string[]; notifications: Notification[] };
 
 export function NotificationsMenu() {
   const user = useAuthStore((state) => state.user);
@@ -55,7 +55,7 @@ export function NotificationsMenu() {
     if (notification.isRead) return;
     try {
       await graphqlRequest(MARK_READ, { id: notification.id });
-      setData((current) => current ? { ...current, unreadNotificationCount: Math.max(0, current.unreadNotificationCount - 1), notifications: current.notifications.map((item) => item.id === notification.id ? { ...item, isRead: true } : item) } : current);
+      await refresh();
     } catch { /* The destination remains available if read tracking is unavailable. */ }
   };
 
@@ -66,7 +66,7 @@ export function NotificationsMenu() {
         {!!data?.unreadNotificationCount && <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[hsl(var(--primary))] px-1 text-[9px] font-bold text-[hsl(var(--primary-foreground))]">{data.unreadNotificationCount > 9 ? "9+" : data.unreadNotificationCount}</span>}
       </button>
       {open && <section className="absolute right-0 z-50 mt-2 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-[hsl(var(--card-border))] bg-[hsl(var(--card))] shadow-[var(--shadow-lg)]" aria-label="Notifications">
-        <header className="flex items-center justify-between border-b border-[hsl(var(--border))] px-4 py-3"><div><h2 className="text-sm font-semibold">Notifications</h2><p className="text-[10px] text-[hsl(var(--foreground-subtle))">{data?.unreadNotificationCount ?? 0} unread</p></div><button type="button" onClick={async () => { try { await graphqlRequest(MARK_ALL_READ); setData((current) => current ? { ...current, unreadNotificationCount: 0, notifications: current.notifications.map((item) => ({ ...item, isRead: true })) } : current); } catch { /* Ignore transient failure. */ } }} className="inline-flex items-center gap-1 text-[10px] text-[hsl(var(--ring))] hover:underline"><CheckCheck className="h-3 w-3" />Mark all read</button></header>
+        <header className="flex items-center justify-between border-b border-[hsl(var(--border))] px-4 py-3"><div><h2 className="text-sm font-semibold">Notifications</h2><p className="text-[10px] text-[hsl(var(--foreground-subtle))">{data?.unreadNotificationCount ?? 0} unread</p></div><button type="button" onClick={async () => { try { await graphqlRequest(MARK_ALL_READ, { ids: data?.unreadNotificationIds ?? [] }); await refresh(); } catch { /* Ignore transient failure. */ } }} className="inline-flex items-center gap-1 text-[10px] text-[hsl(var(--ring))] hover:underline"><CheckCheck className="h-3 w-3" />Mark all read</button></header>
         <div className="max-h-[min(65vh,28rem)] overflow-y-auto">{!data?.notifications.length ? <p className="px-4 py-8 text-center text-xs text-[hsl(var(--foreground-muted))]">Nothing new.</p> : data.notifications.map((item) => <Link key={item.id} href={item.link || "/dashboard"} onClick={() => { void markRead(item); setOpen(false); }} className={`block border-b border-[hsl(var(--border)/0.6)] px-4 py-3 transition hover:bg-[hsl(var(--background-secondary))] ${item.isRead ? "opacity-70" : "bg-[hsl(var(--ring)/0.04)]"}`}><div className="flex gap-2"><span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${item.isRead ? "bg-transparent" : "bg-[hsl(var(--ring))]"}`} /><div><p className="text-xs font-semibold">{item.title}</p><p className="mt-1 line-clamp-2 text-[11px] leading-4 text-[hsl(var(--foreground-muted))]">{item.body}</p><time className="mt-1 block text-[10px] text-[hsl(var(--foreground-subtle))">{new Date(item.createdAt).toLocaleString()}</time></div></div></Link>)}</div>
       </section>}
     </div>

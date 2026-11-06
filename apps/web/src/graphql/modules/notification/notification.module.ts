@@ -40,6 +40,13 @@ builder.queryFields((t) => ({
       return ctx.db.notification.count({ where: { userId: user.id, isRead: false } });
     },
   }),
+  unreadNotificationIds: t.stringList({
+    resolve: async (_root, _args, ctx) => {
+      const user = requireAuth(ctx);
+      const notifications = await ctx.db.notification.findMany({ where: { userId: user.id, isRead: false }, select: { id: true } });
+      return notifications.map((notification) => notification.id);
+    },
+  }),
 }));
 
 builder.mutationFields((t) => ({
@@ -61,10 +68,11 @@ builder.mutationFields((t) => ({
     },
   }),
   markAllNotificationsRead: t.int({
-    resolve: async (_root, _args, ctx) => {
+    args: { ids: t.arg.stringList({ required: true }) },
+    resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
       const result = await ctx.db.notification.updateMany({
-        where: { userId: user.id, isRead: false },
+        where: { userId: user.id, isRead: false, id: { in: args.ids } },
         data: { isRead: true },
       });
       return result.count;

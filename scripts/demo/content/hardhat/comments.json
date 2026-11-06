@@ -1,0 +1,5602 @@
+[
+  {
+    "key": "comment_001",
+    "issueIndex": 1,
+    "authorRole": "hh04",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #1)",
+    "isReply": false
+  },
+  {
+    "key": "comment_002",
+    "issueIndex": 2,
+    "authorRole": "hh05",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #2)",
+    "isReply": false
+  },
+  {
+    "key": "comment_003",
+    "issueIndex": 3,
+    "authorRole": "hh06",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #3)",
+    "isReply": false
+  },
+  {
+    "key": "comment_004",
+    "issueIndex": 4,
+    "authorRole": "hh07",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #4)",
+    "isReply": false
+  },
+  {
+    "key": "comment_005",
+    "issueIndex": 5,
+    "authorRole": "hh08",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #5)",
+    "isReply": false
+  },
+  {
+    "key": "comment_006",
+    "issueIndex": 6,
+    "authorRole": "hh09",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #6)",
+    "isReply": false
+  },
+  {
+    "key": "comment_007",
+    "issueIndex": 7,
+    "authorRole": "hh10",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #7)",
+    "isReply": false
+  },
+  {
+    "key": "comment_008",
+    "issueIndex": 8,
+    "authorRole": "hh11",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #8)",
+    "isReply": false
+  },
+  {
+    "key": "comment_009",
+    "issueIndex": 9,
+    "authorRole": "hh12",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #9)",
+    "isReply": false
+  },
+  {
+    "key": "comment_010",
+    "issueIndex": 10,
+    "authorRole": "hh13",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #10)",
+    "isReply": false
+  },
+  {
+    "key": "comment_011",
+    "issueIndex": 11,
+    "authorRole": "hh14",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #11)",
+    "isReply": false
+  },
+  {
+    "key": "comment_012",
+    "issueIndex": 12,
+    "authorRole": "hh15",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #12)",
+    "isReply": false
+  },
+  {
+    "key": "comment_013",
+    "issueIndex": 13,
+    "authorRole": "hh16",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #13)",
+    "isReply": false
+  },
+  {
+    "key": "comment_014",
+    "issueIndex": 14,
+    "authorRole": "hh17",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #14)",
+    "isReply": false
+  },
+  {
+    "key": "comment_015",
+    "issueIndex": 15,
+    "authorRole": "hh18",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #15)",
+    "isReply": false
+  },
+  {
+    "key": "comment_016",
+    "issueIndex": 16,
+    "authorRole": "hh19",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #16)",
+    "isReply": false
+  },
+  {
+    "key": "comment_017",
+    "issueIndex": 17,
+    "authorRole": "hh20",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #17)",
+    "isReply": false
+  },
+  {
+    "key": "comment_018",
+    "issueIndex": 18,
+    "authorRole": "hh21",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #18)",
+    "isReply": false
+  },
+  {
+    "key": "comment_019",
+    "issueIndex": 19,
+    "authorRole": "hh22",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #19)",
+    "isReply": false
+  },
+  {
+    "key": "comment_020",
+    "issueIndex": 20,
+    "authorRole": "hh23",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #20)",
+    "isReply": false
+  },
+  {
+    "key": "comment_021",
+    "issueIndex": 21,
+    "authorRole": "hh24",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #21)",
+    "isReply": false
+  },
+  {
+    "key": "comment_022",
+    "issueIndex": 22,
+    "authorRole": "hh25",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #22)",
+    "isReply": false
+  },
+  {
+    "key": "comment_023",
+    "issueIndex": 23,
+    "authorRole": "hh26",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #23)",
+    "isReply": false
+  },
+  {
+    "key": "comment_024",
+    "issueIndex": 24,
+    "authorRole": "hh27",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #24)",
+    "isReply": false
+  },
+  {
+    "key": "comment_025",
+    "issueIndex": 25,
+    "authorRole": "hh28",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #25)",
+    "isReply": false
+  },
+  {
+    "key": "comment_026",
+    "issueIndex": 26,
+    "authorRole": "hh29",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #26)",
+    "isReply": false
+  },
+  {
+    "key": "comment_027",
+    "issueIndex": 27,
+    "authorRole": "hh30",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #27)",
+    "isReply": false
+  },
+  {
+    "key": "comment_028",
+    "issueIndex": 28,
+    "authorRole": "hh31",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #28)",
+    "isReply": false
+  },
+  {
+    "key": "comment_029",
+    "issueIndex": 29,
+    "authorRole": "hh32",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #29)",
+    "isReply": false
+  },
+  {
+    "key": "comment_030",
+    "issueIndex": 30,
+    "authorRole": "hh33",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #30)",
+    "isReply": false
+  },
+  {
+    "key": "comment_031",
+    "issueIndex": 31,
+    "authorRole": "hh34",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #31)",
+    "isReply": false
+  },
+  {
+    "key": "comment_032",
+    "issueIndex": 32,
+    "authorRole": "hh35",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #32)",
+    "isReply": false
+  },
+  {
+    "key": "comment_033",
+    "issueIndex": 33,
+    "authorRole": "hh36",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #33)",
+    "isReply": false
+  },
+  {
+    "key": "comment_034",
+    "issueIndex": 34,
+    "authorRole": "hh37",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #34)",
+    "isReply": false
+  },
+  {
+    "key": "comment_035",
+    "issueIndex": 35,
+    "authorRole": "hh38",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #35)",
+    "isReply": false
+  },
+  {
+    "key": "comment_036",
+    "issueIndex": 36,
+    "authorRole": "hh39",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #36)",
+    "isReply": false
+  },
+  {
+    "key": "comment_037",
+    "issueIndex": 37,
+    "authorRole": "hh40",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #37)",
+    "isReply": false
+  },
+  {
+    "key": "comment_038",
+    "issueIndex": 38,
+    "authorRole": "hh41",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #38)",
+    "isReply": false
+  },
+  {
+    "key": "comment_039",
+    "issueIndex": 39,
+    "authorRole": "hh42",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #39)",
+    "isReply": false
+  },
+  {
+    "key": "comment_040",
+    "issueIndex": 40,
+    "authorRole": "hh43",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #40)",
+    "isReply": false
+  },
+  {
+    "key": "comment_041",
+    "issueIndex": 41,
+    "authorRole": "hh44",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #41)",
+    "isReply": false
+  },
+  {
+    "key": "comment_042",
+    "issueIndex": 42,
+    "authorRole": "hh45",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #42)",
+    "isReply": false
+  },
+  {
+    "key": "comment_043",
+    "issueIndex": 43,
+    "authorRole": "hh46",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #43)",
+    "isReply": false
+  },
+  {
+    "key": "comment_044",
+    "issueIndex": 44,
+    "authorRole": "hh47",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #44)",
+    "isReply": false
+  },
+  {
+    "key": "comment_045",
+    "issueIndex": 45,
+    "authorRole": "hh48",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #45)",
+    "isReply": false
+  },
+  {
+    "key": "comment_046",
+    "issueIndex": 46,
+    "authorRole": "hh49",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #46)",
+    "isReply": false
+  },
+  {
+    "key": "comment_047",
+    "issueIndex": 47,
+    "authorRole": "hh04",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #47)",
+    "isReply": false
+  },
+  {
+    "key": "comment_048",
+    "issueIndex": 48,
+    "authorRole": "hh05",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #48)",
+    "isReply": false
+  },
+  {
+    "key": "comment_049",
+    "issueIndex": 49,
+    "authorRole": "hh06",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #49)",
+    "isReply": false
+  },
+  {
+    "key": "comment_050",
+    "issueIndex": 50,
+    "authorRole": "hh07",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #50)",
+    "isReply": false
+  },
+  {
+    "key": "comment_051",
+    "issueIndex": 51,
+    "authorRole": "hh08",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #51)",
+    "isReply": false
+  },
+  {
+    "key": "comment_052",
+    "issueIndex": 52,
+    "authorRole": "hh09",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #52)",
+    "isReply": false
+  },
+  {
+    "key": "comment_053",
+    "issueIndex": 53,
+    "authorRole": "hh10",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #53)",
+    "isReply": false
+  },
+  {
+    "key": "comment_054",
+    "issueIndex": 54,
+    "authorRole": "hh11",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #54)",
+    "isReply": false
+  },
+  {
+    "key": "comment_055",
+    "issueIndex": 55,
+    "authorRole": "hh12",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #55)",
+    "isReply": false
+  },
+  {
+    "key": "comment_056",
+    "issueIndex": 56,
+    "authorRole": "hh13",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #56)",
+    "isReply": false
+  },
+  {
+    "key": "comment_057",
+    "issueIndex": 57,
+    "authorRole": "hh14",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #57)",
+    "isReply": false
+  },
+  {
+    "key": "comment_058",
+    "issueIndex": 58,
+    "authorRole": "hh15",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #58)",
+    "isReply": false
+  },
+  {
+    "key": "comment_059",
+    "issueIndex": 59,
+    "authorRole": "hh16",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #59)",
+    "isReply": false
+  },
+  {
+    "key": "comment_060",
+    "issueIndex": 60,
+    "authorRole": "hh17",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #60)",
+    "isReply": false
+  },
+  {
+    "key": "comment_061",
+    "issueIndex": 61,
+    "authorRole": "hh18",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #61)",
+    "isReply": false
+  },
+  {
+    "key": "comment_062",
+    "issueIndex": 62,
+    "authorRole": "hh19",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #62)",
+    "isReply": false
+  },
+  {
+    "key": "comment_063",
+    "issueIndex": 63,
+    "authorRole": "hh20",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #63)",
+    "isReply": false
+  },
+  {
+    "key": "comment_064",
+    "issueIndex": 64,
+    "authorRole": "hh21",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #64)",
+    "isReply": false
+  },
+  {
+    "key": "comment_065",
+    "issueIndex": 65,
+    "authorRole": "hh22",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #65)",
+    "isReply": false
+  },
+  {
+    "key": "comment_066",
+    "issueIndex": 66,
+    "authorRole": "hh23",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #66)",
+    "isReply": false
+  },
+  {
+    "key": "comment_067",
+    "issueIndex": 67,
+    "authorRole": "hh24",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #67)",
+    "isReply": false
+  },
+  {
+    "key": "comment_068",
+    "issueIndex": 68,
+    "authorRole": "hh25",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #68)",
+    "isReply": false
+  },
+  {
+    "key": "comment_069",
+    "issueIndex": 69,
+    "authorRole": "hh26",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #69)",
+    "isReply": false
+  },
+  {
+    "key": "comment_070",
+    "issueIndex": 70,
+    "authorRole": "hh27",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #70)",
+    "isReply": false
+  },
+  {
+    "key": "comment_071",
+    "issueIndex": 71,
+    "authorRole": "hh28",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #71)",
+    "isReply": false
+  },
+  {
+    "key": "comment_072",
+    "issueIndex": 72,
+    "authorRole": "hh29",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #72)",
+    "isReply": false
+  },
+  {
+    "key": "comment_073",
+    "issueIndex": 73,
+    "authorRole": "hh30",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #73)",
+    "isReply": false
+  },
+  {
+    "key": "comment_074",
+    "issueIndex": 74,
+    "authorRole": "hh31",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #74)",
+    "isReply": false
+  },
+  {
+    "key": "comment_075",
+    "issueIndex": 75,
+    "authorRole": "hh32",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #75)",
+    "isReply": false
+  },
+  {
+    "key": "comment_076",
+    "issueIndex": 76,
+    "authorRole": "hh33",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #76)",
+    "isReply": false
+  },
+  {
+    "key": "comment_077",
+    "issueIndex": 77,
+    "authorRole": "hh34",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #77)",
+    "isReply": false
+  },
+  {
+    "key": "comment_078",
+    "issueIndex": 78,
+    "authorRole": "hh35",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #78)",
+    "isReply": false
+  },
+  {
+    "key": "comment_079",
+    "issueIndex": 79,
+    "authorRole": "hh36",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #79)",
+    "isReply": false
+  },
+  {
+    "key": "comment_080",
+    "issueIndex": 80,
+    "authorRole": "hh37",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #80)",
+    "isReply": false
+  },
+  {
+    "key": "comment_081",
+    "issueIndex": 81,
+    "authorRole": "hh38",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #81)",
+    "isReply": false
+  },
+  {
+    "key": "comment_082",
+    "issueIndex": 82,
+    "authorRole": "hh39",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #82)",
+    "isReply": false
+  },
+  {
+    "key": "comment_083",
+    "issueIndex": 83,
+    "authorRole": "hh40",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #83)",
+    "isReply": false
+  },
+  {
+    "key": "comment_084",
+    "issueIndex": 84,
+    "authorRole": "hh41",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #84)",
+    "isReply": false
+  },
+  {
+    "key": "comment_085",
+    "issueIndex": 85,
+    "authorRole": "hh42",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #85)",
+    "isReply": false
+  },
+  {
+    "key": "comment_086",
+    "issueIndex": 86,
+    "authorRole": "hh43",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #86)",
+    "isReply": false
+  },
+  {
+    "key": "comment_087",
+    "issueIndex": 87,
+    "authorRole": "hh44",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #87)",
+    "isReply": false
+  },
+  {
+    "key": "comment_088",
+    "issueIndex": 88,
+    "authorRole": "hh45",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #88)",
+    "isReply": false
+  },
+  {
+    "key": "comment_089",
+    "issueIndex": 89,
+    "authorRole": "hh46",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #89)",
+    "isReply": false
+  },
+  {
+    "key": "comment_090",
+    "issueIndex": 90,
+    "authorRole": "hh47",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #90)",
+    "isReply": false
+  },
+  {
+    "key": "comment_091",
+    "issueIndex": 91,
+    "authorRole": "hh48",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #91)",
+    "isReply": false
+  },
+  {
+    "key": "comment_092",
+    "issueIndex": 92,
+    "authorRole": "hh49",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #92)",
+    "isReply": false
+  },
+  {
+    "key": "comment_093",
+    "issueIndex": 93,
+    "authorRole": "hh04",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #93)",
+    "isReply": false
+  },
+  {
+    "key": "comment_094",
+    "issueIndex": 94,
+    "authorRole": "hh05",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #94)",
+    "isReply": false
+  },
+  {
+    "key": "comment_095",
+    "issueIndex": 95,
+    "authorRole": "hh06",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #95)",
+    "isReply": false
+  },
+  {
+    "key": "comment_096",
+    "issueIndex": 96,
+    "authorRole": "hh07",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #96)",
+    "isReply": false
+  },
+  {
+    "key": "comment_097",
+    "issueIndex": 97,
+    "authorRole": "hh08",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #97)",
+    "isReply": false
+  },
+  {
+    "key": "comment_098",
+    "issueIndex": 98,
+    "authorRole": "hh09",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #98)",
+    "isReply": false
+  },
+  {
+    "key": "comment_099",
+    "issueIndex": 99,
+    "authorRole": "hh10",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #99)",
+    "isReply": false
+  },
+  {
+    "key": "comment_100",
+    "issueIndex": 100,
+    "authorRole": "hh11",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #100)",
+    "isReply": false
+  },
+  {
+    "key": "comment_101",
+    "issueIndex": 101,
+    "authorRole": "hh12",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #101)",
+    "isReply": false
+  },
+  {
+    "key": "comment_102",
+    "issueIndex": 102,
+    "authorRole": "hh13",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #102)",
+    "isReply": false
+  },
+  {
+    "key": "comment_103",
+    "issueIndex": 103,
+    "authorRole": "hh14",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #103)",
+    "isReply": false
+  },
+  {
+    "key": "comment_104",
+    "issueIndex": 104,
+    "authorRole": "hh15",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #104)",
+    "isReply": false
+  },
+  {
+    "key": "comment_105",
+    "issueIndex": 105,
+    "authorRole": "hh16",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #105)",
+    "isReply": false
+  },
+  {
+    "key": "comment_106",
+    "issueIndex": 106,
+    "authorRole": "hh17",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #106)",
+    "isReply": false
+  },
+  {
+    "key": "comment_107",
+    "issueIndex": 107,
+    "authorRole": "hh18",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #107)",
+    "isReply": false
+  },
+  {
+    "key": "comment_108",
+    "issueIndex": 108,
+    "authorRole": "hh19",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #108)",
+    "isReply": false
+  },
+  {
+    "key": "comment_109",
+    "issueIndex": 109,
+    "authorRole": "hh20",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #109)",
+    "isReply": false
+  },
+  {
+    "key": "comment_110",
+    "issueIndex": 110,
+    "authorRole": "hh21",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #110)",
+    "isReply": false
+  },
+  {
+    "key": "comment_111",
+    "issueIndex": 111,
+    "authorRole": "hh22",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #111)",
+    "isReply": false
+  },
+  {
+    "key": "comment_112",
+    "issueIndex": 112,
+    "authorRole": "hh23",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #112)",
+    "isReply": false
+  },
+  {
+    "key": "comment_113",
+    "issueIndex": 113,
+    "authorRole": "hh24",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #113)",
+    "isReply": false
+  },
+  {
+    "key": "comment_114",
+    "issueIndex": 114,
+    "authorRole": "hh25",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #114)",
+    "isReply": false
+  },
+  {
+    "key": "comment_115",
+    "issueIndex": 115,
+    "authorRole": "hh26",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #115)",
+    "isReply": false
+  },
+  {
+    "key": "comment_116",
+    "issueIndex": 116,
+    "authorRole": "hh27",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #116)",
+    "isReply": false
+  },
+  {
+    "key": "comment_117",
+    "issueIndex": 117,
+    "authorRole": "hh28",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #117)",
+    "isReply": false
+  },
+  {
+    "key": "comment_118",
+    "issueIndex": 118,
+    "authorRole": "hh29",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #118)",
+    "isReply": false
+  },
+  {
+    "key": "comment_119",
+    "issueIndex": 119,
+    "authorRole": "hh30",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #119)",
+    "isReply": false
+  },
+  {
+    "key": "comment_120",
+    "issueIndex": 120,
+    "authorRole": "hh31",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #120)",
+    "isReply": false
+  },
+  {
+    "key": "comment_121",
+    "issueIndex": 121,
+    "authorRole": "hh32",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #121)",
+    "isReply": false
+  },
+  {
+    "key": "comment_122",
+    "issueIndex": 122,
+    "authorRole": "hh33",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #122)",
+    "isReply": false
+  },
+  {
+    "key": "comment_123",
+    "issueIndex": 123,
+    "authorRole": "hh34",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #123)",
+    "isReply": false
+  },
+  {
+    "key": "comment_124",
+    "issueIndex": 124,
+    "authorRole": "hh35",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #124)",
+    "isReply": false
+  },
+  {
+    "key": "comment_125",
+    "issueIndex": 125,
+    "authorRole": "hh36",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #125)",
+    "isReply": false
+  },
+  {
+    "key": "comment_126",
+    "issueIndex": 126,
+    "authorRole": "hh37",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #126)",
+    "isReply": false
+  },
+  {
+    "key": "comment_127",
+    "issueIndex": 127,
+    "authorRole": "hh38",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #127)",
+    "isReply": false
+  },
+  {
+    "key": "comment_128",
+    "issueIndex": 128,
+    "authorRole": "hh39",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #128)",
+    "isReply": false
+  },
+  {
+    "key": "comment_129",
+    "issueIndex": 129,
+    "authorRole": "hh40",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #129)",
+    "isReply": false
+  },
+  {
+    "key": "comment_130",
+    "issueIndex": 130,
+    "authorRole": "hh41",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #130)",
+    "isReply": false
+  },
+  {
+    "key": "comment_131",
+    "issueIndex": 131,
+    "authorRole": "hh42",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #131)",
+    "isReply": false
+  },
+  {
+    "key": "comment_132",
+    "issueIndex": 132,
+    "authorRole": "hh43",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #132)",
+    "isReply": false
+  },
+  {
+    "key": "comment_133",
+    "issueIndex": 133,
+    "authorRole": "hh44",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #133)",
+    "isReply": false
+  },
+  {
+    "key": "comment_134",
+    "issueIndex": 134,
+    "authorRole": "hh45",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #134)",
+    "isReply": false
+  },
+  {
+    "key": "comment_135",
+    "issueIndex": 135,
+    "authorRole": "hh46",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #135)",
+    "isReply": false
+  },
+  {
+    "key": "comment_136",
+    "issueIndex": 136,
+    "authorRole": "hh47",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #136)",
+    "isReply": false
+  },
+  {
+    "key": "comment_137",
+    "issueIndex": 137,
+    "authorRole": "hh48",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #137)",
+    "isReply": false
+  },
+  {
+    "key": "comment_138",
+    "issueIndex": 138,
+    "authorRole": "hh49",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #138)",
+    "isReply": false
+  },
+  {
+    "key": "comment_139",
+    "issueIndex": 139,
+    "authorRole": "hh04",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #139)",
+    "isReply": false
+  },
+  {
+    "key": "comment_140",
+    "issueIndex": 140,
+    "authorRole": "hh05",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #140)",
+    "isReply": false
+  },
+  {
+    "key": "comment_141",
+    "issueIndex": 141,
+    "authorRole": "hh06",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #141)",
+    "isReply": false
+  },
+  {
+    "key": "comment_142",
+    "issueIndex": 142,
+    "authorRole": "hh07",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #142)",
+    "isReply": false
+  },
+  {
+    "key": "comment_143",
+    "issueIndex": 143,
+    "authorRole": "hh08",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #143)",
+    "isReply": false
+  },
+  {
+    "key": "comment_144",
+    "issueIndex": 144,
+    "authorRole": "hh09",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #144)",
+    "isReply": false
+  },
+  {
+    "key": "comment_145",
+    "issueIndex": 145,
+    "authorRole": "hh10",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #145)",
+    "isReply": false
+  },
+  {
+    "key": "comment_146",
+    "issueIndex": 146,
+    "authorRole": "hh11",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #146)",
+    "isReply": false
+  },
+  {
+    "key": "comment_147",
+    "issueIndex": 147,
+    "authorRole": "hh12",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #147)",
+    "isReply": false
+  },
+  {
+    "key": "comment_148",
+    "issueIndex": 148,
+    "authorRole": "hh13",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #148)",
+    "isReply": false
+  },
+  {
+    "key": "comment_149",
+    "issueIndex": 149,
+    "authorRole": "hh14",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #149)",
+    "isReply": false
+  },
+  {
+    "key": "comment_150",
+    "issueIndex": 150,
+    "authorRole": "hh15",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #150)",
+    "isReply": false
+  },
+  {
+    "key": "comment_151",
+    "issueIndex": 151,
+    "authorRole": "hh16",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #151)",
+    "isReply": false
+  },
+  {
+    "key": "comment_152",
+    "issueIndex": 152,
+    "authorRole": "hh17",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #152)",
+    "isReply": false
+  },
+  {
+    "key": "comment_153",
+    "issueIndex": 153,
+    "authorRole": "hh18",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #153)",
+    "isReply": false
+  },
+  {
+    "key": "comment_154",
+    "issueIndex": 154,
+    "authorRole": "hh19",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #154)",
+    "isReply": false
+  },
+  {
+    "key": "comment_155",
+    "issueIndex": 155,
+    "authorRole": "hh20",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #155)",
+    "isReply": false
+  },
+  {
+    "key": "comment_156",
+    "issueIndex": 156,
+    "authorRole": "hh21",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #156)",
+    "isReply": false
+  },
+  {
+    "key": "comment_157",
+    "issueIndex": 157,
+    "authorRole": "hh22",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #157)",
+    "isReply": false
+  },
+  {
+    "key": "comment_158",
+    "issueIndex": 158,
+    "authorRole": "hh23",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #158)",
+    "isReply": false
+  },
+  {
+    "key": "comment_159",
+    "issueIndex": 159,
+    "authorRole": "hh24",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #159)",
+    "isReply": false
+  },
+  {
+    "key": "comment_160",
+    "issueIndex": 160,
+    "authorRole": "hh25",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #160)",
+    "isReply": false
+  },
+  {
+    "key": "comment_161",
+    "issueIndex": 161,
+    "authorRole": "hh26",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #161)",
+    "isReply": false
+  },
+  {
+    "key": "comment_162",
+    "issueIndex": 162,
+    "authorRole": "hh27",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #162)",
+    "isReply": false
+  },
+  {
+    "key": "comment_163",
+    "issueIndex": 163,
+    "authorRole": "hh28",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #163)",
+    "isReply": false
+  },
+  {
+    "key": "comment_164",
+    "issueIndex": 164,
+    "authorRole": "hh29",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #164)",
+    "isReply": false
+  },
+  {
+    "key": "comment_165",
+    "issueIndex": 165,
+    "authorRole": "hh30",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #165)",
+    "isReply": false
+  },
+  {
+    "key": "comment_166",
+    "issueIndex": 166,
+    "authorRole": "hh31",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #166)",
+    "isReply": false
+  },
+  {
+    "key": "comment_167",
+    "issueIndex": 167,
+    "authorRole": "hh32",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #167)",
+    "isReply": false
+  },
+  {
+    "key": "comment_168",
+    "issueIndex": 168,
+    "authorRole": "hh33",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #168)",
+    "isReply": false
+  },
+  {
+    "key": "comment_169",
+    "issueIndex": 169,
+    "authorRole": "hh34",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #169)",
+    "isReply": false
+  },
+  {
+    "key": "comment_170",
+    "issueIndex": 170,
+    "authorRole": "hh35",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #170)",
+    "isReply": false
+  },
+  {
+    "key": "comment_171",
+    "issueIndex": 171,
+    "authorRole": "hh36",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #171)",
+    "isReply": false
+  },
+  {
+    "key": "comment_172",
+    "issueIndex": 172,
+    "authorRole": "hh37",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #172)",
+    "isReply": false
+  },
+  {
+    "key": "comment_173",
+    "issueIndex": 173,
+    "authorRole": "hh38",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #173)",
+    "isReply": false
+  },
+  {
+    "key": "comment_174",
+    "issueIndex": 174,
+    "authorRole": "hh39",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #174)",
+    "isReply": false
+  },
+  {
+    "key": "comment_175",
+    "issueIndex": 175,
+    "authorRole": "hh40",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #175)",
+    "isReply": false
+  },
+  {
+    "key": "comment_176",
+    "issueIndex": 176,
+    "authorRole": "hh41",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #176)",
+    "isReply": false
+  },
+  {
+    "key": "comment_177",
+    "issueIndex": 177,
+    "authorRole": "hh42",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #177)",
+    "isReply": false
+  },
+  {
+    "key": "comment_178",
+    "issueIndex": 178,
+    "authorRole": "hh43",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #178)",
+    "isReply": false
+  },
+  {
+    "key": "comment_179",
+    "issueIndex": 179,
+    "authorRole": "hh44",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #179)",
+    "isReply": false
+  },
+  {
+    "key": "comment_180",
+    "issueIndex": 180,
+    "authorRole": "hh45",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #180)",
+    "isReply": false
+  },
+  {
+    "key": "comment_181",
+    "issueIndex": 181,
+    "authorRole": "hh46",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #181)",
+    "isReply": false
+  },
+  {
+    "key": "comment_182",
+    "issueIndex": 182,
+    "authorRole": "hh47",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #182)",
+    "isReply": false
+  },
+  {
+    "key": "comment_183",
+    "issueIndex": 183,
+    "authorRole": "hh48",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #183)",
+    "isReply": false
+  },
+  {
+    "key": "comment_184",
+    "issueIndex": 184,
+    "authorRole": "hh49",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #184)",
+    "isReply": false
+  },
+  {
+    "key": "comment_185",
+    "issueIndex": 185,
+    "authorRole": "hh04",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #185)",
+    "isReply": false
+  },
+  {
+    "key": "comment_186",
+    "issueIndex": 186,
+    "authorRole": "hh05",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #186)",
+    "isReply": false
+  },
+  {
+    "key": "comment_187",
+    "issueIndex": 187,
+    "authorRole": "hh06",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #187)",
+    "isReply": false
+  },
+  {
+    "key": "comment_188",
+    "issueIndex": 188,
+    "authorRole": "hh07",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #188)",
+    "isReply": false
+  },
+  {
+    "key": "comment_189",
+    "issueIndex": 189,
+    "authorRole": "hh08",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #189)",
+    "isReply": false
+  },
+  {
+    "key": "comment_190",
+    "issueIndex": 190,
+    "authorRole": "hh09",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #190)",
+    "isReply": false
+  },
+  {
+    "key": "comment_191",
+    "issueIndex": 191,
+    "authorRole": "hh10",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #191)",
+    "isReply": false
+  },
+  {
+    "key": "comment_192",
+    "issueIndex": 192,
+    "authorRole": "hh11",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #192)",
+    "isReply": false
+  },
+  {
+    "key": "comment_193",
+    "issueIndex": 193,
+    "authorRole": "hh12",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #193)",
+    "isReply": false
+  },
+  {
+    "key": "comment_194",
+    "issueIndex": 194,
+    "authorRole": "hh13",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #194)",
+    "isReply": false
+  },
+  {
+    "key": "comment_195",
+    "issueIndex": 195,
+    "authorRole": "hh14",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #195)",
+    "isReply": false
+  },
+  {
+    "key": "comment_196",
+    "issueIndex": 196,
+    "authorRole": "hh15",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #196)",
+    "isReply": false
+  },
+  {
+    "key": "comment_197",
+    "issueIndex": 197,
+    "authorRole": "hh16",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #197)",
+    "isReply": false
+  },
+  {
+    "key": "comment_198",
+    "issueIndex": 198,
+    "authorRole": "hh17",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #198)",
+    "isReply": false
+  },
+  {
+    "key": "comment_199",
+    "issueIndex": 199,
+    "authorRole": "hh18",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #199)",
+    "isReply": false
+  },
+  {
+    "key": "comment_200",
+    "issueIndex": 200,
+    "authorRole": "hh19",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #200)",
+    "isReply": false
+  },
+  {
+    "key": "comment_201",
+    "issueIndex": 1,
+    "authorRole": "hh20",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #201)",
+    "isReply": false
+  },
+  {
+    "key": "comment_202",
+    "issueIndex": 2,
+    "authorRole": "hh21",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #202)",
+    "isReply": false
+  },
+  {
+    "key": "comment_203",
+    "issueIndex": 3,
+    "authorRole": "hh22",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #203)",
+    "isReply": false
+  },
+  {
+    "key": "comment_204",
+    "issueIndex": 4,
+    "authorRole": "hh23",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #204)",
+    "isReply": false
+  },
+  {
+    "key": "comment_205",
+    "issueIndex": 5,
+    "authorRole": "hh24",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #205)",
+    "isReply": false
+  },
+  {
+    "key": "comment_206",
+    "issueIndex": 6,
+    "authorRole": "hh25",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #206)",
+    "isReply": false
+  },
+  {
+    "key": "comment_207",
+    "issueIndex": 7,
+    "authorRole": "hh26",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #207)",
+    "isReply": false
+  },
+  {
+    "key": "comment_208",
+    "issueIndex": 8,
+    "authorRole": "hh27",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #208)",
+    "isReply": false
+  },
+  {
+    "key": "comment_209",
+    "issueIndex": 9,
+    "authorRole": "hh28",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #209)",
+    "isReply": false
+  },
+  {
+    "key": "comment_210",
+    "issueIndex": 10,
+    "authorRole": "hh29",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #210)",
+    "isReply": false
+  },
+  {
+    "key": "comment_211",
+    "issueIndex": 11,
+    "authorRole": "hh30",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #211)",
+    "isReply": false
+  },
+  {
+    "key": "comment_212",
+    "issueIndex": 12,
+    "authorRole": "hh31",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #212)",
+    "isReply": false
+  },
+  {
+    "key": "comment_213",
+    "issueIndex": 13,
+    "authorRole": "hh32",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #213)",
+    "isReply": false
+  },
+  {
+    "key": "comment_214",
+    "issueIndex": 14,
+    "authorRole": "hh33",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #214)",
+    "isReply": false
+  },
+  {
+    "key": "comment_215",
+    "issueIndex": 15,
+    "authorRole": "hh34",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #215)",
+    "isReply": false
+  },
+  {
+    "key": "comment_216",
+    "issueIndex": 16,
+    "authorRole": "hh35",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #216)",
+    "isReply": false
+  },
+  {
+    "key": "comment_217",
+    "issueIndex": 17,
+    "authorRole": "hh36",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #217)",
+    "isReply": false
+  },
+  {
+    "key": "comment_218",
+    "issueIndex": 18,
+    "authorRole": "hh37",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #218)",
+    "isReply": false
+  },
+  {
+    "key": "comment_219",
+    "issueIndex": 19,
+    "authorRole": "hh38",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #219)",
+    "isReply": false
+  },
+  {
+    "key": "comment_220",
+    "issueIndex": 20,
+    "authorRole": "hh39",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #220)",
+    "isReply": false
+  },
+  {
+    "key": "comment_221",
+    "issueIndex": 21,
+    "authorRole": "hh40",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #221)",
+    "isReply": false
+  },
+  {
+    "key": "comment_222",
+    "issueIndex": 22,
+    "authorRole": "hh41",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #222)",
+    "isReply": false
+  },
+  {
+    "key": "comment_223",
+    "issueIndex": 23,
+    "authorRole": "hh42",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #223)",
+    "isReply": false
+  },
+  {
+    "key": "comment_224",
+    "issueIndex": 24,
+    "authorRole": "hh43",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #224)",
+    "isReply": false
+  },
+  {
+    "key": "comment_225",
+    "issueIndex": 25,
+    "authorRole": "hh44",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #225)",
+    "isReply": false
+  },
+  {
+    "key": "comment_226",
+    "issueIndex": 26,
+    "authorRole": "hh45",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #226)",
+    "isReply": false
+  },
+  {
+    "key": "comment_227",
+    "issueIndex": 27,
+    "authorRole": "hh46",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #227)",
+    "isReply": false
+  },
+  {
+    "key": "comment_228",
+    "issueIndex": 28,
+    "authorRole": "hh47",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #228)",
+    "isReply": false
+  },
+  {
+    "key": "comment_229",
+    "issueIndex": 29,
+    "authorRole": "hh48",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #229)",
+    "isReply": false
+  },
+  {
+    "key": "comment_230",
+    "issueIndex": 30,
+    "authorRole": "hh49",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #230)",
+    "isReply": false
+  },
+  {
+    "key": "comment_231",
+    "issueIndex": 31,
+    "authorRole": "hh04",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #231)",
+    "isReply": false
+  },
+  {
+    "key": "comment_232",
+    "issueIndex": 32,
+    "authorRole": "hh05",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #232)",
+    "isReply": false
+  },
+  {
+    "key": "comment_233",
+    "issueIndex": 33,
+    "authorRole": "hh06",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #233)",
+    "isReply": false
+  },
+  {
+    "key": "comment_234",
+    "issueIndex": 34,
+    "authorRole": "hh07",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #234)",
+    "isReply": false
+  },
+  {
+    "key": "comment_235",
+    "issueIndex": 35,
+    "authorRole": "hh08",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #235)",
+    "isReply": false
+  },
+  {
+    "key": "comment_236",
+    "issueIndex": 36,
+    "authorRole": "hh09",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #236)",
+    "isReply": false
+  },
+  {
+    "key": "comment_237",
+    "issueIndex": 37,
+    "authorRole": "hh10",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #237)",
+    "isReply": false
+  },
+  {
+    "key": "comment_238",
+    "issueIndex": 38,
+    "authorRole": "hh11",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #238)",
+    "isReply": false
+  },
+  {
+    "key": "comment_239",
+    "issueIndex": 39,
+    "authorRole": "hh12",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #239)",
+    "isReply": false
+  },
+  {
+    "key": "comment_240",
+    "issueIndex": 40,
+    "authorRole": "hh13",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #240)",
+    "isReply": false
+  },
+  {
+    "key": "comment_241",
+    "issueIndex": 41,
+    "authorRole": "hh14",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #241)",
+    "isReply": false
+  },
+  {
+    "key": "comment_242",
+    "issueIndex": 42,
+    "authorRole": "hh15",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #242)",
+    "isReply": false
+  },
+  {
+    "key": "comment_243",
+    "issueIndex": 43,
+    "authorRole": "hh16",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #243)",
+    "isReply": false
+  },
+  {
+    "key": "comment_244",
+    "issueIndex": 44,
+    "authorRole": "hh17",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #244)",
+    "isReply": false
+  },
+  {
+    "key": "comment_245",
+    "issueIndex": 45,
+    "authorRole": "hh18",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #245)",
+    "isReply": false
+  },
+  {
+    "key": "comment_246",
+    "issueIndex": 46,
+    "authorRole": "hh19",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #246)",
+    "isReply": false
+  },
+  {
+    "key": "comment_247",
+    "issueIndex": 47,
+    "authorRole": "hh20",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #247)",
+    "isReply": false
+  },
+  {
+    "key": "comment_248",
+    "issueIndex": 48,
+    "authorRole": "hh21",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #248)",
+    "isReply": false
+  },
+  {
+    "key": "comment_249",
+    "issueIndex": 49,
+    "authorRole": "hh22",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #249)",
+    "isReply": false
+  },
+  {
+    "key": "comment_250",
+    "issueIndex": 50,
+    "authorRole": "hh23",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #250)",
+    "isReply": false
+  },
+  {
+    "key": "comment_251",
+    "issueIndex": 51,
+    "authorRole": "hh24",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #251)",
+    "isReply": false
+  },
+  {
+    "key": "comment_252",
+    "issueIndex": 52,
+    "authorRole": "hh25",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #252)",
+    "isReply": false
+  },
+  {
+    "key": "comment_253",
+    "issueIndex": 53,
+    "authorRole": "hh26",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #253)",
+    "isReply": false
+  },
+  {
+    "key": "comment_254",
+    "issueIndex": 54,
+    "authorRole": "hh27",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #254)",
+    "isReply": false
+  },
+  {
+    "key": "comment_255",
+    "issueIndex": 55,
+    "authorRole": "hh28",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #255)",
+    "isReply": false
+  },
+  {
+    "key": "comment_256",
+    "issueIndex": 56,
+    "authorRole": "hh29",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #256)",
+    "isReply": false
+  },
+  {
+    "key": "comment_257",
+    "issueIndex": 57,
+    "authorRole": "hh30",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #257)",
+    "isReply": false
+  },
+  {
+    "key": "comment_258",
+    "issueIndex": 58,
+    "authorRole": "hh31",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #258)",
+    "isReply": false
+  },
+  {
+    "key": "comment_259",
+    "issueIndex": 59,
+    "authorRole": "hh32",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #259)",
+    "isReply": false
+  },
+  {
+    "key": "comment_260",
+    "issueIndex": 60,
+    "authorRole": "hh33",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #260)",
+    "isReply": false
+  },
+  {
+    "key": "comment_261",
+    "issueIndex": 61,
+    "authorRole": "hh34",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #261)",
+    "isReply": false
+  },
+  {
+    "key": "comment_262",
+    "issueIndex": 62,
+    "authorRole": "hh35",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #262)",
+    "isReply": false
+  },
+  {
+    "key": "comment_263",
+    "issueIndex": 63,
+    "authorRole": "hh36",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #263)",
+    "isReply": false
+  },
+  {
+    "key": "comment_264",
+    "issueIndex": 64,
+    "authorRole": "hh37",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #264)",
+    "isReply": false
+  },
+  {
+    "key": "comment_265",
+    "issueIndex": 65,
+    "authorRole": "hh38",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #265)",
+    "isReply": false
+  },
+  {
+    "key": "comment_266",
+    "issueIndex": 66,
+    "authorRole": "hh39",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #266)",
+    "isReply": false
+  },
+  {
+    "key": "comment_267",
+    "issueIndex": 67,
+    "authorRole": "hh40",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #267)",
+    "isReply": false
+  },
+  {
+    "key": "comment_268",
+    "issueIndex": 68,
+    "authorRole": "hh41",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #268)",
+    "isReply": false
+  },
+  {
+    "key": "comment_269",
+    "issueIndex": 69,
+    "authorRole": "hh42",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #269)",
+    "isReply": false
+  },
+  {
+    "key": "comment_270",
+    "issueIndex": 70,
+    "authorRole": "hh43",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #270)",
+    "isReply": false
+  },
+  {
+    "key": "comment_271",
+    "issueIndex": 71,
+    "authorRole": "hh44",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #271)",
+    "isReply": false
+  },
+  {
+    "key": "comment_272",
+    "issueIndex": 72,
+    "authorRole": "hh45",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #272)",
+    "isReply": false
+  },
+  {
+    "key": "comment_273",
+    "issueIndex": 73,
+    "authorRole": "hh46",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #273)",
+    "isReply": false
+  },
+  {
+    "key": "comment_274",
+    "issueIndex": 74,
+    "authorRole": "hh47",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #274)",
+    "isReply": false
+  },
+  {
+    "key": "comment_275",
+    "issueIndex": 75,
+    "authorRole": "hh48",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #275)",
+    "isReply": false
+  },
+  {
+    "key": "comment_276",
+    "issueIndex": 76,
+    "authorRole": "hh49",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #276)",
+    "isReply": false
+  },
+  {
+    "key": "comment_277",
+    "issueIndex": 77,
+    "authorRole": "hh04",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #277)",
+    "isReply": false
+  },
+  {
+    "key": "comment_278",
+    "issueIndex": 78,
+    "authorRole": "hh05",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #278)",
+    "isReply": false
+  },
+  {
+    "key": "comment_279",
+    "issueIndex": 79,
+    "authorRole": "hh06",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #279)",
+    "isReply": false
+  },
+  {
+    "key": "comment_280",
+    "issueIndex": 80,
+    "authorRole": "hh07",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #280)",
+    "isReply": false
+  },
+  {
+    "key": "comment_281",
+    "issueIndex": 81,
+    "authorRole": "hh08",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #281)",
+    "isReply": false
+  },
+  {
+    "key": "comment_282",
+    "issueIndex": 82,
+    "authorRole": "hh09",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #282)",
+    "isReply": false
+  },
+  {
+    "key": "comment_283",
+    "issueIndex": 83,
+    "authorRole": "hh10",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #283)",
+    "isReply": false
+  },
+  {
+    "key": "comment_284",
+    "issueIndex": 84,
+    "authorRole": "hh11",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #284)",
+    "isReply": false
+  },
+  {
+    "key": "comment_285",
+    "issueIndex": 85,
+    "authorRole": "hh12",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #285)",
+    "isReply": false
+  },
+  {
+    "key": "comment_286",
+    "issueIndex": 86,
+    "authorRole": "hh13",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #286)",
+    "isReply": false
+  },
+  {
+    "key": "comment_287",
+    "issueIndex": 87,
+    "authorRole": "hh14",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #287)",
+    "isReply": false
+  },
+  {
+    "key": "comment_288",
+    "issueIndex": 88,
+    "authorRole": "hh15",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #288)",
+    "isReply": false
+  },
+  {
+    "key": "comment_289",
+    "issueIndex": 89,
+    "authorRole": "hh16",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #289)",
+    "isReply": false
+  },
+  {
+    "key": "comment_290",
+    "issueIndex": 90,
+    "authorRole": "hh17",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #290)",
+    "isReply": false
+  },
+  {
+    "key": "comment_291",
+    "issueIndex": 91,
+    "authorRole": "hh18",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #291)",
+    "isReply": false
+  },
+  {
+    "key": "comment_292",
+    "issueIndex": 92,
+    "authorRole": "hh19",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #292)",
+    "isReply": false
+  },
+  {
+    "key": "comment_293",
+    "issueIndex": 93,
+    "authorRole": "hh20",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #293)",
+    "isReply": false
+  },
+  {
+    "key": "comment_294",
+    "issueIndex": 94,
+    "authorRole": "hh21",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #294)",
+    "isReply": false
+  },
+  {
+    "key": "comment_295",
+    "issueIndex": 95,
+    "authorRole": "hh22",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #295)",
+    "isReply": false
+  },
+  {
+    "key": "comment_296",
+    "issueIndex": 96,
+    "authorRole": "hh23",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #296)",
+    "isReply": false
+  },
+  {
+    "key": "comment_297",
+    "issueIndex": 97,
+    "authorRole": "hh24",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #297)",
+    "isReply": false
+  },
+  {
+    "key": "comment_298",
+    "issueIndex": 98,
+    "authorRole": "hh25",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #298)",
+    "isReply": false
+  },
+  {
+    "key": "comment_299",
+    "issueIndex": 99,
+    "authorRole": "hh26",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #299)",
+    "isReply": false
+  },
+  {
+    "key": "comment_300",
+    "issueIndex": 100,
+    "authorRole": "hh27",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #300)",
+    "isReply": false
+  },
+  {
+    "key": "comment_301",
+    "issueIndex": 101,
+    "authorRole": "hh28",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #301)",
+    "isReply": false
+  },
+  {
+    "key": "comment_302",
+    "issueIndex": 102,
+    "authorRole": "hh29",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #302)",
+    "isReply": false
+  },
+  {
+    "key": "comment_303",
+    "issueIndex": 103,
+    "authorRole": "hh30",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #303)",
+    "isReply": false
+  },
+  {
+    "key": "comment_304",
+    "issueIndex": 104,
+    "authorRole": "hh31",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #304)",
+    "isReply": false
+  },
+  {
+    "key": "comment_305",
+    "issueIndex": 105,
+    "authorRole": "hh32",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #305)",
+    "isReply": false
+  },
+  {
+    "key": "comment_306",
+    "issueIndex": 106,
+    "authorRole": "hh33",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #306)",
+    "isReply": false
+  },
+  {
+    "key": "comment_307",
+    "issueIndex": 107,
+    "authorRole": "hh34",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #307)",
+    "isReply": false
+  },
+  {
+    "key": "comment_308",
+    "issueIndex": 108,
+    "authorRole": "hh35",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #308)",
+    "isReply": false
+  },
+  {
+    "key": "comment_309",
+    "issueIndex": 109,
+    "authorRole": "hh36",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #309)",
+    "isReply": false
+  },
+  {
+    "key": "comment_310",
+    "issueIndex": 110,
+    "authorRole": "hh37",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #310)",
+    "isReply": false
+  },
+  {
+    "key": "comment_311",
+    "issueIndex": 111,
+    "authorRole": "hh38",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #311)",
+    "isReply": false
+  },
+  {
+    "key": "comment_312",
+    "issueIndex": 112,
+    "authorRole": "hh39",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #312)",
+    "isReply": false
+  },
+  {
+    "key": "comment_313",
+    "issueIndex": 113,
+    "authorRole": "hh40",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #313)",
+    "isReply": false
+  },
+  {
+    "key": "comment_314",
+    "issueIndex": 114,
+    "authorRole": "hh41",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #314)",
+    "isReply": false
+  },
+  {
+    "key": "comment_315",
+    "issueIndex": 115,
+    "authorRole": "hh42",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #315)",
+    "isReply": false
+  },
+  {
+    "key": "comment_316",
+    "issueIndex": 116,
+    "authorRole": "hh43",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #316)",
+    "isReply": false
+  },
+  {
+    "key": "comment_317",
+    "issueIndex": 117,
+    "authorRole": "hh44",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #317)",
+    "isReply": false
+  },
+  {
+    "key": "comment_318",
+    "issueIndex": 118,
+    "authorRole": "hh45",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #318)",
+    "isReply": false
+  },
+  {
+    "key": "comment_319",
+    "issueIndex": 119,
+    "authorRole": "hh46",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #319)",
+    "isReply": false
+  },
+  {
+    "key": "comment_320",
+    "issueIndex": 120,
+    "authorRole": "hh47",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #320)",
+    "isReply": false
+  },
+  {
+    "key": "comment_321",
+    "issueIndex": 121,
+    "authorRole": "hh48",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #321)",
+    "isReply": false
+  },
+  {
+    "key": "comment_322",
+    "issueIndex": 122,
+    "authorRole": "hh49",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #322)",
+    "isReply": false
+  },
+  {
+    "key": "comment_323",
+    "issueIndex": 123,
+    "authorRole": "hh04",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #323)",
+    "isReply": false
+  },
+  {
+    "key": "comment_324",
+    "issueIndex": 124,
+    "authorRole": "hh05",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #324)",
+    "isReply": false
+  },
+  {
+    "key": "comment_325",
+    "issueIndex": 125,
+    "authorRole": "hh06",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #325)",
+    "isReply": false
+  },
+  {
+    "key": "comment_326",
+    "issueIndex": 126,
+    "authorRole": "hh07",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #326)",
+    "isReply": false
+  },
+  {
+    "key": "comment_327",
+    "issueIndex": 127,
+    "authorRole": "hh08",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #327)",
+    "isReply": false
+  },
+  {
+    "key": "comment_328",
+    "issueIndex": 128,
+    "authorRole": "hh09",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #328)",
+    "isReply": false
+  },
+  {
+    "key": "comment_329",
+    "issueIndex": 129,
+    "authorRole": "hh10",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #329)",
+    "isReply": false
+  },
+  {
+    "key": "comment_330",
+    "issueIndex": 130,
+    "authorRole": "hh11",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #330)",
+    "isReply": false
+  },
+  {
+    "key": "comment_331",
+    "issueIndex": 131,
+    "authorRole": "hh12",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #331)",
+    "isReply": false
+  },
+  {
+    "key": "comment_332",
+    "issueIndex": 132,
+    "authorRole": "hh13",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #332)",
+    "isReply": false
+  },
+  {
+    "key": "comment_333",
+    "issueIndex": 133,
+    "authorRole": "hh14",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #333)",
+    "isReply": false
+  },
+  {
+    "key": "comment_334",
+    "issueIndex": 134,
+    "authorRole": "hh15",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #334)",
+    "isReply": false
+  },
+  {
+    "key": "comment_335",
+    "issueIndex": 135,
+    "authorRole": "hh16",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #335)",
+    "isReply": false
+  },
+  {
+    "key": "comment_336",
+    "issueIndex": 136,
+    "authorRole": "hh17",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #336)",
+    "isReply": false
+  },
+  {
+    "key": "comment_337",
+    "issueIndex": 137,
+    "authorRole": "hh18",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #337)",
+    "isReply": false
+  },
+  {
+    "key": "comment_338",
+    "issueIndex": 138,
+    "authorRole": "hh19",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #338)",
+    "isReply": false
+  },
+  {
+    "key": "comment_339",
+    "issueIndex": 139,
+    "authorRole": "hh20",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #339)",
+    "isReply": false
+  },
+  {
+    "key": "comment_340",
+    "issueIndex": 140,
+    "authorRole": "hh21",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #340)",
+    "isReply": false
+  },
+  {
+    "key": "comment_341",
+    "issueIndex": 141,
+    "authorRole": "hh22",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #341)",
+    "isReply": false
+  },
+  {
+    "key": "comment_342",
+    "issueIndex": 142,
+    "authorRole": "hh23",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #342)",
+    "isReply": false
+  },
+  {
+    "key": "comment_343",
+    "issueIndex": 143,
+    "authorRole": "hh24",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #343)",
+    "isReply": false
+  },
+  {
+    "key": "comment_344",
+    "issueIndex": 144,
+    "authorRole": "hh25",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #344)",
+    "isReply": false
+  },
+  {
+    "key": "comment_345",
+    "issueIndex": 145,
+    "authorRole": "hh26",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #345)",
+    "isReply": false
+  },
+  {
+    "key": "comment_346",
+    "issueIndex": 146,
+    "authorRole": "hh27",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #346)",
+    "isReply": false
+  },
+  {
+    "key": "comment_347",
+    "issueIndex": 147,
+    "authorRole": "hh28",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #347)",
+    "isReply": false
+  },
+  {
+    "key": "comment_348",
+    "issueIndex": 148,
+    "authorRole": "hh29",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #348)",
+    "isReply": false
+  },
+  {
+    "key": "comment_349",
+    "issueIndex": 149,
+    "authorRole": "hh30",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #349)",
+    "isReply": false
+  },
+  {
+    "key": "comment_350",
+    "issueIndex": 150,
+    "authorRole": "hh31",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #350)",
+    "isReply": false
+  },
+  {
+    "key": "comment_351",
+    "issueIndex": 151,
+    "authorRole": "hh32",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #351)",
+    "isReply": false
+  },
+  {
+    "key": "comment_352",
+    "issueIndex": 152,
+    "authorRole": "hh33",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #352)",
+    "isReply": false
+  },
+  {
+    "key": "comment_353",
+    "issueIndex": 153,
+    "authorRole": "hh34",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #353)",
+    "isReply": false
+  },
+  {
+    "key": "comment_354",
+    "issueIndex": 154,
+    "authorRole": "hh35",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #354)",
+    "isReply": false
+  },
+  {
+    "key": "comment_355",
+    "issueIndex": 155,
+    "authorRole": "hh36",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #355)",
+    "isReply": false
+  },
+  {
+    "key": "comment_356",
+    "issueIndex": 156,
+    "authorRole": "hh37",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #356)",
+    "isReply": false
+  },
+  {
+    "key": "comment_357",
+    "issueIndex": 157,
+    "authorRole": "hh38",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #357)",
+    "isReply": false
+  },
+  {
+    "key": "comment_358",
+    "issueIndex": 158,
+    "authorRole": "hh39",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #358)",
+    "isReply": false
+  },
+  {
+    "key": "comment_359",
+    "issueIndex": 159,
+    "authorRole": "hh40",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #359)",
+    "isReply": false
+  },
+  {
+    "key": "comment_360",
+    "issueIndex": 160,
+    "authorRole": "hh41",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #360)",
+    "isReply": false
+  },
+  {
+    "key": "comment_361",
+    "issueIndex": 161,
+    "authorRole": "hh42",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #361)",
+    "isReply": false
+  },
+  {
+    "key": "comment_362",
+    "issueIndex": 162,
+    "authorRole": "hh43",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #362)",
+    "isReply": false
+  },
+  {
+    "key": "comment_363",
+    "issueIndex": 163,
+    "authorRole": "hh44",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #363)",
+    "isReply": false
+  },
+  {
+    "key": "comment_364",
+    "issueIndex": 164,
+    "authorRole": "hh45",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #364)",
+    "isReply": false
+  },
+  {
+    "key": "comment_365",
+    "issueIndex": 165,
+    "authorRole": "hh46",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #365)",
+    "isReply": false
+  },
+  {
+    "key": "comment_366",
+    "issueIndex": 166,
+    "authorRole": "hh47",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #366)",
+    "isReply": false
+  },
+  {
+    "key": "comment_367",
+    "issueIndex": 167,
+    "authorRole": "hh48",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #367)",
+    "isReply": false
+  },
+  {
+    "key": "comment_368",
+    "issueIndex": 168,
+    "authorRole": "hh49",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #368)",
+    "isReply": false
+  },
+  {
+    "key": "comment_369",
+    "issueIndex": 169,
+    "authorRole": "hh04",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #369)",
+    "isReply": false
+  },
+  {
+    "key": "comment_370",
+    "issueIndex": 170,
+    "authorRole": "hh05",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #370)",
+    "isReply": false
+  },
+  {
+    "key": "comment_371",
+    "issueIndex": 171,
+    "authorRole": "hh06",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #371)",
+    "isReply": false
+  },
+  {
+    "key": "comment_372",
+    "issueIndex": 172,
+    "authorRole": "hh07",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #372)",
+    "isReply": false
+  },
+  {
+    "key": "comment_373",
+    "issueIndex": 173,
+    "authorRole": "hh08",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #373)",
+    "isReply": false
+  },
+  {
+    "key": "comment_374",
+    "issueIndex": 174,
+    "authorRole": "hh09",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #374)",
+    "isReply": false
+  },
+  {
+    "key": "comment_375",
+    "issueIndex": 175,
+    "authorRole": "hh10",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #375)",
+    "isReply": false
+  },
+  {
+    "key": "comment_376",
+    "issueIndex": 176,
+    "authorRole": "hh11",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #376)",
+    "isReply": false
+  },
+  {
+    "key": "comment_377",
+    "issueIndex": 177,
+    "authorRole": "hh12",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #377)",
+    "isReply": false
+  },
+  {
+    "key": "comment_378",
+    "issueIndex": 178,
+    "authorRole": "hh13",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #378)",
+    "isReply": false
+  },
+  {
+    "key": "comment_379",
+    "issueIndex": 179,
+    "authorRole": "hh14",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #379)",
+    "isReply": false
+  },
+  {
+    "key": "comment_380",
+    "issueIndex": 180,
+    "authorRole": "hh15",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #380)",
+    "isReply": false
+  },
+  {
+    "key": "comment_381",
+    "issueIndex": 181,
+    "authorRole": "hh16",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #381)",
+    "isReply": false
+  },
+  {
+    "key": "comment_382",
+    "issueIndex": 182,
+    "authorRole": "hh17",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #382)",
+    "isReply": false
+  },
+  {
+    "key": "comment_383",
+    "issueIndex": 183,
+    "authorRole": "hh18",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #383)",
+    "isReply": false
+  },
+  {
+    "key": "comment_384",
+    "issueIndex": 184,
+    "authorRole": "hh19",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #384)",
+    "isReply": false
+  },
+  {
+    "key": "comment_385",
+    "issueIndex": 185,
+    "authorRole": "hh20",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #385)",
+    "isReply": false
+  },
+  {
+    "key": "comment_386",
+    "issueIndex": 186,
+    "authorRole": "hh21",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #386)",
+    "isReply": false
+  },
+  {
+    "key": "comment_387",
+    "issueIndex": 187,
+    "authorRole": "hh22",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #387)",
+    "isReply": false
+  },
+  {
+    "key": "comment_388",
+    "issueIndex": 188,
+    "authorRole": "hh23",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #388)",
+    "isReply": false
+  },
+  {
+    "key": "comment_389",
+    "issueIndex": 189,
+    "authorRole": "hh24",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #389)",
+    "isReply": false
+  },
+  {
+    "key": "comment_390",
+    "issueIndex": 190,
+    "authorRole": "hh25",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #390)",
+    "isReply": false
+  },
+  {
+    "key": "comment_391",
+    "issueIndex": 191,
+    "authorRole": "hh26",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #391)",
+    "isReply": false
+  },
+  {
+    "key": "comment_392",
+    "issueIndex": 192,
+    "authorRole": "hh27",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #392)",
+    "isReply": false
+  },
+  {
+    "key": "comment_393",
+    "issueIndex": 193,
+    "authorRole": "hh28",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #393)",
+    "isReply": false
+  },
+  {
+    "key": "comment_394",
+    "issueIndex": 194,
+    "authorRole": "hh29",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #394)",
+    "isReply": false
+  },
+  {
+    "key": "comment_395",
+    "issueIndex": 195,
+    "authorRole": "hh30",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #395)",
+    "isReply": false
+  },
+  {
+    "key": "comment_396",
+    "issueIndex": 196,
+    "authorRole": "hh31",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #396)",
+    "isReply": false
+  },
+  {
+    "key": "comment_397",
+    "issueIndex": 197,
+    "authorRole": "hh32",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #397)",
+    "isReply": false
+  },
+  {
+    "key": "comment_398",
+    "issueIndex": 198,
+    "authorRole": "hh33",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #398)",
+    "isReply": false
+  },
+  {
+    "key": "comment_399",
+    "issueIndex": 199,
+    "authorRole": "hh34",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #399)",
+    "isReply": false
+  },
+  {
+    "key": "comment_400",
+    "issueIndex": 200,
+    "authorRole": "hh35",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #400)",
+    "isReply": false
+  },
+  {
+    "key": "comment_401",
+    "issueIndex": 1,
+    "authorRole": "hh36",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #401)",
+    "isReply": false
+  },
+  {
+    "key": "comment_402",
+    "issueIndex": 2,
+    "authorRole": "hh37",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #402)",
+    "isReply": false
+  },
+  {
+    "key": "comment_403",
+    "issueIndex": 3,
+    "authorRole": "hh38",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #403)",
+    "isReply": false
+  },
+  {
+    "key": "comment_404",
+    "issueIndex": 4,
+    "authorRole": "hh39",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #404)",
+    "isReply": false
+  },
+  {
+    "key": "comment_405",
+    "issueIndex": 5,
+    "authorRole": "hh40",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #405)",
+    "isReply": false
+  },
+  {
+    "key": "comment_406",
+    "issueIndex": 6,
+    "authorRole": "hh41",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #406)",
+    "isReply": false
+  },
+  {
+    "key": "comment_407",
+    "issueIndex": 7,
+    "authorRole": "hh42",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #407)",
+    "isReply": false
+  },
+  {
+    "key": "comment_408",
+    "issueIndex": 8,
+    "authorRole": "hh43",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #408)",
+    "isReply": false
+  },
+  {
+    "key": "comment_409",
+    "issueIndex": 9,
+    "authorRole": "hh44",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #409)",
+    "isReply": false
+  },
+  {
+    "key": "comment_410",
+    "issueIndex": 10,
+    "authorRole": "hh45",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #410)",
+    "isReply": false
+  },
+  {
+    "key": "comment_411",
+    "issueIndex": 11,
+    "authorRole": "hh46",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #411)",
+    "isReply": false
+  },
+  {
+    "key": "comment_412",
+    "issueIndex": 12,
+    "authorRole": "hh47",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #412)",
+    "isReply": false
+  },
+  {
+    "key": "comment_413",
+    "issueIndex": 13,
+    "authorRole": "hh48",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #413)",
+    "isReply": false
+  },
+  {
+    "key": "comment_414",
+    "issueIndex": 14,
+    "authorRole": "hh49",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #414)",
+    "isReply": false
+  },
+  {
+    "key": "comment_415",
+    "issueIndex": 15,
+    "authorRole": "hh04",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #415)",
+    "isReply": false
+  },
+  {
+    "key": "comment_416",
+    "issueIndex": 16,
+    "authorRole": "hh05",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #416)",
+    "isReply": false
+  },
+  {
+    "key": "comment_417",
+    "issueIndex": 17,
+    "authorRole": "hh06",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #417)",
+    "isReply": false
+  },
+  {
+    "key": "comment_418",
+    "issueIndex": 18,
+    "authorRole": "hh07",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #418)",
+    "isReply": false
+  },
+  {
+    "key": "comment_419",
+    "issueIndex": 19,
+    "authorRole": "hh08",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #419)",
+    "isReply": false
+  },
+  {
+    "key": "comment_420",
+    "issueIndex": 20,
+    "authorRole": "hh09",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #420)",
+    "isReply": false
+  },
+  {
+    "key": "comment_421",
+    "issueIndex": 21,
+    "authorRole": "hh10",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #421)",
+    "isReply": false
+  },
+  {
+    "key": "comment_422",
+    "issueIndex": 22,
+    "authorRole": "hh11",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #422)",
+    "isReply": false
+  },
+  {
+    "key": "comment_423",
+    "issueIndex": 23,
+    "authorRole": "hh12",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #423)",
+    "isReply": false
+  },
+  {
+    "key": "comment_424",
+    "issueIndex": 24,
+    "authorRole": "hh13",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #424)",
+    "isReply": false
+  },
+  {
+    "key": "comment_425",
+    "issueIndex": 25,
+    "authorRole": "hh14",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #425)",
+    "isReply": false
+  },
+  {
+    "key": "comment_426",
+    "issueIndex": 26,
+    "authorRole": "hh15",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #426)",
+    "isReply": false
+  },
+  {
+    "key": "comment_427",
+    "issueIndex": 27,
+    "authorRole": "hh16",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #427)",
+    "isReply": false
+  },
+  {
+    "key": "comment_428",
+    "issueIndex": 28,
+    "authorRole": "hh17",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #428)",
+    "isReply": false
+  },
+  {
+    "key": "comment_429",
+    "issueIndex": 29,
+    "authorRole": "hh18",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #429)",
+    "isReply": false
+  },
+  {
+    "key": "comment_430",
+    "issueIndex": 30,
+    "authorRole": "hh19",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #430)",
+    "isReply": false
+  },
+  {
+    "key": "comment_431",
+    "issueIndex": 31,
+    "authorRole": "hh20",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #431)",
+    "isReply": false
+  },
+  {
+    "key": "comment_432",
+    "issueIndex": 32,
+    "authorRole": "hh21",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #432)",
+    "isReply": false
+  },
+  {
+    "key": "comment_433",
+    "issueIndex": 33,
+    "authorRole": "hh22",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #433)",
+    "isReply": false
+  },
+  {
+    "key": "comment_434",
+    "issueIndex": 34,
+    "authorRole": "hh23",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #434)",
+    "isReply": false
+  },
+  {
+    "key": "comment_435",
+    "issueIndex": 35,
+    "authorRole": "hh24",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #435)",
+    "isReply": false
+  },
+  {
+    "key": "comment_436",
+    "issueIndex": 36,
+    "authorRole": "hh25",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #436)",
+    "isReply": false
+  },
+  {
+    "key": "comment_437",
+    "issueIndex": 37,
+    "authorRole": "hh26",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #437)",
+    "isReply": false
+  },
+  {
+    "key": "comment_438",
+    "issueIndex": 38,
+    "authorRole": "hh27",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #438)",
+    "isReply": false
+  },
+  {
+    "key": "comment_439",
+    "issueIndex": 39,
+    "authorRole": "hh28",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #439)",
+    "isReply": false
+  },
+  {
+    "key": "comment_440",
+    "issueIndex": 40,
+    "authorRole": "hh29",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #440)",
+    "isReply": false
+  },
+  {
+    "key": "comment_441",
+    "issueIndex": 41,
+    "authorRole": "hh30",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #441)",
+    "isReply": false
+  },
+  {
+    "key": "comment_442",
+    "issueIndex": 42,
+    "authorRole": "hh31",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #442)",
+    "isReply": false
+  },
+  {
+    "key": "comment_443",
+    "issueIndex": 43,
+    "authorRole": "hh32",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #443)",
+    "isReply": false
+  },
+  {
+    "key": "comment_444",
+    "issueIndex": 44,
+    "authorRole": "hh33",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #444)",
+    "isReply": false
+  },
+  {
+    "key": "comment_445",
+    "issueIndex": 45,
+    "authorRole": "hh34",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #445)",
+    "isReply": false
+  },
+  {
+    "key": "comment_446",
+    "issueIndex": 46,
+    "authorRole": "hh35",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #446)",
+    "isReply": false
+  },
+  {
+    "key": "comment_447",
+    "issueIndex": 47,
+    "authorRole": "hh36",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #447)",
+    "isReply": false
+  },
+  {
+    "key": "comment_448",
+    "issueIndex": 48,
+    "authorRole": "hh37",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #448)",
+    "isReply": false
+  },
+  {
+    "key": "comment_449",
+    "issueIndex": 49,
+    "authorRole": "hh38",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #449)",
+    "isReply": false
+  },
+  {
+    "key": "comment_450",
+    "issueIndex": 50,
+    "authorRole": "hh39",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #450)",
+    "isReply": false
+  },
+  {
+    "key": "comment_451",
+    "issueIndex": 51,
+    "authorRole": "hh40",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #451)",
+    "isReply": false
+  },
+  {
+    "key": "comment_452",
+    "issueIndex": 52,
+    "authorRole": "hh41",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #452)",
+    "isReply": false
+  },
+  {
+    "key": "comment_453",
+    "issueIndex": 53,
+    "authorRole": "hh42",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #453)",
+    "isReply": false
+  },
+  {
+    "key": "comment_454",
+    "issueIndex": 54,
+    "authorRole": "hh43",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #454)",
+    "isReply": false
+  },
+  {
+    "key": "comment_455",
+    "issueIndex": 55,
+    "authorRole": "hh44",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #455)",
+    "isReply": false
+  },
+  {
+    "key": "comment_456",
+    "issueIndex": 56,
+    "authorRole": "hh45",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #456)",
+    "isReply": false
+  },
+  {
+    "key": "comment_457",
+    "issueIndex": 57,
+    "authorRole": "hh46",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #457)",
+    "isReply": false
+  },
+  {
+    "key": "comment_458",
+    "issueIndex": 58,
+    "authorRole": "hh47",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #458)",
+    "isReply": false
+  },
+  {
+    "key": "comment_459",
+    "issueIndex": 59,
+    "authorRole": "hh48",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #459)",
+    "isReply": false
+  },
+  {
+    "key": "comment_460",
+    "issueIndex": 60,
+    "authorRole": "hh49",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #460)",
+    "isReply": false
+  },
+  {
+    "key": "comment_461",
+    "issueIndex": 61,
+    "authorRole": "hh04",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #461)",
+    "isReply": false
+  },
+  {
+    "key": "comment_462",
+    "issueIndex": 62,
+    "authorRole": "hh05",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #462)",
+    "isReply": false
+  },
+  {
+    "key": "comment_463",
+    "issueIndex": 63,
+    "authorRole": "hh06",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #463)",
+    "isReply": false
+  },
+  {
+    "key": "comment_464",
+    "issueIndex": 64,
+    "authorRole": "hh07",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #464)",
+    "isReply": false
+  },
+  {
+    "key": "comment_465",
+    "issueIndex": 65,
+    "authorRole": "hh08",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #465)",
+    "isReply": false
+  },
+  {
+    "key": "comment_466",
+    "issueIndex": 66,
+    "authorRole": "hh09",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #466)",
+    "isReply": false
+  },
+  {
+    "key": "comment_467",
+    "issueIndex": 67,
+    "authorRole": "hh10",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #467)",
+    "isReply": false
+  },
+  {
+    "key": "comment_468",
+    "issueIndex": 68,
+    "authorRole": "hh11",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #468)",
+    "isReply": false
+  },
+  {
+    "key": "comment_469",
+    "issueIndex": 69,
+    "authorRole": "hh12",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #469)",
+    "isReply": false
+  },
+  {
+    "key": "comment_470",
+    "issueIndex": 70,
+    "authorRole": "hh13",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #470)",
+    "isReply": false
+  },
+  {
+    "key": "comment_471",
+    "issueIndex": 71,
+    "authorRole": "hh14",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #471)",
+    "isReply": false
+  },
+  {
+    "key": "comment_472",
+    "issueIndex": 72,
+    "authorRole": "hh15",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #472)",
+    "isReply": false
+  },
+  {
+    "key": "comment_473",
+    "issueIndex": 73,
+    "authorRole": "hh16",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #473)",
+    "isReply": false
+  },
+  {
+    "key": "comment_474",
+    "issueIndex": 74,
+    "authorRole": "hh17",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #474)",
+    "isReply": false
+  },
+  {
+    "key": "comment_475",
+    "issueIndex": 75,
+    "authorRole": "hh18",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #475)",
+    "isReply": false
+  },
+  {
+    "key": "comment_476",
+    "issueIndex": 76,
+    "authorRole": "hh19",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #476)",
+    "isReply": false
+  },
+  {
+    "key": "comment_477",
+    "issueIndex": 77,
+    "authorRole": "hh20",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #477)",
+    "isReply": false
+  },
+  {
+    "key": "comment_478",
+    "issueIndex": 78,
+    "authorRole": "hh21",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #478)",
+    "isReply": false
+  },
+  {
+    "key": "comment_479",
+    "issueIndex": 79,
+    "authorRole": "hh22",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #479)",
+    "isReply": false
+  },
+  {
+    "key": "comment_480",
+    "issueIndex": 80,
+    "authorRole": "hh23",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #480)",
+    "isReply": false
+  },
+  {
+    "key": "comment_481",
+    "issueIndex": 81,
+    "authorRole": "hh24",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #481)",
+    "isReply": false
+  },
+  {
+    "key": "comment_482",
+    "issueIndex": 82,
+    "authorRole": "hh25",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #482)",
+    "isReply": false
+  },
+  {
+    "key": "comment_483",
+    "issueIndex": 83,
+    "authorRole": "hh26",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #483)",
+    "isReply": false
+  },
+  {
+    "key": "comment_484",
+    "issueIndex": 84,
+    "authorRole": "hh27",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #484)",
+    "isReply": false
+  },
+  {
+    "key": "comment_485",
+    "issueIndex": 85,
+    "authorRole": "hh28",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #485)",
+    "isReply": false
+  },
+  {
+    "key": "comment_486",
+    "issueIndex": 86,
+    "authorRole": "hh29",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #486)",
+    "isReply": false
+  },
+  {
+    "key": "comment_487",
+    "issueIndex": 87,
+    "authorRole": "hh30",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #487)",
+    "isReply": false
+  },
+  {
+    "key": "comment_488",
+    "issueIndex": 88,
+    "authorRole": "hh31",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #488)",
+    "isReply": false
+  },
+  {
+    "key": "comment_489",
+    "issueIndex": 89,
+    "authorRole": "hh32",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #489)",
+    "isReply": false
+  },
+  {
+    "key": "comment_490",
+    "issueIndex": 90,
+    "authorRole": "hh33",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #490)",
+    "isReply": false
+  },
+  {
+    "key": "comment_491",
+    "issueIndex": 91,
+    "authorRole": "hh34",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #491)",
+    "isReply": false
+  },
+  {
+    "key": "comment_492",
+    "issueIndex": 92,
+    "authorRole": "hh35",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #492)",
+    "isReply": false
+  },
+  {
+    "key": "comment_493",
+    "issueIndex": 93,
+    "authorRole": "hh36",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #493)",
+    "isReply": false
+  },
+  {
+    "key": "comment_494",
+    "issueIndex": 94,
+    "authorRole": "hh37",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #494)",
+    "isReply": false
+  },
+  {
+    "key": "comment_495",
+    "issueIndex": 95,
+    "authorRole": "hh38",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #495)",
+    "isReply": false
+  },
+  {
+    "key": "comment_496",
+    "issueIndex": 96,
+    "authorRole": "hh39",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #496)",
+    "isReply": false
+  },
+  {
+    "key": "comment_497",
+    "issueIndex": 97,
+    "authorRole": "hh40",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #497)",
+    "isReply": false
+  },
+  {
+    "key": "comment_498",
+    "issueIndex": 98,
+    "authorRole": "hh41",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #498)",
+    "isReply": false
+  },
+  {
+    "key": "comment_499",
+    "issueIndex": 99,
+    "authorRole": "hh42",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #499)",
+    "isReply": false
+  },
+  {
+    "key": "comment_500",
+    "issueIndex": 100,
+    "authorRole": "hh43",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #500)",
+    "isReply": false
+  },
+  {
+    "key": "comment_501",
+    "issueIndex": 101,
+    "authorRole": "hh44",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #501)",
+    "isReply": false
+  },
+  {
+    "key": "comment_502",
+    "issueIndex": 102,
+    "authorRole": "hh45",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #502)",
+    "isReply": false
+  },
+  {
+    "key": "comment_503",
+    "issueIndex": 103,
+    "authorRole": "hh46",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #503)",
+    "isReply": false
+  },
+  {
+    "key": "comment_504",
+    "issueIndex": 104,
+    "authorRole": "hh47",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #504)",
+    "isReply": false
+  },
+  {
+    "key": "comment_505",
+    "issueIndex": 105,
+    "authorRole": "hh48",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #505)",
+    "isReply": false
+  },
+  {
+    "key": "comment_506",
+    "issueIndex": 106,
+    "authorRole": "hh49",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #506)",
+    "isReply": false
+  },
+  {
+    "key": "comment_507",
+    "issueIndex": 107,
+    "authorRole": "hh04",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #507)",
+    "isReply": false
+  },
+  {
+    "key": "comment_508",
+    "issueIndex": 108,
+    "authorRole": "hh05",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #508)",
+    "isReply": false
+  },
+  {
+    "key": "comment_509",
+    "issueIndex": 109,
+    "authorRole": "hh06",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #509)",
+    "isReply": false
+  },
+  {
+    "key": "comment_510",
+    "issueIndex": 110,
+    "authorRole": "hh07",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #510)",
+    "isReply": false
+  },
+  {
+    "key": "comment_511",
+    "issueIndex": 111,
+    "authorRole": "hh08",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #511)",
+    "isReply": false
+  },
+  {
+    "key": "comment_512",
+    "issueIndex": 112,
+    "authorRole": "hh09",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #512)",
+    "isReply": false
+  },
+  {
+    "key": "comment_513",
+    "issueIndex": 113,
+    "authorRole": "hh10",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #513)",
+    "isReply": false
+  },
+  {
+    "key": "comment_514",
+    "issueIndex": 114,
+    "authorRole": "hh11",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #514)",
+    "isReply": false
+  },
+  {
+    "key": "comment_515",
+    "issueIndex": 115,
+    "authorRole": "hh12",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #515)",
+    "isReply": false
+  },
+  {
+    "key": "comment_516",
+    "issueIndex": 116,
+    "authorRole": "hh13",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #516)",
+    "isReply": false
+  },
+  {
+    "key": "comment_517",
+    "issueIndex": 117,
+    "authorRole": "hh14",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #517)",
+    "isReply": false
+  },
+  {
+    "key": "comment_518",
+    "issueIndex": 118,
+    "authorRole": "hh15",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #518)",
+    "isReply": false
+  },
+  {
+    "key": "comment_519",
+    "issueIndex": 119,
+    "authorRole": "hh16",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #519)",
+    "isReply": false
+  },
+  {
+    "key": "comment_520",
+    "issueIndex": 120,
+    "authorRole": "hh17",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #520)",
+    "isReply": false
+  },
+  {
+    "key": "comment_521",
+    "issueIndex": 121,
+    "authorRole": "hh18",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #521)",
+    "isReply": false
+  },
+  {
+    "key": "comment_522",
+    "issueIndex": 122,
+    "authorRole": "hh19",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #522)",
+    "isReply": false
+  },
+  {
+    "key": "comment_523",
+    "issueIndex": 123,
+    "authorRole": "hh20",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #523)",
+    "isReply": false
+  },
+  {
+    "key": "comment_524",
+    "issueIndex": 124,
+    "authorRole": "hh21",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #524)",
+    "isReply": false
+  },
+  {
+    "key": "comment_525",
+    "issueIndex": 125,
+    "authorRole": "hh22",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #525)",
+    "isReply": false
+  },
+  {
+    "key": "comment_526",
+    "issueIndex": 126,
+    "authorRole": "hh23",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #526)",
+    "isReply": false
+  },
+  {
+    "key": "comment_527",
+    "issueIndex": 127,
+    "authorRole": "hh24",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #527)",
+    "isReply": false
+  },
+  {
+    "key": "comment_528",
+    "issueIndex": 128,
+    "authorRole": "hh25",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #528)",
+    "isReply": false
+  },
+  {
+    "key": "comment_529",
+    "issueIndex": 129,
+    "authorRole": "hh26",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #529)",
+    "isReply": false
+  },
+  {
+    "key": "comment_530",
+    "issueIndex": 130,
+    "authorRole": "hh27",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #530)",
+    "isReply": false
+  },
+  {
+    "key": "comment_531",
+    "issueIndex": 131,
+    "authorRole": "hh28",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #531)",
+    "isReply": false
+  },
+  {
+    "key": "comment_532",
+    "issueIndex": 132,
+    "authorRole": "hh29",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #532)",
+    "isReply": false
+  },
+  {
+    "key": "comment_533",
+    "issueIndex": 133,
+    "authorRole": "hh30",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #533)",
+    "isReply": false
+  },
+  {
+    "key": "comment_534",
+    "issueIndex": 134,
+    "authorRole": "hh31",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #534)",
+    "isReply": false
+  },
+  {
+    "key": "comment_535",
+    "issueIndex": 135,
+    "authorRole": "hh32",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #535)",
+    "isReply": false
+  },
+  {
+    "key": "comment_536",
+    "issueIndex": 136,
+    "authorRole": "hh33",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #536)",
+    "isReply": false
+  },
+  {
+    "key": "comment_537",
+    "issueIndex": 137,
+    "authorRole": "hh34",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #537)",
+    "isReply": false
+  },
+  {
+    "key": "comment_538",
+    "issueIndex": 138,
+    "authorRole": "hh35",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #538)",
+    "isReply": false
+  },
+  {
+    "key": "comment_539",
+    "issueIndex": 139,
+    "authorRole": "hh36",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #539)",
+    "isReply": false
+  },
+  {
+    "key": "comment_540",
+    "issueIndex": 140,
+    "authorRole": "hh37",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #540)",
+    "isReply": false
+  },
+  {
+    "key": "comment_541",
+    "issueIndex": 141,
+    "authorRole": "hh38",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #541)",
+    "isReply": false
+  },
+  {
+    "key": "comment_542",
+    "issueIndex": 142,
+    "authorRole": "hh39",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #542)",
+    "isReply": false
+  },
+  {
+    "key": "comment_543",
+    "issueIndex": 143,
+    "authorRole": "hh40",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #543)",
+    "isReply": false
+  },
+  {
+    "key": "comment_544",
+    "issueIndex": 144,
+    "authorRole": "hh41",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #544)",
+    "isReply": false
+  },
+  {
+    "key": "comment_545",
+    "issueIndex": 145,
+    "authorRole": "hh42",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #545)",
+    "isReply": false
+  },
+  {
+    "key": "comment_546",
+    "issueIndex": 146,
+    "authorRole": "hh43",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #546)",
+    "isReply": false
+  },
+  {
+    "key": "comment_547",
+    "issueIndex": 147,
+    "authorRole": "hh44",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #547)",
+    "isReply": false
+  },
+  {
+    "key": "comment_548",
+    "issueIndex": 148,
+    "authorRole": "hh45",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #548)",
+    "isReply": false
+  },
+  {
+    "key": "comment_549",
+    "issueIndex": 149,
+    "authorRole": "hh46",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #549)",
+    "isReply": false
+  },
+  {
+    "key": "comment_550",
+    "issueIndex": 150,
+    "authorRole": "hh47",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #550)",
+    "isReply": false
+  },
+  {
+    "key": "comment_551",
+    "issueIndex": 151,
+    "authorRole": "hh48",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #551)",
+    "isReply": false
+  },
+  {
+    "key": "comment_552",
+    "issueIndex": 152,
+    "authorRole": "hh49",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #552)",
+    "isReply": false
+  },
+  {
+    "key": "comment_553",
+    "issueIndex": 153,
+    "authorRole": "hh04",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #553)",
+    "isReply": false
+  },
+  {
+    "key": "comment_554",
+    "issueIndex": 154,
+    "authorRole": "hh05",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #554)",
+    "isReply": false
+  },
+  {
+    "key": "comment_555",
+    "issueIndex": 155,
+    "authorRole": "hh06",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #555)",
+    "isReply": false
+  },
+  {
+    "key": "comment_556",
+    "issueIndex": 156,
+    "authorRole": "hh07",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #556)",
+    "isReply": false
+  },
+  {
+    "key": "comment_557",
+    "issueIndex": 157,
+    "authorRole": "hh08",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #557)",
+    "isReply": false
+  },
+  {
+    "key": "comment_558",
+    "issueIndex": 158,
+    "authorRole": "hh09",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #558)",
+    "isReply": false
+  },
+  {
+    "key": "comment_559",
+    "issueIndex": 159,
+    "authorRole": "hh10",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #559)",
+    "isReply": false
+  },
+  {
+    "key": "comment_560",
+    "issueIndex": 160,
+    "authorRole": "hh11",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #560)",
+    "isReply": false
+  },
+  {
+    "key": "comment_561",
+    "issueIndex": 161,
+    "authorRole": "hh12",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #561)",
+    "isReply": false
+  },
+  {
+    "key": "comment_562",
+    "issueIndex": 162,
+    "authorRole": "hh13",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #562)",
+    "isReply": false
+  },
+  {
+    "key": "comment_563",
+    "issueIndex": 163,
+    "authorRole": "hh14",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #563)",
+    "isReply": false
+  },
+  {
+    "key": "comment_564",
+    "issueIndex": 164,
+    "authorRole": "hh15",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #564)",
+    "isReply": false
+  },
+  {
+    "key": "comment_565",
+    "issueIndex": 165,
+    "authorRole": "hh16",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #565)",
+    "isReply": false
+  },
+  {
+    "key": "comment_566",
+    "issueIndex": 166,
+    "authorRole": "hh17",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #566)",
+    "isReply": false
+  },
+  {
+    "key": "comment_567",
+    "issueIndex": 167,
+    "authorRole": "hh18",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #567)",
+    "isReply": false
+  },
+  {
+    "key": "comment_568",
+    "issueIndex": 168,
+    "authorRole": "hh19",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #568)",
+    "isReply": false
+  },
+  {
+    "key": "comment_569",
+    "issueIndex": 169,
+    "authorRole": "hh20",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #569)",
+    "isReply": false
+  },
+  {
+    "key": "comment_570",
+    "issueIndex": 170,
+    "authorRole": "hh21",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #570)",
+    "isReply": false
+  },
+  {
+    "key": "comment_571",
+    "issueIndex": 171,
+    "authorRole": "hh22",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #571)",
+    "isReply": false
+  },
+  {
+    "key": "comment_572",
+    "issueIndex": 172,
+    "authorRole": "hh23",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #572)",
+    "isReply": false
+  },
+  {
+    "key": "comment_573",
+    "issueIndex": 173,
+    "authorRole": "hh24",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #573)",
+    "isReply": false
+  },
+  {
+    "key": "comment_574",
+    "issueIndex": 174,
+    "authorRole": "hh25",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #574)",
+    "isReply": false
+  },
+  {
+    "key": "comment_575",
+    "issueIndex": 175,
+    "authorRole": "hh26",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #575)",
+    "isReply": false
+  },
+  {
+    "key": "comment_576",
+    "issueIndex": 176,
+    "authorRole": "hh27",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #576)",
+    "isReply": false
+  },
+  {
+    "key": "comment_577",
+    "issueIndex": 177,
+    "authorRole": "hh28",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #577)",
+    "isReply": false
+  },
+  {
+    "key": "comment_578",
+    "issueIndex": 178,
+    "authorRole": "hh29",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #578)",
+    "isReply": false
+  },
+  {
+    "key": "comment_579",
+    "issueIndex": 179,
+    "authorRole": "hh30",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #579)",
+    "isReply": false
+  },
+  {
+    "key": "comment_580",
+    "issueIndex": 180,
+    "authorRole": "hh31",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #580)",
+    "isReply": false
+  },
+  {
+    "key": "comment_581",
+    "issueIndex": 181,
+    "authorRole": "hh32",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #581)",
+    "isReply": false
+  },
+  {
+    "key": "comment_582",
+    "issueIndex": 182,
+    "authorRole": "hh33",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #582)",
+    "isReply": false
+  },
+  {
+    "key": "comment_583",
+    "issueIndex": 183,
+    "authorRole": "hh34",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #583)",
+    "isReply": false
+  },
+  {
+    "key": "comment_584",
+    "issueIndex": 184,
+    "authorRole": "hh35",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #584)",
+    "isReply": false
+  },
+  {
+    "key": "comment_585",
+    "issueIndex": 185,
+    "authorRole": "hh36",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #585)",
+    "isReply": false
+  },
+  {
+    "key": "comment_586",
+    "issueIndex": 186,
+    "authorRole": "hh37",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #586)",
+    "isReply": false
+  },
+  {
+    "key": "comment_587",
+    "issueIndex": 187,
+    "authorRole": "hh38",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #587)",
+    "isReply": false
+  },
+  {
+    "key": "comment_588",
+    "issueIndex": 188,
+    "authorRole": "hh39",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #588)",
+    "isReply": false
+  },
+  {
+    "key": "comment_589",
+    "issueIndex": 189,
+    "authorRole": "hh40",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #589)",
+    "isReply": false
+  },
+  {
+    "key": "comment_590",
+    "issueIndex": 190,
+    "authorRole": "hh41",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #590)",
+    "isReply": false
+  },
+  {
+    "key": "comment_591",
+    "issueIndex": 191,
+    "authorRole": "hh42",
+    "body": "Cho mình hỏi task này có cần hỗ trợ tương thích ngược với Bun runtime 1.4 không bạn? (Ref #591)",
+    "isReply": false
+  },
+  {
+    "key": "comment_592",
+    "issueIndex": 192,
+    "authorRole": "hh43",
+    "body": "I have extensive experience with this pattern in production. Can start immediately and deliver within 48h. (Ref #592)",
+    "isReply": false
+  },
+  {
+    "key": "comment_593",
+    "issueIndex": 193,
+    "authorRole": "hh44",
+    "body": "Bạn có thể cung cấp thêm log chi tiết hoặc unit test case mẫu để reproduce lỗi được không? (Ref #593)",
+    "isReply": false
+  },
+  {
+    "key": "comment_594",
+    "issueIndex": 194,
+    "authorRole": "hh45",
+    "body": "Đã review kỹ đặc tả và repository đính kèm. Sẵn sàng nhận nhiệm vụ và cam kết chất lượng. (Ref #594)",
+    "isReply": false
+  },
+  {
+    "key": "comment_595",
+    "issueIndex": 195,
+    "authorRole": "hh46",
+    "body": "Does this task require gas optimization benchmarks before and after changes? (Ref #595)",
+    "isReply": false
+  },
+  {
+    "key": "comment_596",
+    "issueIndex": 196,
+    "authorRole": "hh47",
+    "body": "Tiêu chí nghiệm thu này có yêu cầu viết thêm E2E test cho luồng giao dịch on-chain không? (Ref #596)",
+    "isReply": false
+  },
+  {
+    "key": "comment_597",
+    "issueIndex": 197,
+    "authorRole": "hh48",
+    "body": "Mình đề xuất hướng tiếp cận dùng batch execution để giảm tối đa chi phí gas cho người dùng. (Ref #597)",
+    "isReply": false
+  },
+  {
+    "key": "comment_598",
+    "issueIndex": 198,
+    "authorRole": "hh49",
+    "body": "Great initiative! Happy to collaborate on the smart contract security audit part. (Ref #598)",
+    "isReply": false
+  },
+  {
+    "key": "comment_599",
+    "issueIndex": 199,
+    "authorRole": "hh04",
+    "body": "Cho mình hỏi bounty này thanh toán bằng token mUSDC trên chain local 31337 đúng không bạn? (Ref #599)",
+    "isReply": false
+  },
+  {
+    "key": "comment_600",
+    "issueIndex": 200,
+    "authorRole": "hh05",
+    "body": "I can optimize the query execution plan with an index on composite columns. (Ref #600)",
+    "isReply": false
+  },
+  {
+    "key": "comment_601",
+    "issueIndex": 1,
+    "authorRole": "hh09",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #1)",
+    "isReply": true
+  },
+  {
+    "key": "comment_602",
+    "issueIndex": 2,
+    "authorRole": "hh10",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #2)",
+    "isReply": true
+  },
+  {
+    "key": "comment_603",
+    "issueIndex": 3,
+    "authorRole": "hh11",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #3)",
+    "isReply": true
+  },
+  {
+    "key": "comment_604",
+    "issueIndex": 4,
+    "authorRole": "hh12",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #4)",
+    "isReply": true
+  },
+  {
+    "key": "comment_605",
+    "issueIndex": 5,
+    "authorRole": "hh13",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #5)",
+    "isReply": true
+  },
+  {
+    "key": "comment_606",
+    "issueIndex": 6,
+    "authorRole": "hh14",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #6)",
+    "isReply": true
+  },
+  {
+    "key": "comment_607",
+    "issueIndex": 7,
+    "authorRole": "hh15",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #7)",
+    "isReply": true
+  },
+  {
+    "key": "comment_608",
+    "issueIndex": 8,
+    "authorRole": "hh16",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #8)",
+    "isReply": true
+  },
+  {
+    "key": "comment_609",
+    "issueIndex": 9,
+    "authorRole": "hh17",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #9)",
+    "isReply": true
+  },
+  {
+    "key": "comment_610",
+    "issueIndex": 10,
+    "authorRole": "hh18",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #10)",
+    "isReply": true
+  },
+  {
+    "key": "comment_611",
+    "issueIndex": 11,
+    "authorRole": "hh19",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #11)",
+    "isReply": true
+  },
+  {
+    "key": "comment_612",
+    "issueIndex": 12,
+    "authorRole": "hh20",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #12)",
+    "isReply": true
+  },
+  {
+    "key": "comment_613",
+    "issueIndex": 13,
+    "authorRole": "hh21",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #13)",
+    "isReply": true
+  },
+  {
+    "key": "comment_614",
+    "issueIndex": 14,
+    "authorRole": "hh22",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #14)",
+    "isReply": true
+  },
+  {
+    "key": "comment_615",
+    "issueIndex": 15,
+    "authorRole": "hh23",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #15)",
+    "isReply": true
+  },
+  {
+    "key": "comment_616",
+    "issueIndex": 16,
+    "authorRole": "hh24",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #16)",
+    "isReply": true
+  },
+  {
+    "key": "comment_617",
+    "issueIndex": 17,
+    "authorRole": "hh25",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #17)",
+    "isReply": true
+  },
+  {
+    "key": "comment_618",
+    "issueIndex": 18,
+    "authorRole": "hh26",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #18)",
+    "isReply": true
+  },
+  {
+    "key": "comment_619",
+    "issueIndex": 19,
+    "authorRole": "hh27",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #19)",
+    "isReply": true
+  },
+  {
+    "key": "comment_620",
+    "issueIndex": 20,
+    "authorRole": "hh28",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #20)",
+    "isReply": true
+  },
+  {
+    "key": "comment_621",
+    "issueIndex": 21,
+    "authorRole": "hh29",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #21)",
+    "isReply": true
+  },
+  {
+    "key": "comment_622",
+    "issueIndex": 22,
+    "authorRole": "hh30",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #22)",
+    "isReply": true
+  },
+  {
+    "key": "comment_623",
+    "issueIndex": 23,
+    "authorRole": "hh31",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #23)",
+    "isReply": true
+  },
+  {
+    "key": "comment_624",
+    "issueIndex": 24,
+    "authorRole": "hh32",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #24)",
+    "isReply": true
+  },
+  {
+    "key": "comment_625",
+    "issueIndex": 25,
+    "authorRole": "hh33",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #25)",
+    "isReply": true
+  },
+  {
+    "key": "comment_626",
+    "issueIndex": 26,
+    "authorRole": "hh34",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #26)",
+    "isReply": true
+  },
+  {
+    "key": "comment_627",
+    "issueIndex": 27,
+    "authorRole": "hh35",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #27)",
+    "isReply": true
+  },
+  {
+    "key": "comment_628",
+    "issueIndex": 28,
+    "authorRole": "hh36",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #28)",
+    "isReply": true
+  },
+  {
+    "key": "comment_629",
+    "issueIndex": 29,
+    "authorRole": "hh37",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #29)",
+    "isReply": true
+  },
+  {
+    "key": "comment_630",
+    "issueIndex": 30,
+    "authorRole": "hh38",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #30)",
+    "isReply": true
+  },
+  {
+    "key": "comment_631",
+    "issueIndex": 31,
+    "authorRole": "hh39",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #31)",
+    "isReply": true
+  },
+  {
+    "key": "comment_632",
+    "issueIndex": 32,
+    "authorRole": "hh40",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #32)",
+    "isReply": true
+  },
+  {
+    "key": "comment_633",
+    "issueIndex": 33,
+    "authorRole": "hh41",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #33)",
+    "isReply": true
+  },
+  {
+    "key": "comment_634",
+    "issueIndex": 34,
+    "authorRole": "hh42",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #34)",
+    "isReply": true
+  },
+  {
+    "key": "comment_635",
+    "issueIndex": 35,
+    "authorRole": "hh43",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #35)",
+    "isReply": true
+  },
+  {
+    "key": "comment_636",
+    "issueIndex": 36,
+    "authorRole": "hh44",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #36)",
+    "isReply": true
+  },
+  {
+    "key": "comment_637",
+    "issueIndex": 37,
+    "authorRole": "hh45",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #37)",
+    "isReply": true
+  },
+  {
+    "key": "comment_638",
+    "issueIndex": 38,
+    "authorRole": "hh46",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #38)",
+    "isReply": true
+  },
+  {
+    "key": "comment_639",
+    "issueIndex": 39,
+    "authorRole": "hh47",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #39)",
+    "isReply": true
+  },
+  {
+    "key": "comment_640",
+    "issueIndex": 40,
+    "authorRole": "hh48",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #40)",
+    "isReply": true
+  },
+  {
+    "key": "comment_641",
+    "issueIndex": 41,
+    "authorRole": "hh49",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #41)",
+    "isReply": true
+  },
+  {
+    "key": "comment_642",
+    "issueIndex": 42,
+    "authorRole": "hh04",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #42)",
+    "isReply": true
+  },
+  {
+    "key": "comment_643",
+    "issueIndex": 43,
+    "authorRole": "hh05",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #43)",
+    "isReply": true
+  },
+  {
+    "key": "comment_644",
+    "issueIndex": 44,
+    "authorRole": "hh06",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #44)",
+    "isReply": true
+  },
+  {
+    "key": "comment_645",
+    "issueIndex": 45,
+    "authorRole": "hh07",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #45)",
+    "isReply": true
+  },
+  {
+    "key": "comment_646",
+    "issueIndex": 46,
+    "authorRole": "hh08",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #46)",
+    "isReply": true
+  },
+  {
+    "key": "comment_647",
+    "issueIndex": 47,
+    "authorRole": "hh09",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #47)",
+    "isReply": true
+  },
+  {
+    "key": "comment_648",
+    "issueIndex": 48,
+    "authorRole": "hh10",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #48)",
+    "isReply": true
+  },
+  {
+    "key": "comment_649",
+    "issueIndex": 49,
+    "authorRole": "hh11",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #49)",
+    "isReply": true
+  },
+  {
+    "key": "comment_650",
+    "issueIndex": 50,
+    "authorRole": "hh12",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #50)",
+    "isReply": true
+  },
+  {
+    "key": "comment_651",
+    "issueIndex": 51,
+    "authorRole": "hh13",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #51)",
+    "isReply": true
+  },
+  {
+    "key": "comment_652",
+    "issueIndex": 52,
+    "authorRole": "hh14",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #52)",
+    "isReply": true
+  },
+  {
+    "key": "comment_653",
+    "issueIndex": 53,
+    "authorRole": "hh15",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #53)",
+    "isReply": true
+  },
+  {
+    "key": "comment_654",
+    "issueIndex": 54,
+    "authorRole": "hh16",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #54)",
+    "isReply": true
+  },
+  {
+    "key": "comment_655",
+    "issueIndex": 55,
+    "authorRole": "hh17",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #55)",
+    "isReply": true
+  },
+  {
+    "key": "comment_656",
+    "issueIndex": 56,
+    "authorRole": "hh18",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #56)",
+    "isReply": true
+  },
+  {
+    "key": "comment_657",
+    "issueIndex": 57,
+    "authorRole": "hh19",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #57)",
+    "isReply": true
+  },
+  {
+    "key": "comment_658",
+    "issueIndex": 58,
+    "authorRole": "hh20",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #58)",
+    "isReply": true
+  },
+  {
+    "key": "comment_659",
+    "issueIndex": 59,
+    "authorRole": "hh21",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #59)",
+    "isReply": true
+  },
+  {
+    "key": "comment_660",
+    "issueIndex": 60,
+    "authorRole": "hh22",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #60)",
+    "isReply": true
+  },
+  {
+    "key": "comment_661",
+    "issueIndex": 61,
+    "authorRole": "hh23",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #61)",
+    "isReply": true
+  },
+  {
+    "key": "comment_662",
+    "issueIndex": 62,
+    "authorRole": "hh24",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #62)",
+    "isReply": true
+  },
+  {
+    "key": "comment_663",
+    "issueIndex": 63,
+    "authorRole": "hh25",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #63)",
+    "isReply": true
+  },
+  {
+    "key": "comment_664",
+    "issueIndex": 64,
+    "authorRole": "hh26",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #64)",
+    "isReply": true
+  },
+  {
+    "key": "comment_665",
+    "issueIndex": 65,
+    "authorRole": "hh27",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #65)",
+    "isReply": true
+  },
+  {
+    "key": "comment_666",
+    "issueIndex": 66,
+    "authorRole": "hh28",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #66)",
+    "isReply": true
+  },
+  {
+    "key": "comment_667",
+    "issueIndex": 67,
+    "authorRole": "hh29",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #67)",
+    "isReply": true
+  },
+  {
+    "key": "comment_668",
+    "issueIndex": 68,
+    "authorRole": "hh30",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #68)",
+    "isReply": true
+  },
+  {
+    "key": "comment_669",
+    "issueIndex": 69,
+    "authorRole": "hh31",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #69)",
+    "isReply": true
+  },
+  {
+    "key": "comment_670",
+    "issueIndex": 70,
+    "authorRole": "hh32",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #70)",
+    "isReply": true
+  },
+  {
+    "key": "comment_671",
+    "issueIndex": 71,
+    "authorRole": "hh33",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #71)",
+    "isReply": true
+  },
+  {
+    "key": "comment_672",
+    "issueIndex": 72,
+    "authorRole": "hh34",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #72)",
+    "isReply": true
+  },
+  {
+    "key": "comment_673",
+    "issueIndex": 73,
+    "authorRole": "hh35",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #73)",
+    "isReply": true
+  },
+  {
+    "key": "comment_674",
+    "issueIndex": 74,
+    "authorRole": "hh36",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #74)",
+    "isReply": true
+  },
+  {
+    "key": "comment_675",
+    "issueIndex": 75,
+    "authorRole": "hh37",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #75)",
+    "isReply": true
+  },
+  {
+    "key": "comment_676",
+    "issueIndex": 76,
+    "authorRole": "hh38",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #76)",
+    "isReply": true
+  },
+  {
+    "key": "comment_677",
+    "issueIndex": 77,
+    "authorRole": "hh39",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #77)",
+    "isReply": true
+  },
+  {
+    "key": "comment_678",
+    "issueIndex": 78,
+    "authorRole": "hh40",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #78)",
+    "isReply": true
+  },
+  {
+    "key": "comment_679",
+    "issueIndex": 79,
+    "authorRole": "hh41",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #79)",
+    "isReply": true
+  },
+  {
+    "key": "comment_680",
+    "issueIndex": 80,
+    "authorRole": "hh42",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #80)",
+    "isReply": true
+  },
+  {
+    "key": "comment_681",
+    "issueIndex": 81,
+    "authorRole": "hh43",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #81)",
+    "isReply": true
+  },
+  {
+    "key": "comment_682",
+    "issueIndex": 82,
+    "authorRole": "hh44",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #82)",
+    "isReply": true
+  },
+  {
+    "key": "comment_683",
+    "issueIndex": 83,
+    "authorRole": "hh45",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #83)",
+    "isReply": true
+  },
+  {
+    "key": "comment_684",
+    "issueIndex": 84,
+    "authorRole": "hh46",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #84)",
+    "isReply": true
+  },
+  {
+    "key": "comment_685",
+    "issueIndex": 85,
+    "authorRole": "hh47",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #85)",
+    "isReply": true
+  },
+  {
+    "key": "comment_686",
+    "issueIndex": 86,
+    "authorRole": "hh48",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #86)",
+    "isReply": true
+  },
+  {
+    "key": "comment_687",
+    "issueIndex": 87,
+    "authorRole": "hh49",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #87)",
+    "isReply": true
+  },
+  {
+    "key": "comment_688",
+    "issueIndex": 88,
+    "authorRole": "hh04",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #88)",
+    "isReply": true
+  },
+  {
+    "key": "comment_689",
+    "issueIndex": 89,
+    "authorRole": "hh05",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #89)",
+    "isReply": true
+  },
+  {
+    "key": "comment_690",
+    "issueIndex": 90,
+    "authorRole": "hh06",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #90)",
+    "isReply": true
+  },
+  {
+    "key": "comment_691",
+    "issueIndex": 91,
+    "authorRole": "hh07",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #91)",
+    "isReply": true
+  },
+  {
+    "key": "comment_692",
+    "issueIndex": 92,
+    "authorRole": "hh08",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #92)",
+    "isReply": true
+  },
+  {
+    "key": "comment_693",
+    "issueIndex": 93,
+    "authorRole": "hh09",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #93)",
+    "isReply": true
+  },
+  {
+    "key": "comment_694",
+    "issueIndex": 94,
+    "authorRole": "hh10",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #94)",
+    "isReply": true
+  },
+  {
+    "key": "comment_695",
+    "issueIndex": 95,
+    "authorRole": "hh11",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #95)",
+    "isReply": true
+  },
+  {
+    "key": "comment_696",
+    "issueIndex": 96,
+    "authorRole": "hh12",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #96)",
+    "isReply": true
+  },
+  {
+    "key": "comment_697",
+    "issueIndex": 97,
+    "authorRole": "hh13",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #97)",
+    "isReply": true
+  },
+  {
+    "key": "comment_698",
+    "issueIndex": 98,
+    "authorRole": "hh14",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #98)",
+    "isReply": true
+  },
+  {
+    "key": "comment_699",
+    "issueIndex": 99,
+    "authorRole": "hh15",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #99)",
+    "isReply": true
+  },
+  {
+    "key": "comment_700",
+    "issueIndex": 100,
+    "authorRole": "hh16",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #100)",
+    "isReply": true
+  },
+  {
+    "key": "comment_701",
+    "issueIndex": 101,
+    "authorRole": "hh17",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #101)",
+    "isReply": true
+  },
+  {
+    "key": "comment_702",
+    "issueIndex": 102,
+    "authorRole": "hh18",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #102)",
+    "isReply": true
+  },
+  {
+    "key": "comment_703",
+    "issueIndex": 103,
+    "authorRole": "hh19",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #103)",
+    "isReply": true
+  },
+  {
+    "key": "comment_704",
+    "issueIndex": 104,
+    "authorRole": "hh20",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #104)",
+    "isReply": true
+  },
+  {
+    "key": "comment_705",
+    "issueIndex": 105,
+    "authorRole": "hh21",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #105)",
+    "isReply": true
+  },
+  {
+    "key": "comment_706",
+    "issueIndex": 106,
+    "authorRole": "hh22",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #106)",
+    "isReply": true
+  },
+  {
+    "key": "comment_707",
+    "issueIndex": 107,
+    "authorRole": "hh23",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #107)",
+    "isReply": true
+  },
+  {
+    "key": "comment_708",
+    "issueIndex": 108,
+    "authorRole": "hh24",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #108)",
+    "isReply": true
+  },
+  {
+    "key": "comment_709",
+    "issueIndex": 109,
+    "authorRole": "hh25",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #109)",
+    "isReply": true
+  },
+  {
+    "key": "comment_710",
+    "issueIndex": 110,
+    "authorRole": "hh26",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #110)",
+    "isReply": true
+  },
+  {
+    "key": "comment_711",
+    "issueIndex": 111,
+    "authorRole": "hh27",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #111)",
+    "isReply": true
+  },
+  {
+    "key": "comment_712",
+    "issueIndex": 112,
+    "authorRole": "hh28",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #112)",
+    "isReply": true
+  },
+  {
+    "key": "comment_713",
+    "issueIndex": 113,
+    "authorRole": "hh29",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #113)",
+    "isReply": true
+  },
+  {
+    "key": "comment_714",
+    "issueIndex": 114,
+    "authorRole": "hh30",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #114)",
+    "isReply": true
+  },
+  {
+    "key": "comment_715",
+    "issueIndex": 115,
+    "authorRole": "hh31",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #115)",
+    "isReply": true
+  },
+  {
+    "key": "comment_716",
+    "issueIndex": 116,
+    "authorRole": "hh32",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #116)",
+    "isReply": true
+  },
+  {
+    "key": "comment_717",
+    "issueIndex": 117,
+    "authorRole": "hh33",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #117)",
+    "isReply": true
+  },
+  {
+    "key": "comment_718",
+    "issueIndex": 118,
+    "authorRole": "hh34",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #118)",
+    "isReply": true
+  },
+  {
+    "key": "comment_719",
+    "issueIndex": 119,
+    "authorRole": "hh35",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #119)",
+    "isReply": true
+  },
+  {
+    "key": "comment_720",
+    "issueIndex": 120,
+    "authorRole": "hh36",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #120)",
+    "isReply": true
+  },
+  {
+    "key": "comment_721",
+    "issueIndex": 121,
+    "authorRole": "hh37",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #121)",
+    "isReply": true
+  },
+  {
+    "key": "comment_722",
+    "issueIndex": 122,
+    "authorRole": "hh38",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #122)",
+    "isReply": true
+  },
+  {
+    "key": "comment_723",
+    "issueIndex": 123,
+    "authorRole": "hh39",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #123)",
+    "isReply": true
+  },
+  {
+    "key": "comment_724",
+    "issueIndex": 124,
+    "authorRole": "hh40",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #124)",
+    "isReply": true
+  },
+  {
+    "key": "comment_725",
+    "issueIndex": 125,
+    "authorRole": "hh41",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #125)",
+    "isReply": true
+  },
+  {
+    "key": "comment_726",
+    "issueIndex": 126,
+    "authorRole": "hh42",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #126)",
+    "isReply": true
+  },
+  {
+    "key": "comment_727",
+    "issueIndex": 127,
+    "authorRole": "hh43",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #127)",
+    "isReply": true
+  },
+  {
+    "key": "comment_728",
+    "issueIndex": 128,
+    "authorRole": "hh44",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #128)",
+    "isReply": true
+  },
+  {
+    "key": "comment_729",
+    "issueIndex": 129,
+    "authorRole": "hh45",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #129)",
+    "isReply": true
+  },
+  {
+    "key": "comment_730",
+    "issueIndex": 130,
+    "authorRole": "hh46",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #130)",
+    "isReply": true
+  },
+  {
+    "key": "comment_731",
+    "issueIndex": 131,
+    "authorRole": "hh47",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #131)",
+    "isReply": true
+  },
+  {
+    "key": "comment_732",
+    "issueIndex": 132,
+    "authorRole": "hh48",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #132)",
+    "isReply": true
+  },
+  {
+    "key": "comment_733",
+    "issueIndex": 133,
+    "authorRole": "hh49",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #133)",
+    "isReply": true
+  },
+  {
+    "key": "comment_734",
+    "issueIndex": 134,
+    "authorRole": "hh04",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #134)",
+    "isReply": true
+  },
+  {
+    "key": "comment_735",
+    "issueIndex": 135,
+    "authorRole": "hh05",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #135)",
+    "isReply": true
+  },
+  {
+    "key": "comment_736",
+    "issueIndex": 136,
+    "authorRole": "hh06",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #136)",
+    "isReply": true
+  },
+  {
+    "key": "comment_737",
+    "issueIndex": 137,
+    "authorRole": "hh07",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #137)",
+    "isReply": true
+  },
+  {
+    "key": "comment_738",
+    "issueIndex": 138,
+    "authorRole": "hh08",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #138)",
+    "isReply": true
+  },
+  {
+    "key": "comment_739",
+    "issueIndex": 139,
+    "authorRole": "hh09",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #139)",
+    "isReply": true
+  },
+  {
+    "key": "comment_740",
+    "issueIndex": 140,
+    "authorRole": "hh10",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #140)",
+    "isReply": true
+  },
+  {
+    "key": "comment_741",
+    "issueIndex": 141,
+    "authorRole": "hh11",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #141)",
+    "isReply": true
+  },
+  {
+    "key": "comment_742",
+    "issueIndex": 142,
+    "authorRole": "hh12",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #142)",
+    "isReply": true
+  },
+  {
+    "key": "comment_743",
+    "issueIndex": 143,
+    "authorRole": "hh13",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #143)",
+    "isReply": true
+  },
+  {
+    "key": "comment_744",
+    "issueIndex": 144,
+    "authorRole": "hh14",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #144)",
+    "isReply": true
+  },
+  {
+    "key": "comment_745",
+    "issueIndex": 145,
+    "authorRole": "hh15",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #145)",
+    "isReply": true
+  },
+  {
+    "key": "comment_746",
+    "issueIndex": 146,
+    "authorRole": "hh16",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #146)",
+    "isReply": true
+  },
+  {
+    "key": "comment_747",
+    "issueIndex": 147,
+    "authorRole": "hh17",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #147)",
+    "isReply": true
+  },
+  {
+    "key": "comment_748",
+    "issueIndex": 148,
+    "authorRole": "hh18",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #148)",
+    "isReply": true
+  },
+  {
+    "key": "comment_749",
+    "issueIndex": 149,
+    "authorRole": "hh19",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #149)",
+    "isReply": true
+  },
+  {
+    "key": "comment_750",
+    "issueIndex": 150,
+    "authorRole": "hh20",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #150)",
+    "isReply": true
+  },
+  {
+    "key": "comment_751",
+    "issueIndex": 151,
+    "authorRole": "hh21",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #151)",
+    "isReply": true
+  },
+  {
+    "key": "comment_752",
+    "issueIndex": 152,
+    "authorRole": "hh22",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #152)",
+    "isReply": true
+  },
+  {
+    "key": "comment_753",
+    "issueIndex": 153,
+    "authorRole": "hh23",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #153)",
+    "isReply": true
+  },
+  {
+    "key": "comment_754",
+    "issueIndex": 154,
+    "authorRole": "hh24",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #154)",
+    "isReply": true
+  },
+  {
+    "key": "comment_755",
+    "issueIndex": 155,
+    "authorRole": "hh25",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #155)",
+    "isReply": true
+  },
+  {
+    "key": "comment_756",
+    "issueIndex": 156,
+    "authorRole": "hh26",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #156)",
+    "isReply": true
+  },
+  {
+    "key": "comment_757",
+    "issueIndex": 157,
+    "authorRole": "hh27",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #157)",
+    "isReply": true
+  },
+  {
+    "key": "comment_758",
+    "issueIndex": 158,
+    "authorRole": "hh28",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #158)",
+    "isReply": true
+  },
+  {
+    "key": "comment_759",
+    "issueIndex": 159,
+    "authorRole": "hh29",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #159)",
+    "isReply": true
+  },
+  {
+    "key": "comment_760",
+    "issueIndex": 160,
+    "authorRole": "hh30",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #160)",
+    "isReply": true
+  },
+  {
+    "key": "comment_761",
+    "issueIndex": 161,
+    "authorRole": "hh31",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #161)",
+    "isReply": true
+  },
+  {
+    "key": "comment_762",
+    "issueIndex": 162,
+    "authorRole": "hh32",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #162)",
+    "isReply": true
+  },
+  {
+    "key": "comment_763",
+    "issueIndex": 163,
+    "authorRole": "hh33",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #163)",
+    "isReply": true
+  },
+  {
+    "key": "comment_764",
+    "issueIndex": 164,
+    "authorRole": "hh34",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #164)",
+    "isReply": true
+  },
+  {
+    "key": "comment_765",
+    "issueIndex": 165,
+    "authorRole": "hh35",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #165)",
+    "isReply": true
+  },
+  {
+    "key": "comment_766",
+    "issueIndex": 166,
+    "authorRole": "hh36",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #166)",
+    "isReply": true
+  },
+  {
+    "key": "comment_767",
+    "issueIndex": 167,
+    "authorRole": "hh37",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #167)",
+    "isReply": true
+  },
+  {
+    "key": "comment_768",
+    "issueIndex": 168,
+    "authorRole": "hh38",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #168)",
+    "isReply": true
+  },
+  {
+    "key": "comment_769",
+    "issueIndex": 169,
+    "authorRole": "hh39",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #169)",
+    "isReply": true
+  },
+  {
+    "key": "comment_770",
+    "issueIndex": 170,
+    "authorRole": "hh40",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #170)",
+    "isReply": true
+  },
+  {
+    "key": "comment_771",
+    "issueIndex": 171,
+    "authorRole": "hh41",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #171)",
+    "isReply": true
+  },
+  {
+    "key": "comment_772",
+    "issueIndex": 172,
+    "authorRole": "hh42",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #172)",
+    "isReply": true
+  },
+  {
+    "key": "comment_773",
+    "issueIndex": 173,
+    "authorRole": "hh43",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #173)",
+    "isReply": true
+  },
+  {
+    "key": "comment_774",
+    "issueIndex": 174,
+    "authorRole": "hh44",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #174)",
+    "isReply": true
+  },
+  {
+    "key": "comment_775",
+    "issueIndex": 175,
+    "authorRole": "hh45",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #175)",
+    "isReply": true
+  },
+  {
+    "key": "comment_776",
+    "issueIndex": 176,
+    "authorRole": "hh46",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #176)",
+    "isReply": true
+  },
+  {
+    "key": "comment_777",
+    "issueIndex": 177,
+    "authorRole": "hh47",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #177)",
+    "isReply": true
+  },
+  {
+    "key": "comment_778",
+    "issueIndex": 178,
+    "authorRole": "hh48",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #178)",
+    "isReply": true
+  },
+  {
+    "key": "comment_779",
+    "issueIndex": 179,
+    "authorRole": "hh49",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #179)",
+    "isReply": true
+  },
+  {
+    "key": "comment_780",
+    "issueIndex": 180,
+    "authorRole": "hh04",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #180)",
+    "isReply": true
+  },
+  {
+    "key": "comment_781",
+    "issueIndex": 181,
+    "authorRole": "hh05",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #181)",
+    "isReply": true
+  },
+  {
+    "key": "comment_782",
+    "issueIndex": 182,
+    "authorRole": "hh06",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #182)",
+    "isReply": true
+  },
+  {
+    "key": "comment_783",
+    "issueIndex": 183,
+    "authorRole": "hh07",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #183)",
+    "isReply": true
+  },
+  {
+    "key": "comment_784",
+    "issueIndex": 184,
+    "authorRole": "hh08",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #184)",
+    "isReply": true
+  },
+  {
+    "key": "comment_785",
+    "issueIndex": 185,
+    "authorRole": "hh09",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #185)",
+    "isReply": true
+  },
+  {
+    "key": "comment_786",
+    "issueIndex": 186,
+    "authorRole": "hh10",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #186)",
+    "isReply": true
+  },
+  {
+    "key": "comment_787",
+    "issueIndex": 187,
+    "authorRole": "hh11",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #187)",
+    "isReply": true
+  },
+  {
+    "key": "comment_788",
+    "issueIndex": 188,
+    "authorRole": "hh12",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #188)",
+    "isReply": true
+  },
+  {
+    "key": "comment_789",
+    "issueIndex": 189,
+    "authorRole": "hh13",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #189)",
+    "isReply": true
+  },
+  {
+    "key": "comment_790",
+    "issueIndex": 190,
+    "authorRole": "hh14",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #190)",
+    "isReply": true
+  },
+  {
+    "key": "comment_791",
+    "issueIndex": 191,
+    "authorRole": "hh15",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #191)",
+    "isReply": true
+  },
+  {
+    "key": "comment_792",
+    "issueIndex": 192,
+    "authorRole": "hh16",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #192)",
+    "isReply": true
+  },
+  {
+    "key": "comment_793",
+    "issueIndex": 193,
+    "authorRole": "hh17",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #193)",
+    "isReply": true
+  },
+  {
+    "key": "comment_794",
+    "issueIndex": 194,
+    "authorRole": "hh18",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #194)",
+    "isReply": true
+  },
+  {
+    "key": "comment_795",
+    "issueIndex": 195,
+    "authorRole": "hh19",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #195)",
+    "isReply": true
+  },
+  {
+    "key": "comment_796",
+    "issueIndex": 196,
+    "authorRole": "hh20",
+    "body": "@dev Đúng rồi bạn nhé, toàn bộ project chạy chuẩn trên Bun runtime và Node 20 LTS. (Reply #196)",
+    "isReply": true
+  },
+  {
+    "key": "comment_797",
+    "issueIndex": 197,
+    "authorRole": "hh21",
+    "body": "@dev Cảm ơn bạn đã quan tâm! Test coverage tối thiểu cần đạt 85% cho các module core. (Reply #197)",
+    "isReply": true
+  },
+  {
+    "key": "comment_798",
+    "issueIndex": 198,
+    "authorRole": "hh22",
+    "body": "@dev Mình vừa cập nhật thêm log và đoạn code minh họa trong phần mô tả bài toán rồi nhé. (Reply #198)",
+    "isReply": true
+  },
+  {
+    "key": "comment_799",
+    "issueIndex": 199,
+    "authorRole": "hh23",
+    "body": "@dev Ý kiến tối ưu gas rất hay, bạn hãy nêu rõ phương án trong đơn ứng tuyển để mình duyệt nhé. (Reply #199)",
+    "isReply": true
+  },
+  {
+    "key": "comment_800",
+    "issueIndex": 200,
+    "authorRole": "hh24",
+    "body": "@dev Chính xác bạn nhé, tiền thưởng sẽ được ký quỹ 100% qua hợp đồng BloodyRoarEscrow. (Reply #200)",
+    "isReply": true
+  }
+]

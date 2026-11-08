@@ -85,6 +85,11 @@ describe("bpsOf", () => {
 });
 
 describe("splitPayout", () => {
+  it.each(["5", "6", "0.5", "33.33"])("preserves the full %s token bounty in its displayed shares", (amount) => {
+    const raw = parseTokenAmount(amount, 6);
+    const { developer, fee } = splitPayout(raw, 250);
+    expect(parseTokenAmount(formatTokenAmount(developer, 6), 6) + parseTokenAmount(formatTokenAmount(fee, 6), 6)).toBe(raw);
+  });
   it("releases to the developer with the fee on the developer's share", () => {
     expect(splitPayout(1_000_000_000n, 250)).toEqual({
       developer: 975_000_000n,

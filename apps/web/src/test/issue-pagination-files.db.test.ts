@@ -54,6 +54,17 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("issue pagination and attachment
     expect((await execute(APPS, { user: owner, db: prisma }, { issue: issues[0], first: 2, after: Buffer.from(applications[3]!).toString("base64") })).errors?.[0]?.extensions?.code).toBe("INVALID_CURSOR");
     expect((await execute(APPS, { user: outsider, db: prisma }, { issue: issues[0], first: 2 })).errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
   }, 60_000);
+  it("filters mixed-case skills before counting and paginating", async () => {
+    await prisma.issue.updateMany({ where: { id: { in: issues.slice(0, 3) } }, data: { requiredSkills: ["Solidity"] } });
+    const query = `query($search: String!, $after: String) { issues(first: 2, skill: "solidity", search: $search, after: $after) { totalCount edges { node { id } } pageInfo { endCursor hasNextPage } } }`;
+    const first = await execute(query, { user: null, db: prisma }, { search: prefix });
+    expect(first.errors).toBeUndefined();
+    const page = first.data?.issues as { totalCount: number; edges: Array<{ node: { id: string } }>; pageInfo: { endCursor: string; hasNextPage: boolean } };
+    expect(page.totalCount).toBe(3); expect(page.edges).toHaveLength(2); expect(page.pageInfo.hasNextPage).toBe(true);
+    const second = await execute(query, { user: null, db: prisma }, { search: prefix, after: page.pageInfo.endCursor });
+    expect(second.errors).toBeUndefined();
+    expect((second.data?.issues as typeof page).edges).toHaveLength(1);
+  });
   it("only attaches verified issue images owned by the issue owner", async () => {
     const data = { uploaderId: owner.id, fileName: "picture.png", fileUrl: "local/picture.png", fileSize: 20, fileMime: "image/png", purpose: "ISSUE_IMAGE" as const };
     const valid = await prisma.attachment.create({ data: { ...data, status: "ATTACHED" } });

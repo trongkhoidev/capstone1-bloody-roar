@@ -310,7 +310,7 @@ export function HomePageView({ search = "" }: { search?: string }) {
           </div>
 
           {/* Contract Rules Section */}
-          <section style={{ marginTop: 36, display: "flex", flexDirection: "column", gap: 14 }}>
+          <section id="rules" style={{ marginTop: 36, display: "flex", flexDirection: "column", gap: 14 }}>
             <div>
               <h2 className="h1" style={{ fontSize: 22 }}>Escrow rules, fixed in the contract</h2>
               <p className="sub">Every number below is a constant in BloodyRoarEscrow.sol. Nobody can change them for a funded bounty.</p>

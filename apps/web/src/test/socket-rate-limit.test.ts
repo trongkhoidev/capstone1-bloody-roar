@@ -4,14 +4,15 @@ import type { Server } from "socket.io";
 const { verifyJWT, prisma, tx } = vi.hoisted(() => {
   const tx = {
     issue: { findUnique: vi.fn() },
-    message: { create: vi.fn(), findUniqueOrThrow: vi.fn() },
+    $queryRaw: vi.fn().mockResolvedValue([]),
+    notification: { create: vi.fn(), updateMany: vi.fn().mockResolvedValue({ count: 0 }) },
+    message: { create: vi.fn(), findFirst: vi.fn().mockResolvedValue(null), findUniqueOrThrow: vi.fn() },
     attachment: { create: vi.fn() },
     dispute: { findUnique: vi.fn(async (_args?: unknown) => null as { raisedAt: Date } | null) },
   };
   const prisma = {
     ...tx,
     aILog: { create: vi.fn(() => Promise.resolve()) },
-    notification: { create: vi.fn() },
     $transaction: vi.fn((run: (client: typeof tx) => unknown) => run(tx)),
   };
   return { verifyJWT: vi.fn(), prisma, tx };
@@ -23,7 +24,7 @@ vi.mock("@bloody-roar/database", () => ({
   prisma,
   AILogStatus: { SUCCESS: "SUCCESS" },
   NotificationType: { MESSAGE_RECEIVED: "MESSAGE_RECEIVED" },
-  Prisma: { TransactionIsolationLevel: { Serializable: "Serializable" } },
+  Prisma: { TransactionIsolationLevel: { Serializable: "Serializable" }, PrismaClientKnownRequestError: class extends Error {} },
 }));
 
 import { registerSocketHandlers } from "../socket/handlers";
@@ -92,6 +93,30 @@ describe("socket message:send rate limit", () => {
     expect(callbacks.slice(0, 10).every((callback) => callback.mock.calls[0]?.length === 0)).toBe(true);
     expect(callbacks[10]).toHaveBeenCalledWith("Too many messages, slow down");
     expect(tx.message.create).toHaveBeenCalledTimes(10);
+  });
+});
+
+describe("message notifications", () => {
+  it("returns an error when notification persistence fails and accepts a retry", async () => {
+    const send = connectSocket();
+    asUser("notification-retry-user");
+    prisma.notification.create.mockRejectedValueOnce(new Error("database unavailable"));
+    const first = vi.fn();
+    await send({ clientMessageId: "retry-1" }, first);
+    expect(first).toHaveBeenCalledWith("Failed to send message");
+    const retry = vi.fn();
+    await send({ clientMessageId: "retry-1" }, retry);
+    expect(retry).toHaveBeenCalledWith();
+    expect(tx.message.create).toHaveBeenCalledTimes(2);
+    expect(prisma.notification.create).toHaveBeenCalledTimes(2);
+  });
+  it("replaces an unread notification inside the locked transaction", async () => {
+    const send = connectSocket();
+    asUser("notification-user");
+    await send({}, vi.fn());
+    expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
+    expect(prisma.notification.updateMany).toHaveBeenCalledWith({ where: { userId: "dev-1", type: "MESSAGE_RECEIVED", isRead: false, link: "/issues/issue-1" }, data: { isRead: true } });
+    expect(prisma.notification.create).toHaveBeenCalledTimes(1);
   });
 });
 

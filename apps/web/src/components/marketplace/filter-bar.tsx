@@ -6,6 +6,7 @@
 import React, { useState } from "react";
 import { Search, Filter as FilterIcon, ChevronDown, ChevronUp } from "lucide-react";
 import { useUiPreferences } from "@/lib/ui-preferences";
+import { ISSUE_STATUS } from "@/lib/issue-status";
 
 export type SortOption = "NEWEST" | "HIGHEST_BOUNTY" | "MOST_VIEWED" | "DEADLINE";
 
@@ -39,9 +40,7 @@ const CATEGORIES = [
 
 const STATUSES = [
   { id: "", label: "Any status" },
-  { id: "OPEN", label: "Open" },
-  { id: "IN_PROGRESS", label: "In progress" },
-  { id: "COMPLETED", label: "Completed" },
+  ...(["OPEN", "AWAITING_FUNDING", "IN_PROGRESS", "COMPLETED", "DISPUTED"] as const).map((id) => ({ id, label: ISSUE_STATUS[id].label })),
 ];
 
 export function MarketplaceFilterBar({
@@ -216,10 +215,10 @@ export function MarketplaceFilterBar({
               key={cat.id}
               type="button"
               onClick={() => onFilterChange({ category: cat.id === "ALL" ? "" : cat.id })}
-              className={`btn btn-sm text-xs rounded-full border transition-all ${
+              className={`inline-flex h-[30px] shrink-0 cursor-pointer items-center whitespace-nowrap rounded-full border px-3 text-xs transition-all ${
                 isSelected
                   ? "bg-[var(--ink)] text-[var(--surface)] font-semibold border-[var(--ink)]"
-                  : "bg-[var(--surface)] text-[var(--ink-2)] border-[var(--line)] hover:bg-[var(--sunk)]"
+                  : "bg-[var(--surface)] text-[var(--ink-2)] font-semibold border-[var(--line)] hover:bg-[var(--sunk)]"
               }`}
               data-testid={`category-chip-${cat.id.toLowerCase()}`}
             >

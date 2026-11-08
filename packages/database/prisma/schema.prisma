@@ -950,3 +950,15 @@ model IssueView {
   @@index([issueId])
   @@map("issue_views")
 }
+
+// Skill — suggestion catalogue for the bounty form; Issue.requiredSkills stores the chosen names as plain text.
+model Skill {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  category  String
+  createdAt DateTime @default(now())
+
+  @@index([category])
+  @@map("skills")
+}

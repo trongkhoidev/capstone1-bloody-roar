@@ -45,19 +45,7 @@ export function Navbar() {
               {t("marketplace")}
             </Link>
             <Link
-              href="/marketplace?view=skills"
-              className={pathname === "/skills" ? "on" : ""}
-            >
-              Skills
-            </Link>
-            <Link
-              href="/marketplace?view=developers"
-              className={pathname === "/developers" ? "on" : ""}
-            >
-              Developers
-            </Link>
-            <Link
-              href="/#escrow-rules"
+              href="/#rules"
               className=""
             >
               How it works

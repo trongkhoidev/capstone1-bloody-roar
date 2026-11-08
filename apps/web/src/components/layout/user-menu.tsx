@@ -33,7 +33,7 @@ export function UserMenu() {
   const [copied, setCopied] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const { user, logout } = useAuthStore();
+  const { user, logout, status, restoreSession } = useAuthStore();
   const { language, setLanguage, theme, setTheme, t } = useUiPreferences();
   const isAuthenticated = Boolean(user);
 
@@ -67,6 +67,13 @@ export function UserMenu() {
 
   if (!isMounted) {
     return <div className="h-9 w-[120px] rounded-full bg-[var(--surface)] animate-pulse border border-[var(--line-2)]" />;
+  }
+
+  if (!user && status === "session_error") {
+    return <Button variant="outline" onClick={() => void restoreSession()}>Retry session</Button>;
+  }
+  if (!user && status === "restoring") {
+    return <Button variant="outline" disabled>Checking session…</Button>;
   }
 
   // Common Network & Preferences JSX

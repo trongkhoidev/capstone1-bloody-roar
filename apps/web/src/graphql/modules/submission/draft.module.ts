@@ -135,23 +135,30 @@ builder.mutationField("requestChanges", (t) => t.field({
   resolve: async (_root, args, ctx) => {
     const user = requireAuth(ctx);
     const notes = parseOrThrow(z.string().trim().min(1).max(2000), args.notes);
-    return ctx.db.$transaction(async (tx) => {
-      const initial = await tx.submission.findUnique({ where: { id: String(args.submissionId) } });
-      if (!initial) throw gqlError("Bài nộp không tồn tại", "NOT_FOUND");
-      await tx.$queryRaw`SELECT id FROM issues WHERE id = ${initial.issueId} FOR UPDATE`;
-      const submission = await tx.submission.findUnique({ where: { id: initial.id }, include: { issue: true } });
-      if (!submission) throw gqlError("Bài nộp không tồn tại", "NOT_FOUND");
-      if (submission.issue.clientId !== user.id) throw gqlError("Chỉ khách hàng được yêu cầu sửa", "FORBIDDEN");
-      const projection = await tx.escrowProjection.findUnique({ where: { issueId: submission.issueId } });
-      if (!projection || projection.phase !== EscrowPhase.FUNDED || projection.client.toLowerCase() !== user.walletAddress.toLowerCase() ||
-          submission.status !== SubmissionStatus.SUBMITTED || !submission.deliveryHash || projection.deliveryHash?.toLowerCase() !== submission.deliveryHash.toLowerCase())
-        throw gqlError("Bài nộp không còn chờ xem xét", "SUBMISSION_NOT_REVIEWABLE");
-      const changed = await tx.submission.update({ where: { id: submission.id }, data: { changesRequested: true, reviewNotes: notes, reviewedAt: new Date() }, include: SUBMISSION_INCLUDE });
-      const notification = await createNotificationIdempotent(tx, { userId: submission.developerId, type: "CHANGES_REQUESTED", title: "Khách hàng yêu cầu chỉnh sửa",
-        body: notes, link: `/issues/${submission.issueId}`, data: { issueId: submission.issueId, submissionId: submission.id },
-        dedupeKey: `changes:${submission.id}:${createHash("sha256").update(notes).digest("hex")}` });
-      if (notification) await tx.$executeRaw`SELECT pg_notify(${NOTIFICATION_CREATED_CHANNEL}, ${JSON.stringify({ userId: submission.developerId, id: notification.id })})`;
-      return changed;
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await ctx.db.$transaction(async (tx) => {
+          const initial = await tx.submission.findUnique({ where: { id: String(args.submissionId) } });
+          if (!initial) throw gqlError("Bài nộp không tồn tại", "NOT_FOUND");
+          await tx.$queryRaw`SELECT id FROM issues WHERE id = ${initial.issueId} FOR UPDATE`;
+          const submission = await tx.submission.findUnique({ where: { id: initial.id }, include: { issue: true } });
+          if (!submission) throw gqlError("Bài nộp không tồn tại", "NOT_FOUND");
+          if (submission.issue.clientId !== user.id) throw gqlError("Chỉ khách hàng được yêu cầu sửa", "FORBIDDEN");
+          const projection = await tx.escrowProjection.findUnique({ where: { issueId: submission.issueId } });
+          if (!projection || projection.phase !== EscrowPhase.FUNDED || projection.client.toLowerCase() !== user.walletAddress.toLowerCase() ||
+              submission.status !== SubmissionStatus.SUBMITTED || !submission.deliveryHash || projection.deliveryHash?.toLowerCase() !== submission.deliveryHash.toLowerCase())
+            throw gqlError("Bài nộp không còn chờ xem xét", "SUBMISSION_NOT_REVIEWABLE");
+          const changed = await tx.submission.update({ where: { id: submission.id }, data: { changesRequested: true, reviewNotes: notes, reviewedAt: new Date() }, include: SUBMISSION_INCLUDE });
+          const notification = await createNotificationIdempotent(tx, { userId: submission.developerId, type: "CHANGES_REQUESTED", title: "Khách hàng yêu cầu chỉnh sửa",
+            body: notes, link: `/issues/${submission.issueId}`, data: { issueId: submission.issueId, submissionId: submission.id },
+            dedupeKey: `changes:${submission.id}:${createHash("sha256").update(notes).digest("hex")}` });
+          if (notification) await tx.$executeRaw`SELECT pg_notify(${NOTIFICATION_CREATED_CHANNEL}, ${JSON.stringify({ userId: submission.developerId, id: notification.id })})`;
+          return changed;
+        }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+      } catch (error) {
+        if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2034" || attempt >= 4) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 20 * 2 ** attempt));
+      }
+    }
   },
 }));

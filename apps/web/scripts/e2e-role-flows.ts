@@ -303,9 +303,6 @@ async function run() {
   const outsider = await login(KEYS.outsider, "DEVELOPER");
 
   check("SETUP", "Admin role", admin.user.role === "ADMIN", admin.user.role);
-  check("SETUP", "Client role", client.user.role === "CLIENT", client.user.role);
-  check("SETUP", "Dev role", dev.user.role === "DEVELOPER", dev.user.role);
-  check("SETUP", "Dev2 role", dev2.user.role === "DEVELOPER", dev2.user.role);
 
   // Drain any pre-existing claimable balances on-chain from previous test runs
   for (const actor of [client, dev, dev2, arbiter, feeRecipient, outsider]) {

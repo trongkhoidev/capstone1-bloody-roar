@@ -1075,6 +1075,21 @@ body.dark .mark,
   outline-offset: -1px;
 }
 
+textarea.inp {
+  height: auto;
+  min-height: 84px;
+  padding: 9px 11px;
+  line-height: 1.5;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.inp::placeholder { color: var(--ink-3); }
+.inp:disabled { opacity: 0.55; cursor: not-allowed; }
+.inp:invalid:not(:placeholder-shown):not(:focus) { border-color: var(--bad); }
+.field .req { color: var(--bad); }
+.field input[type="file"] { font-size: 12.5px; }
+
 select.inp {
   appearance: auto;
 }
@@ -1219,6 +1234,20 @@ select.inp {
   font-weight: 600;
 }
 
+.tab-badge {
+  display: inline-block;
+  margin-left: 6px;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
 .stepcard {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -1338,8 +1367,12 @@ select.inp {
 }
 
 .banner b {
-  display: block;
   color: var(--ink);
+}
+
+/* Banners without an icon: the text must span the full width, not the 20px icon column. */
+.banner > :only-child {
+  grid-column: 1 / -1;
 }
 
 .bn-warn {

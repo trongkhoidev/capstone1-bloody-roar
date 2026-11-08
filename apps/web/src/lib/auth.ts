@@ -82,29 +82,33 @@ export function thirdwebAuth(): ThirdwebAuth {
  * DB for revocation using the `refreshHash` of the token.
  */
 export async function verifyJWT(token: string) {
+  return verifySessionJWT(token).catch(() => null);
+}
+
+// Session restoration must distinguish an unavailable database from an invalid token.
+export async function verifySessionJWT(token: string) {
+  const auth = thirdwebAuth();
+  let authUser: Awaited<ReturnType<typeof auth.authenticate>>;
   try {
-    const auth = thirdwebAuth();
-    const authUser = await auth.authenticate(token);
-    if (!authUser?.address) return null;
-
-    // Check if session is revoked via refreshHash
-    const refreshHash = crypto.createHash("sha256").update(token).digest("hex");
-    const session = await prisma.session.findUnique({
-      where: { refreshHash },
-      select: { userId: true, revokedAt: true, expiresAt: true },
-    });
-
-    if (!session || session.revokedAt || session.expiresAt <= new Date()) {
-      return null;
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { walletAddress: authUser.address.toLowerCase() },
-    });
-
-    if (!user || user.id !== session.userId || user.isBanned) return null;
-    return user;
+    authUser = await auth.authenticate(token);
   } catch {
     return null;
   }
+  if (!authUser?.address) return null;
+
+  // Check if session is revoked via refreshHash
+  const refreshHash = crypto.createHash("sha256").update(token).digest("hex");
+  const session = await prisma.session.findUnique({
+    where: { refreshHash },
+    select: { userId: true, revokedAt: true, expiresAt: true },
+  });
+
+  if (!session || session.revokedAt || session.expiresAt <= new Date()) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { walletAddress: authUser.address.toLowerCase() },
+  });
+
+  if (!user || user.id !== session.userId || user.isBanned) return null;
+  return user;
 }

@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
+import { Prisma } from "@bloody-roar/database";
 import { computeDeliveryHash } from "@bloody-roar/shared/escrow";
 import { execute, loadSchema } from "./graphql-execute";
 
@@ -121,6 +122,14 @@ describe("requestChanges", () => {
     expect(database.tx.submission.update.mock.calls[0]![0].data).toMatchObject({ changesRequested: true, reviewNotes: "please revise" });
     expect(database.tx.notification.createMany.mock.calls[0]![0].data[0]).toMatchObject({ userId: actor.id, type: "CHANGES_REQUESTED" });
     expect(database.tx.$executeRaw).toHaveBeenCalledOnce();
+  });
+  it("retries a serialization conflict before notifying the developer", async () => {
+    const database = reviewDb();
+    database.$transaction.mockRejectedValueOnce(new Prisma.PrismaClientKnownRequestError("conflict", { code: "P2034", clientVersion: "test" }));
+    const result = await execute(query, { user: client, db: database }, { id: "draft", notes: "please revise" });
+    expect(result.errors).toBeUndefined();
+    expect(database.$transaction).toHaveBeenCalledTimes(2);
+    expect(database.tx.notification.createMany).toHaveBeenCalledTimes(1);
   });
   it("rejects a non-client or a superseded delivery", async () => {
     const database = reviewDb();

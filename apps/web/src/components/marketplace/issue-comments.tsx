@@ -27,7 +27,7 @@ type IssueComment = {
   user: { id: string; name?: string | null; role: string; walletAddress: string };
 };
 
-export function IssueComments({ issueId }: { issueId: string }) {
+export function IssueComments({ issueId, ownerId }: { issueId: string; ownerId: string }) {
   const user = useAuthStore((state) => state.user);
   const { t } = useUiPreferences();
   const [comments, setComments] = useState<IssueComment[]>([]);
@@ -82,7 +82,7 @@ export function IssueComments({ issueId }: { issueId: string }) {
           <article key={comment.id} className="py-4 first:pt-0 last:pb-0">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
               <strong>{comment.user.name || `${comment.user.walletAddress.slice(0, 6)}…${comment.user.walletAddress.slice(-4)}`}</strong>
-              <span className="rounded-full bg-[hsl(var(--background-secondary))] px-2 py-0.5 text-[10px] text-[hsl(var(--foreground-muted))]">{comment.user.role === "CLIENT" ? "Client" : comment.user.role === "DEVELOPER" ? "Developer" : "Admin"}</span>
+              {(comment.user.role === "ADMIN" || comment.user.id === ownerId) && <span className="rounded-full bg-[hsl(var(--background-secondary))] px-2 py-0.5 text-[10px] text-[hsl(var(--foreground-muted))]">{comment.user.role === "ADMIN" ? "Admin" : "Owner"}</span>}
               <time className="text-[hsl(var(--foreground-subtle))]" dateTime={comment.createdAt}>{new Date(comment.createdAt).toLocaleString()}</time>
             </div>
             <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-[hsl(var(--foreground-muted))]">{comment.body}</p>

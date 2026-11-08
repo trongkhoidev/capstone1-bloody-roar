@@ -1,7 +1,7 @@
 "use client";
 
 import { uploadFile } from "@/lib/upload";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus } from "lucide-react";
 import { ISSUE_CATEGORIES, ISSUE_DIFFICULTY, BOUNTY_MIN_AMOUNT, BOUNTY_MAX_AMOUNT } from "@bloody-roar/shared";
@@ -19,6 +19,8 @@ const CREATE_ISSUE = `mutation CreateIssue($input: CreateIssueInput!) {
 
 type Token = { id: string; symbol: string; name: string; decimals: number; chainId: number };
 type TokenResponse = { tokens: Token[] };
+const MAX_IMAGES = 4;
+const SEARCH_SKILLS = `query Skills($query: String, $first: Int) { skills(query: $query, first: $first) { id name } }`;
 const ATTACH_ISSUE_FILE = `mutation AttachIssueFile($issue: ID!, $attachment: ID!) { attachIssueFile(issueId: $issue, attachmentId: $attachment) { id } }`;
 
 type CreateResponse = { createIssue: { id: string; title: string; status: string } };
@@ -70,8 +72,23 @@ export function CreateIssueForm() {
   const [editorTab, setEditorTab] = useState<"write" | "preview">("write");
   const [loadingTokens, setLoadingTokens] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [createdId, setCreatedId] = useState<string | null>(null);
+  const previews = useMemo(() => imageFiles.map((file) => URL.createObjectURL(file)), [imageFiles]);
+  useEffect(() => () => previews.forEach((url) => URL.revokeObjectURL(url)), [previews]);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const validateField = (event: React.SyntheticEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const field = event.currentTarget;
+    const messages: Record<string, string> = {
+      "issue-title": "Title must contain 10–120 characters.",
+      "issue-description": "Scope must contain 30–5000 characters.",
+      "bounty-amount": `Reward must be between ${BOUNTY_MIN_AMOUNT} and ${BOUNTY_MAX_AMOUNT}.`,
+      deadline: "Deadline must be tomorrow or later.",
+    };
+    setFieldErrors((current) => ({ ...current, [field.id]: field.validity.valid ? "" : messages[field.id] ?? field.validationMessage }));
+  };
 
   useEffect(() => {
     let active = true;
@@ -92,6 +109,25 @@ export function CreateIssueForm() {
     };
   }, []);
 
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  useEffect(() => {
+    let active = true;
+    const timer = setTimeout(() => {
+      graphqlRequest<{ skills: Array<{ name: string }> }>(SEARCH_SKILLS, { query: skillDraft.trim(), first: 8 })
+        .then((result) => { if (active) setSuggestions(result.skills.map((skill) => skill.name)); })
+        .catch(() => { if (active) setSuggestions([]); });
+    }, 150);
+    return () => { active = false; clearTimeout(timer); };
+  }, [skillDraft]);
+  const pickSkill = (name: string) => { addSkills(name); setSuggestOpen(false); };
+
+  const addImages = (files: File[]) => {
+    const picked = files.filter((file) => file.type.startsWith("image/") && file.size <= 5 * 1024 * 1024);
+    if (picked.length < files.length) setError("Only images up to 5 MB can be attached.");
+    setImageFiles((current) => [...current, ...picked].slice(0, MAX_IMAGES));
+  };
+
   const addSkills = (value = skillDraft) => {
     const next = value
       .split(",")
@@ -107,6 +143,16 @@ export function CreateIssueForm() {
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (title.trim().length < 10 || title.trim().length > 120) {
+      setFieldErrors((current) => ({ ...current, "issue-title": "Title must contain 10–120 characters." }));
+      document.getElementById("issue-title")?.focus();
+      return;
+    }
+    if (description.trim().length < 30) {
+      setEditorTab("write");
+      setFieldErrors((current) => ({ ...current, "issue-description": "Scope must contain 30–5000 characters." }));
+      return;
+    }
     setError(null);
     setSaving(true);
     try {
@@ -114,7 +160,7 @@ export function CreateIssueForm() {
         title: title.trim(),
         description: description.trim(),
         category,
-        bountyAmount: Number(amount),
+        bountyAmount: String(amount),
         tokenId,
         requiredSkills: skills,
         ...(difficulty ? { difficulty } : {}),
@@ -123,10 +169,20 @@ export function CreateIssueForm() {
         ...(githubRepo.trim() ? { githubRepo: githubRepo.trim() } : {}),
       };
       const result = await graphqlRequest<CreateResponse>(CREATE_ISSUE, { input });
-      // The preview image is attached after the task exists: the upload is announced without an issue, then linked to it.
-      if (imageFile) {
-        const { attachmentId } = await uploadFile(imageFile, "ISSUE_IMAGE");
-        await graphqlRequest(ATTACH_ISSUE_FILE, { issue: result.createIssue.id, attachment: attachmentId });
+      // Images attach after the task exists: each upload is announced without an issue, then linked to it.
+      setCreatedId(result.createIssue.id);
+      const failed: string[] = [];
+      for (const file of imageFiles) {
+        try {
+          const { attachmentId } = await uploadFile(file, "ISSUE_IMAGE");
+          await graphqlRequest(ATTACH_ISSUE_FILE, { issue: result.createIssue.id, attachment: attachmentId });
+        } catch {
+          failed.push(file.name);
+        }
+      }
+      if (failed.length) {
+        setError(`Bounty posted, but these images failed to upload: ${failed.join(", ")}. Open the bounty to continue.`);
+        return;
       }
       window.location.assign(`/issues/${result.createIssue.id}`);
     } catch (reason) {
@@ -246,7 +302,7 @@ export function CreateIssueForm() {
         </li>
       </ol>
 
-      {error && <div className="err" role="alert">{error}</div>}
+      {error && <div className="err" role="alert">{error}{createdId && <> <Link href={`/issues/${createdId}`} style={{ textDecoration: "underline" }}>Open bounty</Link></>}</div>}
 
       <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         {/* Section 1: Basics */}
@@ -266,12 +322,15 @@ export function CreateIssueForm() {
               maxLength={120}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              onBlur={validateField}
+              onInvalid={validateField}
               placeholder="e.g. Fix reentrancy in StakingVault.withdraw()"
             />
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span className="hint">{t("titleHint")}</span>
               <span className="hint mono">{title.length} / 120</span>
             </div>
+            {fieldErrors["issue-title"] && <span role="alert" className="err">{fieldErrors["issue-title"]}</span>}
           </div>
 
           <div className="two">
@@ -312,6 +371,7 @@ export function CreateIssueForm() {
 
           <div className="field">
             <label htmlFor="required-skills">{t("skillsLabel")}</label>
+            <div style={{ position: "relative" }}>
             <div className="taginput">
               {skills.map((skill) => (
                 <span key={skill} className="tag">
@@ -329,7 +389,13 @@ export function CreateIssueForm() {
               <input
                 id="required-skills"
                 value={skillDraft}
-                onChange={(e) => setSkillDraft(e.target.value)}
+                autoComplete="off"
+                role="combobox"
+                aria-expanded={suggestOpen && suggestions.length > 0}
+                aria-controls="skill-suggestions"
+                onChange={(e) => { setSkillDraft(e.target.value); setSuggestOpen(true); }}
+                onFocus={() => setSuggestOpen(true)}
+                onBlur={() => setTimeout(() => setSuggestOpen(false), 120)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === ",") {
                     e.preventDefault();
@@ -348,6 +414,18 @@ export function CreateIssueForm() {
                   <Plus className="h-3 w-3" /> Add
                 </button>
               )}
+            </div>
+            {suggestOpen && suggestions.filter((name) => !skills.includes(name)).length > 0 && (
+              <ul id="skill-suggestions" role="listbox" style={{ position: "absolute", zIndex: 20, left: 0, right: 0, top: "100%", marginTop: 4, maxHeight: 240, overflowY: "auto", listStyle: "none", padding: 4, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 8, boxShadow: "0 8px 24px rgba(0,0,0,.12)" }}>
+                {suggestions.filter((name) => !skills.includes(name)).map((name) => (
+                  <li key={name} role="option" aria-selected={false}>
+                    <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => pickSkill(name)} style={{ display: "block", width: "100%", textAlign: "left", padding: "7px 10px", borderRadius: 6, fontSize: 13, color: "var(--ink)", background: "transparent", cursor: "pointer" }} className="hover:bg-[var(--surface-2)]">
+                      {name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
             </div>
             <span className="hint">Up to 10 skills. Developers who match will be notified.</span>
           </div>
@@ -424,6 +502,13 @@ export function CreateIssueForm() {
                   maxLength={5000}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  onBlur={validateField}
+                  onInvalid={validateField}
+                  onPaste={(e) => {
+                    // Pasted screenshots join the bounty's images; plain-text paste is untouched.
+                    const images = Array.from(e.clipboardData.files).filter((file) => file.type.startsWith("image/"));
+                    if (images.length) { e.preventDefault(); addImages(images); }
+                  }}
                   placeholder="## Problem&#10;Describe the vulnerability or feature...&#10;&#10;## Acceptance criteria&#10;- Passes all tests on main&#10;- CEI checks-effects-interactions applied"
                 />
               ) : (
@@ -437,6 +522,7 @@ export function CreateIssueForm() {
                 <span className="mono">{description.length} / 5000</span>
               </div>
             </div>
+            {fieldErrors["issue-description"] && <span role="alert" className="err">{fieldErrors["issue-description"]}</span>}
           </div>
         </section>
 
@@ -460,10 +546,13 @@ export function CreateIssueForm() {
                 step="any"
                 value={amount}
                 onChange={(e) => setAmount(Number(e.target.value))}
+                onBlur={validateField}
+                onInvalid={validateField}
               />
               <span className="hint">
                 {t("allowedRange")}: {BOUNTY_MIN_AMOUNT.toLocaleString()}–{BOUNTY_MAX_AMOUNT.toLocaleString()} tokens.
               </span>
+              {fieldErrors["bounty-amount"] && <span role="alert" className="err">{fieldErrors["bounty-amount"]}</span>}
             </div>
 
             <div className="field">
@@ -509,7 +598,10 @@ export function CreateIssueForm() {
                 min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)}
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
+                onBlur={validateField}
+                onInvalid={validateField}
               />
+              {fieldErrors.deadline && <span role="alert" className="err">{fieldErrors.deadline}</span>}
             </div>
           </div>
 
@@ -528,9 +620,30 @@ export function CreateIssueForm() {
 
         <div>
           <label style={{ fontSize: 13 }}>
-            Preview image (optional)
-            <input type="file" accept="image/*" style={{ display: "block", marginTop: 6 }} onChange={(e) => setImageFile(e.target.files?.[0] ?? null)} />
+            Images (optional, up to {MAX_IMAGES})
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              style={{ display: "block", marginTop: 6 }}
+              onChange={(e) => {
+                addImages(Array.from(e.target.files ?? []));
+                e.target.value = "";
+              }}
+            />
           </label>
+          <p style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 4 }}>Images only, 5 MB each. You can also paste screenshots into the scope box. The first image is the cover in the marketplace.</p>
+          {previews.length > 0 && (
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+              {previews.map((url, index) => (
+                <div key={url} style={{ position: "relative" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt={imageFiles[index]?.name ?? ""} style={{ width: 96, height: 72, objectFit: "cover", borderRadius: 6, border: "1px solid var(--line)" }} />
+                  <button type="button" aria-label="Remove image" onClick={() => setImageFiles((current) => current.filter((_, i) => i !== index))} style={{ position: "absolute", top: 2, right: 2, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 4, fontSize: 11, lineHeight: "16px", width: 18, cursor: "pointer" }}>×</button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}
@@ -542,7 +655,7 @@ export function CreateIssueForm() {
             <Button type="button" variant="outline">
               Save as draft
             </Button>
-            <Button type="submit" isLoading={saving} disabled={!tokenId || loadingTokens}>
+            <Button type="submit" isLoading={saving} disabled={!tokenId || loadingTokens || Boolean(createdId)}>
               {t("publishBounty")}
             </Button>
           </div>

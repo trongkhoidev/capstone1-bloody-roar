@@ -27,6 +27,7 @@ export interface AuthUser {
 export type AuthStatus =
   | "idle"
   | "restoring"
+  | "session_error"
   | "connecting"
   | "requesting_nonce"
   | "signing"
@@ -54,6 +55,8 @@ interface AuthState {
     signerFn: (message: string) => Promise<string>
   ) => Promise<boolean>;
 }
+
+let restorePromise: Promise<void> | null = null;
 
 export const useAuthStore = create<AuthState>()(
     (set, get) => ({
@@ -88,15 +91,23 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      restoreSession: async () => {
-        if (get().status === "authenticated") return;
+      restoreSession: () => {
+        if (restorePromise) return restorePromise;
+        if (get().status === "authenticated") return Promise.resolve();
         set({ status: "restoring", error: null });
-        try {
-          const { data } = await apiClient.get<{ user?: AuthUser }>("/api/auth/session");
-          set({ user: data.user ?? null, status: data.user ? "authenticated" : "idle", error: null });
-        } catch {
-          set({ user: null, status: "idle", error: null });
-        }
+        restorePromise = (async () => {
+          for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+              const { data } = await apiClient.get<{ user: AuthUser | null }>("/api/auth/session");
+              if (get().status === "restoring") set({ user: data.user, status: data.user ? "authenticated" : "idle", error: null });
+              return;
+            } catch {
+              if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 1000));
+            }
+          }
+          if (get().status === "restoring") set({ status: "session_error", error: null });
+        })().finally(() => { restorePromise = null; });
+        return restorePromise;
       },
 
       loginWithSignature: async (

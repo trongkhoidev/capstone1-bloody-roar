@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import Link from "next/link";
 import Image from "next/image";
@@ -241,9 +241,8 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     return () => { active = false; };
   }, [canChat, issueId]);
 
-  // Unread badge on the Bounty Chat tab: seed from the server once, then count realtime messages while another tab is open.
+  // Unread badge on the Bounty Chat tab: the server count is the only source; refetch it on each realtime message from the other side.
   const [chatUnread, setChatUnread] = useState(0);
-  const unreadSeeded = useRef(false);
   const chatTabOpen = activeTab === "chat";
   const chatEnabled = canChat && Boolean(issue?.developerId);
   const viewerId = user?.id;
@@ -251,16 +250,14 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     if (!chatEnabled) return;
     if (chatTabOpen) { setChatUnread(0); return; }
     let active = true;
-    if (!unreadSeeded.current) {
-      unreadSeeded.current = true;
-      void graphqlRequest<{ unreadMessageCount: number }>(UNREAD_QUERY, { issueId })
-        .then((result) => { if (active) setChatUnread(result.unreadMessageCount); })
-        .catch(() => undefined);
-    }
+    const refresh = () => void graphqlRequest<{ unreadMessageCount: number }>(UNREAD_QUERY, { issueId })
+      .then((result) => { if (active) setChatUnread(result.unreadMessageCount); })
+      .catch(() => undefined);
+    refresh();
     const client = io({ transports: ["websocket", "polling"], withCredentials: true });
     client.on("connect", () => client.emit("task:join", issueId, () => undefined));
     client.on("message:new", (message: { issueId: string; senderId: string }) => {
-      if (active && message.issueId === issueId && message.senderId !== viewerId) setChatUnread((count) => count + 1);
+      if (message.issueId === issueId && message.senderId !== viewerId) refresh();
     });
     return () => { active = false; client.disconnect(); };
   }, [chatEnabled, chatTabOpen, issueId, viewerId]);

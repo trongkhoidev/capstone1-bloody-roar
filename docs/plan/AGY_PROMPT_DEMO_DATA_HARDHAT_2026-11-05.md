@@ -59,7 +59,7 @@ Chain đã reset, nên các escrow của lần nạp trước (escrow cũ `0xB7f
 2. **Dừng lại, hỏi người dùng** chọn một trong hai:
    - (a) để nguyên, dữ liệu cũ chỉ để xem
    - (b) viết script dọn, chỉ đụng các dòng có `contractAddress` = escrow cũ
-   
+
    Chưa có câu trả lời thì không làm (b). Phần dữ liệu off-chain cũ (user, bài `OPEN`, bình luận) luôn giữ nguyên.
 
 ## 4. Bước 3: nội dung mới
@@ -86,7 +86,7 @@ bun run scripts/demo/verify.ts
 | W2 Bài | 200 bài. Mỗi bài có ≥2 tiêu chí kiểm thử tạo bằng `createTestCase` và duyệt bằng `updateTestCase` (AI đang tắt) |
 | W3 Bình luận | 800 bình luận, có reply lồng nhau, rải đều trên các bài `OPEN` |
 | W4 Ứng tuyển | 600 đơn, đủ `PENDING`, `REJECTED`, `WITHDRAWN`, `ACCEPTED` |
-| W5 Funding | 60 bài được `selectDeveloper`, trong đó 50 bài nạp escrow on-chain thật (approve + deposit), 5 bài để `AWAITING_FUNDING`, 5 bài để reservation hết hạn |
+| W5 Funding | 60 bài được `selectDeveloper`, trong đó 50 bài nạp escrow on-chain thật (approve + deposit), 5 bài để `AWAITING_FUNDING`, 5 bài bị huỷ reservation (`cancelReservation`) |
 | W6 Phòng chat | Mỗi task đã nạp tiền có phòng chat 8–30 tin qua socket, cả hai bên cùng nhắn, có tin kèm file |
 | W7 Nộp bài | 40 bài nộp on-chain (`prepareSubmitWork`), 10 bài có `requestChanges` rồi nộp lại |
 | W8 Kết thúc | 25 release + claim, 6 settlement, 4 dispute đang mở, 3 dispute có initial ruling, 3 dispute đã finalize, 2 missed-delivery refund, 2 review-timeout |
@@ -112,7 +112,7 @@ Kiểm thêm bằng CLI:
 ## 7. Báo cáo
 
 Ghi vào `docs/plan/DEMO_DATA_HARDHAT_2026-11-05.md`:
-1. Cảnh báo đầu trang: on-chain chỉ có trên Hardhat của máy này. Restart node là mất, muốn có lại thì chạy lại W5–W9.
+1. Cảnh báo đầu trang: on-chain chỉ có trên Hardhat của máy này. Restart node là mất: dùng database mới, xoá `demo-wallets/state-hardhat.json` rồi chạy lại W1–W9.
 2. Địa chỉ escrow mới, deploy block.
 3. Bảng số dòng trước/sau của các bảng: `users`, `issues`, `applications`, `issue_comments`, `messages`, `submissions`, `escrow_projections`, `disputes`, `reviews`, `notifications`, `attachments`.
 4. Phân bố trạng thái issue so với mục tiêu ở §5.

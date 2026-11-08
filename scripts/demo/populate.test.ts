@@ -2,6 +2,10 @@
 import { describe, expect, it } from "bun:test";
 import { DemoPopulator } from "./populate";
 import { getDeterministicIp } from "./lib/session";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+import { assertSameDeployment, loadState, type DemoState } from "./lib/state";
 
 describe("Demo Populator Plan and Quantities (R5)", () => {
   it("enforces deterministic IPs per wallet role", () => {
@@ -131,5 +135,22 @@ describe("Demo Populator Plan and Quantities (R5)", () => {
     } finally {
       process.env.DEMO_ACCOUNTS = origEnv;
     }
+  });
+});
+
+describe("assertSameDeployment", () => {
+  it("records the first deployment and rejects a different one", () => {
+    const state = { reservations: {} } as unknown as DemoState;
+    assertSameDeployment(state, "0xaaa");
+    expect(() => assertSameDeployment(state, "0xaaa")).not.toThrow();
+    expect(() => assertSameDeployment(state, "0xbbb")).toThrow(/fresh database/);
+  });
+});
+
+describe("loadState", () => {
+  it("marks issues from an old state file as having all criteria, so W2 adds no duplicates", () => {
+    const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "demo-state-")), "state.json");
+    fs.writeFileSync(file, JSON.stringify({ issues: { issue_001: "id1" } }));
+    expect(loadState(file).criteria.issue_001).toBeGreaterThanOrEqual(2);
   });
 });

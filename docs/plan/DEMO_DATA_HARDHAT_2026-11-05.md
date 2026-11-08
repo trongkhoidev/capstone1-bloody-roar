@@ -1,7 +1,7 @@
 # Báo Cáo Nạp Demo Data Hardhat (Local Node) — 2026-11-05
 
 > [!WARNING]
-> **Cảnh báo quan trọng**: Toàn bộ dữ liệu giao dịch on-chain chỉ tồn tại trên Hardhat node cục bộ (`http://127.0.0.1:8545`, Chain ID `31337`). Nếu tắt hoặc restart Hardhat node, trạng thái trên chain sẽ bị mất và không khớp với database Supabase. Trong trường hợp cần tạo lại trạng thái on-chain, chạy lại các Wave W5–W9 qua `scripts/demo/populate.ts`.
+> **Cảnh báo quan trọng**: Toàn bộ dữ liệu giao dịch on-chain chỉ tồn tại trên Hardhat node cục bộ (`http://127.0.0.1:8545`, Chain ID `31337`). Nếu tắt hoặc restart Hardhat node, trạng thái trên chain sẽ bị mất và không khớp với database Supabase. Không thể khôi phục bằng cách chạy lại riêng W5–W9: database vẫn giữ các reservation đã `FUNDED` trên chain cũ. Sau khi reset chain, dùng database mới, xoá `demo-wallets/state-hardhat.json` rồi chạy lại toàn bộ W1–W9 (`populate.ts` từ chối chạy nếu tx triển khai escrow khác với state đã lưu).
 
 ---
 

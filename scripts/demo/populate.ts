@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { ethers } from "./lib/ethers";
 import { createColorPng } from "./lib/image";
-import { loadState, saveState, type DemoState } from "./lib/state";
+import { assertSameDeployment, loadState, saveState, type DemoState } from "./lib/state";
 import { loginWallet, type UserSession } from "./lib/session";
 import { gqlRequest } from "./lib/gql";
 import { connectDemoSocket, emitAck } from "./lib/socket";
@@ -35,6 +35,11 @@ export class DemoPopulator {
   private chatRooms: ChatRoomContent[];
   private options: PopulateOptions;
   private token84532Id?: string;
+
+  public bindDeployment(deploymentTx: string): void {
+    assertSameDeployment(this.state, deploymentTx);
+    saveState(this.state);
+  }
 
   constructor(options: PopulateOptions = {}) {
     this.options = { baseUrl: process.env.BASE_URL || "http://localhost:4000", ...options };
@@ -229,7 +234,8 @@ export class DemoPopulator {
     }
 
     for (const item of this.issues) {
-      if (this.state.issues[item.key]) {
+      const criteriaDone = this.state.criteria[item.key] ?? 0;
+      if (this.state.issues[item.key] && criteriaDone >= (item.testCases?.length ?? 0)) {
         count++;
         continue;
       }
@@ -240,41 +246,45 @@ export class DemoPopulator {
       }
 
       const session = await this.getSession(item.clientRole);
+      const isNew = !this.state.issues[item.key];
+      let issueId = this.state.issues[item.key] ?? "";
 
-      // Create issue
-      const issueRes = await gqlRequest<{ createIssue: { id: string } }>(
-        `mutation CreateIssue($input: CreateIssueInput!) {
-          createIssue(input: $input) {
-            id
-          }
-        }`,
-        {
-          input: {
-            title: item.title,
-            description: item.description,
-            category: item.category,
-            bountyAmount: item.bountyAmount.toString(),
-            tokenId: this.token84532Id,
-            requiredSkills: item.requiredSkills,
-            difficulty: item.difficulty,
-            timeEstimate: item.timeEstimate,
-            githubRepo: item.githubRepo,
+      // Create issue (a re-run only resumes missing test criteria for an issue already created)
+      if (isNew) {
+        const issueRes = await gqlRequest<{ createIssue: { id: string } }>(
+          `mutation CreateIssue($input: CreateIssueInput!) {
+            createIssue(input: $input) {
+              id
+            }
+          }`,
+          {
+            input: {
+              title: item.title,
+              description: item.description,
+              category: item.category,
+              bountyAmount: item.bountyAmount.toString(),
+              tokenId: this.token84532Id,
+              requiredSkills: item.requiredSkills,
+              difficulty: item.difficulty,
+              timeEstimate: item.timeEstimate,
+              githubRepo: item.githubRepo,
+            },
           },
-        },
-        { cookie: session.cookie, ip: session.ip, baseUrl: this.options.baseUrl }
-      );
+          { cookie: session.cookie, ip: session.ip, baseUrl: this.options.baseUrl }
+        );
 
-      const issueId = issueRes.createIssue.id;
-      this.state.issues[item.key] = issueId;
-      this.state.issueMetadata[item.key] = {
-        id: issueId,
-        clientRole: item.clientRole,
-        category: item.category,
-        bountyAmount: item.bountyAmount.toString(),
-      };
+        issueId = issueRes.createIssue.id;
+        this.state.issues[item.key] = issueId;
+        this.state.issueMetadata[item.key] = {
+          id: issueId,
+          clientRole: item.clientRole,
+          category: item.category,
+          bountyAmount: item.bountyAmount.toString(),
+        };
+      }
 
       // If issue has attachment, upload and attach image
-      if (item.hasAttachment) {
+      if (isNew && item.hasAttachment) {
         try {
           const imgBuffer = createColorPng(120, 80, 50, 120, 200);
           const uploadResult = await this.uploadPng(session, "ISSUE_IMAGE", imgBuffer, `${item.key}-preview.png`);
@@ -294,7 +304,7 @@ export class DemoPopulator {
 
       // If issue has test criteria, add and approve them
       if (item.testCases) {
-        for (const tc of item.testCases) {
+        for (const tc of item.testCases.slice(criteriaDone)) {
           try {
             const tcRes = await gqlRequest<{ createTestCase: { id: string } }>(
               `mutation AddCase($input: CreateTestCaseInput!) {
@@ -333,8 +343,11 @@ export class DemoPopulator {
               },
               { cookie: session.cookie, ip: session.ip, baseUrl: this.options.baseUrl }
             );
+            this.state.criteria[item.key] = (this.state.criteria[item.key] ?? 0) + 1;
           } catch (err) {
+            // Stop here: the next run resumes from the criteria already saved for this issue.
             console.warn(`Failed to add/approve test case for ${item.key}:`, err);
+            break;
           }
         }
       }
@@ -1480,6 +1493,11 @@ if ((import.meta as unknown as { main?: boolean }).main) {
   console.log(`=== Demo Populator Started (dryRun=${dryRun}, wave=${wave || "ALL"}) ===`);
 
   async function run() {
+    if (!dryRun && isHardhatMode()) {
+      const manifestPath = path.resolve(process.cwd(), "apps/contracts/deployments/localhost.json");
+      const { deploymentTransaction } = JSON.parse(fs.readFileSync(manifestPath, "utf-8")) as { deploymentTransaction: string };
+      populator.bindDeployment(deploymentTransaction);
+    }
     if (!wave || wave === "W1") await populator.runWave1();
     if (!wave || wave === "W2") await populator.runWave2();
     if (!wave || wave === "W3") await populator.runWave3();

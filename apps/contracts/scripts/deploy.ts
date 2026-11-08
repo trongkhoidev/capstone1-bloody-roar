@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import type { Signer } from "ethers";
 import { ethers, network } from "hardhat";
 import {
   BASE_SEPOLIA_CHAIN_ID,
@@ -87,13 +88,17 @@ async function main() {
   console.log(`  arbiter Safe:  ${arbiterSafe}`);
   console.log(`  fee recipient: ${feeRecipient}`);
 
+  // Local runs deploy from a fresh random wallet: a reset Hardhat restarts every nonce at 0, so a fixed
+  // deployer would reuse the same escrow address and the worker would reuse old projection checkpoints.
+  let escrowDeployer: Signer = deployer;
   if (isLocal) {
-    // In local runs, advance deployer nonce by 1 so the newly deployed escrow gets a distinct
-    // address from previous runs (avoiding collision with historical projection checkpoints in DB).
-    await (await deployer.sendTransaction({ to: deployer.address, value: 0 })).wait();
+    const fresh = ethers.Wallet.createRandom(ethers.provider);
+    await (await deployer.sendTransaction({ to: fresh.address, value: ethers.parseEther("1") })).wait();
+    escrowDeployer = fresh;
+    console.log(`  escrow deployer: ${fresh.address}`);
   }
 
-  const EscrowFactory = await ethers.getContractFactory("BloodyRoarEscrow");
+  const EscrowFactory = await ethers.getContractFactory("BloodyRoarEscrow", escrowDeployer);
   const escrow = await EscrowFactory.deploy(tokenAddress, ownerSafe, arbiterSafe, feeRecipient);
   await escrow.waitForDeployment();
   const escrowAddress = await escrow.getAddress();

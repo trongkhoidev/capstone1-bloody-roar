@@ -20,7 +20,7 @@ describe("manual acceptance criteria", () => {
     });
     render(<TestCasePanel issueId="issue1" owner issueStatus="OPEN" />);
     fireEvent.click(await screen.findByText("Generate with AI"));
-    expect(await screen.findByText("AI chưa bật, hãy thêm tiêu chí thủ công")).toBeInTheDocument();
+    expect(await screen.findByText("AI service is unavailable. Please add criteria manually.")).toBeInTheDocument();
     for (const [label, value] of Object.entries({ title: item.title, description: item.description, given: item.given, when: item.when, then: item.bddThen })) {
       fireEvent.change(screen.getByLabelText(`New criterion ${label}`), { target: { value } });
     }

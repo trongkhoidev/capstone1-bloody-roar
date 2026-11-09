@@ -129,7 +129,7 @@ export function MarketplaceView({ initialSearch = "", initialSkill }: { initialS
         setHasNextPage(false);
         setEndCursor(null);
       }
-      setRequestError(error instanceof Error ? error.message : "Không thể tải bài toán.");
+      setRequestError(error instanceof Error ? error.message : "Failed to load bounties.");
     } finally {
       if (!signal?.aborted) {
         setIsLoading(false);
@@ -204,7 +204,7 @@ export function MarketplaceView({ initialSearch = "", initialSkill }: { initialS
                     onClick={() => void fetchPage(null, false)}
                     className="btn btn-sm btn-o"
                   >
-                    Thử lại
+                    Try again
                   </button>
                 </div>
               )}

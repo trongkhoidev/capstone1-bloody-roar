@@ -5,7 +5,6 @@
 
 import React, { useState } from "react";
 import { Search, Filter as FilterIcon, ChevronDown, ChevronUp } from "lucide-react";
-import { useUiPreferences } from "@/lib/ui-preferences";
 import { ISSUE_STATUS } from "@/lib/issue-status";
 
 export type SortOption = "NEWEST" | "HIGHEST_BOUNTY" | "MOST_VIEWED" | "DEADLINE";
@@ -48,20 +47,19 @@ export function MarketplaceFilterBar({
   totalCount,
   onFilterChange,
 }: FilterBarProps) {
-  const { language } = useUiPreferences();
   const [showDrawer, setShowDrawer] = useState(false);
 
   const categories = CATEGORIES.map((cat) => {
     switch (cat.id) {
-      case "ALL": return { ...cat, label: language === "vi" ? "Tất cả" : "All tasks" };
-      case "BUG_FIX": return { ...cat, label: language === "vi" ? "Sửa lỗi" : "Bug fixes" };
-      case "FEATURE": return { ...cat, label: language === "vi" ? "Tính năng" : "Features" };
+      case "ALL": return { ...cat, label: "All tasks" };
+      case "BUG_FIX": return { ...cat, label: "Bug fixes" };
+      case "FEATURE": return { ...cat, label: "Features" };
       case "SMART_CONTRACT": return { ...cat, label: "Smart contracts" };
-      case "AUDIT": return { ...cat, label: language === "vi" ? "Bảo mật & kiểm toán" : "Security & audit" };
-      case "UI_UX": return { ...cat, label: language === "vi" ? "Giao diện" : "Frontend & design" };
-      case "DATA_SCIENCE": return { ...cat, label: language === "vi" ? "AI & dữ liệu" : "AI & data" };
+      case "AUDIT": return { ...cat, label: "Security & audit" };
+      case "UI_UX": return { ...cat, label: "Frontend & design" };
+      case "DATA_SCIENCE": return { ...cat, label: "AI & data" };
       case "DEVOPS": return { ...cat, label: "DevOps" };
-      case "DOCUMENTATION": return { ...cat, label: language === "vi" ? "Tài liệu" : "Documentation" };
+      case "DOCUMENTATION": return { ...cat, label: "Documentation" };
       default: return cat;
     }
   });
@@ -198,7 +196,7 @@ export function MarketplaceFilterBar({
         <Search className="absolute left-3 top-2.5 h-4 w-4 text-[var(--ink-3)]" />
         <input
           type="search"
-          placeholder={language === "vi" ? "Tìm theo tiêu đề, mô tả kỹ thuật hoặc kỹ năng…" : "Search titles, technical details, or skills…"}
+          placeholder="Search titles, technical details, or skills…"
           value={filters.search}
           onChange={(e) => onFilterChange({ search: e.target.value })}
           className="tin pl-9 h-9 w-full bg-[var(--surface)] border-[var(--line-2)] rounded-md text-xs sm:text-sm text-[var(--ink)]"

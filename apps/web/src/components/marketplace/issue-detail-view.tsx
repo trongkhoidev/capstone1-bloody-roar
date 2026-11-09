@@ -157,10 +157,10 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
         setIssue({ ...result.issue, bountyAmount: Number(result.issue.bountyAmount.formatted), bountyRaw: result.issue.bountyAmount.raw, bountyDecimals: result.issue.bountyAmount.decimals });
       } else {
         setIssue(null);
-        setError("Không tìm thấy bài toán.");
+        setError("Bounty not found.");
       }
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Không tìm thấy bài toán.");
+      setError(reason instanceof Error ? reason.message : "Bounty not found.");
     } finally {
       setIsLoading(false);
     }
@@ -596,7 +596,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
 
           {/* Notices & Banners */}
           {notice && <div className="banner bn-info" style={{ gridTemplateColumns: "minmax(0,1fr) auto" }}><div><b>Notice:</b> {notice}</div><button type="button" aria-label="Dismiss" onClick={() => setNotice(null)} style={{ cursor: "pointer" }}>✕</button></div>}
-          {chainPending && <div className="banner bn-info"><div>Đang chờ chain xác nhận</div></div>}
+          {chainPending && <div className="banner bn-info"><div>Waiting for blockchain confirmation...</div></div>}
           {error && <div className="banner bn-bad" style={{ gridTemplateColumns: "minmax(0,1fr) auto" }}><div><b>Error:</b> {error}</div><button type="button" aria-label="Dismiss" onClick={() => setError(null)} style={{ cursor: "pointer" }}>✕</button></div>}
 
           {/* Main 2-column Grid */}
@@ -754,7 +754,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                         )}
                         {reservationId && issue.viewerCapabilities?.canFund && (
                           <button type="button" className="btn btn-o btn-sm" style={{ marginBottom: 12 }} disabled={isWorking} onClick={() => void cancelFunding()}>
-                            Hủy giữ chỗ
+                            Cancel reservation
                           </button>
                         )}
                         {applications.map((app) => (

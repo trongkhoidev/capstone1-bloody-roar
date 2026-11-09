@@ -19,7 +19,7 @@ export function ProfileView() {
   const authUser = useAuthStore((state) => state.user);
   const authUserId = authUser?.id;
   const authStatus = useAuthStore((state) => state.status);
-  const { language, t, theme } = useUiPreferences();
+  const { t, theme } = useUiPreferences();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState("");
@@ -107,7 +107,7 @@ export function ProfileView() {
   return (
     <div className={`br min-h-screen py-8 ${theme === "dark" ? "dark" : ""}`}>
       <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-        <div className="animate-fade-in"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">{language === "vi" ? "Tài khoản" : "Account"}</p><h1 className="mt-1 font-outfit text-3xl font-bold text-[var(--ink)]">{t("profileHeading")}</h1><p className="mt-1 text-sm text-[var(--ink-3)]">{t("profileIntro")}</p></div>
+        <div className="animate-fade-in"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">Account</p><h1 className="mt-1 font-outfit text-3xl font-bold text-[var(--ink)]">{t("profileHeading")}</h1><p className="mt-1 text-sm text-[var(--ink-3)]">{t("profileIntro")}</p></div>
       {error && <div role="alert" className="mt-5 rounded-lg border border-[hsl(var(--destructive)/0.35)] bg-[hsl(var(--destructive)/0.08)] p-3 text-sm text-[hsl(var(--destructive))]">{error}</div>}
       {notice && <div role="status" className="mt-5 rounded-lg border border-[hsl(var(--success)/0.35)] bg-[hsl(var(--success)/0.08)] p-3 text-sm text-[hsl(var(--success))]">{notice}</div>}
       <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -119,7 +119,7 @@ export function ProfileView() {
             <Field label={t("aboutYou")} error={fieldErrors.bio}><textarea className="min-h-32 w-full rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--background-secondary))] px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]" maxLength={200} value={bio} onChange={(event) => setBio(event.target.value)} placeholder={t("bioPlaceholder")} /></Field>
             <Field label={t("skillsComma")} error={fieldErrors.skills}><Input value={skillsText} onChange={(event) => setSkillsText(event.target.value)} placeholder="TypeScript, Solidity, UI design" /></Field>
             <Field label={t("locationLabel")} error={fieldErrors.location}><Input maxLength={80} value={location} onChange={(event) => setLocation(event.target.value)} placeholder={t("locationPlaceholder")} /></Field>
-            {profile?.role !== "ADMIN" && <Field label="Nhãn hiển thị" error={fieldErrors.role}><select value={role} onChange={(event) => setRole(event.target.value as "CLIENT" | "DEVELOPER")} className="block w-full rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--background-secondary))] px-3 py-2.5 text-sm"><option value="DEVELOPER">{t("developerRole")}</option><option value="CLIENT">{t("clientRole")}</option></select><span className="mt-1 block text-xs text-[hsl(var(--foreground-muted))]">Không ảnh hưởng quyền</span></Field>}
+            {profile?.role !== "ADMIN" && <Field label="Display role" error={fieldErrors.role}><select value={role} onChange={(event) => setRole(event.target.value as "CLIENT" | "DEVELOPER")} className="block w-full rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--background-secondary))] px-3 py-2.5 text-sm"><option value="DEVELOPER">{t("developerRole")}</option><option value="CLIENT">{t("clientRole")}</option></select><span className="mt-1 block text-xs text-[hsl(var(--foreground-muted))]">Does not affect permissions</span></Field>}
             <Button type="submit" isLoading={saving}><Save className="mr-2 h-4 w-4" />{t("saveProfile")}</Button>
           </>}
         </form>

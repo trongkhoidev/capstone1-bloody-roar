@@ -5,7 +5,7 @@ import { useAuthStore } from "@/lib/store/use-auth-store";
 
 const { request } = vi.hoisted(() => ({ request: vi.fn(async (_query: string) => ({ tokens: [{ id: "token", symbol: "USDC", name: "USD", decimals: 6, chainId: 1 }] })) }));
 vi.mock("@/lib/graphql-client", () => ({ graphqlRequest: request }));
-vi.mock("@/lib/ui-preferences", () => ({ useUiPreferences: () => ({ language: "en", theme: "light", t: (key: string) => key }) }));
+vi.mock("@/lib/ui-preferences", () => ({ useUiPreferences: () => ({ theme: "light", t: (key: string) => key }) }));
 
 describe("create issue validation", () => {
   it("shows field errors when invalid fields are submitted or blurred", async () => {

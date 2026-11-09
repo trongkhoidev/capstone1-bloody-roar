@@ -16,10 +16,10 @@ export function MarketplaceEmpty({ onResetFilters }: MarketplaceEmptyProps) {
     >
       <div className="text-4xl">🔍</div>
       <h3 className="text-base font-bold text-[hsl(var(--foreground))]">
-        Không tìm thấy bài toán nào phù hợp
+        No matching bounties found
       </h3>
       <p className="text-xs text-[hsl(var(--foreground-muted))] max-w-sm mx-auto leading-relaxed">
-        Thử điều chỉnh lại từ khóa tìm kiếm, bỏ chọn tag kỹ năng hoặc đổi danh mục lọc để xem thêm bài đăng.
+        Try adjusting your search terms, removing skill filters, or switching categories to see more listings.
       </p>
       <Button
         variant="secondary"
@@ -28,7 +28,7 @@ export function MarketplaceEmpty({ onResetFilters }: MarketplaceEmptyProps) {
         className="mt-2"
         data-testid="reset-filters-btn"
       >
-        Đặt lại bộ lọc
+        Reset filters
       </Button>
     </div>
   );

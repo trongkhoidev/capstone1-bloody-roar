@@ -56,7 +56,7 @@ export function TestCasePanel({ issueId, owner, issueStatus }: { issueId: string
       const result = await graphqlRequest<{ generateTestCases: TestCase[] }>(GENERATE_TEST_CASES, { issueId });
       setTestCases(result.generateTestCases);
     } catch (reason) {
-      setError(reason instanceof GraphQLRequestError && reason.code === "AI_UNAVAILABLE" ? "AI chưa bật, hãy thêm tiêu chí thủ công" : reason instanceof Error ? reason.message : "Could not generate acceptance criteria.");
+      setError(reason instanceof GraphQLRequestError && reason.code === "AI_UNAVAILABLE" ? "AI service is unavailable. Please add criteria manually." : reason instanceof Error ? reason.message : "Could not generate acceptance criteria.");
     } finally { setGenerating(false); }
   };
 

@@ -40,22 +40,9 @@ const CATEGORY_NAMES: Record<(typeof ISSUE_CATEGORIES)[number], string> = {
 export function CreateIssueForm() {
   const user = useAuthStore((state) => state.user);
   const authStatus = useAuthStore((state) => state.status);
-  const { language, t, theme } = useUiPreferences();
+  const { t, theme } = useUiPreferences();
 
-  const categoryNames =
-    language === "vi"
-      ? {
-          BUG_FIX: "Sửa lỗi",
-          FEATURE: "Tính năng",
-          SMART_CONTRACT: "Smart contract",
-          AUDIT: "Kiểm toán bảo mật",
-          UI_UX: "Giao diện",
-          DATA_SCIENCE: "Khoa học dữ liệu",
-          DEVOPS: "DevOps",
-          DOCUMENTATION: "Tài liệu",
-          OTHER: "Khác",
-        }
-      : CATEGORY_NAMES;
+  const categoryNames = CATEGORY_NAMES;
 
   const [tokens, setTokens] = useState<Token[]>([]);
   const [title, setTitle] = useState("");
@@ -186,7 +173,7 @@ export function CreateIssueForm() {
       }
       window.location.assign(`/issues/${result.createIssue.id}`);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Không thể tạo bài toán.");
+      setError(reason instanceof Error ? reason.message : "Could not create bounty.");
     } finally {
       setSaving(false);
     }

@@ -6,7 +6,7 @@ import { useAuthStore } from "@/lib/store/use-auth-store";
 
 const { request } = vi.hoisted(() => ({ request: vi.fn() }));
 vi.mock("@/lib/graphql-client", async (importOriginal) => ({ ...(await importOriginal<object>()), graphqlRequest: request }));
-vi.mock("@/lib/ui-preferences", () => ({ useUiPreferences: () => ({ language: "en", theme: "light", t: (key: string) => key }) }));
+vi.mock("@/lib/ui-preferences", () => ({ useUiPreferences: () => ({ theme: "light", t: (key: string) => key }) }));
 
 describe("profile validation", () => {
   it("shows the server field error without losing the entered value", async () => {

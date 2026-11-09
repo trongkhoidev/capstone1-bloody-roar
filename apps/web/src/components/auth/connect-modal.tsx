@@ -273,7 +273,7 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
                   <div className="how" style={{ fontSize: 13, lineHeight: 1.6 }}>
                     <b style={{ color: "var(--ink)" }}>Wallet-first identity</b>
                     <p style={{ margin: 0 }}>
-                      Social logins (Google, GitHub) cannot directly control smart contract escrow on Base Sepolia.
+                      Social logins (Google, GitHub) cannot directly control smart contract escrow on {ACTIVE_CHAIN.name}.
                       Please connect your wallet first, then you can link GitHub from your profile settings.
                     </p>
                   </div>

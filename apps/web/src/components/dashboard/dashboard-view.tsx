@@ -109,7 +109,7 @@ export function DashboardView() {
         {BigInt(claimable) > 0n && (
           <section className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[hsl(var(--border))] p-4">
             <p className="text-sm">Available to withdraw: <strong>{formatRaw(claimable)} USDC</strong></p>
-            <Button className="btn btn-p" disabled={claiming} onClick={() => void claimFunds()}>Rút tiền</Button>
+            <Button className="btn btn-p" disabled={claiming} onClick={() => void claimFunds()}>Claim funds</Button>
             {claimNotice && <p role="status" className="w-full text-xs text-[hsl(var(--success))]">{claimNotice}</p>}
           </section>
         )}

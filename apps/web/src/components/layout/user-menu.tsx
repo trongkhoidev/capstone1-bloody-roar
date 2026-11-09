@@ -12,7 +12,6 @@ import {
   Sun,
   Moon,
   Globe,
-  Languages,
   LogOut,
   User,
   LayoutDashboard,
@@ -34,7 +33,7 @@ export function UserMenu() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const { user, logout, status, restoreSession } = useAuthStore();
-  const { language, setLanguage, theme, setTheme, t } = useUiPreferences();
+  const { theme, setTheme, t } = useUiPreferences();
   const isAuthenticated = Boolean(user);
 
   const [isMounted, setIsMounted] = useState(false);
@@ -102,42 +101,6 @@ export function UserMenu() {
       <div className="pt-2.5 mt-2.5 border-t border-[var(--line-2)] space-y-2.5">
         <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ink-3)] px-0.5">
           {t("preferences") || "Preferences"}
-        </div>
-
-        {/* Language Selector */}
-        <div className="flex items-center justify-between px-0.5">
-          <span className="text-xs text-[var(--ink-2)] flex items-center gap-1.5">
-            <Languages className="w-3.5 h-3.5 text-[var(--ink-3)]" />
-            <span>{t("language")}</span>
-          </span>
-          <div className="inline-flex rounded-md border border-[var(--line-2)] bg-[var(--surface-2)] p-0.5">
-            <button
-              type="button"
-              onClick={() => setLanguage("en")}
-              className={`px-2.5 py-1 text-xs font-semibold rounded transition-all cursor-pointer ${
-                language === "en"
-                  ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs"
-                  : "text-[var(--ink-3)] hover:text-[var(--ink)]"
-              }`}
-              data-testid={language === "vi" ? "language-toggle" : "language-en-btn"}
-              aria-label="English"
-            >
-              EN
-            </button>
-            <button
-              type="button"
-              onClick={() => setLanguage("vi")}
-              className={`px-2.5 py-1 text-xs font-semibold rounded transition-all cursor-pointer ${
-                language === "vi"
-                  ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs"
-                  : "text-[var(--ink-3)] hover:text-[var(--ink)]"
-              }`}
-              data-testid={language === "en" ? "language-toggle" : "language-vi-btn"}
-              aria-label="Tiếng Việt"
-            >
-              VI
-            </button>
-          </div>
         </div>
 
         {/* Theme Selector */}

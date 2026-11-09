@@ -126,7 +126,7 @@ describe("MarketplaceEmpty", () => {
     render(<MarketplaceEmpty onResetFilters={handleReset} />);
 
     expect(
-      screen.getByText("Không tìm thấy bài toán nào phù hợp")
+      screen.getByText("No matching bounties found")
     ).toBeInTheDocument();
 
     const resetBtn = screen.getByTestId("reset-filters-btn");

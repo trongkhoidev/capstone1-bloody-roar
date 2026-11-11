@@ -11,6 +11,7 @@ import { parse } from "node:url";
 import next from "next";
 import { Server as SocketIOServer } from "socket.io";
 import { registerSocketHandlers } from "./src/socket/handlers";
+import { startEscrowBridge } from "./src/lib/realtime/escrow-bridge";
 import { logger } from "./src/lib/logger";
 
 const dev = process.env.NODE_ENV !== "production";
@@ -64,6 +65,7 @@ app.prepare().then(() => {
 
   // Register all Socket.io event handlers
   registerSocketHandlers(io);
+  startEscrowBridge(io);
 
   // Make io instance available globally (for use in GraphQL resolvers)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -8,21 +8,21 @@ async function main() {
   console.log("🌱 Seeding database...");
 
   // -----------------------------------------------------------------------
-  // 1. Admin user
+  // 1. Admin users: every wallet in ADMIN_WALLETS (same format as the app reads it)
   // -----------------------------------------------------------------------
-  const admin = await prisma.user.upsert({
-    where: { walletAddress: "0x000000000000000000000000000000000000dead" },
-    update: {},
-    create: {
-      walletAddress: "0x000000000000000000000000000000000000dead",
-      role: UserRole.ADMIN,
-      name: "Bloody-Roar Admin",
-      email: "admin@bloody-roar.dev",
-      bio: "Platform administrator and arbiter",
-      skills: ["Administration", "Dispute Resolution"],
-    },
-  });
-  console.log(`✅ Admin user: ${admin.id}`);
+  const adminWallets = (process.env.ADMIN_WALLETS ?? "")
+    .split(",")
+    .map((address) => address.trim().toLowerCase())
+    .filter(Boolean);
+  if (adminWallets.length === 0) throw new Error("Set ADMIN_WALLETS to at least one wallet before seeding");
+  for (const walletAddress of adminWallets) {
+    await prisma.user.upsert({
+      where: { walletAddress },
+      update: { role: UserRole.ADMIN },
+      create: { walletAddress, role: UserRole.ADMIN, name: "Bloody-Roar Admin" },
+    });
+  }
+  console.log(`✅ Admin users: ${adminWallets.join(", ")}`);
 
   // -----------------------------------------------------------------------
   // 2. Sample Client
@@ -355,7 +355,7 @@ Convert the Figma design to a pixel-perfect, responsive pricing page.
   console.log("\n🎉 Database seeded successfully!");
   console.log(`
   Users created:
-    - Admin:     ${admin.walletAddress}
+    - Admin:     ${adminWallets.join(", ")}
     - Client:    ${client.walletAddress}
     - Developer: ${developer.walletAddress}
   

@@ -411,7 +411,7 @@ Kết quả là một bản báo cáo gợi ý cách chia tiền. Trọng tài (
 | Che code thông minh  | Người thuê thấy tiến độ, không thấy code gốc                                        |
 | Trợ lý AI           | Lọc thông tin nhạy cảm, chấm điểm code, phân tích tranh chấp                        |
 | Chat                  | Nhắn tin thời gian thực, AI bảo vệ                                                       |
-| GitHub                | Tự động phát hiện khi lập trình viên gửi code                                        |
+| GitHub                | Nhận sự kiện PR đã merge và thông báo cho khách hàng; khách hàng tự xác nhận thanh toán |
 | Bảng điều khiển   | Trang quản lý dành cho trọng tài và quản trị viên                                    |
 
 ### Đang nghiên cứu & phát triển thêm

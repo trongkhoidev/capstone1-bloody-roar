@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { AUTH_COOKIE_NAME, thirdwebAuth } from "../../../../lib/auth";
 import { authDomain, issueAuthToken } from "../../../../lib/auth/siwe";
 import { validateSiwePayload } from "../../../../lib/auth/siwe-validation";
-import { buildChallengeIdentity, consumeSiweChallenge } from "../../../../lib/auth/challenge";
+import { buildChallengeIdentity, ChallengeReplayError, consumeSiweChallenge } from "../../../../lib/auth/challenge";
 import { prisma, UserRole } from "@bloody-roar/database";
 import { isConfiguredAdmin } from "../../../../lib/admin-wallets";
 import crypto from "crypto";
 import { createLogger } from "../../../../lib/logger";
+import { clientIp, rateLimit, tooManyRequests } from "../../../../lib/rate-limit";
 
 const log = createLogger("auth-login");
 
@@ -37,6 +38,11 @@ export async function POST(req: Request) {
       uri,
       chainId,
     });
+    const ipLimit = rateLimit(`login:ip:${clientIp(req)}`, { limit: 30, windowMs: 60_000 });
+    const addressLimit = rateLimit(`login:address:${payload.payload.address.toLowerCase()}`, { limit: 10, windowMs: 60_000 });
+    if (!ipLimit.ok || !addressLimit.ok) {
+      return tooManyRequests(Math.max(ipLimit.retryAfterMs, addressLimit.retryAfterMs));
+    }
     const walletAddress = await auth.verify(payload, {
       uri,
       version: "1",
@@ -117,6 +123,12 @@ export async function POST(req: Request) {
     response.headers.set("Cache-Control", "no-store");
     return response;
   } catch (error) {
+    if (error instanceof ChallengeReplayError) {
+      return NextResponse.json(
+        { error: "Login challenge already used" },
+        { status: 401, headers: { "Cache-Control": "no-store" } },
+      );
+    }
     log.warn({ error: error instanceof Error ? error.message : String(error) }, "Wallet login verification failed");
     return NextResponse.json(
       { error: "Invalid login payload" },

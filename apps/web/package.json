@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:e2e:backend": "bun run scripts/e2e-login.ts && bun run scripts/e2e-issue.ts && bun run scripts/e2e-chat.ts && bun run scripts/e2e-workflow.ts",
     "test:escrow": "bun run scripts/e2e-escrow.ts",
     "test:e2e": "playwright test"

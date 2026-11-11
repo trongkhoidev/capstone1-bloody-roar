@@ -1,26 +1,17 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@bloody-roar/database";
+import { keyBytes } from "../../../../../lib/github/crypto";
 
 export const dynamic = "force-dynamic";
 
-function redirect(request: Request, result: "connected" | "error") {
+function redirect(request: Request, result: "connected" | "error", code?: string) {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
-  return NextResponse.redirect(new URL(`/profile?github=${result}`, base));
-}
-
-function keyBytes() {
-  const encoded = process.env.GITHUB_TOKEN_ENCRYPTION_KEY ?? "";
-  if (/^[\da-fA-F]{64}$/.test(encoded)) return Buffer.from(encoded, "hex");
-  if (/^[A-Za-z0-9_-]{43}$/.test(encoded)) return Buffer.from(encoded, "base64url");
-  return null;
-}
-
-function encryptToken(token: string, key: Buffer) {
-  const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
-  const encrypted = Buffer.concat([cipher.update(token, "utf8"), cipher.final()]);
-  return `v1.${iv.toString("base64url")}.${cipher.getAuthTag().toString("base64url")}.${encrypted.toString("base64url")}`;
+  const target = new URL(`/profile?github=${result}`, base);
+  if (code) target.searchParams.set("code", code);
+  const response = NextResponse.redirect(target);
+  response.cookies.set("github_oauth_state", "", { path: "/api/auth/github/callback", maxAge: 0 });
+  return response;
 }
 
 export async function GET(request: Request) {
@@ -29,7 +20,6 @@ export async function GET(request: Request) {
   const code = url.searchParams.get("code");
   const returnedState = url.searchParams.get("state");
   const response = redirect(request, "error");
-  response.cookies.set("github_oauth_state", "", { path: "/api/auth/github/callback", maxAge: 0 });
 
   try {
     if (!cookieState || !code || !returnedState || !process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) return response;
@@ -61,18 +51,18 @@ export async function GET(request: Request) {
     const githubUser = await githubResponse.json() as { id?: number; login?: string };
     if (!githubUser.id || !githubUser.login) return response;
 
+    const owner = await prisma.user.findUnique({ where: { githubId: String(githubUser.id) }, select: { id: true } });
+    if (owner && owner.id !== state.userId) return redirect(request, "error", "GITHUB_ALREADY_LINKED");
+
     await prisma.user.update({
       where: { id: state.userId },
       data: {
         githubId: String(githubUser.id),
         githubUsername: githubUser.login,
-        githubAccessTokenEncrypted: encryptToken(tokenResult.access_token, key),
         isGithubVerified: true,
       },
     });
-    const connected = redirect(request, "connected");
-    connected.cookies.set("github_oauth_state", "", { path: "/api/auth/github/callback", maxAge: 0 });
-    return connected;
+    return redirect(request, "connected");
   } catch {
     return response;
   }

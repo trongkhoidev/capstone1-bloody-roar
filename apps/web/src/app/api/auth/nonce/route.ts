@@ -4,8 +4,12 @@ import { tryChecksumAddress } from "../../../../lib/auth/address";
 import { prisma } from "@bloody-roar/database";
 import { authDomain } from "../../../../lib/auth/siwe";
 import { buildChallengeIdentity } from "../../../../lib/auth/challenge";
+import { createLogger } from "../../../../lib/logger";
+import { clientIp, rateLimit, tooManyRequests } from "../../../../lib/rate-limit";
 
 export const dynamic = "force-dynamic";
+
+const log = createLogger("auth-nonce");
 
 export async function GET(req: Request) {
   try {
@@ -16,6 +20,11 @@ export async function GET(req: Request) {
         { error: "A valid wallet address is required" },
         { status: 400, headers: { "Cache-Control": "no-store" } },
       );
+    }
+    const ipLimit = rateLimit(`nonce:ip:${clientIp(req)}`, { limit: 30, windowMs: 60_000 });
+    const addressLimit = rateLimit(`nonce:address:${address.toLowerCase()}`, { limit: 10, windowMs: 60_000 });
+    if (!ipLimit.ok || !addressLimit.ok) {
+      return tooManyRequests(Math.max(ipLimit.retryAfterMs, addressLimit.retryAfterMs));
     }
     const auth = thirdwebAuth();
     const uri = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:4000";
@@ -44,7 +53,7 @@ export async function GET(req: Request) {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
-    console.error("Nonce error:", error);
+    log.error({ err: error }, "Nonce error");
     return NextResponse.json(
       { error: "Failed to generate nonce" },
       { status: 500, headers: { "Cache-Control": "no-store" } },

@@ -24,8 +24,13 @@ export function buildChallengeIdentity(input: {
   };
 }
 
+export class ChallengeReplayError extends Error {}
+
 export async function consumeSiweChallenge(
-  repository: { updateMany(args: unknown): Promise<{ count: number }> },
+  repository: {
+    updateMany(args: unknown): Promise<{ count: number }>;
+    findUnique(args: unknown): Promise<{ consumedAt: Date | null } | null>;
+  },
   identity: ChallengeIdentity,
   now = new Date(),
 ): Promise<void> {
@@ -37,5 +42,9 @@ export async function consumeSiweChallenge(
     },
     data: { consumedAt: now },
   });
-  if (result.count !== 1) throw new Error("Invalid or expired login challenge");
+  if (result.count === 1) return;
+
+  const row = await repository.findUnique({ where: { nonceHash: identity.nonceHash } });
+  if (row?.consumedAt) throw new ChallengeReplayError("Login challenge already used");
+  throw new Error("Invalid or expired login challenge");
 }

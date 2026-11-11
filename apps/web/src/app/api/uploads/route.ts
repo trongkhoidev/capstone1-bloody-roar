@@ -9,6 +9,7 @@ import { tokenFromRequest, verifyJWT } from "@/lib/auth";
 import { prisma } from "@bloody-roar/database";
 import { canReadIssueChat } from "@/lib/chat-access";
 import { getS3Storage, localUploadPath } from "@/lib/storage";
+import { rateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,6 +29,8 @@ export async function POST(request: Request) {
   const user = token ? await verifyJWT(token) : null;
   if (!user || user.isBanned)
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  const limit = rateLimit(`upload:${user.id}`, { limit: 20, windowMs: 60_000 });
+  if (!limit.ok) return tooManyRequests(limit.retryAfterMs);
 
   const body = (await request.json().catch(() => null)) as {
     fileName?: string;

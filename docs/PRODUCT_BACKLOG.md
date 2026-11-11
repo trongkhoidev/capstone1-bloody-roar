@@ -106,14 +106,14 @@
 
 ### Epic 8: GitHub Auth (KYC) & Integration
 
-> **Mục tiêu:** Xác thực user qua GitHub OAuth, liên kết repo, auto-payment khi PR merged.
+> **Mục tiêu:** Xác thực user qua GitHub OAuth, liên kết repo, thông báo cho client khi PR merged (không tự thanh toán).
 
 | ID     | User Story                                                         | Priority |
 | ------ | ------------------------------------------------------------------ | -------- |
 | US-8.1 | Là User, tôi muốn kết nối GitHub để được verify (KYC)    | P0       |
 | US-8.2 | Là User, tôi muốn thấy verified badge sau khi kết nối GitHub | P0       |
 | US-8.3 | Là Client, tôi muốn liên kết GitHub repo với task            | P1       |
-| US-8.4 | Là System, tôi muốn auto-pay khi PR được merge               | P2       |
+| US-8.4 | ~~Là System, tôi muốn auto-pay khi PR được merge~~ (đã bỏ: client xác nhận thanh toán, xem BE-70) | P2       |
 
 ### Epic 9: Admin & Analytics
 
@@ -283,7 +283,7 @@
 | **S1-MKP-05** | Viết`updateIssue` mutation                  | Hiếu | 1h       | S1-MKP-04             | Client-only update                                 |
 | **S1-MKP-06** | Viết`cancelIssue` mutation                  | Hiếu | 1h       | S1-MKP-04             | Status = CANCELLED nếu chưa assign               |
 | **S1-MKP-07** | Viết Application module                       | Hiếu | 2h       | S1-MKP-03             | `applyIssue`, `getApplicants`                  |
-| **S1-MKP-08** | Viết`assignDeveloper` mutation              | Hiếu | 2h       | S1-MKP-07             | Client-only, status → IN_PROGRESS                 |
+| **S1-MKP-08** | Viết`assignDeveloper` mutation              | Hiếu | 2h       | S1-MKP-07             | Client-only; tạo reservation `AWAITING_FUNDING` 24 giờ, giữ các application khác; chỉ `IN_PROGRESS` khi có event `Deposited` (UC-01) |
 | **S1-MKP-09** | Viết Search & Filter logic                    | Hiếu | 2h       | S1-MKP-02             | Prisma`where` + `orderBy`                      |
 | **S1-MKP-10** | Thiết kế Marketplace listing (grid, filter)  | Hân  | 3h       | S0-DSN-02             | Figma design                                       |
 | **S1-MKP-11** | Thiết kế Issue Detail page                   | Hân  | 2h       | S0-DSN-02             | Figma design                                       |
@@ -418,7 +418,7 @@
 | ------------------- | ------------------------------------------ | ----- | -------- | -------------------- | ---------------------------------------------- |
 | **S2-DSP-01** | Viết Dispute GraphQL types                | Hiếu | 1h       | S1-MKP-01            | Types: Dispute, Resolution                     |
 | **S2-DSP-02** | Viết Dispute Queries + Mutations          | Hiếu | 2h       | S2-DSP-01            | `getDispute`, `raiseDispute`               |
-| **S2-DSP-03** | Viết`proposeResolution(issueId, ratio)` | Hiếu | 1h       | S2-ESC-11            | Admin-only                                     |
+| **S2-DSP-03** | Viết`proposeResolution(issueId, ratio)` | Hiếu | 1h       | S2-ESC-11            | Admin-only; chỉ soạn bản nháp, không gửi on-chain |
 | **S2-DSP-04** | Viết`challengeResolution(issueId)`      | Hiếu | 1h       | S2-DSP-03            | Gọi contract.challengeResolution()            |
 | **S2-DSP-05** | Thiết kế Admin Dispute Dashboard         | Hân  | 3h       | —                   | Figma: case list, AI report, resolution slider |
 | **S2-DSP-06** | Implement Admin Dispute Dashboard          | Trâm | 3h       | S2-DSP-05, S2-DSP-02 | Case table, AI report view                     |
@@ -474,7 +474,7 @@
 | **S3-GH-04** | Đăng ký GitHub App (webhook)                 | Hiếu | 2h       | —                  | App ID + private key + webhook secret       |
 | **S3-GH-05** | Cài Octokit + cấu hình                       | Hiếu | 1h       | S3-GH-04            | Gọi GitHub API thành công                |
 | **S3-GH-06** | Viết Webhook handler (`pull_request.merged`) | Hiếu | 2h       | S3-GH-05            | Nhận webhook → verify → lưu DB          |
-| **S3-GH-07** | Viết auto-payment trigger                      | Hiếu | 2h       | S3-GH-06, S2-ESC-09 | PR merged → gọi releaseFunds              |
+| **S3-GH-07** | ~~Viết auto-payment trigger~~ (đã bỏ)          | Hiếu | 0h       | —                   | PR merged chỉ tạo thông báo cho client (BE-70) |
 | **S3-GH-08** | Viết`linkGithubRepo` GraphQL mutation        | Hiếu | 1h       | S3-GH-05            | Lưu repo URL + installation ID             |
 | **S3-GH-09** | Implement GitHub Auth UI (verified badge)       | Trâm | 2h       | S1-MKP-22, S3-GH-02 | Connect → verified                         |
 | **S3-GH-10** | Implement GitHub Repo linking UI                | Trâm | 2h       | S3-GH-08            | Select repo for task                        |
@@ -673,7 +673,7 @@
 ### V2 Roadmap (Sau MVP)
 
 ```
-🔲 Docker Sandbox (code-server + CI/CD test runner + Oracle auto-pay)
+🔲 Docker Sandbox (code-server + CI/CD test runner)
 🔲 Advanced KYC (Sumsub/Persona + face liveness + SBT)
 🔲 Gitcoin Passport (chống Sybil/fake identity)
 🔲 Advanced Analytics (Tinybird/Metabase)

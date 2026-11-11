@@ -101,6 +101,9 @@ async function main() {
     throw new Error(`Deployment readback mismatch: ${actualReadback.join(", ")}`);
   }
 
+  const deployReceipt = await escrow.deploymentTransaction()?.wait();
+  if (!deployReceipt) throw new Error("Deployment receipt not found");
+
   const manifest = {
     network: network.name,
     chainId: chainId.toString(),
@@ -110,7 +113,8 @@ async function main() {
     ownerSafe,
     arbiterSafe,
     feeRecipient,
-    deploymentTransaction: escrow.deploymentTransaction()?.hash ?? null,
+    deploymentTransaction: deployReceipt.hash,
+    deployBlock: deployReceipt.blockNumber,
     deployedAt: new Date().toISOString(),
     verification: {
       constructorArgs: [tokenAddress, ownerSafe, arbiterSafe, feeRecipient],

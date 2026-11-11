@@ -1,5 +1,11 @@
 import { EscrowStatus, IssueStatus } from "@bloody-roar/database";
-import { builder } from "../../builder";
+import {
+  builder,
+  parseTokenAmountInput,
+  tokenAmount,
+  TokenAmountRef,
+  type TokenAmountValue,
+} from "../../builder";
 import { requireAdmin, requireAuth } from "../../context";
 
 type UserStats = {
@@ -10,14 +16,13 @@ type UserStats = {
   completedPayouts: number;
 };
 
-type TokenAmount = { symbol: string; amount: number };
 type AdminStats = {
   users: number;
   openTasks: number;
   activeTasks: number;
   completedTasks: number;
   openDisputes: number;
-  completedBounties: TokenAmount[];
+  completedBounties: TokenAmountValue[];
 };
 
 const UserStatsRef = builder.objectRef<UserStats>("UserStats").implement({
@@ -27,13 +32,6 @@ const UserStatsRef = builder.objectRef<UserStats>("UserStats").implement({
     completedTasks: t.exposeInt("completedTasks"),
     applications: t.exposeInt("applications"),
     completedPayouts: t.exposeInt("completedPayouts"),
-  }),
-});
-
-const TokenAmountRef = builder.objectRef<TokenAmount>("TokenAmount").implement({
-  fields: (t) => ({
-    symbol: t.exposeString("symbol"),
-    amount: t.exposeFloat("amount"),
   }),
 });
 
@@ -81,13 +79,15 @@ builder.queryFields((t) => ({
         ctx.db.dispute.count({ where: { status: { in: ["OPEN", "ANALYZING", "PROPOSED", "CHALLENGED"] } } }),
         ctx.db.escrow.groupBy({ by: ["tokenId"], where: { status: EscrowStatus.COMPLETED }, _sum: { bountyAmount: true } }),
       ]);
-      const tokens = await ctx.db.token.findMany({ where: { id: { in: paidByToken.map((row) => row.tokenId) } }, select: { id: true, symbol: true } });
-      const symbolById = new Map(tokens.map((token) => [token.id, token.symbol]));
+      const tokens = await ctx.db.token.findMany({ where: { id: { in: paidByToken.map((row) => row.tokenId) } }, select: { id: true, symbol: true, decimals: true } });
+      const tokenById = new Map(tokens.map((token) => [token.id, token]));
       return {
         users, openTasks, activeTasks, completedTasks, openDisputes,
         completedBounties: paidByToken.flatMap((row) => {
-          const symbol = symbolById.get(row.tokenId);
-          return symbol && row._sum.bountyAmount ? [{ symbol, amount: row._sum.bountyAmount.toNumber() }] : [];
+          const token = tokenById.get(row.tokenId);
+          return token && row._sum.bountyAmount
+            ? [tokenAmount(parseTokenAmountInput(row._sum.bountyAmount.toFixed(), token), token)]
+            : [];
         }),
       };
     },

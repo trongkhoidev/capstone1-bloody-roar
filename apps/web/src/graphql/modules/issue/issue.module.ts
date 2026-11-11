@@ -4,7 +4,15 @@
 // - issue(id): detail (client + token + applicationCount)
 // - createIssue(input): post a new bounty (auth required)
 
-import { builder } from "../../builder";
+import {
+  builder,
+  parseTokenAmountInput,
+  tokenAmount,
+  TokenAmountRef,
+  type TokenAmountValue,
+} from "../../builder";
+import { formatTokenAmount } from "@bloody-roar/shared/money";
+import { ESCROW_CONSTANTS } from "@bloody-roar/shared/escrow";
 import { requireAuth } from "../../context";
 import { gqlError, parseOrThrow } from "../../errors";
 import type { Prisma } from "@bloody-roar/database";
@@ -24,6 +32,20 @@ import {
   MAX_PAGE_SIZE,
   ACTIVE_CHAIN_ID,
 } from "@bloody-roar/shared";
+
+// Ngân sách lưu ở numeric(20,6), nên input chỉ nhận tối đa 6 chữ số thập phân để không bị làm tròn
+const BOUNTY_TEXT = /^\d+(\.\d{1,6})?$/;
+const DAY_MS = 86_400_000;
+
+function issueBountyRaw(issue: { bountyAmount: { toFixed(): string }; token: { decimals: number } }) {
+  return parseTokenAmountInput(issue.bountyAmount.toFixed(), issue.token);
+}
+
+function assertBountyRange(raw: bigint, token: { decimals: number }) {
+  const min = parseTokenAmountInput(String(BOUNTY_MIN_AMOUNT), token);
+  const max = parseTokenAmountInput(String(BOUNTY_MAX_AMOUNT), token);
+  if (raw < min || raw > max) throw gqlError("Ngân sách ngoài khoảng cho phép", "BAD_USER_INPUT");
+}
 
 // ---------------------------------------------------------------------------
 // GraphQL enums (map từ Prisma enum / shared constants)
@@ -89,9 +111,14 @@ export const IssueRef = builder.prismaObject("Issue", {
     description: t.exposeString("description"),
     category: t.expose("category", { type: IssueCategoryEnum }),
     status: t.expose("status", { type: IssueStatusEnum }),
-    bountyAmount: t.float({
-      description: "Bounty in human-readable token units",
-      resolve: (issue) => issue.bountyAmount.toNumber(),
+    bountyAmount: t.field({
+      type: TokenAmountRef,
+      description: "Ngân sách theo đơn vị token: raw, decimals, symbol, formatted",
+      resolve: (issue) => tokenAmount(issueBountyRaw(issue), issue.token),
+    }),
+    bountyAmountRaw: t.string({
+      description: "Ngân sách theo đơn vị nhỏ nhất của token (chuỗi số nguyên)",
+      resolve: (issue) => issueBountyRaw(issue).toString(),
     }),
     requiredSkills: t.exposeStringList("requiredSkills"),
     difficulty: t.exposeString("difficulty", { nullable: true }),
@@ -101,6 +128,12 @@ export const IssueRef = builder.prismaObject("Issue", {
     developerId: t.exposeString("developerId", { nullable: true }),
     isDraft: t.exposeBoolean("isDraft"),
     githubRepo: t.exposeString("githubRepo", { nullable: true }),
+    termsVersion: t.exposeInt("termsVersion"),
+    deliveryDeadline: t.string({
+      nullable: true,
+      description: "ISO 8601",
+      resolve: (issue) => issue.deliveryDeadline?.toISOString() ?? null,
+    }),
     expiresAt: t.string({
       nullable: true,
       description: "ISO 8601",
@@ -216,24 +249,15 @@ const IssueConnectionRef = builder.objectRef<IssueConnectionShape>("IssueConnect
 
 type MarketplaceStats = {
   openBounties: number;
-  bountyPool: Array<{ symbol: string; amount: number }>;
+  bountyPool: TokenAmountValue[];
   activeHunters: number;
 };
-
-const MarketplaceTokenAmountRef = builder
-  .objectRef<{ symbol: string; amount: number }>("MarketplaceTokenAmount")
-  .implement({
-    fields: (t) => ({
-      symbol: t.exposeString("symbol"),
-      amount: t.exposeFloat("amount"),
-    }),
-  });
 
 const MarketplaceStatsRef = builder.objectRef<MarketplaceStats>("MarketplaceStats").implement({
   fields: (t) => ({
     openBounties: t.exposeInt("openBounties"),
     bountyPool: t.field({
-      type: [MarketplaceTokenAmountRef],
+      type: [TokenAmountRef],
       resolve: (stats) => stats.bountyPool,
     }),
     activeHunters: t.exposeInt("activeHunters"),
@@ -260,15 +284,15 @@ builder.queryField("marketplaceStats", (t) =>
       ]);
       const tokens = await ctx.db.token.findMany({
         where: { id: { in: bountyByToken.map((row) => row.tokenId) } },
-        select: { id: true, symbol: true },
+        select: { id: true, symbol: true, decimals: true },
       });
-      const symbolById = new Map(tokens.map((token) => [token.id, token.symbol]));
+      const tokenById = new Map(tokens.map((token) => [token.id, token]));
       return {
         openBounties,
         bountyPool: bountyByToken.flatMap((row) => {
-          const symbol = symbolById.get(row.tokenId);
-          return symbol && row._sum.bountyAmount
-            ? [{ symbol, amount: row._sum.bountyAmount.toNumber() }]
+          const token = tokenById.get(row.tokenId);
+          return token && row._sum.bountyAmount
+            ? [tokenAmount(parseTokenAmountInput(row._sum.bountyAmount.toFixed(), token), token)]
             : [];
         }),
         activeHunters: hunters.length,
@@ -287,8 +311,8 @@ const IssuesQuerySchema = z.object({
   after: z.string().max(256).nullish(),
   category: z.enum(ISSUE_CATEGORIES).nullish(),
   status: z.enum(ISSUE_STATUSES).nullish(),
-  bountyMin: z.number().positive().nullish(),
-  bountyMax: z.number().positive().nullish(),
+  bountyMin: z.string().regex(BOUNTY_TEXT).nullish(),
+  bountyMax: z.string().regex(BOUNTY_TEXT).nullish(),
   skill: z.string().max(40).nullish(),
   search: z.string().max(100).nullish(),
   sortBy: z.enum(ISSUE_SORT_BY).nullish(),
@@ -299,8 +323,21 @@ const CreateIssueSchema = z.object({
   title: z.string().min(10).max(120),
   description: z.string().min(30).max(5000),
   category: z.enum(ISSUE_CATEGORIES),
-  bountyAmount: z.number().min(BOUNTY_MIN_AMOUNT).max(BOUNTY_MAX_AMOUNT),
+  bountyAmount: z.string().regex(BOUNTY_TEXT, "Ngân sách chỉ gồm số, tối đa 6 chữ số thập phân"),
   tokenId: z.string().min(1),
+  deliveryDeadline: z
+    .string()
+    .datetime()
+    .refine(
+      (s) => {
+        const deadline = new Date(s).getTime();
+        return (
+          deadline > Date.now() && deadline <= Date.now() + ESCROW_CONSTANTS.MAX_DELIVERY_DAYS * DAY_MS
+        );
+      },
+      { message: "deliveryDeadline phải ở tương lai và không quá 180 ngày" },
+    )
+    .nullish(),
   requiredSkills: z.array(z.string().min(1).max(40)).max(10).nullish(),
   difficulty: z.enum(ISSUE_DIFFICULTY).nullish(),
   timeEstimate: z.string().max(50).nullish(),
@@ -336,8 +373,8 @@ builder.queryField("issues", (t) =>
       after: t.arg.string({ required: false }),
       category: t.arg({ type: IssueCategoryEnum, required: false }),
       status: t.arg({ type: IssueStatusEnum, required: false }),
-      bountyMin: t.arg.float({ required: false }),
-      bountyMax: t.arg.float({ required: false }),
+      bountyMin: t.arg.string({ required: false }),
+      bountyMax: t.arg.string({ required: false }),
       skill: t.arg.string({ required: false }),
       search: t.arg.string({ required: false }),
       sortBy: t.arg({ type: IssueSortByEnum, required: false }),
@@ -379,7 +416,11 @@ builder.queryField("issues", (t) =>
           : sortBy === "VIEW_COUNT"
             ? [{ viewCount: direction }, { id: "asc" }]
             : sortBy === "DEADLINE"
-              ? [{ expiresAt: "asc" }, { createdAt: "desc" }, { id: "asc" }]
+              ? [
+                  { expiresAt: { sort: direction, nulls: "last" } },
+                  { createdAt: "desc" },
+                  { id: "asc" },
+                ]
               : [{ createdAt: direction }, { id: "asc" }];
 
       // Fetch take + 1 để tính hasNextPage
@@ -503,21 +544,19 @@ builder.mutationField("createIssue", (t) =>
       title: t.input.string({ required: true }),
       description: t.input.string({ required: true }),
       category: t.input.field({ type: IssueCategoryEnum, required: true }),
-      bountyAmount: t.input.float({ required: true }),
+      bountyAmount: t.input.string({ required: true }),
       tokenId: t.input.id({ required: true }),
       requiredSkills: t.input.stringList({ required: false }),
       difficulty: t.input.string({ required: false }),
       timeEstimate: t.input.string({ required: false }),
       expiresAt: t.input.string({ required: false }),
+      deliveryDeadline: t.input.string({ required: false }),
       githubRepo: t.input.string({ required: false }),
     },
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
-      if (user.role !== UserRole.CLIENT)
-        throw gqlError(
-          "Switch your profile to the client role before posting a bounty",
-          "CLIENT_ROLE_REQUIRED",
-        );
+      if (user.role === UserRole.ADMIN)
+        throw gqlError("Quản trị viên không thể đăng bài toán", "ADMIN_NOT_ALLOWED");
 
       const input = parseOrThrow(CreateIssueSchema, args.input);
 
@@ -532,17 +571,21 @@ builder.mutationField("createIssue", (t) =>
         );
       }
 
+      const bountyRaw = parseTokenAmountInput(input.bountyAmount, token);
+      assertBountyRange(bountyRaw, token);
+
       return ctx.db.issue.create({
         data: {
           title: input.title,
           description: input.description,
           category: input.category,
-          bountyAmount: input.bountyAmount,
+          bountyAmount: formatTokenAmount(bountyRaw, token.decimals),
           tokenId: input.tokenId,
           requiredSkills: input.requiredSkills ?? [],
           ...(input.difficulty != null ? { difficulty: input.difficulty } : {}),
           ...(input.timeEstimate != null ? { timeEstimate: input.timeEstimate } : {}),
           ...(input.expiresAt ? { expiresAt: new Date(input.expiresAt) } : {}),
+          ...(input.deliveryDeadline ? { deliveryDeadline: new Date(input.deliveryDeadline) } : {}),
           ...(input.githubRepo != null ? { githubRepo: input.githubRepo } : {}),
           clientId: user.id,
           status: IssueStatus.OPEN,
@@ -559,7 +602,6 @@ const UpdateIssueSchema = CreateIssueSchema.partial()
     title: z.string().min(10).max(120).optional(),
     description: z.string().min(30).max(5000).optional(),
     category: z.enum(ISSUE_CATEGORIES).optional(),
-    bountyAmount: z.number().min(BOUNTY_MIN_AMOUNT).max(BOUNTY_MAX_AMOUNT).optional(),
     tokenId: z.string().min(1).optional(),
   })
   .refine((value) => Object.keys(value).length > 0, "Cần thay đổi ít nhất một trường");
@@ -574,12 +616,13 @@ builder.mutationField("updateIssue", (t) =>
       title: t.input.string({ required: false }),
       description: t.input.string({ required: false }),
       category: t.input.field({ type: IssueCategoryEnum, required: false }),
-      bountyAmount: t.input.float({ required: false }),
+      bountyAmount: t.input.string({ required: false }),
       tokenId: t.input.id({ required: false }),
       requiredSkills: t.input.stringList({ required: false }),
       difficulty: t.input.string({ required: false }),
       timeEstimate: t.input.string({ required: false }),
       expiresAt: t.input.string({ required: false }),
+      deliveryDeadline: t.input.string({ required: false }),
       githubRepo: t.input.string({ required: false }),
     },
     resolve: async (_root, args, ctx) => {
@@ -598,29 +641,48 @@ builder.mutationField("updateIssue", (t) =>
         Object.entries(args.input).filter(([key, value]) => key !== "id" && value !== null),
       );
       const input = parseOrThrow(UpdateIssueSchema, raw);
-      if (input.tokenId) {
-        const token = await ctx.db.token.findFirst({
-          where: {
-            id: input.tokenId,
-            isActive: true,
-            chainId: ACTIVE_CHAIN_ID,
-          },
-        });
-        if (!token)
-          throw gqlError("Bounty token không tồn tại hoặc không được hỗ trợ", "INVALID_TOKEN");
-      }
+      // Đổi token thì ngân sách được quy đổi theo token mới; không đổi thì dùng token hiện tại
+      const token = input.tokenId
+        ? await ctx.db.token.findFirst({
+            where: {
+              id: input.tokenId,
+              isActive: true,
+              chainId: ACTIVE_CHAIN_ID,
+            },
+          })
+        : current.token;
+      if (!token)
+        throw gqlError("Bounty token không tồn tại hoặc không được hỗ trợ", "INVALID_TOKEN");
+
+      const bountyRaw = parseTokenAmountInput(
+        input.bountyAmount ?? current.bountyAmount.toFixed(),
+        token,
+      );
+      if (input.bountyAmount !== undefined) assertBountyRange(bountyRaw, token);
+      const deadline =
+        input.deliveryDeadline != null ? new Date(input.deliveryDeadline) : current.deliveryDeadline;
+
+      // Sửa thực chất (ngân sách, token, deadline, repo) làm tăng termsVersion (BE-16)
+      const material =
+        bountyRaw !== issueBountyRaw(current) ||
+        (input.tokenId !== undefined && input.tokenId !== current.tokenId) ||
+        deadline?.getTime() !== current.deliveryDeadline?.getTime() ||
+        (input.githubRepo !== undefined && input.githubRepo !== current.githubRepo);
 
       const updateData: Prisma.IssueUncheckedUpdateManyInput = {};
       if (input.title !== undefined) updateData.title = input.title;
       if (input.description !== undefined) updateData.description = input.description;
       if (input.category !== undefined) updateData.category = input.category;
-      if (input.bountyAmount !== undefined) updateData.bountyAmount = input.bountyAmount;
+      if (input.bountyAmount !== undefined)
+        updateData.bountyAmount = formatTokenAmount(bountyRaw, token.decimals);
       if (input.tokenId !== undefined) updateData.tokenId = input.tokenId;
       if (input.requiredSkills != null) updateData.requiredSkills = input.requiredSkills;
       if (input.difficulty !== undefined) updateData.difficulty = input.difficulty;
       if (input.timeEstimate !== undefined) updateData.timeEstimate = input.timeEstimate;
       if (input.expiresAt != null) updateData.expiresAt = new Date(input.expiresAt);
+      if (input.deliveryDeadline != null) updateData.deliveryDeadline = deadline;
       if (input.githubRepo !== undefined) updateData.githubRepo = input.githubRepo;
+      if (material) updateData.termsVersion = { increment: 1 };
 
       const updated = await ctx.db.issue.updateMany({
         where: { id: current.id, clientId: user.id, status: IssueStatus.OPEN },

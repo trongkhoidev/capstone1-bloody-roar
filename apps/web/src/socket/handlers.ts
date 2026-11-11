@@ -21,6 +21,8 @@ import { z } from "zod";
 import { createHash } from "node:crypto";
 import { AILogStatus, NotificationType, Prisma } from "@bloody-roar/database";
 import { guardMessage } from "../ai/guard/service";
+import { scanAndMask } from "../ai/guard/scanner";
+import { createNotification } from "../lib/services/notifications";
 import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE_BYTES } from "@bloody-roar/shared";
 import { getS3Storage, localUploadPath } from "../lib/storage";
 
@@ -29,7 +31,7 @@ type StoredMessage = Prisma.MessageGetPayload<{
   include: { attachments: true };
 }>;
 
-function toMessagePayload(
+export function toMessagePayload(
   message: StoredMessage,
   sender: { id: string; name: string | null; avatar: string | null },
 ): ChatMessagePayload {
@@ -72,6 +74,7 @@ export function registerSocketHandlers(
       const user = await verifyJWT(token);
       if (!user) return next(new Error("Unauthorized"));
       socket.data.user = user;
+      socket.data.token = token;
     } else {
       return next(new Error("Unauthorized"));
     }
@@ -132,8 +135,12 @@ export function registerSocketHandlers(
       try {
         log.debug({ issueId: data.issueId, type: data.type }, "Incoming message");
 
-        const user = socket.data.user;
-        if (!user) return callback?.("Unauthorized");
+        // Re-check the session on every send: the handshake check misses later logout or ban.
+        const user = await verifyJWT(socket.data.token);
+        if (!user) {
+          socket.disconnect(true);
+          return callback?.("Unauthorized");
+        }
 
         const parsed = z
           .object({
@@ -265,11 +272,11 @@ export function registerSocketHandlers(
           }
         }
 
-        const guard =
-          type === "TEXT"
-            ? await guardMessage(content, { issueId })
-            : { content, wasModified: false, matches: [] as string[] };
-        const originalHash = guard.wasModified
+        const guard = await guardMessage(content, { issueId });
+        // File names are user input too, so they get the same masking as message text.
+        const fileNameScan = scanAndMask(fileName ?? "");
+        const wasModified = guard.wasModified || fileNameScan.wasModified;
+        const originalHash = wasModified
           ? createHash("sha256").update(content).digest("hex")
           : undefined;
         const startedAt = Date.now();
@@ -310,7 +317,7 @@ export function registerSocketHandlers(
                   senderId: user.id,
                   clientMessageId: clientMessageId || null,
                   replyToId: replyToId || null,
-                  wasModified: guard.wasModified,
+                  wasModified,
                   ...(originalHash ? { originalHash } : {}),
                 },
               });
@@ -320,7 +327,7 @@ export function registerSocketHandlers(
                   data: {
                     messageId: created.id,
                     uploaderId: user.id,
-                    fileName,
+                    fileName: fileNameScan.content,
                     fileUrl,
                     fileSize,
                     fileMime,
@@ -354,7 +361,7 @@ export function registerSocketHandlers(
           return;
         }
 
-        if (guard.wasModified) {
+        if (wasModified) {
           const outputHash = createHash("sha256").update(guard.content).digest("hex");
           void prisma.aILog
             .create({
@@ -379,27 +386,17 @@ export function registerSocketHandlers(
         const recipientId = issue.clientId === user.id ? issue.developerId : issue.clientId;
         if (recipientId) {
           try {
-            const notification = await prisma.notification.create({
-              data: {
-                userId: recipientId,
-                actorId: user.id,
-                type: NotificationType.MESSAGE_RECEIVED,
-                title: `Tin nhắn mới trong “${issue.title}”`,
-                body:
-                  type === "FILE"
-                    ? `${user.name || "Thành viên"} đã gửi một tệp.`
-                    : guard.content.slice(0, 180),
-                link: `/issues/${issueId}`,
-                data: { issueId, messageId: message.id },
-              },
-            });
-            io.to(`user:${recipientId}`).emit("notification:new", {
-              id: notification.id,
-              type: notification.type,
-              title: notification.title,
-              body: notification.body,
-              data: { link: notification.link, issueId },
-              createdAt: notification.createdAt.toISOString(),
+            await createNotification(prisma, {
+              userId: recipientId,
+              actorId: user.id,
+              type: NotificationType.MESSAGE_RECEIVED,
+              title: `Tin nhắn mới trong “${issue.title}”`,
+              body:
+                type === "FILE"
+                  ? `${user.name || "Thành viên"} đã gửi một tệp.`
+                  : guard.content.slice(0, 180),
+              link: `/issues/${issueId}`,
+              data: { issueId, messageId: message.id },
             });
           } catch (notificationError) {
             log.warn(

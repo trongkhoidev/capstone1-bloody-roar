@@ -18,7 +18,10 @@ export const NotificationRef = builder.prismaObject("Notification", {
 builder.queryFields((t) => ({
   notifications: t.prismaField({
     type: [NotificationRef],
-    args: { first: t.arg.int({ required: false }) },
+    args: {
+      first: t.arg.int({ required: false }),
+      after: t.arg.id({ required: false }),
+    },
     resolve: (query, _root, args, ctx) => {
       const user = requireAuth(ctx);
       const first = Math.min(Math.max(args.first ?? 30, 1), 100);
@@ -27,6 +30,7 @@ builder.queryFields((t) => ({
         where: { userId: user.id },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         take: first,
+        ...(args.after ? { cursor: { id: String(args.after) }, skip: 1 } : {}),
       });
     },
   }),

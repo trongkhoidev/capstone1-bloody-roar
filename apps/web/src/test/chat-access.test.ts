@@ -24,8 +24,16 @@ describe("task chat access", () => {
     expect(canWriteIssueChat(issue, client)).toBe(false);
   });
 
-  it("keeps completed and disputed history read-only for participants", () => {
-    for (const status of ["COMPLETED", "DISPUTED"]) {
+  it("keeps the chat writable while funding or a dispute is open", () => {
+    for (const status of ["AWAITING_FUNDING", "IN_PROGRESS", "DISPUTED"]) {
+      const issue = { clientId: client.id, developerId: developer.id, status };
+      expect(canWriteIssueChat(issue, client)).toBe(true);
+      expect(canWriteIssueChat(issue, developer)).toBe(true);
+    }
+  });
+
+  it("keeps completed and cancelled history read-only for participants", () => {
+    for (const status of ["COMPLETED", "CANCELLED"]) {
       const issue = { clientId: client.id, developerId: developer.id, status };
       expect(canReadIssueChat(issue, client)).toBe(true);
       expect(canWriteIssueChat(issue, client)).toBe(false);
@@ -35,6 +43,7 @@ describe("task chat access", () => {
   it("allows an administrator to inspect disputed evidence only", () => {
     expect(canReadIssueChat({ clientId: client.id, developerId: developer.id, status: "DISPUTED" }, admin)).toBe(true);
     expect(canReadIssueChat({ clientId: client.id, developerId: developer.id, status: "IN_PROGRESS" }, admin)).toBe(false);
+    expect(canReadIssueChat({ clientId: client.id, developerId: developer.id, status: "COMPLETED" }, admin)).toBe(false);
     expect(canWriteIssueChat({ clientId: client.id, developerId: developer.id, status: "DISPUTED" }, admin)).toBe(false);
   });
 });

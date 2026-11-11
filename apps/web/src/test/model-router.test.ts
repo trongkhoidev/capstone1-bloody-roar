@@ -62,6 +62,25 @@ describe("hosted model router", () => {
     expect(auditEvents.map((event) => `${event.provider}:${event.status}`)).toEqual(["groq:ERROR", "openai:FALLBACK"]);
   });
 
+  it("stops at the shared deadline when the first provider hangs, without trying the next one", async () => {
+    vi.stubEnv("AI_BASE_URL", "");
+    vi.stubEnv("GROQ_API_KEY", "groq-test-key");
+    vi.stubEnv("OPENAI_API_KEY", "openai-test-key");
+    const fetcher = vi.fn((_url: string, init: RequestInit) => new Promise<Response>((_resolve, reject) => {
+      init.signal?.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })));
+    }));
+
+    await expect(completeAI({
+      task: "GUARD",
+      messages: [{ role: "user", content: "check" }],
+      timeoutMs: 50,
+    }, {
+      fetcher: fetcher as typeof fetch,
+      audit: async () => undefined,
+    })).rejects.toThrow("groq: request timed out");
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
   it("supports a self-hosted OpenAI-compatible endpoint without an API key", async () => {
     vi.stubEnv("AI_BASE_URL", "http://127.0.0.1:11434/v1/");
     vi.stubEnv("AI_API_KEY", "");

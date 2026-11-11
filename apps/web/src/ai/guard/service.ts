@@ -22,8 +22,11 @@ export interface GuardMessageOptions {
 /** Regex masking always runs first; the optional model may only add exact redactions. */
 export async function guardMessage(content: string, options: GuardMessageOptions = {}): Promise<GuardResult> {
   const local = scanAndMask(content);
-  const completion = options.completion ?? completeAI;
-  if (!options.completion && !isAIConfigured("GUARD")) return local;
+  // The hosted pass is opt-in: message text should not leave the server by default.
+  const completion =
+    options.completion ??
+    (process.env.AI_EXTERNAL_GUARD === "true" && isAIConfigured("GUARD") ? completeAI : undefined);
+  if (!completion) return local;
 
   try {
     const result = await completion({

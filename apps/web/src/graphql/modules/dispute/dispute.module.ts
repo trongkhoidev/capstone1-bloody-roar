@@ -36,9 +36,11 @@ export const DisputeRef = builder.prismaObject("Dispute", {
       nullable: true,
       resolve: (d) => d.noticeDeadline?.toISOString() ?? null,
     }),
+    // Only the arbiter reads the advisory analysis; the parties see the ruling, not the reasoning behind it.
     aiReport: t.string({
       nullable: true,
-      resolve: (dispute) => (dispute.aiReport == null ? null : JSON.stringify(dispute.aiReport)),
+      resolve: (dispute, _args, ctx) =>
+        ctx.user?.role !== "ADMIN" || dispute.aiReport == null ? null : JSON.stringify(dispute.aiReport),
     }),
     aiConfidenceScore: t.exposeFloat("aiConfidenceScore", { nullable: true }),
     suggestedRatio: t.float({
@@ -91,11 +93,17 @@ builder.queryFields((t) => ({
   }),
   adminDisputes: t.prismaField({
     type: [DisputeRef],
-    resolve: (query, _root, _args, ctx) => {
+    args: {
+      first: t.arg.int({ required: false }),
+      after: t.arg.id({ required: false }),
+    },
+    resolve: (query, _root, args, ctx) => {
       requireAdmin(ctx);
       return ctx.db.dispute.findMany({
         ...query,
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        take: Math.min(Math.max(args.first ?? 50, 1), 100),
+        ...(args.after ? { cursor: { id: String(args.after) }, skip: 1 } : {}),
         include: DISPUTE_INCLUDE,
       });
     },
@@ -521,6 +529,10 @@ builder.mutationField("challengeDisputeResolution", (t) =>
         dispute.challengeDeadline < new Date()
       ) {
         throw gqlError("Thời hạn phản đối đã hết hoặc chưa có đề xuất", "CHALLENGE_WINDOW_CLOSED");
+      }
+      // shortcut: one challenge per dispute, remove when the on-chain flow (BE-57) replaces this path
+      if (dispute.challengedAt) {
+        throw gqlError("Tranh chấp này đã được phản đối một lần", "CHALLENGE_ALREADY_USED");
       }
       return ctx.db.dispute.update({
         where: { id: dispute.id },

@@ -9,6 +9,7 @@ const base: HealthState = {
   cursorMovedAt: 0,
   rpcLatencyMs: 42,
   rpcErrorStreak: 0,
+  queuedTestRuns: 3,
 };
 
 test("healthy worker reports the fields the plan asks for", () => {
@@ -21,6 +22,7 @@ test("healthy worker reports the fields the plan asks for", () => {
     cursorAgeSeconds: 10,
     rpcLatencyMs: 42,
     rpcErrorStreak: 0,
+    queuedTestRuns: 3,
     uptimeSeconds: 10,
   });
 });

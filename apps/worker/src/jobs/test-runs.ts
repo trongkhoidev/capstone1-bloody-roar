@@ -4,6 +4,7 @@ import path from "node:path";
 import { tmpdir } from "node:os";
 import { createNotificationIdempotent } from "@bloody-roar/database";
 import { executableCases, submissionPatch, testBundleSha256 } from "@bloody-roar/shared/test-runner";
+import { sensitiveSourceFile } from "@bloody-roar/shared/source-privacy";
 import { readAttachment } from "../storage";
 import { runInSandbox } from "../runner/sandbox";
 import { notifyNotificationCreated } from "../indexer/notify";
@@ -11,7 +12,7 @@ import type { Job } from "../runtime/scheduler";
 
 export const testRunsJob: Job = {
   name: "test-runs", everyMs: 5_000,
-  async run({ db, config, now }) {
+  async run({ db, config, now, log }) {
     if (!config.testRunnerEnabled) return;
     // Allow the five-minute install and ten-minute test timeout, plus five minutes for recovery.
     await db.testRun.updateMany({ where: { status: "RUNNING", startedAt: { lt: new Date(now().getTime() - 20 * 60_000) } }, data: { status: "ERROR", log: "worker lost", finishedAt: now() } });
@@ -35,6 +36,13 @@ export const testRunsJob: Job = {
         if (!patch || patch.sha256 !== run.patchSha256) throw new Error("No patch file");
         const bytes = await readAttachment(patch.fileUrl);
         if (createHash("sha256").update(bytes).digest("hex") !== run.patchSha256) throw new Error("Patch checksum mismatch");
+        const additions = Buffer.from(bytes).toString("utf8").split(/\r?\n/)
+          .filter((line) => line.startsWith("+") && !line.startsWith("+++ ")).map((line) => line.slice(1))
+          .filter((line) => sensitiveSourceFile("", line) && /["'][\w+/=-]{16,}["']|[:=]\s*[\w+/=-]{16,}\s*$/.test(line));
+        if (additions.length) {
+          log.warn({ runId: run.id, code: "PATCH_CONTAINS_SECRET", pattern: "source-privacy:credential-assignment" }, "patch rejected");
+          throw new Error("PATCH_CONTAINS_SECRET source-privacy:credential-assignment");
+        }
         patchPath = path.join(temp, "submission.patch"); await writeFile(patchPath, bytes);
       }
       const result = await runInSandbox({ snapshotPath: source.storagePath, ...(patchPath ? { patchPath } : {}), files: cases.map((c) => ({ id: c.id, path: c.testFilePath ?? "", code: c.testCode! })), framework: source.framework, installCommand: source.installCommand ?? "" });

@@ -17,6 +17,8 @@ Tài liệu này chạy tay từng dịch vụ (không qua harness). Mọi lện
    bun run db:migrate
    ```
 
+   `db:migrate` chỉ cho phép DATABASE_URL và DIRECT_URL (nếu được đặt) trỏ localhost/127.0.0.1; áp migration lên DB thật bằng `db:migrate:prod`.
+
 2. Chạy Hardhat node (giữ terminal này mở):
 
    ```bash

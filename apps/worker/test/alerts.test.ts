@@ -1,5 +1,30 @@
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
 import { alertsJob, evaluateAlerts, LAG_ALERT_SECONDS, RPC_ERROR_ALERT_STREAK, sendAlerts } from "../src/alerts";
+import { health } from "../src/runtime/health";
+import type { JobContext } from "../src/runtime/scheduler";
+
+test.each(["count", "findMany", "updateMany"])("still sends independent alerts when testRun.%s fails", async (failure) => {
+  const previous = { ...health }, posts: Array<{ alerts: string[] }> = [];
+  const webhook = spyOn(globalThis, "fetch").mockImplementation(async (_url, init) => {
+    posts.push(JSON.parse(String(init?.body)));
+    return new Response("ok");
+  });
+  try {
+    Object.assign(health, { lastSafeBlock: 2n, lastScannedBlock: 1n, cursorMovedAt: 0, rpcErrorStreak: 5 });
+    const db = { testRun: {
+      count: async () => { if (failure === "count") throw new Error("pool exhausted"); return 1; },
+      findMany: async () => { if (failure === "findMany") throw new Error("pool exhausted"); return [{ id: "queued-run", log: null }]; },
+      updateMany: async () => { throw new Error("pool exhausted"); },
+    } };
+    const { alertsJob: freshJob } = await import(`../src/alerts.ts?db-failure=${failure}`);
+    await freshJob.run({ db, config: { relayerPrivateKey: `0x${"22".repeat(32)}`, relayerMinGasWei: 100n, alertWebhookUrl: "https://hooks.example/alerts" }, now: () => new Date(600_000), rpc: { call: async () => "0x63" }, log: { warn() {}, error() {} } } as unknown as JobContext);
+    expect(posts).toHaveLength(1);
+    expect(posts[0]?.alerts).toEqual(["projection lag 600s is over 300s", "5 RPC errors in a row", "RELAYER_LOW_GAS", "DB_UNREACHABLE"]);
+  } finally {
+    webhook.mockRestore();
+    Object.assign(health, previous);
+  }
+});
 
 test("alerts below the relayer gas threshold, not at the threshold", () => {
   expect(evaluateAlerts({ lagSeconds: null, rpcErrorStreak: 0, relayerBalanceWei: 99n, relayerMinGasWei: 100n })).toEqual(["RELAYER_LOW_GAS"]);
@@ -9,7 +34,7 @@ test("alerts below the relayer gas threshold, not at the threshold", () => {
 test("deduplicates low gas alerts until the relayer recovers", async () => {
   let balance = "0x63";
   const warnings: Array<{ alert: string }> = [];
-  const ctx = { config: { relayerPrivateKey: `0x${"11".repeat(32)}`, relayerMinGasWei: 100n }, now: () => new Date(), rpc: { call: async () => balance }, log: { warn: (item: { alert: string }) => warnings.push(item), error() {} } };
+  const ctx = { db: { testRun: { count: async () => 0, findMany: async () => [] } }, config: { relayerPrivateKey: `0x${"11".repeat(32)}`, relayerMinGasWei: 100n }, now: () => new Date(), rpc: { call: async () => balance }, log: { warn: (item: { alert: string }) => warnings.push(item), error() {} } };
   await alertsJob.run(ctx as never); await alertsJob.run(ctx as never);
   balance = "0x64"; await alertsJob.run(ctx as never);
   balance = "0x63"; await alertsJob.run(ctx as never);

@@ -65,6 +65,7 @@ export async function runInSandbox(input: { snapshotPath: string; patchPath?: st
       log += patch.log;
       if (patch.code) { log += "\nPatch does not apply"; return finish(patch.timedOut ? "timeout" : "error"); }
     }
+    await rm(path.join(work, "__bloodyroar__"), { recursive: true, force: true });
     for (const file of input.files) {
       let current = work;
       for (const part of file.path.split("/")) {
@@ -80,7 +81,8 @@ export async function runInSandbox(input: { snapshotPath: string; patchPath?: st
     const install = input.framework === "VITEST" ? "bun install --ignore-scripts" : "python -I .br-install.py";
     const installed = await docker(install, "bridge", 300_000);
     if (installed.code) return finish(installed.timedOut ? "timeout" : "error");
-    const result = await docker(input.framework === "VITEST" ? "node node_modules/vitest/vitest.mjs run __bloodyroar__ --reporter=json --outputFile=/work/.br-results.json" : "python -m pytest __bloodyroar__ --junitxml=/work/.br-results.xml -q", "none", input.timeoutMs ?? 600_000);
+    const testPaths = input.files.map((file) => `'${file.path.replaceAll("'", "'\\''")}'`).join(" ");
+    const result = await docker(input.framework === "VITEST" ? `node node_modules/vitest/vitest.mjs run ${testPaths} --reporter=json --outputFile=/work/.br-results.json` : `python -m pytest ${testPaths} --junitxml=/work/.br-results.xml -q`, "none", input.timeoutMs ?? 600_000);
     if (result.timedOut) return finish("timeout");
     const report = path.join(work, input.framework === "VITEST" ? ".br-results.json" : ".br-results.xml");
     const stat = await lstat(report);

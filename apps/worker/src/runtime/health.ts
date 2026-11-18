@@ -8,6 +8,7 @@ export type HealthState = {
   cursorMovedAt: number | null; // ms, when lastScannedBlock last increased
   rpcLatencyMs: number | null;
   rpcErrorStreak: number;
+  queuedTestRuns: number;
 };
 
 export const RPC_ERROR_LIMIT = 5;
@@ -20,6 +21,7 @@ export const health: HealthState = {
   cursorMovedAt: null,
   rpcLatencyMs: null,
   rpcErrorStreak: 0,
+  queuedTestRuns: 0,
 };
 
 export function healthSnapshot(state: HealthState, nowMs: number) {
@@ -32,6 +34,7 @@ export function healthSnapshot(state: HealthState, nowMs: number) {
     cursorAgeSeconds: state.cursorMovedAt === null ? null : Math.round((nowMs - state.cursorMovedAt) / 1000),
     rpcLatencyMs: state.rpcLatencyMs,
     rpcErrorStreak: state.rpcErrorStreak,
+    queuedTestRuns: state.queuedTestRuns,
     uptimeSeconds: Math.round((nowMs - state.startedAt) / 1000),
   };
 }

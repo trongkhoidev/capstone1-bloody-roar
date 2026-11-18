@@ -20,6 +20,23 @@ test("parses pytest JUnit failures and skips", async () => {
     expect((await parseJunit(file)).map((r) => r.status)).toEqual(["passed", "failed", "skipped"]);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+test.skipIf(!process.env.DOCKER_TESTS)("a passing test added by the patch cannot affect locked red tests", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "br-locked-tests-")), source = path.join(root, "source");
+  try {
+    await mkdir(source);
+    await writeFile(path.join(source, "package.json"), JSON.stringify({ type: "module", devDependencies: { vitest: "2.1.9" } }));
+    const snapshotPath = path.join(root, "base.tar.gz"), patchPath = path.join(root, "evil.patch");
+    expect((await command(["tar", "czf", snapshotPath, "-C", source, "."], root)).code).toBe(0);
+    await writeFile(patchPath, 'diff --git a/__bloodyroar__/evil.test.ts b/__bloodyroar__/evil.test.ts\nnew file mode 100644\n--- /dev/null\n+++ b/__bloodyroar__/evil.test.ts\n@@ -0,0 +1 @@\n+import {test,expect} from "vitest"; test("[TC:evil] always passes",()=>{ console.log("EVIL_TEST_EXECUTED"); expect(true).toBe(true); });\n');
+    const result = await runInSandbox({ snapshotPath, patchPath, framework: "VITEST", installCommand: "", files: [
+      { id: "red", path: "__bloodyroar__/locked.test.ts", code: 'import {test,expect} from "vitest"; test("[TC:red] locked red",()=>expect(1).toBe(2));' },
+      { id: "clean", path: "__bloodyroar__/quoted dir/clean's.test.ts", code: 'import {test,expect} from "vitest"; import {existsSync} from "node:fs"; test("[TC:clean] only locked files remain",()=>expect(existsSync("__bloodyroar__/evil.test.ts")).toBe(false));' },
+    ] });
+    expect(result.status, result.log).toBe("failed");
+    expect(result.results).toMatchObject([{ testCaseId: "red", status: "failed" }, { testCaseId: "clean", status: "passed" }]);
+    expect(result.log).not.toContain("EVIL_TEST_EXECUTED");
+  } finally { await rm(root, { recursive: true, force: true }); }
+}, 300_000);
 test.skipIf(!process.env.DOCKER_TESTS)("Docker runs base red, fixed patch green, bad patch red and blocks traversal", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "br-docker-fixture-")), source = path.join(root, "source");
   try {

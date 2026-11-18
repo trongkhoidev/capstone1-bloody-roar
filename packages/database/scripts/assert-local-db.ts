@@ -7,7 +7,12 @@ export function isAllowedDatabase(url: string | undefined, override?: string): b
   }
 }
 
-if ((import.meta as ImportMeta & { main?: boolean }).main && !isAllowedDatabase(process.env.DATABASE_URL, process.env.ALLOW_REMOTE_DB)) {
-  console.error("DATABASE_URL must point to localhost or 127.0.0.1; set ALLOW_REMOTE_DB=1 to override.");
-  process.exit(1);
+if ((import.meta as ImportMeta & { main?: boolean }).main) {
+  for (const variable of ["DATABASE_URL", "DIRECT_URL"]) {
+    if (variable === "DIRECT_URL" && process.env[variable] === undefined) continue;
+    if (!isAllowedDatabase(process.env[variable], process.env.ALLOW_REMOTE_DB)) {
+      console.error(`${variable} must point to localhost or 127.0.0.1; set ALLOW_REMOTE_DB=1 to override.`);
+      process.exit(1);
+    }
+  }
 }

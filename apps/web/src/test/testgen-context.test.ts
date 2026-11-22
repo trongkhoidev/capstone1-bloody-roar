@@ -66,7 +66,7 @@ it("generateTestCases sends selected files first when focusFiles is given (US-45
   };
   const field = schema.getMutationType()!.getFields().generateTestCases!;
   await expect(field.resolve!({} as never, { issueId: "issue-1", focusFiles: ["src/cart.ts"] }, { db, user: client } as never, {} as never)).rejects.toThrow();
-  const context = JSON.parse(completeAI.mock.calls[0]![0].messages[1].content as string).context as string;
+  const context = (completeAI.mock.calls[0]![0].messages[1].content as string).split("<repository_content>\n")[1]!;
   expect(context.startsWith("--- src/cart.ts ---\nexport const total")).toBe(true);
   expect(context).toContain('--- package.json ---\n{"name":"cart"');
 });

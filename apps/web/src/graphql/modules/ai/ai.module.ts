@@ -10,6 +10,7 @@ import { scanAndMask } from "../../../ai/guard/scanner";
 import { validTestPath } from "@bloody-roar/shared/test-runner";
 import { queueBaseCheck } from "../../../lib/test-runs";
 import { aiRateLimit } from "../../../lib/rate-limit";
+import { focusedSourceContext } from "../../../lib/source-archive";
 
 const TestCasePriorityEnum = builder.enumType(TestCasePriority, { name: "TestCasePriority" });
 const TestCaseSourceEnum = builder.enumType(TestCaseSource, { name: "TestCaseSource" });
@@ -167,13 +168,14 @@ builder.mutationField("generateTestCases", (t) =>
       }
       // Rate-limit only after input checks so rejected requests do not use AI quota.
       aiRateLimit(user);
+      const context = executable ? (focusFiles?.length ? await focusedSourceContext(source, focusFiles) : sanitizeSourceContext(source.context ?? "")) : "";
       const safeTask = scanAndMask(JSON.stringify({
         title: issue.title,
         description: issue.description,
         category: issue.category,
         requiredSkills: issue.requiredSkills,
         githubRepo: issue.githubRepo,
-        ...(executable ? { framework: source.framework, context: sanitizeSourceContext(source.context ?? "") } : {}),
+        ...(executable ? { framework: source.framework, context } : {}),
         ...(focusFiles?.length ? { focusFiles } : {}),
         ...(hint ? { clientHint: hint } : {}),
       })).content;

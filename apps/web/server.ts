@@ -145,8 +145,21 @@ app.prepare().then(async () => {
     // Dev compiles routes on first request; pre-compile them in the background so the first click is fast.
     if (dev && process.env.WARM_ROUTES !== "0") {
       void (async () => {
-        for (const route of ["/", "/marketplace", "/dashboard", "/issues/create", "/guide", "/profile"]) {
+        for (const route of ["/", "/marketplace", "/dashboard", "/issues/create", "/guide", "/profile", "/messages", "/admin"]) {
           await fetch(`http://localhost:${port}${route}`, { redirect: "manual" }).catch(() => undefined);
+        }
+        try {
+          const response = await fetch(`http://localhost:${port}/api/graphql`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ query: "{ issues(first: 1) { edges { node { id } } } }" }),
+          });
+          if (!response.ok) return;
+          const body = await response.json() as { data?: { issues?: { edges: Array<{ node: { id: string } }> } } };
+          const issueId = body.data?.issues?.edges[0]?.node.id;
+          if (issueId) await fetch(`http://localhost:${port}/issues/${encodeURIComponent(issueId)}`, { redirect: "manual" });
+        } catch {
+          // The server must still start if the issue query or warm-up fails.
         }
       })();
     }

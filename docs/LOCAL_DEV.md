@@ -89,6 +89,8 @@ Tài liệu này chạy tay từng dịch vụ (không qua harness). Mọi lện
 
 ## 4. Thử luồng
 
+Khi test tay, chạy `bun run build && bun run start` để tải các route đã biên dịch.
+
 1. Đăng nhập bằng ví (ký SIWE).
 2. Client đăng bài toán (bounty) với token MockUSDC và ít nhất một tiêu chí chấp nhận.
 3. Developer ứng tuyển.

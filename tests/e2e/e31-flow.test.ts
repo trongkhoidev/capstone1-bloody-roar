@@ -19,7 +19,7 @@ test("E31: one issue runs from selection to claim and the escrow pays out exactl
   const developerBefore = await tokenBalance(f, f.developer.walletAddress);
   await claimFunds(f, f.developer);
   await claimFunds(f, fee);
-  expect(await tokenBalance(f, f.developer.walletAddress) - developerBefore).toBe(97_500_000n);
-  expect(funded - await tokenBalance(f, process.env.ESCROW_ADDRESS!)).toBe(100_000_000n);
+  expect(await tokenBalance(f, f.developer.walletAddress) - developerBefore).toBe(100_000_000n);
+  expect(funded - await tokenBalance(f, process.env.ESCROW_ADDRESS!)).toBe(110_000_000n);
   expect((await f.prisma.issue.findUniqueOrThrow({ where: { id: f.issueId } })).status).toBe("COMPLETED");
 }, 240_000);

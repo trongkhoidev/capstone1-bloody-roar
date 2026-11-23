@@ -21,5 +21,5 @@ test("E5: signed funding projects only after the worker folds deposit", async ()
   expect((await f.prisma.application.findUniqueOrThrow({ where: { id: f.rivalApplicationId } })).status).toBe("REJECTED");
   for (const [type, userId] of [["APPLICATION_ACCEPTED", f.developer.id], ["TASK_ASSIGNED", f.developer.id], ["APPLICATION_REJECTED", f.rival.id], ["DEPOSIT_CONFIRMED", f.client.id]] as const)
     expect(await f.prisma.notification.count({ where: { type, userId, data: { path: ["issueId"], equals: f.issueId } } })).toBe(1);
-  expect(await balance() - before).toBe(100000000n);
+  expect(await balance() - before).toBe(110000000n);
 }, 120_000);

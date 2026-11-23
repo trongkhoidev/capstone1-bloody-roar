@@ -28,8 +28,8 @@ test("E10: release and claim transfer the indexed balances", async () => {
   await releaseFunds(f);
   expect((await f.prisma.issue.findUniqueOrThrow({ where: { id: f.issueId } })).outcome).toBe("RELEASE");
   const credit = await f.prisma.claimableBalance.findUniqueOrThrow({ where: balanceWhere });
-  expect(BigInt(credit.amountRaw.toFixed()) - BigInt(prior)).toBe(97500000n);
-  expect(BigInt((await f.prisma.claimableBalance.findUniqueOrThrow({ where: feeWhere })).amountRaw.toFixed()) - BigInt(feePrior)).toBe(2500000n);
+  expect(BigInt(credit.amountRaw.toFixed()) - BigInt(prior)).toBe(100000000n);
+  expect(BigInt((await f.prisma.claimableBalance.findUniqueOrThrow({ where: feeWhere })).amountRaw.toFixed()) - BigInt(feePrior)).toBe(10000000n);
   const claimableData = encodeFunctionData({ abi: ESCROW_ABI, functionName: "claimable", args: [f.developer.walletAddress as Hex] });
   expect(decodeFunctionResult({ abi: ESCROW_ABI, functionName: "claimable", data: await rpc<Hex>("eth_call", [{ to: process.env.ESCROW_ADDRESS, data: claimableData }, "latest"]) })).toBe(BigInt(credit.amountRaw.toFixed()));
   expect(await f.prisma.notification.count({ where: { type: "ESCROW_RESOLVED", data: { path: ["issueId"], equals: f.issueId } } })).toBe(2);

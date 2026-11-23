@@ -19,10 +19,10 @@ test("E12: a missed delivery refund opens after the deadline and pays the client
     await advanceTime(6 * 86400);
     const before = await claimable(f.prisma, f.client.walletAddress);
     await prepareAndSend(f, f.outsider, "prepareClaimMissedDeliveryRefund");
-    await waitFor(async () => (await claimable(f.prisma, f.client.walletAddress)) - before === 100_000_000n);
+    await waitFor(async () => (await claimable(f.prisma, f.client.walletAddress)) - before === 110_000_000n);
     const walletBefore = await tokenBalance(f, f.client.walletAddress);
     await claimFunds(f, f.client);
-    expect(await tokenBalance(f, f.client.walletAddress) - walletBefore).toBe(100_000_000n);
+    expect(await tokenBalance(f, f.client.walletAddress) - walletBefore).toBe(110_000_000n);
   } finally {
     await restoreChain(snapshot, f);
   }

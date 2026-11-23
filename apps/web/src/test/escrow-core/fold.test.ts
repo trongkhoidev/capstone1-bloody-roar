@@ -22,6 +22,7 @@ const hash = (byte: string) => `0x${byte.repeat(32)}` as const;
 const ZERO = hash("00");
 
 const AMOUNT = 1_000_000_000n; // 1000 USDC
+const REFUND = 1_100_000_000n; // bounty + 10% platform fee, what the client deposited
 const T0 = 1_790_000_000n; // lúc deposit
 const DEADLINE = T0 + 30n * DAY;
 
@@ -98,16 +99,17 @@ const initialRuling = (clientBps: number, decisionHash = hash("55"), at = INITIA
     challengeEndsAt: at + 7n * DAY,
   });
 
-// Chỉ dùng khi cần thấy số tiền. Phí 2,5% chỉ tính trên phần Developer.
+// Chỉ dùng khi cần thấy số tiền. Client nạp bounty + 10%; phí chỉ tính trên phần Developer, phần dư trả lại Client.
 function expectSplit(effect: FoldEffect | undefined, amount: bigint, clientBps: bigint) {
+  const depositFee = (amount * 1_000n) / 10_000n;
   const clientShare = (amount * clientBps) / 10_000n;
-  const developerGross = amount - clientShare;
-  const fee = (developerGross * 250n) / 10_000n;
+  const developer = amount - clientShare;
+  const fee = (developer * 1_000n) / 10_000n;
   expect(effect).toMatchObject({ kind: "ESCROW_RESOLVED" });
   if (effect?.kind !== "ESCROW_RESOLVED") return;
-  expect(effect.clientAmount).toBe(clientShare);
+  expect(effect.clientAmount).toBe(clientShare + depositFee - fee);
   expect(effect.platformFee).toBe(fee);
-  expect(effect.developerAmount).toBe(amount - clientShare - fee);
+  expect(effect.developerAmount).toBe(developer);
 }
 
 describe("Deposited", () => {
@@ -407,12 +409,12 @@ describe("FinalRulingPosted", () => {
 });
 
 describe("EscrowResolved", () => {
-  it("RELEASE: client gets nothing, the developer gets principal minus 2.5%", () => {
+  it("RELEASE: client gets nothing, the developer gets full principal, the platform gets 10% on top", () => {
     const at = T0 + 2n * DAY;
     const { state, effects } = play([
       [deposit(), T0],
       [work(), T0 + DAY],
-      [resolved("RELEASE", 0n, 975_000_000n, 25_000_000n), at],
+      [resolved("RELEASE", 0n, AMOUNT, 100_000_000n), at],
     ]);
     expect(state).toMatchObject({ phase: "RESOLVED", resolutionKind: "RELEASE", settlement: null });
     expect(effects.at(-1)).toEqual({
@@ -423,39 +425,39 @@ describe("EscrowResolved", () => {
       developer: DEVELOPER,
       feeRecipient: FEE,
       clientAmount: 0n,
-      developerAmount: 975_000_000n,
-      platformFee: 25_000_000n,
+      developerAmount: AMOUNT,
+      platformFee: 100_000_000n,
       decisionHash: ZERO,
     });
   });
 
   it("RELEASE: rejected with no delivery", () => {
-    expect(() => play([[deposit(), T0], [resolved("RELEASE", 0n, 975_000_000n, 25_000_000n), T0 + DAY]])).toThrow(/no delivery/);
+    expect(() => play([[deposit(), T0], [resolved("RELEASE", 0n, AMOUNT, 100_000_000n), T0 + DAY]])).toThrow(/no delivery/);
   });
 
   it("MISSED_DELIVERY_REFUND: the client gets everything and no fee is charged", () => {
     const { effects } = play([
       [deposit(), T0],
-      [resolved("MISSED_DELIVERY_REFUND", AMOUNT, 0n, 0n), DEADLINE + 1n],
+      [resolved("MISSED_DELIVERY_REFUND", REFUND, 0n, 0n), DEADLINE + 1n],
     ]);
     expectSplit(effects.at(-1), AMOUNT, 10_000n);
-    expect(effects.at(-1)).toMatchObject({ clientAmount: AMOUNT, developerAmount: 0n, platformFee: 0n });
+    expect(effects.at(-1)).toMatchObject({ clientAmount: REFUND, developerAmount: 0n, platformFee: 0n });
   });
 
   it("MISSED_DELIVERY_REFUND: needs the deadline passed and no delivery", () => {
-    expect(() => play([[deposit(), T0], [resolved("MISSED_DELIVERY_REFUND", AMOUNT, 0n, 0n), DEADLINE]])).toThrow(/not reached/);
+    expect(() => play([[deposit(), T0], [resolved("MISSED_DELIVERY_REFUND", REFUND, 0n, 0n), DEADLINE]])).toThrow(/not reached/);
     expect(() =>
       play([
         [deposit(), T0],
         [work(), T0 + DAY],
-        [resolved("MISSED_DELIVERY_REFUND", AMOUNT, 0n, 0n), DEADLINE + 1n],
+        [resolved("MISSED_DELIVERY_REFUND", REFUND, 0n, 0n), DEADLINE + 1n],
       ]),
     ).toThrow(/delivery was submitted/);
   });
 
   it("REVIEW_TIMEOUT: only after the latest submission plus 7 days, and only with a delivery", () => {
     const reviewEnd = T0 + 8n * DAY;
-    const amounts = [0n, 975_000_000n, 25_000_000n] as const;
+    const amounts = [0n, AMOUNT, 100_000_000n] as const;
     expect(() =>
       play([[deposit(), T0], [work(), T0 + DAY], [resolved("REVIEW_TIMEOUT", ...amounts), reviewEnd - 1n]]),
     ).toThrow(/review window still open/);
@@ -469,14 +471,14 @@ describe("EscrowResolved", () => {
     const { state, effects } = play([
       [deposit(), T0],
       [ev({ name: "SettlementProposed", escrowIdHash: ESCROW, proposer: CLIENT, clientBps: 3000 }), T0 + DAY],
-      [resolved("SETTLEMENT", 300_000_000n, 682_500_000n, 17_500_000n), T0 + 2n * DAY],
+      [resolved("SETTLEMENT", 330_000_000n, 700_000_000n, 70_000_000n), T0 + 2n * DAY],
     ]);
     expect(state).toMatchObject({ phase: "RESOLVED", resolutionKind: "SETTLEMENT", settlement: null });
     expectSplit(effects.at(-1), AMOUNT, 3000n);
   });
 
   it("SETTLEMENT: rejected with no pending proposal", () => {
-    expect(() => play([[deposit(), T0], [resolved("SETTLEMENT", 0n, 975_000_000n, 25_000_000n), T0 + DAY]])).toThrow(/no pending settlement/);
+    expect(() => play([[deposit(), T0], [resolved("SETTLEMENT", 0n, AMOUNT, 100_000_000n), T0 + DAY]])).toThrow(/no pending settlement/);
   });
 
   it("RULING via the initial ruling: applies only after the 7-day challenge window", () => {
@@ -486,10 +488,10 @@ describe("EscrowResolved", () => {
       [disputeAt(), RAISED],
       [initialRuling(5000), INITIAL_AT],
     ];
-    expect(() => play([...steps, [resolved("RULING", 500_000_000n, 487_500_000n, 12_500_000n, hash("55")), after - 1n]])).toThrow(
+    expect(() => play([...steps, [resolved("RULING", 550_000_000n, 500_000_000n, 50_000_000n, hash("55")), after - 1n]])).toThrow(
       /challenge window still open/,
     );
-    const { state, effects } = play([...steps, [resolved("RULING", 500_000_000n, 487_500_000n, 12_500_000n, hash("55")), after]]);
+    const { state, effects } = play([...steps, [resolved("RULING", 550_000_000n, 500_000_000n, 50_000_000n, hash("55")), after]]);
     expect(state).toMatchObject({ phase: "RESOLVED", resolutionKind: "RULING" });
     expectSplit(effects.at(-1), AMOUNT, 5000n);
   });
@@ -503,7 +505,7 @@ describe("EscrowResolved", () => {
       [ev({ name: "RulingChallenged", escrowIdHash: ESCROW, challengedBy: DEVELOPER, challengedAt: INITIAL_AT + DAY }), INITIAL_AT + DAY],
       [ev({ name: "FinalRulingPosted", escrowIdHash: ESCROW, arbiter: ARBITER, clientBps: 7000, decisionHash: hash("66"), noticeEndsAt: at + 24n * HOUR }), at],
     ];
-    const payout = [700_000_000n, 292_500_000n, 7_500_000n] as const;
+    const payout = [770_000_000n, 300_000_000n, 30_000_000n] as const;
     expect(() => play([...steps, [resolved("RULING", ...payout, hash("66")), at + 24n * HOUR - 1n]])).toThrow(/notice period/);
     const { effects } = play([...steps, [resolved("RULING", ...payout, hash("66")), at + 24n * HOUR]]);
     expectSplit(effects.at(-1), AMOUNT, 7000n);
@@ -516,7 +518,7 @@ describe("EscrowResolved", () => {
         [deposit(), T0],
         [disputeAt(), RAISED],
         [initialRuling(5000), INITIAL_AT],
-        [resolved("RULING", 500_000_000n, 487_500_000n, 12_500_000n, hash("99")), after],
+        [resolved("RULING", 550_000_000n, 500_000_000n, 50_000_000n, hash("99")), after],
       ]),
     ).toThrow(/decision hash/);
   });
@@ -526,7 +528,7 @@ describe("EscrowResolved", () => {
     const { state, effects } = play([
       [deposit(), T0],
       [disputeAt(), RAISED],
-      [resolved("ARBITER_TIMEOUT_SPLIT", 500_000_000n, 487_500_000n, 12_500_000n), at],
+      [resolved("ARBITER_TIMEOUT_SPLIT", 550_000_000n, 500_000_000n, 50_000_000n), at],
     ]);
     expect(state?.resolutionKind).toBe("ARBITER_TIMEOUT_SPLIT");
     expectSplit(effects.at(-1), AMOUNT, 5000n);
@@ -540,7 +542,7 @@ describe("EscrowResolved", () => {
       [initialRuling(5000), INITIAL_AT],
       [ev({ name: "RulingChallenged", escrowIdHash: ESCROW, challengedBy: DEVELOPER, challengedAt }), challengedAt],
     ];
-    const payout = [500_000_000n, 487_500_000n, 12_500_000n] as const;
+    const payout = [550_000_000n, 500_000_000n, 50_000_000n] as const;
     expect(() => play([...steps, [resolved("ARBITER_TIMEOUT_SPLIT", ...payout), challengedAt + 30n * DAY - 1n]])).toThrow(/stall period/);
     expect(play([...steps, [resolved("ARBITER_TIMEOUT_SPLIT", ...payout), challengedAt + 30n * DAY]]).state?.phase).toBe("RESOLVED");
   });
@@ -551,8 +553,8 @@ describe("EscrowResolved", () => {
       play([
         [deposit(), T0],
         [work(), T0 + DAY],
-        [resolved("RELEASE", 0n, 975_000_000n, 25_000_000n), at],
-        [resolved("RELEASE", 0n, 975_000_000n, 25_000_000n), at + 1n],
+        [resolved("RELEASE", 0n, AMOUNT, 100_000_000n), at],
+        [resolved("RELEASE", 0n, AMOUNT, 100_000_000n), at + 1n],
       ]),
     ).toThrow(/already resolved/);
   });
@@ -570,10 +572,10 @@ describe("EscrowResolved", () => {
 
   it("conserves the principal and charges the fee only on the developer's share, for every resolution", () => {
     const cases: Array<[Parameters<typeof resolved>, bigint]> = [
-      [["RELEASE", 0n, 975_000_000n, 25_000_000n], 0n],
-      [["MISSED_DELIVERY_REFUND", AMOUNT, 0n, 0n], 10_000n],
-      [["SETTLEMENT", 300_000_000n, 682_500_000n, 17_500_000n], 3000n],
-      [["ARBITER_TIMEOUT_SPLIT", 500_000_000n, 487_500_000n, 12_500_000n], 5000n],
+      [["RELEASE", 0n, AMOUNT, 100_000_000n], 0n],
+      [["MISSED_DELIVERY_REFUND", REFUND, 0n, 0n], 10_000n],
+      [["SETTLEMENT", 330_000_000n, 700_000_000n, 70_000_000n], 3000n],
+      [["ARBITER_TIMEOUT_SPLIT", 550_000_000n, 500_000_000n, 50_000_000n], 5000n],
     ];
     // Bước cần có trước mỗi kết thúc, và thời điểm kết thúc.
     const setup: Record<string, Array<[DecodedEscrowEvent, bigint]>> = {
@@ -595,7 +597,7 @@ describe("EscrowResolved", () => {
       const effect = play(steps).effects.at(-1);
       expect(effect).toMatchObject({ kind: "ESCROW_RESOLVED" });
       if (effect?.kind !== "ESCROW_RESOLVED") continue;
-      expect(effect.clientAmount + effect.developerAmount + effect.platformFee, kind).toBe(AMOUNT);
+      expect(effect.clientAmount + effect.developerAmount + effect.platformFee, kind).toBe(REFUND);
       expectSplit(effect, AMOUNT, bps);
     }
   });
@@ -646,11 +648,11 @@ describe("balances across escrows", () => {
     const runA: Array<[DecodedEscrowEvent, bigint]> = [
       [deposit(escrowA), T0],
       [work(DEVELOPER, hash("22"), escrowA), T0 + DAY],
-      [resolved("RELEASE", 0n, 975_000_000n, 25_000_000n, ZERO, escrowA), T0 + 2n * DAY],
+      [resolved("RELEASE", 0n, AMOUNT, 100_000_000n, ZERO, escrowA), T0 + 2n * DAY],
     ];
     const runB: Array<[DecodedEscrowEvent, bigint]> = [
       [deposit(escrowB), T0],
-      [resolved("MISSED_DELIVERY_REFUND", AMOUNT, 0n, 0n, ZERO, escrowB), DEADLINE + 1n],
+      [resolved("MISSED_DELIVERY_REFUND", REFUND, 0n, 0n, ZERO, escrowB), DEADLINE + 1n],
     ];
     const effects = [...play(runA).effects, ...play(runB).effects];
 
@@ -664,14 +666,14 @@ describe("balances across escrows", () => {
       }
     }
     const credited = [...ledger.values()].reduce((sum, value) => sum + value, 0n);
-    expect(credited).toBe(2n * AMOUNT);
-    expect(ledger.get(DEVELOPER)).toBe(975_000_000n);
-    expect(ledger.get(FEE)).toBe(25_000_000n);
-    expect(ledger.get(CLIENT)).toBe(AMOUNT);
+    expect(credited).toBe(2n * REFUND);
+    expect(ledger.get(DEVELOPER)).toBe(AMOUNT);
+    expect(ledger.get(FEE)).toBe(100_000_000n);
+    expect(ledger.get(CLIENT)).toBe(REFUND);
 
     // Developer claim toàn bộ số dư của mình.
-    credit(DEVELOPER, -975_000_000n);
+    credit(DEVELOPER, -AMOUNT);
     expect(ledger.get(DEVELOPER)).toBe(0n);
-    expect([...ledger.values()].reduce((sum, value) => sum + value, 0n)).toBe(2n * AMOUNT - 975_000_000n);
+    expect([...ledger.values()].reduce((sum, value) => sum + value, 0n)).toBe(2n * REFUND - AMOUNT);
   });
 });

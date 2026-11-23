@@ -47,7 +47,7 @@ export async function fund(f: Fixture) {
   const signature = await rpc<string>("eth_signTypedData_v4", [f.accounts[2], payload]);
   const signed = await gqlAs(f.client, `mutation($id: ID!, $signature: String!, $nonce: String!, $expiry: String!) { submitFundingIntent(reservationId: $id, signature: $signature, nonce: $nonce, intentExpiry: $expiry) { id } }`, { id, signature, nonce: nonce.toString(), expiry: expiry.toISOString() });
   if (signed.errors?.length) throw new Error(`Funding signature: ${signed.errors[0]?.message}`);
-  await mintUsdc(f, f.accounts[2]!, 100000000n);
+  await mintUsdc(f, f.accounts[2]!, 110000000n); // 100 USDC bounty + 10% platform fee
   const prepared = await gqlAs(f.client, `mutation($id: ID!) { prepareEscrowDeposit(reservationId: $id) { steps { intentId method contractAddress data value } } }`, { id });
   if (prepared.errors?.length) throw new Error(`Prepare deposit: ${prepared.errors[0]?.message}`);
   const steps = (prepared.data?.prepareEscrowDeposit as { steps: Prepared[] }).steps;
@@ -59,10 +59,13 @@ export async function fund(f: Fixture) {
 
 export async function externalDeposit(f: Fixture, reservation: Awaited<ReturnType<Fixture["prisma"]["fundingReservation"]["findUniqueOrThrow"]>>, overrides: { amount?: bigint; developer?: Hex } = {}) {
   const { encodeErc20Approve, encodeEscrowCall } = await import("@bloody-roar/shared/escrow");
+  const { depositTotal } = await import("@bloody-roar/shared/money");
+  const { PLATFORM_FEE_BPS } = await import("@bloody-roar/shared/constants");
   const amount = overrides.amount ?? BigInt(reservation.amountRaw.toFixed());
+  const total = depositTotal(amount, PLATFORM_FEE_BPS);
   const send = (to: string, data: string) => rpc<string>("eth_sendTransaction", [{ from: f.accounts[2], to, data, gas: "0x500000" }]);
-  await send(f.token.address, encodeFunctionData({ abi: mintAbi, functionName: "mint", args: [f.accounts[2] as Hex, amount] }));
-  await send(f.token.address, encodeErc20Approve(reservation.contractAddress as Hex, amount.toString()));
+  await send(f.token.address, encodeFunctionData({ abi: mintAbi, functionName: "mint", args: [f.accounts[2] as Hex, total] }));
+  await send(f.token.address, encodeErc20Approve(reservation.contractAddress as Hex, total.toString()));
   return send(reservation.contractAddress, encodeEscrowCall("deposit", { escrowId: reservation.escrowKey, developer: overrides.developer ?? f.developer.walletAddress,
     amount: amount.toString(), deliveryDeadline: String(Math.floor(reservation.deliveryDeadline.getTime() / 1000)), termsHash: reservation.termsHash }));
 }

@@ -1,4 +1,3 @@
-import { MAX_BPS } from "@bloody-roar/shared/constants";
 import { utils } from "ethers";
 import type { BigNumber } from "ethers";
 
@@ -15,11 +14,4 @@ export function decimalAmountToRaw(value: string, decimals: number): BigNumber {
     throw new Error("Bounty amount exceeds token precision");
   }
   return utils.parseUnits(value, decimals);
-}
-
-export function calculatePayout(amount: BigNumber, platformFeeBps: number): BigNumber {
-  if (!Number.isInteger(platformFeeBps) || platformFeeBps < 0 || platformFeeBps > MAX_BPS) {
-    throw new Error("Platform fee basis points are invalid");
-  }
-  return amount.sub(amount.mul(platformFeeBps).div(MAX_BPS));
 }

@@ -60,7 +60,7 @@ test("E32: client funds, developer delivers, client releases, developer claims, 
   const f = await fixture();
   const selection = await f.select(f.applicationId);
   expect(selection.errors?.length ?? 0).toBe(0);
-  await mintUsdc(f, f.accounts[2]!, 100000000n);
+  await mintUsdc(f, f.accounts[2]!, 110000000n); // 100 USDC bounty + 10% platform fee
   const issueUrl = `${BASE}/issues/${f.issueId}`;
 
   const client = await asUser(f.accounts[2]!);
@@ -83,13 +83,13 @@ test("E32: client funds, developer delivers, client releases, developer claims, 
   await waitFor(async () => (await f.prisma.submission.findFirst({ where: { issueId: f.issueId, status: "SUBMITTED" } })) !== null);
   await expectNoError(developer);
 
-  // Release credits the developer's claimable balance; the delta is this bounty's 97.5 USDC after the 250 bps fee.
+  // Release credits the developer's claimable balance; the developer gets the full 100 USDC bounty.
   const owedBeforeRelease = await claimable(f.prisma, f.developer.walletAddress);
   await client.reload({ waitUntil: "domcontentloaded" });
   await client.getByRole("tab", { name: /Delivery & Submissions/ }).click();
   await client.getByRole("button", { name: "Approve delivery" }).click();
   await waitFor(async () => (await f.prisma.issue.findUnique({ where: { id: f.issueId } }))?.status === "COMPLETED");
-  await waitFor(async () => (await claimable(f.prisma, f.developer.walletAddress)) - owedBeforeRelease === 97500000n);
+  await waitFor(async () => (await claimable(f.prisma, f.developer.walletAddress)) - owedBeforeRelease === 100000000n);
   await expectNoError(client);
 
   // The developer withdraws everything owed, which includes unclaimed balances from earlier files that share this account.

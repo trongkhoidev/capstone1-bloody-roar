@@ -26,7 +26,7 @@ import type { IssueItem } from "./issue-card";
 import { sendPreparedCalls } from "@/lib/web3/send-prepared";
 import { signFundingIntent } from "@/lib/web3/funding-intent";
 import { uploadFile } from "@/lib/upload";
-import { formatTokenAmount, splitPayout } from "@bloody-roar/shared/money";
+import { depositTotal, formatTokenAmount, splitPayout } from "@bloody-roar/shared/money";
 import { PLATFORM_FEE_BPS } from "@bloody-roar/shared/constants";
 
 // Date input value (YYYY-MM-DD) seven days out; the contract deadline is the end of that day in UTC.
@@ -558,6 +558,8 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const payout = splitPayout(BigInt(issue.bountyRaw), PLATFORM_FEE_BPS);
   const devShare = formatTokenAmount(payout.developer, issue.bountyDecimals);
   const platformFee = formatTokenAmount(payout.fee, issue.bountyDecimals);
+  const clientTotal = formatTokenAmount(depositTotal(BigInt(issue.bountyRaw), PLATFORM_FEE_BPS), issue.bountyDecimals);
+  const feePercent = `${PLATFORM_FEE_BPS / 100}%`;
 
   const statusInfo = issueStatus(issue.status);
 
@@ -597,7 +599,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                 <Clock className="ico" style={{ width: 14, height: 14 }} />
                 Deadline: {issue.expiresAt ? new Date(issue.expiresAt).toLocaleDateString() : "Flexible"}
               </span>
-              <span className="cd hot">2.5% fee on release</span>
+              <span className="cd hot">{feePercent} platform fee paid by the client</span>
             </div>
           </div>
 
@@ -1147,13 +1149,13 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                       <dl className="kv">
                         <dt>Escrow ID</dt>
                         <dd className="mono">BR-{issue.id.slice(0, 12)}</dd>
-                        <dt>Total Locked</dt>
+                        <dt>Total Locked (client pays)</dt>
                         <dd className="mono" style={{ color: "var(--gold)", fontWeight: 600 }}>
-                          {issue.bountyAmount.toLocaleString()} {issue.token.symbol}
+                          {clientTotal} {issue.token.symbol}
                         </dd>
-                        <dt>Developer Net (97.5%)</dt>
+                        <dt>Developer Net (full bounty)</dt>
                         <dd className="mono">{devShare} {issue.token.symbol}</dd>
-                        <dt>Platform Fee (2.5%)</dt>
+                        <dt>Platform Fee ({feePercent})</dt>
                         <dd className="mono">{platformFee} {issue.token.symbol}</dd>
                         <dt>Review Timeout</dt>
                         <dd className="mono">7 days after the latest submission</dd>
@@ -1189,9 +1191,9 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                 </div>
 
                 <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
-                  <div className="bd" role="img" aria-label="Developer 97.5 percent, fee 2.5 percent">
-                    <i style={{ width: "97.5%", background: "var(--ok)" }} />
-                    <i style={{ width: "2.5%", background: "var(--ink-3)" }} />
+                  <div className="bd" role="img" aria-label={`Developer ${devShare}, fee ${platformFee}, client pays ${clientTotal}`}>
+                    <i style={{ flex: 10_000, background: "var(--ok)" }} />
+                    <i style={{ flex: PLATFORM_FEE_BPS, background: "var(--ink-3)" }} />
                   </div>
                   <div className="legend">
                     <span><i style={{ background: "var(--ok)" }} /> Developer: <b className="mono">{devShare}</b></span>

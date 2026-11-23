@@ -539,10 +539,10 @@ async function run() {
     }, "myClaimable reaches 0");
     check("S1", "myClaimable returns 0 / empty", true);
 
-    // Check dev on-chain USDC increased by 97.5% (97,500,000 units)
+    // Dev gets the full bounty; the 10% fee was paid by the client on top
     const finalDevBal = await getUsdcBalance(tokenAddress, dev.address);
     const diff = finalDevBal - initialDevBal;
-    check("S1", "Dev received exactly 97.5% of bounty (97.5 USDC)", diff === 97_500_000n, `delta: ${diff}`);
+    check("S1", "Dev received the full bounty (100 USDC)", diff === 100_000_000n, `delta: ${diff}`);
   } catch (err: any) {
     check("S1", "Scenario S1 completed", false, err.message);
   }
@@ -784,7 +784,7 @@ async function run() {
 
     const finalDevBal = await getUsdcBalance(tokenAddress, dev.address);
     const diff = finalDevBal - initialDevBal;
-    check("S5", "Dev received 97.5% on review timeout", diff === 97_500_000n, `delta: ${diff}`);
+    check("S5", "Dev received the full bounty on review timeout", diff === 100_000_000n, `delta: ${diff}`);
   } catch (err: any) {
     check("S5", "Scenario S5 completed", false, err.message);
   }

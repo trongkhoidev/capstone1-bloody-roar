@@ -307,7 +307,7 @@ function escrowEvent(state: EscrowState, event: EscrowScopedEvent, meta: EventMe
       if (state.phase === "RESOLVED") reject("escrow already resolved");
       const terms = resolutionTerms(state, event.resolution, now);
       if (!same(event.decisionHash, terms.decisionHash)) reject("decision hash does not match the resolution");
-      // Số tiền lấy từ event. Fold chỉ kiểm rằng chúng khớp quy tắc phí 2,5% trên phần Developer (QĐ-02).
+      // Số tiền lấy từ event. Fold chỉ kiểm rằng chúng khớp quy tắc phí trên phần Developer (splitPayout).
       const split = splitPayout(state.amount, ESCROW_CONSTANTS.FEE_BPS, terms.clientBps);
       if (event.clientAmount !== split.client || event.developerAmount !== split.developer || event.platformFee !== split.fee) {
         reject("payout amounts do not match the fee rule");

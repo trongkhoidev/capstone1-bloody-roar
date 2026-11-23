@@ -15,6 +15,7 @@ const wallet = ethers.Wallet.createRandom();
 const user = { id: "client-1", role: "CLIENT", walletAddress: wallet.address, isBanned: false };
 const deadline = new Date(Date.now() + 30 * 86400_000);
 const amount = 100_000_000n;
+const total = 110_000_000n; // bounty + 10% platform fee
 const typed = { FundingIntent: [
   { name: "escrowId", type: "string" }, { name: "client", type: "address" }, { name: "developer", type: "address" },
   { name: "token", type: "address" }, { name: "amount", type: "uint256" }, { name: "deliveryDeadline", type: "uint256" },
@@ -48,7 +49,7 @@ beforeEach(async () => {
     deliveryDeadline: Math.floor(deadline.getTime() / 1000), termsHash, intentExpiry: Math.floor(expiry.getTime() / 1000), nonce: "7",
   });
   reservation = row(signature, expiry);
-  mock.readFundingState.mockReset().mockResolvedValue({ balance: amount, allowance: 0n, paused: false, token, blockTimestamp: BigInt(Math.floor(Date.now() / 1000)) });
+  mock.readFundingState.mockReset().mockResolvedValue({ balance: total, allowance: 0n, paused: false, token, blockTimestamp: BigInt(Math.floor(Date.now() / 1000)) });
 });
 
 describe("prepareEscrowDeposit", () => {
@@ -57,23 +58,23 @@ describe("prepareEscrowDeposit", () => {
     expect(result.errors).toBeUndefined();
     const steps = (result.data?.prepareEscrowDeposit as { steps: Array<{ method: string; data: string; contractAddress: string }> }).steps;
     expect(steps.map((step) => step.method)).toEqual(["approve", "deposit"]);
-    expect(steps[0]).toMatchObject({ contractAddress: token, data: encodeErc20Approve(contract, amount.toString()) });
+    expect(steps[0]).toMatchObject({ contractAddress: token, data: encodeErc20Approve(contract, total.toString()) });
     expect(steps[1]).toMatchObject({ contractAddress: contract, data: encodeEscrowCall("deposit", { escrowId: reservation.escrowKey, developer: developerAddress, amount: amount.toString(), deliveryDeadline: String(Math.floor(deadline.getTime() / 1000)), termsHash }) });
     expect(db.tx.transactionIntent.create).toHaveBeenCalledTimes(2);
   });
   it("omits approval when allowance is sufficient", async () => {
-    mock.readFundingState.mockResolvedValue({ balance: amount, allowance: amount, paused: false, token, blockTimestamp: BigInt(Math.floor(Date.now() / 1000)) });
+    mock.readFundingState.mockResolvedValue({ balance: total, allowance: total, paused: false, token, blockTimestamp: BigInt(Math.floor(Date.now() / 1000)) });
     const result = await run();
     expect(result.errors).toBeUndefined();
     expect((result.data?.prepareEscrowDeposit as { steps: Array<{ method: string }> }).steps.map((step) => step.method)).toEqual(["deposit"]);
   });
   it.each([
     ["paused", { paused: true }, "ESCROW_PAUSED"],
-    ["insufficient balance", { balance: amount - 1n }, "INSUFFICIENT_BALANCE"],
+    ["insufficient balance", { balance: total - 1n }, "INSUFFICIENT_BALANCE"],
     ["wrong token", { token: developerAddress }, "INVALID_TOKEN"],
     ["deadline passed on chain", { blockTimestamp: BigInt(Math.floor(deadline.getTime() / 1000)) }, "DELIVERY_DEADLINE_INVALID"],
   ])("rejects %s", async (_name, changes, code) => {
-    mock.readFundingState.mockResolvedValue({ balance: amount, allowance: 0n, paused: false, token, blockTimestamp: 1n, ...changes });
+    mock.readFundingState.mockResolvedValue({ balance: total, allowance: 0n, paused: false, token, blockTimestamp: 1n, ...changes });
     const db = fakeDb(); const result = await run(db);
     expect(result.errors?.[0]?.extensions?.code).toBe(code);
     expect(db.tx.transactionIntent.create).not.toHaveBeenCalled();

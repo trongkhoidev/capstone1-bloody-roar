@@ -30,7 +30,7 @@ test("SIWE sessions drive issue creation through chat, submission, release and c
     const before = await tokenBalance(f, f.developer.walletAddress);
     await claimFunds(f, f.developer);
     await claimFunds(f, fee);
-    expect(await tokenBalance(f, f.developer.walletAddress) - before).toBe(97_500_000n);
+    expect(await tokenBalance(f, f.developer.walletAddress) - before).toBe(100_000_000n);
     expect((await f.prisma.issue.findUniqueOrThrow({ where: { id: f.issueId } })).status).toBe("COMPLETED");
   } finally {
     client.close(); developer.close();

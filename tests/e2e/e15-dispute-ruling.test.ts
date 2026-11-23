@@ -37,8 +37,8 @@ test("E15: evidence, an initial ruling and finalization pay the split", async ()
     const before = { client: await claimable(f.prisma, f.client.walletAddress), developer: await claimable(f.prisma, f.developer.walletAddress), fee: await claimable(f.prisma, f.feeRecipient) };
     await prepareAndSend(f, f.outsider, "prepareFinalizeRuling");
     await waitFor(async () => (await f.prisma.dispute.findUniqueOrThrow({ where: { issueId: f.issueId } })).status === "RESOLVED");
-    expect((await claimable(f.prisma, f.client.walletAddress)) - before.client).toBe(50_000_000n);
-    expect((await claimable(f.prisma, f.developer.walletAddress)) - before.developer).toBe(48_750_000n);
+    expect((await claimable(f.prisma, f.client.walletAddress)) - before.client).toBe(55_000_000n);
+    expect((await claimable(f.prisma, f.developer.walletAddress)) - before.developer).toBe(50_000_000n);
     expect((await claimable(f.prisma, f.feeRecipient)) - before.fee).toBe(1_250_000n);
     expect(await f.prisma.notification.count({ where: { type: "DISPUTE_RESOLVED", data: { path: ["issueId"], equals: f.issueId } } })).toBe(2);
     expect(await f.prisma.notification.count({ where: { type: "ESCROW_RESOLVED", data: { path: ["issueId"], equals: f.issueId } } })).toBe(0);

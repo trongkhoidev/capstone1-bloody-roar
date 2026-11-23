@@ -4,6 +4,8 @@ import { time } from "@nomicfoundation/hardhat-network-helpers";
 import type { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import type { BloodyRoarEscrow, MockUSDC } from "../typechain-types";
 import { SAFE_V141_SINGLETONS, assertProductionSafes } from "../scripts/deployment-checks";
+// The off-chain split the app and the fold use; the settlement test below checks the contract against it.
+import { depositTotal, splitPayout } from "../../../packages/shared/src/money";
 
 const DAY = 24 * 60 * 60;
 const USDC = (value: string | number | bigint) => ethers.parseUnits(value.toString(), 6);
@@ -344,26 +346,23 @@ describe("BloodyRoarEscrow", () => {
       expect(await escrow.claimable(developer.address)).to.equal(USDC(100));
     });
 
-    for (const clientBps of [0n, 1n, 5_000n, 9_999n, 10_000n]) {
+    for (const clientBps of [0n, 1n, 1_234n, 5_000n, 9_999n, 10_000n]) {
       it(`conserves every unit for a ${clientBps} bps mutual settlement`, async () => {
         const id = `settlement-${clientBps}`;
         const amount = 1_000_003n;
         await deposit(id, amount);
         await escrow.connect(client).proposeSettlement(id, clientBps);
         await escrow.connect(developer).acceptSettlement(id);
-        const depositFee = (amount * 1_000n) / 10_000n;
-        const clientShare = (amount * clientBps) / 10_000n;
-        const developerAmount = amount - clientShare;
-        const fee = (developerAmount * 1_000n) / 10_000n;
-        const clientAmount = clientShare + depositFee - fee;
+        const fee = Number(await escrow.PLATFORM_FEE_BPS());
+        const split = splitPayout(amount, fee, Number(clientBps));
         expect(
           (await escrow.claimable(client.address)) +
             (await escrow.claimable(developer.address)) +
             (await escrow.claimable(feeRecipient.address)),
-        ).to.equal(amount + depositFee);
-        expect(await escrow.claimable(client.address)).to.equal(clientAmount);
-        expect(await escrow.claimable(developer.address)).to.equal(developerAmount);
-        expect(await escrow.claimable(feeRecipient.address)).to.equal(fee);
+        ).to.equal(depositTotal(amount, fee));
+        expect(await escrow.claimable(client.address)).to.equal(split.client);
+        expect(await escrow.claimable(developer.address)).to.equal(split.developer);
+        expect(await escrow.claimable(feeRecipient.address)).to.equal(split.fee);
       });
     }
 

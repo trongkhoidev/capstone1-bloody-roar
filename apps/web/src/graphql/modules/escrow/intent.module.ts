@@ -3,6 +3,7 @@
 // sau khi event deposit đã được fold (xem apps/worker/src/effects/escrow.ts).
 
 import { MINUTE_MS } from "@bloody-roar/shared/constants";
+import { depositTotal } from "@bloody-roar/shared/money";
 import { z } from "zod";
 import { IntentStatus, ReservationStatus } from "@bloody-roar/database";
 import {
@@ -181,7 +182,9 @@ builder.mutationField("prepareEscrowDeposit", (t) =>
       if (chain.token.toLowerCase() !== reservation.tokenAddress.toLowerCase()) throw gqlError("Token does not match the escrow contract", "INVALID_TOKEN");
       if (chain.paused) throw gqlError("Escrow is paused", "ESCROW_PAUSED");
       if (chain.blockTimestamp >= intent.deliveryDeadline) throw gqlError("The delivery deadline has passed", "DELIVERY_DEADLINE_INVALID");
-      if (chain.balance < intent.amount) throw gqlError("Insufficient token balance", "INSUFFICIENT_BALANCE");
+      // The contract pulls the bounty plus the platform fee.
+      const total = depositTotal(intent.amount, ESCROW_CONSTANTS.FEE_BPS);
+      if (chain.balance < total) throw gqlError("Insufficient token balance", "INSUFFICIENT_BALANCE");
       const expiry = new Date(Math.min(reservation.expiresAt.getTime(), reservation.intentExpiresAt.getTime(), now.getTime() + ESCROW_CONSTANTS.INTENT_MINUTES * MINUTE_MS));
       return ctx.db.$transaction(async (tx) => {
         await tx.$queryRaw`SELECT id FROM funding_reservations WHERE id = ${reservation.id} FOR UPDATE`;
@@ -198,13 +201,13 @@ builder.mutationField("prepareEscrowDeposit", (t) =>
             !issue || issue.status !== "AWAITING_FUNDING" || issue.termsVersion !== reservation.termsVersion)
           throw gqlError("The reservation or its terms changed", "RESERVATION_NOT_FUNDABLE");
         const steps: PreparedCall[] = [];
-        if (chain.allowance < intent.amount) {
-          const approvalArgs = { spender: target.contractAddress, amount: intent.amount.toString() };
+        if (chain.allowance < total) {
+          const approvalArgs = { spender: target.contractAddress, amount: total.toString() };
           const approval = await tx.transactionIntent.create({ data: { userId: user.id, issueId: reservation.issueId,
             escrowKey: reservation.escrowKey, chainId: target.chainId, contractAddress: reservation.tokenAddress,
             method: "approve", args: approvalArgs, status: IntentStatus.AWAITING_SIGNATURE, expiresAt: expiry } });
           steps.push({ intentId: approval.id, chainId: target.chainId, to: reservation.tokenAddress as Hex, method: "approve",
-            args: approvalArgs, data: encodeErc20Approve(target.contractAddress, intent.amount.toString()), value: "0", expiresAt: expiry.toISOString() });
+            args: approvalArgs, data: encodeErc20Approve(target.contractAddress, total.toString()), value: "0", expiresAt: expiry.toISOString() });
         }
         steps.push(await createPreparedCall(tx, { userId: user.id, issueId: reservation.issueId, escrowKey: reservation.escrowKey,
           method: "deposit", expiresAt: expiry, args: { escrowId: reservation.escrowKey, developer: developer.walletAddress,

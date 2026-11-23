@@ -13,7 +13,7 @@ test("each submission resets both the fold timer and the stored review deadline"
   const latest = foldEscrowEvent(first, work, { ...meta, blockTimestamp: start + 3n * day }).state!;
   expect(latest.submittedAt).toBe(start + 3n * day);
   expect(projectionFields(latest, 3n, []).reviewDeadline).toEqual(new Date(Number(start + 10n * day) * 1000));
-  const resolved = { name: "EscrowResolved" as const, escrowIdHash: state.escrowIdHash, resolution: "REVIEW_TIMEOUT" as const, clientAmount: 0n, developerAmount: 975n, platformFee: 25n, decisionHash: hash("00") };
+  const resolved = { name: "EscrowResolved" as const, escrowIdHash: state.escrowIdHash, resolution: "REVIEW_TIMEOUT" as const, clientAmount: 0n, developerAmount: 1000n, platformFee: 100n, decisionHash: hash("00") };
   expect(() => foldEscrowEvent(latest, resolved, { ...meta, blockTimestamp: start + 8n * day })).toThrow("review window still open");
   expect(foldEscrowEvent(latest, resolved, { ...meta, blockTimestamp: start + 10n * day }).state?.phase).toBe("RESOLVED");
 });

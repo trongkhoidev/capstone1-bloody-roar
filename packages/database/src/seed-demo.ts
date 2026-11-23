@@ -1178,7 +1178,7 @@ Identified potential read-only reentrancy during reward settlement when external
       id: "seed-comment-cmw34qqap-02",
       issueId: "cmw34qqap01ujdgmtft3mp6tj",
       userId: "cmw33rr5x003ydgmt82npe8og", // Trịnh Kim Ngân (Client)
-      body: "Good catch Arthur. Emergency pauses must be instant to protect user funds during an active exploit. Only parameter changes such as the 2.5% platform fee and the 72-hour dispute window must go through the 48-hour timelock.",
+      body: "Good catch Arthur. Emergency pauses must be instant to protect user funds during an active exploit. Only parameter changes such as the 10% platform fee and the 72-hour dispute window must go through the 48-hour timelock.",
       createdAt: new Date("2026-11-05T17:30:00.000Z"),
     },
     {

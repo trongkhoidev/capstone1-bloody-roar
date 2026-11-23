@@ -1,6 +1,6 @@
 // apps/web/src/test/escrow-core/money.test.ts
 import { describe, expect, it } from "vitest";
-import { bpsOf, formatTokenAmount, parseTokenAmount, splitPayout } from "@bloody-roar/shared/money";
+import { bpsOf, formatTokenAmount, parseTokenAmount, splitPayout, depositTotal } from "@bloody-roar/shared/money";
 
 const UINT256_MAX = 2n ** 256n - 1n;
 
@@ -85,41 +85,35 @@ describe("bpsOf", () => {
 });
 
 describe("splitPayout", () => {
-  it.each(["5", "6", "0.5", "33.33"])("preserves the full %s token bounty in its displayed shares", (amount) => {
-    const raw = parseTokenAmount(amount, 6);
-    const { developer, fee } = splitPayout(raw, 250);
-    expect(parseTokenAmount(formatTokenAmount(developer, 6), 6) + parseTokenAmount(formatTokenAmount(fee, 6), 6)).toBe(raw);
-  });
-  it("releases to the developer with the fee on the developer's share", () => {
-    expect(splitPayout(1_000_000_000n, 250)).toEqual({
-      developer: 975_000_000n,
-      fee: 25_000_000n,
-      client: 0n,
-    });
+  it("charges the client 110 for a 100 USDC bounty and pays the developer the full 100", () => {
+    const bounty = parseTokenAmount("100", 6);
+    expect(depositTotal(bounty, 1_000)).toBe(parseTokenAmount("110", 6));
+    expect(splitPayout(bounty, 1_000)).toEqual({ developer: bounty, fee: parseTokenAmount("10", 6), client: 0n });
   });
 
-  it("rounds the fee down and gives the remainder to the developer", () => {
-    expect(splitPayout(999n, 250)).toEqual({ developer: 975n, fee: 24n, client: 0n });
+  it("rounds the fee down", () => {
+    expect(depositTotal(999n, 1_000)).toBe(1_098n);
+    expect(splitPayout(999n, 1_000)).toEqual({ developer: 999n, fee: 99n, client: 0n });
   });
 
-  it("charges no fee on the client's share (QĐ-02)", () => {
-    // 1000 * 30% = 300 to the client. Developer gross 700, fee floor(700 * 2.5%) = 17.
-    expect(splitPayout(1_000n, 250, 3_000)).toEqual({ developer: 683n, fee: 17n, client: 300n });
+  it("charges the fee only on the developer's share and returns the rest of the fee to the client", () => {
+    // Deposit 1000 + 100. Client share 300, developer 700, fee floor(700 * 10%) = 70, client gets 300 + 100 - 70.
+    expect(splitPayout(1_000n, 1_000, 3_000)).toEqual({ developer: 700n, fee: 70n, client: 330n });
   });
 
-  it("refunds the full principal to the client with no fee", () => {
-    expect(splitPayout(1_000n, 250, 10_000)).toEqual({ developer: 0n, fee: 0n, client: 1_000n });
+  it("refunds the bounty and the fee to the client on a full refund", () => {
+    expect(splitPayout(1_000n, 1_000, 10_000)).toEqual({ developer: 0n, fee: 0n, client: 1_100n });
   });
 
   it("pays nothing on a zero principal", () => {
-    expect(splitPayout(0n, 250, 5_000)).toEqual({ developer: 0n, fee: 0n, client: 0n });
+    expect(splitPayout(0n, 1_000, 5_000)).toEqual({ developer: 0n, fee: 0n, client: 0n });
   });
 
-  it("conserves every unit for each client share", () => {
+  it("conserves every deposited unit for each client share", () => {
     for (const principal of [1n, 7n, 999n, 1_000_001n, 123_456_789n]) {
       for (const clientBps of [0, 1, 1_234, 5_000, 9_999, 10_000]) {
-        const { developer, fee, client } = splitPayout(principal, 250, clientBps);
-        expect(developer + fee + client, `${principal} ${clientBps}`).toBe(principal);
+        const { developer, fee, client } = splitPayout(principal, 1_000, clientBps);
+        expect(developer + fee + client, `${principal} ${clientBps}`).toBe(depositTotal(principal, 1_000));
       }
     }
   });

@@ -6,7 +6,7 @@
 // =============================================================================
 
 export const PLATFORM_NAME = "Bloody-Roar";
-export const PLATFORM_FEE_BPS = 250; // 2.5% trên phần Developer, khớp contract
+export const PLATFORM_FEE_BPS = 1_000; // 10%, client trả thêm trên bounty, khớp contract
 
 // =============================================================================
 // ESCROW

@@ -26,7 +26,7 @@ const RULES = [
   ["24 h", "For the client to fund after selecting a developer. Otherwise the bounty reopens."],
   ["7 days", "Review window after the latest submission. Resubmitting starts a fresh window; silence lets the developer claim."],
   ["72 h", "For the other side to add evidence once a dispute opens. No ruling before it closes."],
-  ["2.5%", "Platform fee, taken from the developer share only. A full refund pays no fee."],
+  ["10%", "Platform fee, paid by the client on top of the bounty: a 100 USDC bounty costs 110. The developer gets the full bounty. A full refund returns the fee too."],
 ];
 
 function Steps({ title, steps }: { title: string; steps: string[][] }) {

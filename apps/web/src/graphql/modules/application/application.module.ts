@@ -26,6 +26,7 @@ export const ApplicationRef = builder.prismaObject("Application", {
     message: t.exposeString("message", { nullable: true }),
     issueId: t.exposeString("issueId"),
     developerId: t.exposeString("developerId"),
+    reuseOfIssueId: t.exposeString("reuseOfIssueId", { nullable: true }),
     createdAt: t.string({
       resolve: (application) => application.createdAt.toISOString(),
     }),
@@ -43,6 +44,7 @@ export const ApplicationRef = builder.prismaObject("Application", {
 const ApplySchema = z.object({
   issueId: z.string().min(1),
   message: z.string().trim().max(1000).optional(),
+  reuseOfIssueId: z.string().min(1).max(191).optional(),
 });
 
 function issueApplications(db: GraphQLContext["db"], issueId: string, take = DEFAULT_PAGE_SIZE, cursor?: string | null, query: object = {}) {
@@ -113,6 +115,7 @@ builder.mutationField("applyToIssue", (t) =>
     input: {
       issueId: t.input.id({ required: true }),
       message: t.input.string({ required: false }),
+      reuseOfIssueId: t.input.id({ required: false, description: "US-108: a COMPLETED issue you fixed that matches this one; applies at the reuse price" }),
     },
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
@@ -121,6 +124,7 @@ builder.mutationField("applyToIssue", (t) =>
       const input = parseOrThrow(ApplySchema, {
         issueId: String(args.input.issueId),
         ...(args.input.message != null ? { message: args.input.message } : {}),
+        ...(args.input.reuseOfIssueId != null ? { reuseOfIssueId: String(args.input.reuseOfIssueId) } : {}),
       });
       const message = input.message?.trim() ? (await guardMessage(input.message.trim(), { issueId: input.issueId })).content : null;
       let result: {
@@ -156,6 +160,19 @@ builder.mutationField("applyToIssue", (t) =>
             if (previous && previous.status !== ApplicationStatus.WITHDRAWN) {
               throw gqlError("You already applied to this bounty", "ALREADY_APPLIED");
             }
+            if (input.reuseOfIssueId) {
+              const [reused, similar] = await Promise.all([
+                tx.issue.findUnique({ where: { id: input.reuseOfIssueId }, select: { developerId: true, status: true } }),
+                tx.issueSimilarity.findUnique({ where: { issueId_similarIssueId: { issueId: issue.id, similarIssueId: input.reuseOfIssueId } }, select: { developerId: true } }),
+              ]);
+              if (!reused || reused.developerId !== user.id)
+                throw gqlError("Only the developer who fixed that issue can reuse it", "REUSE_NOT_ALLOWED");
+              if (reused.status !== IssueStatus.COMPLETED)
+                throw gqlError("The reused issue is not completed", "REUSE_NOT_ALLOWED");
+              if (similar?.developerId !== user.id)
+                throw gqlError("That issue was not matched to this bounty", "REUSE_NOT_ALLOWED");
+            }
+            const reuseOfIssueId = input.reuseOfIssueId ?? null;
 
             const application = previous
               ? await tx.application.update({
@@ -163,6 +180,7 @@ builder.mutationField("applyToIssue", (t) =>
                   data: {
                     status: ApplicationStatus.PENDING,
                     message,
+                    reuseOfIssueId,
                   },
                   include: APPLICATION_INCLUDE,
                 })
@@ -171,6 +189,7 @@ builder.mutationField("applyToIssue", (t) =>
                     issueId: input.issueId,
                     developerId: user.id,
                     message,
+                    reuseOfIssueId,
                   },
                   include: APPLICATION_INCLUDE,
                 });

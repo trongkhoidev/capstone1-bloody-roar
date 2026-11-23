@@ -32,7 +32,7 @@ test("E14: the other party accepts a proposed split and payouts follow it", asyn
     await waitFor(async () => (await f.prisma.issue.findUniqueOrThrow({ where: { id: f.issueId } })).outcome === "SETTLEMENT");
     expect((await claimable(f.prisma, f.client.walletAddress)) - before.client).toBe(33_000_000n);
     expect((await claimable(f.prisma, f.developer.walletAddress)) - before.developer).toBe(70_000_000n);
-    expect((await claimable(f.prisma, f.feeRecipient)) - before.fee).toBe(1_750_000n);
+    expect((await claimable(f.prisma, f.feeRecipient)) - before.fee).toBe(7_000_000n);
   } finally {
     await restoreChain(snapshot, f);
   }

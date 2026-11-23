@@ -35,7 +35,7 @@ test("E16: a client challenge replaces the initial ruling with a final ruling", 
     await waitFor(async () => (await f.prisma.dispute.findUniqueOrThrow({ where: { issueId: f.issueId } })).status === "RESOLVED");
     expect((await claimable(f.prisma, f.client.walletAddress)) - before.client).toBe(77_000_000n);
     expect((await claimable(f.prisma, f.developer.walletAddress)) - before.developer).toBe(30_000_000n);
-    expect((await claimable(f.prisma, f.feeRecipient)) - before.fee).toBe(750_000n);
+    expect((await claimable(f.prisma, f.feeRecipient)) - before.fee).toBe(3_000_000n);
   } finally {
     await restoreChain(snapshot, f);
   }

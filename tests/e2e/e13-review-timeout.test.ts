@@ -23,7 +23,7 @@ test("E13: a review timeout waits for the review window, then pays the developer
     const feeBefore = await claimable(f.prisma, f.feeRecipient);
     await prepareAndSend(f, f.developer, "prepareClaimReviewTimeout");
     await waitFor(async () => (await claimable(f.prisma, f.developer.walletAddress)) - developerBefore === 100_000_000n);
-    expect((await claimable(f.prisma, f.feeRecipient)) - feeBefore).toBe(2_500_000n);
+    expect((await claimable(f.prisma, f.feeRecipient)) - feeBefore).toBe(10_000_000n);
     expect((await f.prisma.issue.findUniqueOrThrow({ where: { id: f.issueId } })).outcome).toBe("REVIEW_TIMEOUT");
   } finally {
     await restoreChain(snapshot, f);

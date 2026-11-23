@@ -29,7 +29,7 @@ test("E17: an arbiter timeout is open to anyone after 30 days from the raise", a
     expect((await f.prisma.dispute.findUniqueOrThrow({ where: { issueId: f.issueId } })).finalClientBps).toBe(5000);
     expect((await claimable(f.prisma, f.client.walletAddress)) - before.client).toBe(55_000_000n);
     expect((await claimable(f.prisma, f.developer.walletAddress)) - before.developer).toBe(50_000_000n);
-    expect((await claimable(f.prisma, f.feeRecipient)) - before.fee).toBe(1_250_000n);
+    expect((await claimable(f.prisma, f.feeRecipient)) - before.fee).toBe(5_000_000n);
     expect(await f.prisma.notification.count({ where: { type: "DISPUTE_RESOLVED", data: { path: ["issueId"], equals: f.issueId } } })).toBe(2);
   } finally {
     await restoreChain(snapshot, f);

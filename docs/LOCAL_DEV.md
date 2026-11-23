@@ -182,3 +182,7 @@ bun run scripts/demo/down.sh
 ```
 
 Script sẽ đọc các PID đã lưu, gửi tín hiệu ngắt nhẹ nhàng (`SIGTERM`), dọn dẹp tiến trình và xóa file PID tracking.
+
+### Pool khi web kết nối Supabase
+
+Nếu chạy một tiến trình web với Supabase session pooler, đặt `connection_limit=10` trong `DATABASE_URL`. Giá trị trên URL được ưu tiên. Khi URL thiếu `connection_limit`, Prisma dùng `DB_POOL_SIZE`, mặc định là 4. Tính cả worker và công cụ quản trị khi chia giới hạn kết nối của pooler.

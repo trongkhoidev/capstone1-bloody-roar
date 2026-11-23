@@ -47,7 +47,10 @@ export async function fund(f: Fixture) {
   const signature = await rpc<string>("eth_signTypedData_v4", [f.accounts[2], payload]);
   const signed = await gqlAs(f.client, `mutation($id: ID!, $signature: String!, $nonce: String!, $expiry: String!) { submitFundingIntent(reservationId: $id, signature: $signature, nonce: $nonce, intentExpiry: $expiry) { id } }`, { id, signature, nonce: nonce.toString(), expiry: expiry.toISOString() });
   if (signed.errors?.length) throw new Error(`Funding signature: ${signed.errors[0]?.message}`);
-  await mintUsdc(f, f.accounts[2]!, 110000000n); // 100 USDC bounty + 10% platform fee
+  // Exactly what the contract pulls: the reserved amount (bounty or reuse price) plus the platform fee.
+  const { depositTotal } = await import("@bloody-roar/shared/money");
+  const { PLATFORM_FEE_BPS } = await import("@bloody-roar/shared/constants");
+  await mintUsdc(f, f.accounts[2]!, depositTotal(BigInt(reservation.amountRaw.toFixed()), PLATFORM_FEE_BPS));
   const prepared = await gqlAs(f.client, `mutation($id: ID!) { prepareEscrowDeposit(reservationId: $id) { steps { intentId method contractAddress data value } } }`, { id });
   if (prepared.errors?.length) throw new Error(`Prepare deposit: ${prepared.errors[0]?.message}`);
   const steps = (prepared.data?.prepareEscrowDeposit as { steps: Prepared[] }).steps;

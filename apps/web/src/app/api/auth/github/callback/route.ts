@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@bloody-roar/database";
+import { clearAuthCache } from "../../../../../lib/auth";
 import { keyBytes } from "../../../../../lib/github/crypto";
 
 export const dynamic = "force-dynamic";
@@ -62,6 +63,7 @@ export async function GET(request: Request) {
         isGithubVerified: true,
       },
     });
+    clearAuthCache();
     return redirect(request, "connected");
   } catch {
     return response;

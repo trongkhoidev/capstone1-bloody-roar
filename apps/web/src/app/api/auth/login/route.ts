@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ACTIVE_CHAIN_ID } from "@bloody-roar/shared";
-import { AUTH_COOKIE_NAME, thirdwebAuth } from "../../../../lib/auth";
+import { clearAuthCache, AUTH_COOKIE_NAME, thirdwebAuth } from "../../../../lib/auth";
 import { authDomain, authUri, issueAuthToken } from "../../../../lib/auth/siwe";
 import { validateSiwePayload } from "../../../../lib/auth/siwe-validation";
 import { buildChallengeIdentity, ChallengeReplayError, consumeSiweChallenge } from "../../../../lib/auth/challenge";
@@ -112,6 +112,7 @@ export async function POST(req: Request) {
       return persistedUser;
     });
 
+    clearAuthCache();
     const response = NextResponse.json({ token, user });
     response.cookies.set(AUTH_COOKIE_NAME, token, {
       httpOnly: true,

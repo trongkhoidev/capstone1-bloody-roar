@@ -4,6 +4,7 @@ import { GET } from "../app/api/auth/github/callback/route";
 
 const prisma = vi.hoisted(() => ({ user: { findUnique: vi.fn(), update: vi.fn() } }));
 vi.mock("@bloody-roar/database", () => ({ prisma }));
+vi.mock("../lib/auth", () => ({ clearAuthCache: vi.fn() }));
 
 const KEY = "ab".repeat(32);
 const USER_ID = "user-1";

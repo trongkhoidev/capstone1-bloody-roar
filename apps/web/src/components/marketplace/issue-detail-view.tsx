@@ -205,6 +205,16 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     if (!cached || Date.now() - (queryClient.getQueryState(key)?.dataUpdatedAt ?? 0) >= 60_000) void load();
   }, [issueId, load, queryClient, user?.id, setError]);
 
+  const viewed = useRef<string | null>(null);
+  useEffect(() => {
+    if (!user?.id || issue?.id !== issueId) return;
+    const key = `${issueId}:${user.id}`;
+    if (viewed.current === key) return;
+    viewed.current = key;
+    void graphqlRequest("mutation RecordIssueView($id: ID!) { recordIssueView(issueId: $id) }", { id: issueId })
+      .catch(() => undefined);
+  }, [issue?.id, issueId, user?.id]);
+
   // Live refresh: the server emits escrow:invalidate to the task room when a confirmed transaction changes the escrow.
   useEffect(() => {
     if (!user) return;

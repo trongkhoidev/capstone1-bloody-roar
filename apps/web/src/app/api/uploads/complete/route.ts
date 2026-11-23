@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { NextResponse } from "next/server";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { prisma } from "@bloody-roar/database";
-import { tokenFromRequest, verifyJWT } from "@/lib/auth";
+import { clearAuthCache, tokenFromRequest, verifyJWT } from "@/lib/auth";
 import { getS3Storage, localUploadPath } from "@/lib/storage";
 
 export const runtime = "nodejs";
@@ -58,5 +58,6 @@ export async function POST(request: Request) {
       ? [prisma.user.update({ where: { id: user.id }, data: { avatar: attachment.fileUrl } })]
       : []),
   ]);
+  if (attachment.purpose === "AVATAR") clearAuthCache();
   return NextResponse.json({ attachmentId: attachment.id, sha256 });
 }

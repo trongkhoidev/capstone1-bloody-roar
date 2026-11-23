@@ -14,7 +14,7 @@ const state = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("@/lib/auth", () => ({ tokenFromRequest: () => (state.user ? "token" : null), verifyJWT: async () => state.user }));
+vi.mock("@/lib/auth", () => ({ clearAuthCache: vi.fn(), tokenFromRequest: () => (state.user ? "token" : null), verifyJWT: async () => state.user }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: () => ({ ok: true, retryAfterMs: 0 }), tooManyRequests: () => new Response(null, { status: 429 }) }));
 vi.mock("@/lib/storage", () => ({
   getS3Storage: () => null,

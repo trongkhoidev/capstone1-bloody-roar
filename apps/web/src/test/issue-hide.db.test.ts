@@ -38,6 +38,29 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("issue hiding on test database",
     return ((result.data?.issues as { edges: Array<{ node: { id: string } }> }).edges).map((edge) => edge.node.id);
   };
 
+  it("counts one view per viewer per hour, even with concurrent requests", async () => {
+    const record = () => as(developer, `mutation($id: ID!) { recordIssueView(issueId: $id) }`, { id: issueId });
+    const results = await Promise.all([record(), record()]);
+    for (const result of results) expect(result.errors).toBeUndefined();
+    expect(results.map((result) => result.data?.recordIssueView).sort()).toEqual([false, true]);
+    await prisma.issueView.updateMany({ where: { issueId, userId: developer.id }, data: { viewedAt: new Date(Date.now() - 3_660_000) } });
+    expect((await record()).data?.recordIssueView).toBe(true);
+    expect((await prisma.issue.findUniqueOrThrow({ where: { id: issueId } })).viewCount).toBe(2);
+  });
+
+  it("records a draft view only for its owner", async () => {
+    const record = (user: typeof client) => as(user, `mutation($id: ID!) { recordIssueView(issueId: $id) }`, { id: issueId });
+    await prisma.issue.update({ where: { id: issueId }, data: { isDraft: true } });
+    try {
+      for (const user of [developer, admin, outsider]) {
+        expect((await record(user)).errors?.[0]?.extensions?.code).toBe("NOT_FOUND");
+      }
+      expect((await record(client)).data?.recordIssueView).toBe(true);
+    } finally {
+      await prisma.issue.update({ where: { id: issueId }, data: { isDraft: false } });
+    }
+  });
+
   it("hides an issue from the marketplace and records the admin action", async () => {
     expect((await as(outsider, issueQuery, { id: issueId })).data?.issue).toMatchObject({ id: issueId });
     expect(await listed(outsider)).toContain(issueId);

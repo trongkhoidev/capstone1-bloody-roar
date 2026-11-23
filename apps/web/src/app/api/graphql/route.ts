@@ -1,4 +1,4 @@
-import { getOperationAST } from "graphql";
+import { getOperationAST, Kind, type DocumentNode, type SelectionSetNode } from "graphql";
 import { createYoga, type Plugin } from "graphql-yoga";
 import { schema } from "../../../graphql/schema";
 import { createContext } from "../../../graphql/context";
@@ -13,6 +13,21 @@ const dev = process.env.NODE_ENV !== "production";
 // Points per client per minute: a mutation spends 5, a query 1.
 const GRAPHQL_POINTS_PER_MINUTE = 600;
 
+const AUTH_MUTATIONS = new Set([
+  "banUser", "unbanUser", "setUserRole", "updateProfile", "unlinkGithub",
+  "revokeSession", "revokeOtherSessions", "submitReview",
+]);
+
+function changesAuth(document: DocumentNode, selections: SelectionSetNode): boolean {
+  return selections.selections.some((selection) => {
+    if (selection.kind === Kind.FIELD) return AUTH_MUTATIONS.has(selection.name.value);
+    if (selection.kind === Kind.INLINE_FRAGMENT) return changesAuth(document, selection.selectionSet);
+    const fragment = document.definitions.find((definition) =>
+      definition.kind === Kind.FRAGMENT_DEFINITION && definition.name.value === selection.name.value);
+    return fragment?.kind === Kind.FRAGMENT_DEFINITION && changesAuth(document, fragment.selectionSet);
+  });
+}
+
 const logOperations: Plugin = {
   onExecute({ args }) {
     const started = performance.now();
@@ -21,7 +36,7 @@ const logOperations: Plugin = {
     return {
       onExecuteDone({ result }) {
         // Mutations can change the user row or revoke sessions; never serve a cached user after one.
-        if (ast?.operation === "mutation") clearAuthCache();
+        if (ast?.operation === "mutation" && changesAuth(args.document, ast.selectionSet)) clearAuthCache();
         const errors = "errors" in result ? result.errors?.map((error) => error.message) : undefined;
         logger.info({ operation, durationMs: Math.round(performance.now() - started), errors }, "graphql operation");
       },

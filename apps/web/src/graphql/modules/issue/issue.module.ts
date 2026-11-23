@@ -4,6 +4,7 @@
 // - issue(id): detail (client + token + applicationCount)
 // - createIssue(input): post a new bounty (auth required)
 
+import { randomUUID } from "node:crypto";
 import { DAY_MS } from "@bloody-roar/shared/constants";
 import { executableCases } from "@bloody-roar/shared/test-runner";
 import { guardMessage } from "../../../ai/guard/service";
@@ -565,16 +566,27 @@ builder.queryField("issue", (t) =>
 builder.mutationField("recordIssueView", (t) => t.boolean({
   args: { issueId: t.arg.id({ required: true }) },
   resolve: async (_root, args, ctx) => {
-    const user = requireAuth(ctx), issueId = String(args.issueId), now = new Date();
-    return ctx.db.$transaction(async (tx) => {
-      const issue = await tx.issue.findUnique({ where: { id: issueId }, select: { id: true, clientId: true, isDraft: true } });
-      if (!issue || (issue.isDraft && issue.clientId !== user.id)) throw gqlError("Bounty not found", "NOT_FOUND");
-      const inserted = await tx.issueView.createMany({ data: [{ issueId, userId: user.id, viewedAt: now }], skipDuplicates: true });
-      const updated = inserted.count ? null : await tx.issueView.updateMany({ where: { issueId, userId: user.id, viewedAt: { lte: new Date(now.getTime() - 3_600_000) } }, data: { viewedAt: now } });
-      if (!inserted.count && !updated?.count) return false;
-      await tx.issue.update({ where: { id: issueId }, data: { viewCount: { increment: 1 } } });
-      return true;
-    });
+    const user = requireAuth(ctx), issueId = String(args.issueId);
+    const [result] = await ctx.db.$queryRaw<{ visible: boolean; counted: boolean }[]>`
+      WITH eligible AS (
+        SELECT id FROM issues
+        WHERE id = ${issueId} AND (NOT "isDraft" OR "clientId" = ${user.id})
+        FOR NO KEY UPDATE
+      ), recorded AS (
+        INSERT INTO issue_views (id, "issueId", "userId", "viewedAt")
+        SELECT ${randomUUID()}, id, ${user.id}, now() AT TIME ZONE 'UTC' FROM eligible
+        ON CONFLICT ("issueId", "userId") DO UPDATE SET "viewedAt" = EXCLUDED."viewedAt"
+        WHERE issue_views."viewedAt" <= EXCLUDED."viewedAt" - interval '1 hour'
+        RETURNING "issueId"
+      ), counted AS (
+        UPDATE issues SET "viewCount" = "viewCount" + 1, "updatedAt" = now() AT TIME ZONE 'UTC'
+        FROM recorded WHERE issues.id = recorded."issueId"
+        RETURNING issues.id
+      )
+      SELECT EXISTS (SELECT 1 FROM eligible) AS visible, EXISTS (SELECT 1 FROM counted) AS counted
+    `;
+    if (!result?.visible) throw gqlError("Bounty not found", "NOT_FOUND");
+    return result.counted;
   },
 }));
 

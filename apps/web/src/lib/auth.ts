@@ -88,9 +88,11 @@ export async function verifyJWT(token: string) {
 
 // Session restoration must distinguish an unavailable database from an invalid token.
 // A page load fires several requests with the same token; share one lookup for a moment.
-// shortcut: per-process cache, cleared on logout and every GraphQL mutation; use Redis if scaled out.
-const AUTH_CACHE_MS = 2000;
-const authCache = new Map<string, { at: number; result: ReturnType<typeof loadSession> }>();
+// shortcut: per-process cache, use shared invalidation when running multiple replicas.
+const AUTH_CACHE_MS = 30_000;
+type CachedSession = { expiresAt: number; result: Promise<Awaited<ReturnType<typeof loadSession>>["user"]> };
+const authGlobals = globalThis as typeof globalThis & { bloodyRoarAuthCache?: Map<string, CachedSession> };
+const authCache = authGlobals.bloodyRoarAuthCache ??= new Map();
 
 export function clearAuthCache() {
   authCache.clear();
@@ -98,24 +100,33 @@ export function clearAuthCache() {
 
 export function verifySessionJWT(token: string) {
   const hit = authCache.get(token);
-  if (hit && Date.now() - hit.at < AUTH_CACHE_MS) return hit.result;
-  const result = loadSession(token);
-  authCache.set(token, { at: Date.now(), result });
-  result.catch(() => authCache.delete(token));
-  // Forget the entry once it expires, so random tokens cannot grow the map.
-  setTimeout(() => authCache.delete(token), AUTH_CACHE_MS).unref();
-  return result;
+  if (hit && Date.now() < hit.expiresAt) return hit.result;
+  const entry: CachedSession = {
+    expiresAt: Date.now() + AUTH_CACHE_MS,
+    result: loadSession(token).then(({ user, expiresAt }) => {
+      entry.expiresAt = Math.min(entry.expiresAt, expiresAt);
+      return user;
+    }),
+  };
+  authCache.set(token, entry);
+  const forget = () => {
+    if (authCache.get(token) === entry) authCache.delete(token);
+  };
+  entry.result.catch(forget);
+  setTimeout(forget, AUTH_CACHE_MS).unref();
+  return entry.result;
 }
 
 async function loadSession(token: string) {
+  const invalid = { user: null, expiresAt: 0 };
   const auth = thirdwebAuth();
   let authUser: Awaited<ReturnType<typeof auth.authenticate>>;
   try {
     authUser = await auth.authenticate(token);
   } catch {
-    return null;
+    return invalid;
   }
-  if (!authUser?.address) return null;
+  if (!authUser?.address) return invalid;
 
   // Check if session is revoked via refreshHash; one joined query instead of two round trips.
   const refreshHash = crypto.createHash("sha256").update(token).digest("hex");
@@ -124,9 +135,9 @@ async function loadSession(token: string) {
     include: { user: true },
   });
 
-  if (!session || session.revokedAt || session.expiresAt <= new Date()) return null;
+  if (!session || session.revokedAt || session.expiresAt <= new Date()) return invalid;
 
   const user = session.user;
-  if (user.walletAddress !== authUser.address.toLowerCase() || user.isBanned) return null;
-  return user;
+  if (user.walletAddress !== authUser.address.toLowerCase() || user.isBanned) return invalid;
+  return { user, expiresAt: session.expiresAt.getTime() };
 }

@@ -2,7 +2,7 @@ import { ApplicationStatus, IssueStatus, Prisma, UserRole } from "@bloody-roar/d
 import { z } from "zod";
 import { builder } from "../../builder";
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "@bloody-roar/shared";
-import { requireAuth } from "../../context";
+import { requireAuth, type GraphQLContext } from "../../context";
 import { gqlError, parseOrThrow } from "../../errors";
 import { createNotificationSafely } from "../../../lib/services/notifications";
 import { guardMessage } from "../../../ai/guard/service";
@@ -45,6 +45,33 @@ const ApplySchema = z.object({
   message: z.string().trim().max(1000).optional(),
 });
 
+function issueApplications(db: GraphQLContext["db"], issueId: string, take = DEFAULT_PAGE_SIZE, cursor?: string | null, query: object = {}) {
+  return db.application.findMany({
+    ...query,
+    where: { issueId }, orderBy: [{ createdAt: "asc" }, { id: "asc" }], take,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}), include: APPLICATION_INCLUDE,
+  });
+}
+
+builder.prismaObjectFields(IssueRef, (t) => ({
+  ownerApplications: t.field({
+    type: [ApplicationRef],
+    resolve: (issue, _args, ctx) => ctx.user?.id === issue.clientId ? issueApplications(ctx.db, issue.id) : [],
+  }),
+  viewerApplication: t.field({
+    type: ApplicationRef,
+    nullable: true,
+    resolve: (issue, _args, ctx) => {
+      const user = ctx.user;
+      if (!user || user.role === "ADMIN" || user.id === issue.clientId) return null;
+      return ctx.db.application.findUnique({
+        where: { issueId_developerId: { issueId: issue.id, developerId: user.id } },
+        include: APPLICATION_INCLUDE,
+      });
+    },
+  }),
+}));
+
 builder.queryFields((t) => ({
   applications: t.prismaField({
     type: [ApplicationRef],
@@ -62,9 +89,7 @@ builder.queryFields((t) => ({
       const cursor = page.after ? decodeCursor(page.after) : null;
       if (cursor && !await ctx.db.application.findFirst({ where: { id: cursor, issueId: args.issueId }, select: { id: true } }))
         throw gqlError("Cursor does not belong to this applicant list", "INVALID_CURSOR");
-      return ctx.db.application.findMany({ ...query, where: { issueId: args.issueId },
-        orderBy: [{ createdAt: "asc" }, { id: "asc" }], take: page.first ?? DEFAULT_PAGE_SIZE,
-        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}), include: APPLICATION_INCLUDE });
+      return issueApplications(ctx.db, args.issueId, page.first ?? DEFAULT_PAGE_SIZE, cursor, query);
     },
   }),
   myApplications: t.prismaField({

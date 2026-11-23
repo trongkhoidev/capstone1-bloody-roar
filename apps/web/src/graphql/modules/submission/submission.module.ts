@@ -1,6 +1,6 @@
 import { type Prisma, SubmissionStatus } from "@bloody-roar/database";
 import { builder } from "../../builder";
-import { requireAuth } from "../../context";
+import { requireAuth, type GraphQLContext } from "../../context";
 import { gqlError } from "../../errors";
 import { ISSUE_INCLUDE, IssueRef } from "../issue/issue.module";
 import { UserRef } from "../user/user.module";
@@ -45,6 +45,28 @@ export const SubmissionRef = builder.prismaObject("Submission", {
   }),
 });
 
+function submissionList(ctx: GraphQLContext, issue: { id: string; clientId: string; developerId: string | null }, query: object = {}) {
+  const user = ctx.user;
+  const clientOnly = user?.role !== "ADMIN" && issue.clientId === user?.id && issue.developerId !== user.id;
+  return ctx.db.submission.findMany({
+    ...query,
+    where: { issueId: issue.id, ...(clientOnly && { status: { not: SubmissionStatus.DRAFT } }) },
+    orderBy: [{ submittedAt: "desc" }, { id: "asc" }],
+    include: SUBMISSION_INCLUDE,
+  });
+}
+
+builder.prismaObjectFields(IssueRef, (t) => ({
+  viewerSubmissions: t.field({
+    type: [SubmissionRef],
+    resolve: (issue, _args, ctx) => {
+      const user = ctx.user;
+      if (!user || (user.id !== issue.clientId && user.id !== issue.developerId && !(user.role === "ADMIN" && issue.status === "DISPUTED"))) return [];
+      return submissionList(ctx, issue);
+    },
+  }),
+}));
+
 builder.queryField("submissions", (t) =>
   t.prismaField({
     type: [SubmissionRef],
@@ -58,15 +80,7 @@ builder.queryField("submissions", (t) =>
       if (!issue) throw gqlError("Bounty not found", "NOT_FOUND");
       if (user.role !== "ADMIN" && issue.clientId !== user.id && issue.developerId !== user.id)
         throw gqlError("Only participants or admins can view submissions", "FORBIDDEN");
-      return ctx.db.submission.findMany({
-        ...query,
-        where: {
-          issueId: args.issueId,
-          ...(user.role !== "ADMIN" && issue.clientId === user.id && issue.developerId !== user.id && { status: { not: SubmissionStatus.DRAFT } }),
-        },
-        orderBy: [{ submittedAt: "desc" }, { id: "asc" }],
-        include: SUBMISSION_INCLUDE,
-      });
+      return submissionList(ctx, { ...issue, id: args.issueId }, query);
     },
   }),
 );

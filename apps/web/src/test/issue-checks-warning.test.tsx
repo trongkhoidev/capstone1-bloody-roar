@@ -54,9 +54,22 @@ describe("automated checks warning on the issue page", () => {
     await showIssue();
     expect(await screen.findByText(headline)).toBeInTheDocument();
     expect(screen.getByText(explanation)).toBeInTheDocument();
-    expect(request).toHaveBeenCalledWith(expect.stringContaining("noExecutableTests"), { id: "issue" });
+    expect(request).toHaveBeenCalledWith(expect.stringContaining("noExecutableTests"), { id: "issue", initial: true });
     await act(async () => { fireEvent.click(screen.getByRole("tab", { name: /delivery/i })); });
     expect(screen.getByText(headline)).toBeInTheDocument();
+  });
+
+  it("loads the issue and viewer data together while unread and view tracking run separately", async () => {
+    await showIssue();
+    await screen.findByText("Fix addition");
+    const operations = request.mock.calls.map(([query]) => String(query));
+    const issueRequests = operations.filter((query) => query.includes("query IssueDetail"));
+    expect(issueRequests).toHaveLength(1);
+    for (const field of ["reservation", "ownerApplications", "viewerApplication", "viewerSubmissions"]) {
+      expect(issueRequests[0]).toContain(field + " @include");
+    }
+    expect(operations.filter((query) => query.includes("query UnreadMessages"))).toHaveLength(1);
+    expect(operations.filter((query) => query.includes("mutation RecordIssueView"))).toHaveLength(1);
   });
 
   it("does not warn about missing checks when approved code exists", async () => {

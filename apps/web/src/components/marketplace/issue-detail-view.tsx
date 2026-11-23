@@ -35,12 +35,21 @@ const defaultDeliveryDeadline = () => new Date(Date.now() + 7 * 86_400_000).toIS
 const UNREAD_QUERY = `query UnreadMessages($issueId: String!) { unreadMessageCount(issueId: $issueId) }`;
 
 const ISSUE_QUERY = `
-  query IssueDetail($id: ID!) {
+  query IssueDetail($id: ID!, $initial: Boolean! = false) {
     issue(id: $id) {
       id title description category status githubRepo bountyAmount { formatted raw decimals } requiredSkills difficulty timeEstimate
       expiresAt viewCount applicationCount createdAt clientId developerId noExecutableTests
       viewerCapabilities { canApply canSelect canFund canSubmit canRelease canRequestChanges canDispute canProposeSettlement canRevokeSettlement canAcceptSettlement canSubmitEvidence canChallengeRuling canFinalizeRuling canFinalizeArbiterTimeoutSplit canClaimMissedDeliveryRefund canClaimReviewTimeout }
       escrow { availableActions { action reasonDisabled } }
+      reservation @include(if: $initial) { id status }
+      ownerApplications @include(if: $initial) {
+        id status message createdAt
+        developer { id name avatar walletAddress reputationScore isGithubVerified skills }
+      }
+      viewerApplication @include(if: $initial) { id status message }
+      viewerSubmissions @include(if: $initial) {
+        id status description pullRequestUrl submittedAt reviewedAt reviewNotes developer { name walletAddress }
+      }
       token { symbol name }
       attachments { id fileName fileUrl fileMime }
       client { id name avatar walletAddress reputationScore isGithubVerified }
@@ -101,6 +110,9 @@ const PREPARE_RAISE_DISPUTE = `mutation PrepareRaise($issue: ID!, $manifest: ID!
 const CANCEL_MUTATION = `mutation Cancel($id: ID!) { cancelIssue(id: $id) { id status } }`;
 const SUBMISSIONS_QUERY = `query TaskSubmissions($issueId: String!) { submissions(issueId: $issueId) { id status description pullRequestUrl submittedAt reviewedAt reviewNotes developer { name walletAddress } } }`;
 
+const recordView = (id: string) =>
+  graphqlRequest("mutation RecordIssueView($id: ID!) { recordIssueView(issueId: $id) }", { id }).catch(() => undefined);
+
 type PreparedStep = { intentId: string; method: string; contractAddress: string; data: string; value: string };
 
 type ReservationRow = { id: string; status: string; chainId: number; contractAddress: string; tokenAddress: string; escrowKey: string; termsHash: string; amountRaw: string; deliveryDeadline: string; clientWallet: string; developerWallet: string };
@@ -109,7 +121,13 @@ type ViewerCapabilities = { canApply?: boolean; canSelect: boolean; canFund: boo
 type IssueDetail = IssueItem & { noExecutableTests: boolean; githubRepo?: string | null; bountyRaw: string; bountyDecimals: number; clientId: string; developerId?: string | null; developer?: IssueItem["client"] | null; viewerCapabilities?: ViewerCapabilities | null; escrow?: { availableActions: Array<{ action: string; reasonDisabled: string | null }> } | null };
 type Application = { id: string; status: string; message?: string | null; createdAt: string; developer: IssueItem["client"] & { skills?: string[] } };
 
-type DetailResponse = { issue: (Omit<IssueDetail, "bountyAmount" | "bountyRaw" | "bountyDecimals"> & { bountyAmount: { formatted: string; raw: string; decimals: number } }) | null };
+type DetailResponse = { issue: (Omit<IssueDetail, "bountyAmount" | "bountyRaw" | "bountyDecimals"> & {
+  bountyAmount: { formatted: string; raw: string; decimals: number };
+  reservation?: Pick<ReservationRow, "id" | "status"> | null;
+  ownerApplications?: Application[];
+  viewerApplication?: { id: string; status: string; message?: string | null } | null;
+  viewerSubmissions?: Submission[];
+}) | null };
 
 type ApplicationResponse = { applications: Application[] };
 type Submission = { id: string; status: string; description?: string | null; pullRequestUrl?: string | null; submittedAt: string; reviewedAt?: string | null; reviewNotes?: string | null; developer: { name?: string | null; walletAddress: string } };
@@ -143,6 +161,8 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const [showDisputeForm, setShowDisputeForm] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [requiresTests, setRequiresTests] = useState(false);
+  const checksRequired = useRef(false);
+  const viewed = useRef<string | null>(null);
   const [testsPassed, setTestsPassed] = useState(false);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [deliveryDescription, setDeliveryDescription] = useState("");
@@ -168,14 +188,34 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   }, []);
 
   // Refreshes in place; the full-page loader and error reset happen only when the issue id changes (see effect below).
-  const load = useCallback(async () => {
+  const load = useCallback(async (initial = false) => {
     const isCurrent = () => currentView.current.issueId === issueId && currentView.current.userId === user?.id;
     try {
-      const result = await graphqlRequest<DetailResponse>(ISSUE_QUERY, { id: issueId });
+      const result = initial
+        ? await queryClient.fetchQuery({
+            queryKey: ["issue-detail", issueId, user?.id ?? null, "initial"],
+            queryFn: () => graphqlRequest<DetailResponse>(ISSUE_QUERY, { id: issueId, initial: true }),
+            staleTime: 0,
+            retry: false,
+          })
+        : await graphqlRequest<DetailResponse>(ISSUE_QUERY, { id: issueId });
       if (!isCurrent()) return;
       if (result.issue) {
         queryClient.setQueryData(["issue-detail", issueId, user?.id ?? null], result.issue);
-        setRequiresTests(!result.issue.noExecutableTests);
+        checksRequired.current = !result.issue.noExecutableTests;
+        setRequiresTests(checksRequired.current);
+        if (initial) {
+          const { reservation, ownerApplications, viewerApplication, viewerSubmissions } = result.issue;
+          setReservationId(reservation?.status === "AWAITING_FUNDING" && result.issue.clientId === user?.id ? reservation.id : null);
+          setApplications(ownerApplications ?? []);
+          setMyApplication(viewerApplication ?? null);
+          setSubmissions(viewerSubmissions ?? []);
+          const viewKey = `${issueId}:${user?.id}`;
+          if (user?.id && viewed.current !== viewKey) {
+            viewed.current = viewKey;
+            void recordView(issueId);
+          }
+        }
         setIssue({ ...result.issue, bountyAmount: Number(result.issue.bountyAmount.formatted), bountyRaw: result.issue.bountyAmount.raw, bountyDecimals: result.issue.bountyAmount.decimals });
       } else {
         setIssue(null);
@@ -189,6 +229,8 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   }, [issueId, queryClient, user?.id, setError]);
 
   const onExecutableChange = useCallback((hasTests: boolean) => {
+    if (checksRequired.current === hasTests) return;
+    checksRequired.current = hasTests;
     setRequiresTests(hasTests);
     void load();
   }, [load]);
@@ -198,22 +240,17 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     const cached = queryClient.getQueryData<NonNullable<DetailResponse["issue"]>>(key);
     setError(null);
     if (cached) {
-      setRequiresTests(!cached.noExecutableTests);
+      checksRequired.current = !cached.noExecutableTests;
+      setRequiresTests(checksRequired.current);
       setIssue({ ...cached, bountyAmount: Number(cached.bountyAmount.formatted), bountyRaw: cached.bountyAmount.raw, bountyDecimals: cached.bountyAmount.decimals });
       setIsLoading(false);
     } else { setIssue(null); setIsLoading(true); }
-    if (!cached || Date.now() - (queryClient.getQueryState(key)?.dataUpdatedAt ?? 0) >= 60_000) void load();
+    setApplications(cached?.ownerApplications ?? []);
+    setMyApplication(cached?.viewerApplication ?? null);
+    setSubmissions(cached?.viewerSubmissions ?? []);
+    setReservationId(null);
+    void load(true);
   }, [issueId, load, queryClient, user?.id, setError]);
-
-  const viewed = useRef<string | null>(null);
-  useEffect(() => {
-    if (!user?.id || issue?.id !== issueId) return;
-    const key = `${issueId}:${user.id}`;
-    if (viewed.current === key) return;
-    viewed.current = key;
-    void graphqlRequest("mutation RecordIssueView($id: ID!) { recordIssueView(issueId: $id) }", { id: issueId })
-      .catch(() => undefined);
-  }, [issue?.id, issueId, user?.id]);
 
   // Live refresh: the server emits escrow:invalidate to the task room when a confirmed transaction changes the escrow.
   useEffect(() => {
@@ -250,49 +287,9 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   // The card shows only when the server lists an action or evidence step for this viewer; the status check lives there.
   const escrowCardVisible = Boolean(issue?.viewerCapabilities?.canSubmitEvidence || ESCROW_ACTIONS.some((action) => issue?.viewerCapabilities?.[action.flag] && actionOf(action.action)));
 
-  useEffect(() => {
-    if (!isClient) return;
-    let active = true;
-    void graphqlRequest<{ reservation: ReservationRow | null }>(RESERVATION_QUERY, { issueId })
-      .then((result) => { if (active) setReservationId(result.reservation?.status === "AWAITING_FUNDING" ? result.reservation.id : null); })
-      .catch(() => undefined);
-    return () => { active = false; };
-  }, [isClient, issueId]);
   const isDeveloper = Boolean(user && issue?.developerId === user.id);
   const isAdmin = user?.role === "ADMIN";
   const canChat = Boolean(user && (isClient || isDeveloper || (isAdmin && issue?.status === "DISPUTED")));
-
-  useEffect(() => {
-    if (!isClient) return;
-    let active = true;
-    void graphqlRequest<ApplicationResponse>(APPLICATIONS_QUERY, { issueId })
-      .then((result) => { if (active) setApplications(result.applications); })
-      .catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : "Could not load applications."); });
-    return () => { active = false; };
-  }, [isClient, issueId, setError]);
-
-  useEffect(() => {
-    if (!user || isClient || isAdmin) return;
-    let active = true;
-    void graphqlRequest<{ myApplications: Array<{ id: string; issueId: string; status: string; message?: string | null }> }>(MY_APPLICATIONS_QUERY)
-      .then((result) => {
-        if (active) {
-          const app = result.myApplications?.find((a) => a.issueId === issueId) ?? null;
-          setMyApplication(app);
-        }
-      })
-      .catch(() => undefined);
-    return () => { active = false; };
-  }, [user, isClient, isAdmin, issueId]);
-
-  useEffect(() => {
-    if (!canChat) return;
-    let active = true;
-    void graphqlRequest<SubmissionResponse>(SUBMISSIONS_QUERY, { issueId })
-      .then((result) => { if (active) setSubmissions(result.submissions); })
-      .catch(() => undefined);
-    return () => { active = false; };
-  }, [canChat, issueId]);
 
   // Unread badge on the Bounty Chat tab: the server count is the only source; refetch it on each realtime message from the other side.
   const [chatUnread, setChatUnread] = useState(0);

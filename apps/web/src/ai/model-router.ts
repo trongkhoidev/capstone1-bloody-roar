@@ -101,6 +101,14 @@ function buildProviders(task: AIWorkload): AIProvider[] {
   return providers;
 }
 
+export function parseAIJson(text: string): unknown {
+  const unfenced = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  const start = unfenced.indexOf("{");
+  const end = unfenced.lastIndexOf("}");
+  if (start < 0 || end < start) throw new Error("The model returned invalid JSON.");
+  return JSON.parse(unfenced.slice(start, end + 1));
+}
+
 export function isAIConfigured(task: AIWorkload) {
   return buildProviders(task).length > 0;
 }

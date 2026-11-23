@@ -5,7 +5,7 @@ import { z } from "zod";
 import { builder } from "../../builder";
 import { requireAdmin, requireAuth } from "../../context";
 import { gqlError, parseOrThrow } from "../../errors";
-import { completeAI } from "../../../ai/model-router";
+import { completeAI, parseAIJson } from "../../../ai/model-router";
 import { scanAndMask } from "../../../ai/guard/scanner";
 import { validTestPath } from "@bloody-roar/shared/test-runner";
 import { queueBaseCheck } from "../../../lib/test-runs";
@@ -61,14 +61,6 @@ const GeneratedCaseSchema = z.object({
 });
 
 const GeneratedCasesSchema = z.object({ testCases: z.array(GeneratedCaseSchema).min(3).max(12) });
-
-function parseAIJson(text: string): unknown {
-  const unfenced = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
-  const start = unfenced.indexOf("{");
-  const end = unfenced.lastIndexOf("}");
-  if (start < 0 || end < start) throw new Error("The model returned invalid JSON.");
-  return JSON.parse(unfenced.slice(start, end + 1));
-}
 
 builder.queryField("testCases", (t) =>
   t.field({

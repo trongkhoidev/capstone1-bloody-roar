@@ -34,7 +34,8 @@ const EscrowProjectionRef = builder.prismaObject("EscrowProjection", { fields: (
 type Capabilities = { canApply: boolean; canSelect: boolean; canFund: boolean; canSubmit: boolean; canRelease: boolean; canDispute: boolean;
   canRequestChanges: boolean; canProposeSettlement: boolean; canRevokeSettlement: boolean; canAcceptSettlement: boolean;
   canSubmitEvidence: boolean; canChallengeRuling: boolean; canFinalizeRuling: boolean; canFinalizeArbiterTimeoutSplit: boolean;
-  canClaimMissedDeliveryRefund: boolean; canClaimReviewTimeout: boolean; canPostInitialRuling: boolean; canPostFinalRuling: boolean };
+  canClaimMissedDeliveryRefund: boolean; canClaimReviewTimeout: boolean; canPostInitialRuling: boolean; canPostFinalRuling: boolean;
+  similarFixIssueId: string | null };
 const CapabilityRef = builder.objectRef<Capabilities>("ViewerCapabilities").implement({ fields: (t) => ({
   canApply: t.exposeBoolean("canApply"), canSelect: t.exposeBoolean("canSelect"), canFund: t.exposeBoolean("canFund"),
   canSubmit: t.exposeBoolean("canSubmit"), canRelease: t.exposeBoolean("canRelease"), canDispute: t.exposeBoolean("canDispute"),
@@ -44,6 +45,7 @@ const CapabilityRef = builder.objectRef<Capabilities>("ViewerCapabilities").impl
   canFinalizeRuling: t.exposeBoolean("canFinalizeRuling"), canFinalizeArbiterTimeoutSplit: t.exposeBoolean("canFinalizeArbiterTimeoutSplit"),
   canClaimMissedDeliveryRefund: t.exposeBoolean("canClaimMissedDeliveryRefund"), canClaimReviewTimeout: t.exposeBoolean("canClaimReviewTimeout"),
   canPostInitialRuling: t.exposeBoolean("canPostInitialRuling"), canPostFinalRuling: t.exposeBoolean("canPostFinalRuling"),
+  similarFixIssueId: t.exposeString("similarFixIssueId", { nullable: true, description: "A completed issue the viewer fixed that matches this one (US-107); only that developer sees it" }),
 }) });
 
 builder.prismaObjectFields(IssueRef, (t) => ({
@@ -60,10 +62,11 @@ builder.prismaObjectFields(IssueRef, (t) => ({
   viewerCapabilities: t.field({ type: CapabilityRef, resolve: async (issue, _args, ctx) => {
     const user = ctx.user, now = new Date();
     const enabledUser = !!user && !user.isBanned;
-    const [projection, reservation, application] = await Promise.all([
+    const [projection, reservation, application, similar] = await Promise.all([
       ctx.db.escrowProjection.findUnique({ where: { issueId: issue.id } }),
       user ? ctx.db.fundingReservation.findFirst({ where: { issueId: issue.id, status: "AWAITING_FUNDING", clientId: user.id }, orderBy: { createdAt: "desc" } }) : null,
       user ? ctx.db.application.findUnique({ where: { issueId_developerId: { issueId: issue.id, developerId: user.id } }, select: { status: true } }) : null,
+      user ? ctx.db.issueSimilarity.findFirst({ where: { issueId: issue.id, developerId: user.id }, orderBy: { score: "desc" }, select: { similarIssueId: true } }) : null,
     ]);
     const ruling = projection ? await currentRuling(ctx.db, projection) : null;
     const chainNow = projection ? await readChainTime(projection.chainId) : now;
@@ -91,6 +94,7 @@ builder.prismaObjectFields(IssueRef, (t) => ({
       canFinalizeArbiterTimeoutSplit: enabledUser && enabled("finalizeArbiterTimeoutSplit"),
       canClaimMissedDeliveryRefund: enabledUser && enabled("claimMissedDeliveryRefund"), canClaimReviewTimeout: enabledUser && enabled("claimReviewTimeout"),
       canPostInitialRuling: isArbiter && enabled("postInitialRuling"), canPostFinalRuling: isArbiter && enabled("postFinalRuling"),
+      similarFixIssueId: enabledUser ? similar?.similarIssueId ?? null : null,
     };
   } }),
 }));

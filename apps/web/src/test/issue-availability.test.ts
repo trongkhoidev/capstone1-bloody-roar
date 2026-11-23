@@ -24,6 +24,7 @@ function fakeDb(p: Record<string, unknown> | null = projection, i = issue) {
       return null;
     }) },
     application: { findUnique: vi.fn().mockResolvedValue(null) },
+    issueSimilarity: { findFirst: vi.fn().mockResolvedValue(null) },
     submission: { findFirst: vi.fn().mockResolvedValue(submission) }, rulingRecord: { findFirst: vi.fn().mockResolvedValue(null) },
   };
 }

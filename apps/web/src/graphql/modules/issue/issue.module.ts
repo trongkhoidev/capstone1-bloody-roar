@@ -22,6 +22,7 @@ import { gqlError, parseOrThrow } from "../../errors";
 import type { Prisma } from "@bloody-roar/database";
 import { IssueCategory, IssueStatus, UserRole, ApplicationStatus } from "@bloody-roar/database";
 import { createNotificationSafely } from "../../../lib/services/notifications";
+import { detectSimilarIssuesInBackground } from "../../../lib/services/similar-issues";
 import { UserRef } from "../user/user.module";
 import { AttachmentRef } from "../chat/chat.module";
 import { z } from "zod";
@@ -633,7 +634,7 @@ builder.mutationField("createIssue", (t) =>
       const bountyRaw = parseTokenAmountInput(input.bountyAmount, token);
       assertBountyRange(bountyRaw, token);
 
-      return ctx.db.issue.create({
+      const created = await ctx.db.issue.create({
         data: {
           title: input.title,
           description: (await guardMessage(input.description)).content,
@@ -652,6 +653,8 @@ builder.mutationField("createIssue", (t) =>
         },
         include: ISSUE_INCLUDE,
       });
+      detectSimilarIssuesInBackground(ctx.db, created.id, user);
+      return created;
     },
   }),
 );

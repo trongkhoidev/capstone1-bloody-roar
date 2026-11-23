@@ -1,17 +1,17 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { AUTH_COOKIE_NAME, verifyJWT } from "./auth";
+import { AUTH_COOKIE_NAME, verifySessionJWT } from "./auth";
 
 type Role = "CLIENT" | "DEVELOPER" | "ADMIN";
 
-/** Signed-in user for server components, or null for guests and expired sessions. */
+/** Returns null for a confirmed guest and undefined when session restoration should retry. */
 export async function getServerUser() {
   const token = cookies().get(AUTH_COOKIE_NAME)?.value;
   if (!token) return null;
   try {
-    return await verifyJWT(token);
+    return await verifySessionJWT(token);
   } catch {
-    return null;
+    return undefined;
   }
 }
 

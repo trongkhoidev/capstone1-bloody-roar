@@ -4,6 +4,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
+import { toPublicAuthUser } from "@/lib/auth";
+import { getServerUser } from "@/lib/server-session";
 import { Navbar } from "@/components/layout/Navbar";
 
 export const metadata: Metadata = {
@@ -45,11 +47,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const serverUser = await getServerUser();
+  const publicUser = toPublicAuthUser(serverUser ?? null);
+  const initialUser = publicUser ? { ...publicUser, createdAt: publicUser.createdAt.toISOString() } : serverUser === null ? null : undefined;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -70,7 +76,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--ink)] font-sans antialiased">
-        <Providers>
+        <Providers initialUser={initialUser}>
           <Navbar />
           <div className="flex-1 br">{children}</div>
         </Providers>

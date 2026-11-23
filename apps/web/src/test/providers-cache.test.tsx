@@ -23,3 +23,18 @@ describe("logout cache", () => {
     expect(client.getQueryData(["marketplace-issues", {}])).toEqual({ public: true });
   });
 });
+
+it("gives children the server session on their first render without requesting it again", () => {
+  const get = vi.spyOn(apiClient, "get");
+  const seen: Array<string | undefined> = [];
+  const initialUser = { id: "server-user", role: "DEVELOPER" } as const;
+  function Capture() {
+    seen.push(useAuthStore((state) => state.user?.id));
+    return null;
+  }
+  render(<Providers initialUser={initialUser as never}><Capture /></Providers>);
+  expect(seen[0]).toBe("server-user");
+  expect(useAuthStore.getState().user?.id).not.toBe("server-user");
+  expect(get).not.toHaveBeenCalled();
+  get.mockRestore();
+});

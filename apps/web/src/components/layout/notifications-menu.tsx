@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { Bell, CheckCheck } from "lucide-react";
 import { graphqlRequest } from "@/lib/graphql-client";
-import { useAuthStore } from "@/lib/store/use-auth-store";
+import { useAuthStore, useAuthStoreApi } from "@/lib/store/use-auth-store";
 
 const NOTIFICATIONS_QUERY = `query Notifications { unreadNotificationCount notifications(first: 20) { id type title body isRead link createdAt } }`;
 const UNREAD_IDS_QUERY = `query UnreadNotificationIds { unreadNotificationIds }`;
@@ -15,6 +15,7 @@ type Notification = { id: string; type: string; title: string; body: string; isR
 type NotificationData = { unreadNotificationCount: number; notifications: Notification[] };
 
 export function NotificationsMenu() {
+  const authStore = useAuthStoreApi();
   const user = useAuthStore((state) => state.user);
   const userId = user?.id;
   const [isMounted, setIsMounted] = useState(false);
@@ -73,7 +74,7 @@ export function NotificationsMenu() {
           notifications: current.notifications.map((item) => item.id === notification.id ? { ...item, isRead: false } : item) };
       });
     } finally {
-      if (useAuthStore.getState().user?.id === user.id) void queryClient.invalidateQueries({ queryKey: key });
+      if (authStore.getState().user?.id === user.id) void queryClient.invalidateQueries({ queryKey: key });
     }
   };
 

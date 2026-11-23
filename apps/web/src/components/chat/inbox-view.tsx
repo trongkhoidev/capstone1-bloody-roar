@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { io } from "socket.io-client";
 import { graphqlRequest } from "@/lib/graphql-client";
-import { useAuthStore } from "@/lib/store/use-auth-store";
+import { useAuthStore, useAuthStoreApi } from "@/lib/store/use-auth-store";
 import { useUiPreferences } from "@/lib/ui-preferences";
 import { AuthRequiredPanel } from "@/components/auth/auth-required-panel";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { ChatRoom } from "./chat-room";
 type Conversation = { id: string; kind: string; issueId: string; issue: { title: string }; counterpart: { name: string | null; walletAddress: string } | null; lastMessage: { content: string } | null; lastMessageAt: string | null; unreadCount: number; canWrite: boolean };
 const QUERY = `query Inbox($after: ID) { myConversations(first: 30, after: $after) { id kind issueId issue { title } counterpart { name walletAddress } lastMessage { content } lastMessageAt unreadCount canWrite } }`;
 export function InboxView() {
+  const authStore = useAuthStoreApi();
   const user = useAuthStore((s) => s.user), { theme } = useUiPreferences(), params = useSearchParams();
   const [cachedRows, setRows] = useState<Conversation[]>([]), [loadedFor, setLoadedFor] = useState<string | null>(null), [selected, setSelected] = useState<string | null>(params.get("c"));
   const [unreadOnly, setUnreadOnly] = useState(false), [error, setError] = useState<string | null>(null), [more, setMore] = useState(false);
@@ -21,12 +22,12 @@ export function InboxView() {
     const actorId = user?.id; if (!actorId) return;
     try {
       const result = await graphqlRequest<{ myConversations: Conversation[] }>(QUERY, { after: after ?? null });
-      if (useAuthStore.getState().user?.id !== actorId) return;
+      if (authStore.getState().user?.id !== actorId) return;
       setLoadedFor(actorId);
       setRows((current) => after ? [...current, ...result.myConversations.filter((r) => !current.some((c) => c.id === r.id))] : result.myConversations);
       setMore(result.myConversations.length === 30); setError(null);
-    } catch (e) { if (useAuthStore.getState().user?.id !== actorId) return; setLoadedFor(actorId); setError(e instanceof Error ? e.message : "Could not load messages"); }
-  }, [user?.id]);
+    } catch (e) { if (authStore.getState().user?.id !== actorId) return; setLoadedFor(actorId); setError(e instanceof Error ? e.message : "Could not load messages"); }
+  }, [authStore, user?.id]);
   useEffect(() => {
     setRows([]);
     if (!user) return;

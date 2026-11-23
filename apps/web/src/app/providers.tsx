@@ -5,12 +5,12 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
-import { useAuthStore } from "@/lib/store/use-auth-store";
+import { AuthStoreContext, createAuthStore, useAuthStore, type AuthUser } from "@/lib/store/use-auth-store";
 import { Toaster } from "@/components/ui/toaster";
 import { UiPreferencesProvider } from "@/lib/ui-preferences";
 
-export function Providers({ children }: { children: ReactNode }) {
-  const restoreSession = useAuthStore((state) => state.restoreSession);
+export function Providers({ children, initialUser }: { children: ReactNode; initialUser?: AuthUser | null | undefined }) {
+  const [authStore] = useState(() => initialUser === undefined ? useAuthStore : createAuthStore(initialUser));
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -27,19 +27,21 @@ export function Providers({ children }: { children: ReactNode }) {
     // Remove JWTs persisted by older builds. Authentication now uses an
     // HttpOnly cookie managed by the server.
     window.localStorage.removeItem("bloody-roar-auth");
-    void restoreSession();
-  }, [restoreSession]);
+    if (initialUser === undefined) void authStore.getState().restoreSession();
+  }, [authStore, initialUser]);
 
-  useEffect(() => useAuthStore.subscribe((state, previous) => {
+  useEffect(() => authStore.subscribe((state, previous) => {
     if (previous.user && !state.user) {
       queryClient.removeQueries({ queryKey: ["issue-detail"] });
       queryClient.removeQueries({ queryKey: ["notifications"] });
     }
-  }), [queryClient]);
+  }), [authStore, queryClient]);
 
   return (
-    <UiPreferencesProvider>
-      <QueryClientProvider client={queryClient}>{children}<Toaster /></QueryClientProvider>
-    </UiPreferencesProvider>
+    <AuthStoreContext.Provider value={authStore}>
+      <UiPreferencesProvider>
+        <QueryClientProvider client={queryClient}>{children}<Toaster /></QueryClientProvider>
+      </UiPreferencesProvider>
+    </AuthStoreContext.Provider>
   );
 }

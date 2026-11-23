@@ -2,7 +2,8 @@
 // Zustand Authentication Store — SIWE (Sign-In with Ethereum) & User Session
 // Trâm (UI/UX Designer & Test Engineer) — Sprint 1 (S1-AUTH-08)
 
-import { create } from "zustand";
+import { createContext, useContext } from "react";
+import { createStore, useStore } from "zustand";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client";
 import { createLoginMessage, type SiweLoginPayload } from "@/lib/auth/siwe";
 
@@ -55,12 +56,12 @@ interface AuthState {
   ) => Promise<boolean>;
 }
 
-let restorePromise: Promise<void> | null = null;
-
-export const useAuthStore = create<AuthState>()(
+export function createAuthStore(initialUser: AuthUser | null = null) {
+  let restorePromise: Promise<void> | null = null;
+  return createStore<AuthState>()(
     (set, get) => ({
-      user: null,
-      status: "idle",
+      user: initialUser,
+      status: initialUser ? "authenticated" : "idle",
       error: null,
 
       setAuth: (user: AuthUser) => {
@@ -170,4 +171,20 @@ export const useAuthStore = create<AuthState>()(
         }
       },
     })
+);
+}
+
+const fallbackStore = createAuthStore();
+export const AuthStoreContext = createContext(fallbackStore);
+
+export function useAuthStoreApi() {
+  return useContext(AuthStoreContext);
+}
+
+export const useAuthStore = Object.assign(
+  function useAuthStore<T = AuthState>(selector?: (state: AuthState) => T) {
+    const store = useAuthStoreApi();
+    return useStore(store, selector ?? ((state) => state as T));
+  },
+  fallbackStore,
 );

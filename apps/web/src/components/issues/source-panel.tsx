@@ -2,12 +2,13 @@
 import { useEffect, useState } from "react";
 import { graphqlRequest } from "@/lib/graphql-client";
 import { uploadFile } from "@/lib/upload";
-import { useAuthStore } from "@/lib/store/use-auth-store";
+import { useAuthStore, useAuthStoreApi } from "@/lib/store/use-auth-store";
 import { Button } from "@/components/ui/button";
 
 type Source = { downloadUrl?: string | null; status: string; framework: string | null; repoUrl: string | null; ref: string | null; commitSha: string | null; error: string | null };
 const QUERY = `query Source($id: ID!) { issueSource(issueId: $id) { status framework repoUrl ref commitSha error downloadUrl } }`;
 export function SourcePanel({ issueId, repository, editable }: { issueId: string; repository?: string | null; editable: boolean }) {
+  const authStore = useAuthStoreApi();
   const actorId = useAuthStore((s) => s.user?.id) ?? "guest";
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const [cachedSource, setSource] = useState<Source | null>(null), [url, setUrl] = useState<string | null>(null), [ref, setRef] = useState("HEAD"), [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null);
@@ -15,9 +16,9 @@ export function SourcePanel({ issueId, repository, editable }: { issueId: string
   const source = loadedFor === actorId ? cachedSource : null;
   useEffect(() => {
     let active = true;
-    const load = () => { void graphqlRequest<{ issueSource: Source | null }>(QUERY, { id: issueId }).then((r) => { if (active && (useAuthStore.getState().user?.id ?? "guest") === actorId) { setSource(r.issueSource); setLoadedFor(actorId); } }).catch((e) => { if (active) setError(e.message); }); };
+    const load = () => { void graphqlRequest<{ issueSource: Source | null }>(QUERY, { id: issueId }).then((r) => { if (active && (authStore.getState().user?.id ?? "guest") === actorId) { setSource(r.issueSource); setLoadedFor(actorId); } }).catch((e) => { if (active) setError(e.message); }); };
     load(); const timer = source?.status === "PENDING" ? setInterval(load, 5000) : null; return () => { active = false; if (timer) clearInterval(timer); };
-  }, [issueId, actorId, source?.status]);
+  }, [authStore, issueId, actorId, source?.status]);
   const save = async (file?: File) => {
     const repo = (url ?? repository ?? "").trim();
     if (!file && (!/^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo) || repo.endsWith(".git"))) { setRepoError(true); return; }
@@ -25,7 +26,7 @@ export function SourcePanel({ issueId, repository, editable }: { issueId: string
     try {
       const attachment = file ? await uploadFile(new File([file], file.name, { type: "application/zip" }), "SOURCE", issueId) : null;
       const result = await graphqlRequest<{ setIssueSource: Source }>(`mutation SetSource($id: ID!, $repo: String, $ref: String, $file: ID) { setIssueSource(issueId: $id, repoUrl: $repo, ref: $ref, attachmentId: $file) { status framework repoUrl ref commitSha error downloadUrl } }`, { id: issueId, repo: attachment ? null : repo, ref: attachment ? null : ref, file: attachment?.attachmentId ?? null });
-      if ((useAuthStore.getState().user?.id ?? "guest") === actorId) { setSource(result.setIssueSource); setLoadedFor(actorId); }
+      if ((authStore.getState().user?.id ?? "guest") === actorId) { setSource(result.setIssueSource); setLoadedFor(actorId); }
     } catch (e) { setError(e instanceof Error ? e.message : "Could not save source"); }
     finally { setBusy(false); }
   };

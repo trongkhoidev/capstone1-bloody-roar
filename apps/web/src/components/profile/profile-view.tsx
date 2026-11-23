@@ -6,7 +6,7 @@ import { shrinkAvatar } from "@/lib/avatar-image";
 import { useEffect, useState } from "react";
 import { Camera, Save, ShieldCheck } from "lucide-react";
 import { graphqlRequest, GraphQLRequestError } from "@/lib/graphql-client";
-import { useAuthStore } from "@/lib/store/use-auth-store";
+import { useAuthStore, useAuthStoreApi } from "@/lib/store/use-auth-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LocationPicker } from "@/components/ui/location-picker";
@@ -19,6 +19,7 @@ const UPDATE_PROFILE = `mutation UpdateProfile($input: UpdateProfileInput!) { up
 type Profile = { id: string; name?: string | null; avatar?: string | null; bio?: string | null; skills: string[]; location?: string | null; role: "CLIENT" | "DEVELOPER" | "ADMIN"; walletAddress: string; reputationScore: number; completedTaskCount: number; isGithubVerified: boolean; githubUsername?: string | null; githubUrl?: string | null; linkedinUrl?: string | null; portfolioUrl?: string | null; attestations: Array<{ attestationUid: string; schemaUid: string; type: string; chainId: number; attester: string; createdAt: string; revokedAt?: string | null }> };
 
 export function ProfileView() {
+  const authStore = useAuthStoreApi();
   const authUser = useAuthStore((state) => state.user);
   const authUserId = authUser?.id;
   const authStatus = useAuthStore((state) => state.status);
@@ -57,15 +58,15 @@ export function ProfileView() {
     setLoading(true); setError(null); setNotice(null); setFieldErrors({});
     void graphqlRequest<{ me: Profile | null }>(ME_QUERY)
       .then(({ me }) => {
-        if (!active || useAuthStore.getState().user?.id !== authUserId) return;
+        if (!active || authStore.getState().user?.id !== authUserId) return;
         if (!me || me.id !== authUserId) throw new Error("Could not load your profile.");
         setProfile(me); setName(me.name ?? ""); setAvatar(me.avatar ?? ""); setBio(me.bio ?? ""); setSkills(me.skills); setGithubUrl(me.githubUrl ?? ""); setLinkedinUrl(me.linkedinUrl ?? ""); setPortfolioUrl(me.portfolioUrl ?? ""); setLocation(me.location ?? ""); setRole(me.role === "CLIENT" ? "CLIENT" : "DEVELOPER");
-        useAuthStore.setState((state) => state.user ? { user: { ...state.user, ...me } } : state);
+        authStore.setState((state) => state.user ? { user: { ...state.user, ...me } } : state);
       })
       .catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : "Could not load your profile."); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [authUserId, setError, setNotice]);
+  }, [authStore, authUserId, setError, setNotice]);
 
   const save = async (event: React.FormEvent) => {
     event.preventDefault(); setSaving(true); setError(null); setFieldErrors({}); setNotice(null);
@@ -76,9 +77,9 @@ export function ProfileView() {
         ...(profile?.role === "ADMIN" ? {} : { role }),
         skills, githubUrl: githubUrl.trim() || null, linkedinUrl: linkedinUrl.trim() || null, portfolioUrl: portfolioUrl.trim() || null,
       } });
-      if (useAuthStore.getState().user?.id !== authUserId) return;
+      if (authStore.getState().user?.id !== authUserId) return;
       setProfile((current) => current ? { ...current, ...result.updateProfile } : result.updateProfile);
-      useAuthStore.setState((state) => state.user ? { user: { ...state.user, ...result.updateProfile } } : state);
+      authStore.setState((state) => state.user ? { user: { ...state.user, ...result.updateProfile } } : state);
       setNotice("Profile saved.");
     } catch (reason) {
       const details = reason instanceof GraphQLRequestError && reason.code === "BAD_USER_INPUT" ? reason.details : null;

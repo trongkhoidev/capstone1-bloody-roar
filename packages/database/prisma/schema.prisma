@@ -116,6 +116,7 @@ enum NotificationType {
   FUNDS_CLAIMABLE
   DEADLINE_APPROACHING
   PR_MERGED // Client: linked pull request was merged (GitHub webhook)
+  SIMILAR_ISSUE_POSTED // Dev: a new bounty looks like an issue you fixed (US-107)
 }
 
 enum MessageType {
@@ -260,6 +261,7 @@ model User {
   issueComments    IssueComment[]
   conversationMemberships ConversationParticipant[]
   issueViews       IssueView[]
+  similarFixes     IssueSimilarity[]
 
   @@index([walletAddress])
   @@index([githubId])
@@ -379,6 +381,8 @@ model Issue {
   review       Review?
   comments     IssueComment[]
   views        IssueView[]
+  similarTo    IssueSimilarity[] @relation("SimilarityNewIssue")
+  similarFrom  IssueSimilarity[] @relation("SimilarityOldIssue")
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -391,6 +395,23 @@ model Issue {
   @@index([developerId])
   @@index([tokenId])
   @@map("issues")
+}
+
+// IssueSimilarity — US-107: a newly published issue that looks like a COMPLETED one; developerId fixed the old one
+model IssueSimilarity {
+  id             String   @id @default(cuid())
+  issueId        String
+  issue          Issue    @relation("SimilarityNewIssue", fields: [issueId], references: [id], onDelete: Cascade)
+  similarIssueId String
+  similarIssue   Issue    @relation("SimilarityOldIssue", fields: [similarIssueId], references: [id], onDelete: Cascade)
+  developerId    String
+  developer      User     @relation(fields: [developerId], references: [id], onDelete: Cascade)
+  score          Float // AI confidence 0..1, not money
+  createdAt      DateTime @default(now())
+
+  @@unique([issueId, similarIssueId])
+  @@index([issueId, developerId])
+  @@map("issue_similarities")
 }
 
 // Application — a Developer's application to an Issue

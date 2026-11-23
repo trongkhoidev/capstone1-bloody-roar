@@ -66,3 +66,21 @@ it("does not change check availability when loading criteria fails", async () =>
   expect(await screen.findByRole("alert")).toHaveTextContent("Could not load acceptance criteria");
   expect(changed).not.toHaveBeenCalled();
 });
+
+it("lets only the owner of an open issue check scope and shows the result", async () => {
+  request.mockResolvedValue({ testCases: [] });
+  const { rerender } = render(<TestCasePanel issueId="scope" owner={false} issueStatus="OPEN" />);
+  expect(screen.queryByRole("button", { name: "Check my scope" })).toBeNull();
+  rerender(<TestCasePanel issueId="scope" owner issueStatus="IN_PROGRESS" />);
+  expect(screen.queryByRole("button", { name: "Check my scope" })).toBeNull();
+  rerender(<TestCasePanel issueId="scope" owner issueStatus="OPEN" />);
+  request.mockResolvedValueOnce({ checkIssueScope: { status: "OK", ambiguities: ["Clarify delivery"], openQuestions: ["Which chain?"], difficulty: "HARD" } });
+  fireEvent.click(await screen.findByRole("button", { name: "Check my scope" }));
+  expect(await screen.findByText("Clarify delivery")).toBeInTheDocument();
+  expect(screen.getByText("Which chain?")).toBeInTheDocument();
+  expect(screen.getByText("Difficulty: HARD")).toBeInTheDocument();
+  expect(request).toHaveBeenCalledWith(expect.stringContaining("checkIssueScope"), { issueId: "scope" });
+  request.mockResolvedValueOnce({ checkIssueScope: { status: "AI_UNAVAILABLE" } });
+  fireEvent.click(screen.getByRole("button", { name: "Check my scope" }));
+  expect(await screen.findByText("AI is unavailable, try again later")).toBeInTheDocument();
+});

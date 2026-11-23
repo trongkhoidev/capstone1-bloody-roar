@@ -6,6 +6,11 @@ import { Check, Pencil, Sparkles, X } from "lucide-react";
 import { graphqlRequest, GraphQLRequestError } from "@/lib/graphql-client";
 import { Button } from "@/components/ui/button";
 
+type ScopeCheck = { status: "OK" | "AI_UNAVAILABLE"; ambiguities: string[]; openQuestions: string[]; difficulty: string | null };
+const CHECK_SCOPE = `mutation CheckIssueScope($issueId: String!) {
+  checkIssueScope(issueId: $issueId) { status ambiguities openQuestions difficulty }
+}`;
+
 type TestCase = {
   testCode?: string | null;
   testFilePath?: string | null;
@@ -38,6 +43,9 @@ export function TestCasePanel({ issueId, owner, issueStatus, onExecutableChange 
   const [codeDrafts, setCodeDrafts] = useState<Record<string, { code: string; path: string; expectBaseFail: boolean }>>({});
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scope, setScope] = useState<ScopeCheck | null>(null);
+  const [checkingScope, setCheckingScope] = useState(false);
+  const canCheckScope = owner && issueStatus === "OPEN";
   const [generating, setGenerating] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -75,6 +83,18 @@ export function TestCasePanel({ issueId, owner, issueStatus, onExecutableChange 
     try { const result = await graphqlRequest<{ updateTestCase: TestCase }>(UPDATE_TEST_CASE, { input: { id: testCase.id, testCode: draft.code, testFilePath: draft.path, expectBaseFail: draft.expectBaseFail } }); setTestCases((cases) => cases.map((c) => c.id === testCase.id ? result.updateTestCase : c)); }
     catch (e) { setError(e instanceof Error ? e.message : "Could not save test code"); }
     finally { setSavingId(null); }
+  };
+
+  const checkScope = async () => {
+    setCheckingScope(true); setError(null); setScope(null);
+    try {
+      const result = await graphqlRequest<{ checkIssueScope: ScopeCheck }>(CHECK_SCOPE, { issueId });
+      setScope(result.checkIssueScope);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Could not check scope");
+    } finally {
+      setCheckingScope(false);
+    }
   };
 
   const generate = async () => {
@@ -134,8 +154,20 @@ export function TestCasePanel({ issueId, owner, issueStatus, onExecutableChange 
     <section className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5 sm:p-6" aria-labelledby="test-case-heading">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div><h2 id="test-case-heading" className="font-semibold">Acceptance criteria</h2><p className="mt-1 text-xs leading-5 text-[hsl(var(--foreground-muted))]">Specific checks help both sides agree on what counts as complete.</p></div>
-        {owner && issueStatus === "OPEN" && <Button size="sm" variant="outline" disabled={generating} onClick={() => void generate()}><Sparkles className="mr-2 h-4 w-4" />{generating ? "Generating…" : testCases.length ? "Regenerate drafts" : "Generate with AI"}</Button>}
+        <div className="flex flex-wrap gap-2">
+          {canCheckScope && <Button size="sm" variant="outline" disabled={checkingScope} onClick={() => void checkScope()}>{checkingScope ? "Checking…" : "Check my scope"}</Button>}
+          {canCheckScope && <Button size="sm" variant="outline" disabled={generating} onClick={() => void generate()}><Sparkles className="mr-2 h-4 w-4" />{generating ? "Generating…" : testCases.length ? "Regenerate drafts" : "Generate with AI"}</Button>}
+        </div>
       </div>
+      {canCheckScope && scope && <div className="space-y-1 p-4 text-xs" aria-live="polite">
+        {scope.status === "AI_UNAVAILABLE" ? <p>AI is unavailable, try again later</p> : <>
+          {scope.difficulty && <p>Difficulty: {scope.difficulty}</p>}
+          <p className="font-medium">Ambiguities</p>
+          <ul className="list-disc pl-5">{scope.ambiguities.map((item, index) => <li key={index}>{item}</li>)}</ul>
+          <p className="font-medium">Open questions</p>
+          <ul className="list-disc pl-5">{scope.openQuestions.map((item, index) => <li key={index}>{item}</li>)}</ul>
+        </>}
+      </div>}
 
       {owner && issueStatus === "OPEN" && <details className="group mt-4 rounded-lg border border-[hsl(var(--border))]" open={testCases.length === 0}>
         <summary className="cursor-pointer select-none px-3.5 py-2.5 text-sm font-medium">+ Add a criterion</summary>

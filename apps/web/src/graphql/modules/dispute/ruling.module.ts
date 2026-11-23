@@ -2,7 +2,6 @@ import {
   ARBITER_STALL_DAYS,
   DAY_MS,
   DISPUTE_CHALLENGE_DAYS,
-  DISPUTE_EVIDENCE_RESPONSE_HOURS,
   DISPUTE_FINAL_NOTICE_HOURS,
   HOUR_MS,
   encodeFunctionData,
@@ -13,6 +12,7 @@ import type { GraphQLContext } from "../../context";
 import { requireAdmin, requireAuth } from "../../context";
 import { gqlError } from "../../errors";
 import { PreparedCallRef } from "../escrow/release.module";
+import { rulingWindow } from "../../../lib/escrow/availability";
 import { readChainTime } from "../../../lib/escrow/chain-time";
 import { createPreparedCall, escrowTarget } from "../../../lib/escrow/prepare";
 
@@ -35,11 +35,10 @@ builder.mutationField("draftRuling", (t) => t.field({
     if (projection.chainId !== target.chainId || projection.contractAddress.toLowerCase() !== target.contractAddress.toLowerCase())
       throw gqlError("Escrow does not match the configured contract", "ESCROW_CHAIN_MISMATCH");
     const now = await readChainTime(projection.chainId);
-    const start = args.kind === "INITIAL" ? projection.disputeRaisedAt : projection.challengedAt;
-    if ((args.kind === "INITIAL" ? projection.phase !== "DISPUTED" : projection.phase !== "CHALLENGED") || !start)
+    const window = rulingWindow(projection);
+    if (window?.kind !== args.kind)
       throw gqlError("Invalid dispute state", "INVALID_PHASE");
-    const elapsed = now.getTime() - start.getTime();
-    if (elapsed >= ARBITER_STALL_DAYS * DAY_MS || (args.kind === "INITIAL" && elapsed < DISPUTE_EVIDENCE_RESPONSE_HOURS * HOUR_MS) || elapsed < 0)
+    if (now < window.opensAt || now >= window.closesAt)
       throw gqlError("Outside the ruling window", "DEADLINE_PASSED");
     const decisionHash = computeDecisionHash({ issueId, escrowId: projection.escrowKey, clientBps: args.clientBps, rationale: args.rationale });
     const draft = await ctx.db.$transaction(async (tx) => {

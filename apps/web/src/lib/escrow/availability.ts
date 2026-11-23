@@ -1,3 +1,4 @@
+import { ARBITER_STALL_DAYS, DAY_MS, DISPUTE_EVIDENCE_RESPONSE_HOURS, HOUR_MS } from "@bloody-roar/shared";
 import { ESCROW_CONSTANTS } from "@bloody-roar/shared/escrow";
 import type { EscrowProjection, RulingRecord } from "@bloody-roar/database";
 
@@ -6,6 +7,17 @@ type Projection = Pick<EscrowProjection, "phase" | "deliveryDeadline" | "reviewD
 type Ruling = Pick<RulingRecord, "noticeEndsAt" | "clientBps">;
 const hour = 3_600_000;
 const day = 24 * hour;
+
+export function rulingWindow(projection: Pick<Projection, "phase" | "disputeRaisedAt" | "challengedAt">) {
+  const kind = projection.phase === "DISPUTED" ? "INITIAL" : projection.phase === "CHALLENGED" ? "FINAL" : null;
+  const start = kind === "INITIAL" ? projection.disputeRaisedAt : kind === "FINAL" ? projection.challengedAt : null;
+  if (!kind || !start) return null;
+  return {
+    kind,
+    opensAt: new Date(start.getTime() + (kind === "INITIAL" ? DISPUTE_EVIDENCE_RESPONSE_HOURS * HOUR_MS : 0)),
+    closesAt: new Date(start.getTime() + ARBITER_STALL_DAYS * DAY_MS),
+  };
+}
 
 // now is supplied by the caller so deadline boundaries can be tested without changing the clock.
 export function availableActions(p: Projection, now: Date, ruling: Ruling | null = null): AvailableAction[] {

@@ -14,7 +14,7 @@ import { useUiPreferences } from "@/lib/ui-preferences";
 
 const ADMIN_STATS = `query AdminStats { adminStats { users openTasks activeTasks completedTasks openDisputes completedBounties { symbol formatted } } }`;
 const ADMIN_USERS = `query AdminUsers($search: String, $first: Int) { adminUsers(search: $search, first: $first) { id name walletAddress role isGithubVerified githubUsername isBanned bannedReason createdAt } }`;
-const ADMIN_DISPUTES = `query AdminDisputes { adminDisputes { id issueId status reason aiReport aiConfidenceScore aiStatus suggestedClientBps proposedClientBps finalClientBps challengeDeadline createdAt } }`;
+const ADMIN_DISPUTES = `query AdminDisputes { adminDisputes { id issueId status reason aiReport aiConfidenceScore aiStatus suggestedClientBps proposedClientBps finalClientBps challengeDeadline createdAt escrowPhase rulingOpensAt rulingClosesAt } }`;
 const ADMIN_ISSUES = `query AdminIssues { adminIssues(first: 50) { id title status clientId developerId createdAt } }`;
 const OPS_QUERY = `query AdminOps { indexerStatus { chainId contractAddress lastScannedBlock lagSeconds updatedAt } contractConfig { chainId contractAddress paused owner arbiter pendingArbiter feeRecipient pendingFeeRecipient updatedAt } reconciliationFindings(status: "OPEN", first: 20) { id kind blockNumber createdAt } stuckIntents(first: 20) { id method status createdAt } }`;
 const EVIDENCE_QUERY = `query AdminEvidence($issueId: ID!) { evidenceFiles(issueId: $issueId) { id side manifestHash files { name downloadUrl sha256 size } } }`;
@@ -33,7 +33,7 @@ function aiSummary(raw?: string | null): string | null {
   try { const summary = (JSON.parse(raw) as { summary?: unknown }).summary; return typeof summary === "string" ? summary : null; } catch { return null; }
 }
 
-type AdminDispute = { id: string; issueId: string; status: string; reason: string; aiReport?: string | null; aiConfidenceScore?: number | null; aiStatus?: string | null; suggestedClientBps?: number | null; proposedClientBps?: number | null; finalClientBps?: number | null; challengeDeadline?: string | null; createdAt: string };
+type AdminDispute = { escrowPhase?: string | null; rulingOpensAt?: string | null; rulingClosesAt?: string | null; id: string; issueId: string; status: string; reason: string; aiReport?: string | null; aiConfidenceScore?: number | null; aiStatus?: string | null; suggestedClientBps?: number | null; proposedClientBps?: number | null; finalClientBps?: number | null; challengeDeadline?: string | null; createdAt: string };
 type AdminIssue = { id: string; title: string; status: string; clientId: string; developerId?: string | null; createdAt: string };
 type OpsData = {
   indexerStatus: Array<{ chainId: number; contractAddress: string; lastScannedBlock: string; lagSeconds: number; updatedAt: string }>;
@@ -43,7 +43,8 @@ type OpsData = {
 };
 type EvidenceView = { id: string; side: string; manifestHash: string; files: Array<{ name: string; downloadUrl: string; sha256: string; size: number }> };
 type RulingDraft = { decisionHash: string; safeTransactionJson: string };
-type DraftForm = { kind: "INITIAL" | "FINAL"; clientPercent: string; rationale: string };
+type DraftForm = { clientPercent: string; rationale: string };
+const rulingKind = (phase: AdminDispute["escrowPhase"]) => phase === "DISPUTED" ? "INITIAL" : phase === "CHALLENGED" ? "FINAL" : null;
 
 export function AdminView() {
   const user = useAuthStore((state) => state.user);
@@ -133,10 +134,12 @@ export function AdminView() {
 
   // Drafts a ruling for the arbiter Safe. The admin's percentage is never filled from the AI suggestion.
   const draftRuling = async (dispute: AdminDispute) => {
-    const form = drafts[dispute.id] ?? { kind: "INITIAL" as const, clientPercent: "50", rationale: "" };
+    const kind = rulingKind(dispute.escrowPhase);
+    if (!kind) return;
+    const form = drafts[dispute.id] ?? { clientPercent: "50", rationale: "" };
     setWorking(dispute.id); setError(null); setNotice(null);
     try {
-      const data = await graphqlRequest<{ draftRuling: RulingDraft }>(DRAFT_RULING, { issue: dispute.issueId, kind: form.kind, bps: Math.round(Number(form.clientPercent) * 100), rationale: form.rationale.trim() });
+      const data = await graphqlRequest<{ draftRuling: RulingDraft }>(DRAFT_RULING, { issue: dispute.issueId, kind, bps: Math.round(Number(form.clientPercent) * 100), rationale: form.rationale.trim() });
       setRulings((current) => ({ ...current, [dispute.issueId]: data.draftRuling }));
       setNotice("Ruling draft saved. Copy or download the Safe transaction and send it from the arbiter Safe.");
       await load(search.trim());
@@ -227,9 +230,13 @@ export function AdminView() {
         <section className="overflow-hidden glass rounded-xl animate-fade-in">
           <header className="border-b border-[hsl(var(--border))] p-4 sm:p-5"><h2 className="font-semibold">{t("disputes")}</h2><p className="text-xs text-[hsl(var(--foreground-muted))]">{t("reviewDisputes")}</p></header>
           {loading ? <RowsSkeleton /> : <div className="divide-y divide-[hsl(var(--border))]">{disputes.map((dispute) => {
-            const form = drafts[dispute.id] ?? { kind: "INITIAL" as const, clientPercent: "50", rationale: "" };
+            const form = drafts[dispute.id] ?? { clientPercent: "50", rationale: "" };
             const draft = rulings[dispute.issueId];
-            const canDraft = ["DISPUTED", "CHALLENGED", "INITIAL_RULING"].includes(dispute.status);
+            const kind = rulingKind(dispute.escrowPhase);
+            const opensAt = dispute.rulingOpensAt ? new Date(dispute.rulingOpensAt) : null;
+            const closesAt = dispute.rulingClosesAt ? new Date(dispute.rulingClosesAt) : null;
+            const tooEarly = opensAt && opensAt.getTime() > Date.now();
+            const closed = closesAt && closesAt.getTime() <= Date.now();
             return <article key={dispute.id} className="space-y-3 p-4 sm:p-5"><div className="flex items-start justify-between gap-3"><div><p className="font-medium">Dispute · {dispute.status.replaceAll("_", " ")}</p><p className="mt-1 text-xs text-[hsl(var(--foreground-muted))]">{dispute.reason}</p></div><Link href={`/issues/${dispute.issueId}`} className="inline-flex shrink-0 items-center gap-1 text-xs text-[hsl(var(--ring))]">Task <ExternalLink className="h-3 w-3" /></Link></div>
               {dispute.suggestedClientBps != null && <p className="rounded-md bg-[hsl(var(--background-secondary))] p-2.5 text-xs">AI suggestion (reference only): <strong>{(dispute.suggestedClientBps / 100).toFixed(2)}% client</strong>{dispute.aiConfidenceScore != null && <span className="text-[hsl(var(--foreground-muted))]"> · {Math.round(dispute.aiConfidenceScore * 100)}% confidence</span>}</p>}
               {aiSummary(dispute.aiReport) && <p className="text-xs text-[hsl(var(--foreground-muted))]">AI summary: {aiSummary(dispute.aiReport)}</p>}
@@ -238,15 +245,14 @@ export function AdminView() {
               <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" disabled={working === dispute.id} onClick={() => void analyzeDispute(dispute)}>{dispute.aiReport ? "Reanalyze evidence" : "Analyze evidence with AI"}</Button><Button size="sm" variant="outline" disabled={working === dispute.issueId} onClick={() => void loadEvidence(dispute.issueId)}>Evidence files</Button></div>
               {(evidence[dispute.issueId] ?? []).map((view) => <div key={view.id} className="rounded-md border border-[hsl(var(--border))] p-2.5 text-xs"><p className="font-medium">{view.side} · {view.manifestHash.slice(0, 12)}…</p><ul className="mt-1 space-y-1">{view.files.map((file) => <li key={file.downloadUrl}><a className="text-[hsl(var(--ring))] underline" href={file.downloadUrl}>{file.name}</a> <span className="font-mono text-[10px]">{file.sha256.slice(0, 12)}…</span></li>)}{view.files.length === 0 && <li>No files</li>}</ul></div>)}
               {dispute.challengeDeadline && <p className="text-[10px] text-[hsl(var(--foreground-subtle))]">Challenge deadline: {new Date(dispute.challengeDeadline).toLocaleString()}</p>}
-              {canDraft && <div className="space-y-2">
-                <label htmlFor={`ruling-kind-${dispute.id}`} className="block text-xs">Ruling</label>
-                <select id={`ruling-kind-${dispute.id}`} value={form.kind} onChange={(event) => setDrafts((current) => ({ ...current, [dispute.id]: { ...form, kind: event.target.value as "INITIAL" | "FINAL" } }))} className="h-9 w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] px-2 text-xs">
-                  <option value="INITIAL">Initial ruling</option><option value="FINAL">Final ruling</option>
-                </select>
+              {kind && <div className="space-y-2">
+                <p className="text-xs font-medium">{kind === "INITIAL" ? "Initial ruling" : "Final ruling"}</p>
+                {tooEarly && <p className="text-xs">Ruling window opens at {opensAt.toLocaleString()}</p>}
+                {closed && <p className="text-xs">Ruling window closed at {closesAt.toLocaleString()}</p>}
                 <label htmlFor={`client-percent-${dispute.id}`} className="block text-xs">Client share (%)</label>
                 <Input id={`client-percent-${dispute.id}`} type="number" min={0} max={100} step="0.01" value={form.clientPercent} onChange={(event) => setDrafts((current) => ({ ...current, [dispute.id]: { ...form, clientPercent: event.target.value } }))} />
                 <textarea value={form.rationale} onChange={(event) => setDrafts((current) => ({ ...current, [dispute.id]: { ...form, rationale: event.target.value } }))} minLength={20} maxLength={10000} rows={3} placeholder="Rationale for the ruling (at least 20 characters)" className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] p-3 text-xs outline-none" />
-                <Button size="sm" disabled={working === dispute.id || form.rationale.trim().length < 20} onClick={() => void draftRuling(dispute)}>Draft ruling</Button>
+                <Button size="sm" disabled={!opensAt || !closesAt || Boolean(tooEarly || closed) || working === dispute.id || form.rationale.trim().length < 20} onClick={() => void draftRuling(dispute)}>Draft ruling</Button>
               </div>}
               {draft && <div className="space-y-2"><p className="text-xs">Decision hash: <span className="font-mono text-[10px] break-all">{draft.decisionHash}</span></p><pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all rounded-md bg-[hsl(var(--background-secondary))] p-2 text-[10px]">{draft.safeTransactionJson}</pre><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => copyRuling(dispute.issueId)}>Copy</Button><Button size="sm" variant="outline" onClick={() => downloadRuling(dispute.issueId)}>Download ruling-{dispute.issueId}.json</Button></div></div>}
             </article>;

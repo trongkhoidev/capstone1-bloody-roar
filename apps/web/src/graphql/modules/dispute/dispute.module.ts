@@ -1,5 +1,5 @@
 import { DisputeStatus } from "@bloody-roar/database";
-import type { Prisma } from "@bloody-roar/database";
+import type { EscrowProjection, Prisma } from "@bloody-roar/database";
 import { z } from "zod";
 import { builder } from "../../builder";
 import { requireAdmin, requireAuth } from "../../context";
@@ -8,6 +8,11 @@ import { UserRef } from "../user/user.module";
 import { completeAI, type AIRouterDependencies } from "../../../ai/model-router";
 import { scanAndMask } from "../../../ai/guard/scanner";
 import { aiRateLimit } from "../../../lib/rate-limit";
+
+import { rulingWindow } from "../../../lib/escrow/availability";
+
+type RulingProjection = Pick<EscrowProjection, "phase" | "disputeRaisedAt" | "challengedAt">;
+const projectionOf = (dispute: { id: string }) => (dispute as { projection?: RulingProjection }).projection;
 
 const DisputeStatusEnum = builder.enumType(DisputeStatus, { name: "DisputeStatus" });
 const DISPUTE_INCLUDE = { raisedBy: true, resolvedBy: true } satisfies Prisma.DisputeInclude;
@@ -19,6 +24,21 @@ export const DisputeRef = builder.prismaObject("Dispute", {
     issueId: t.exposeString("issueId"),
     status: t.expose("status", { type: DisputeStatusEnum }),
     reason: t.exposeString("reason"),
+    escrowPhase: t.string({ nullable: true, resolve: (dispute) => projectionOf(dispute)?.phase ?? null }),
+    rulingOpensAt: t.string({
+      nullable: true,
+      resolve: (dispute) => {
+        const projection = projectionOf(dispute);
+        return projection ? rulingWindow(projection)?.opensAt.toISOString() ?? null : null;
+      },
+    }),
+    rulingClosesAt: t.string({
+      nullable: true,
+      resolve: (dispute) => {
+        const projection = projectionOf(dispute);
+        return projection ? rulingWindow(projection)?.closesAt.toISOString() ?? null : null;
+      },
+    }),
     evidenceManifestHash: t.exposeString("evidenceManifestHash", { nullable: true }),
     counterpartyEvidenceHash: t.exposeString("counterpartyEvidenceHash", { nullable: true }),
     initialDecisionHash: t.exposeString("initialDecisionHash", { nullable: true }),
@@ -92,15 +112,22 @@ builder.queryFields((t) => ({
       first: t.arg.int({ required: false }),
       after: t.arg.id({ required: false }),
     },
-    resolve: (query, _root, args, ctx) => {
+    resolve: async (query, _root, args, ctx) => {
       requireAdmin(ctx);
-      return ctx.db.dispute.findMany({
+      const disputes = await ctx.db.dispute.findMany({
         ...query,
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         take: Math.min(Math.max(args.first ?? 50, 1), 100),
         ...(args.after ? { cursor: { id: String(args.after) }, skip: 1 } : {}),
         include: DISPUTE_INCLUDE,
       });
+      if (!disputes.length) return disputes;
+      const projections = await ctx.db.escrowProjection.findMany({
+        where: { issueId: { in: disputes.map((dispute) => dispute.issueId) } },
+        select: { issueId: true, phase: true, disputeRaisedAt: true, challengedAt: true },
+      });
+      const byIssue = new Map(projections.map((projection) => [projection.issueId, projection]));
+      return disputes.map((dispute) => ({ ...dispute, projection: byIssue.get(dispute.issueId) }));
     },
   }),
 }));

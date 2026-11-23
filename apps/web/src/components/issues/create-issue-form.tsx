@@ -233,23 +233,6 @@ export function CreateIssueForm() {
             Publishing is free and needs no signature. You sign only when you fund a selected developer.
           </p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span
-            style={{
-              fontSize: "12.5px",
-              color: "var(--ink-3)",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            <span className="dot" />
-            Draft ready
-          </span>
-          <button type="button" className="btn btn-o btn-sm">
-            Save draft
-          </button>
-        </div>
       </div>
 
       {/* Stepper Header */}
@@ -561,14 +544,9 @@ export function CreateIssueForm() {
           <Button asChild variant="outline">
             <Link href="/marketplace">{t("cancel")}</Link>
           </Button>
-          <div style={{ display: "flex", gap: 10 }}>
-            <Button type="button" variant="outline">
-              Save as draft
-            </Button>
-            <Button type="submit" isLoading={saving} disabled={!tokenId || loadingTokens || Boolean(createdId)}>
-              {t("publishBounty")}
-            </Button>
-          </div>
+          <Button type="submit" isLoading={saving} disabled={!tokenId || loadingTokens || Boolean(createdId)}>
+            {t("publishBounty")}
+          </Button>
         </div>
       </form>
     </main>

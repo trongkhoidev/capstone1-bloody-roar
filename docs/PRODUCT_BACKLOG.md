@@ -309,7 +309,7 @@
 | **S1-SC-02** | Viết`BloodyRoarEscrow.sol` — base                | Kiên | 2h       | S0-SC-03 | Contract skeleton compile      |
 | **S1-SC-03** | Implement`deposit(escrowId, developer, deadline)`   | Kiên | 3h       | S1-SC-02 | Lock canonical USDC, emit deposit event |
 | **S1-SC-04** | Implement`submitDelivery(escrowId, digest)`          | Kiên | 1h       | S1-SC-03 | Lưu latest `Submission` digest       |
-| **S1-SC-05** | Implement`releaseFunds(escrowId)`                    | Kiên | 2h       | S1-SC-04 | Client release, platform fee 2,5%       |
+| **S1-SC-05** | Implement`releaseFunds(escrowId)`                    | Kiên | 2h       | S1-SC-04 | Client release, platform fee 10% (client trả thêm, QĐ-33) |
 | **S1-SC-06** | Implement missed-delivery refund                      | Kiên | 1h       | S1-SC-03 | Client claim sau delivery deadline      |
 | **S1-SC-07** | Implement review-timeout claim                        | Kiên | 1h       | S1-SC-04 | Developer claim sau deadline + 7 ngày |
 | **S1-SC-08** | Implement mutual `Settlement`                         | Kiên | 2h       | S1-SC-03 | Propose/accept/revoke, fee-free         |

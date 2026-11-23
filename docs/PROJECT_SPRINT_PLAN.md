@@ -41,9 +41,9 @@ This document summarizes the project's objectives, the division of work, the mil
 | Docker sandbox moves to v2. | Team plan | `docs/TEAM_PLAN.md` section 1 |
 | The admin drafts a ruling. The Arbiter Safe signs it. AI supports the decision and does not make it. | QĐ-25 | `BACKEND_EXECUTION_PLAN.md` section 2 |
 | AI features are built after the money flow and may be cut. | QĐ-32 | `BACKEND_EXECUTION_PLAN.md` section 2 |
-| The 2.5% platform fee applies to the developer's share in every settlement path. | QĐ-02 | `BACKEND_EXECUTION_PLAN.md` section 2 |
+| The platform fee is 10%, paid by the client on top of the bounty (100 USDC bounty, 110 USDC deposit). The developer receives the full bounty share. The fee applies only to the developer's share; the unused part goes back to the client. | QĐ-33 (replaces QĐ-02, 23 Nov 2026) | `apps/contracts/contracts/BloodyRoarEscrow.sol` `_resolve` |
 
-The proposal describes the 2.5% fee as applying to "successful escrows". Section 7, item 4, lists the wording fix.
+The submitted proposal still describes a 2.5% fee on "successful escrows". Section 7, item 4, lists the wording fix.
 
 ### 1.3 Project overview
 
@@ -226,7 +226,7 @@ Level is the seriousness (impact) of the risk. Likelihood is its probability. Th
 | 1 | Proposal cover and revision history | The cover says 6 Sep 2026. Revision history v1.0 says 23 Aug 2026. | Use one date for the document. Record v1.1 in the history. |
 | 2 | Proposal section 6.1 | "70 days" is labelled as working days. | Choose calendar or working days. Recompute and tell the mentor. |
 | 3 | Proposal section 5, Sprint 0 | "17 models" for the Prisma schema. The registration form says "17 models / 16 enums". | The schema has 31 models and 19 enums on 4 Nov. Update the figure or state the change. |
-| 4 | Proposal section 7, Economic row | "2.5% fee on successful escrows". | Match QĐ-02: 2.5% on the developer's share in every settlement path. |
+| 4 | Proposal section 7, Economic row | "2.5% fee on successful escrows". | Match QĐ-33: 10% paid by the client on top of the bounty, charged only on the developer's share. |
 | 5 | AI Usage Disclosure | Lists ChatGPT, Cursor, Copilot, Claude and Groq/Gemini. The repository also refers to Codex, agy (Antigravity) and OpenCode (`AGENTS.md`, `docs/plan/parallel/reports/CODEX.md`, `AGY_PROMPT_*` files). | Confirm which tools the team used and add them. The statement says that non-disclosure may be academic misconduct. |
 | 6 | File names | Two course forms were named `C2SE12`. The team code is C1SE.25. | Done 8 Nov 2026: both forms renamed to `C1SE25`. |
 | 7 | Team roles | `TEAM_PLAN.md` gives the escrow contract to the smart-contract engineer. On `main`, 2 of 19 commits touching `apps/contracts` come from an identity that is probably that member (see `TEAM_EVIDENCE.md` section 3). | Confirm the identity mapping. Record pairing or review on contract changes. |

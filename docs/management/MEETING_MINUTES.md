@@ -48,7 +48,7 @@ Source: `docs/plan/BACKEND_EXECUTION_PLAN.md` §2. The file was first committed 
 | ID | Decision | Meeting date |
 |---|---|---|
 | QĐ-01 | Freeze the contract logic at commit `c538e0c` as v1.0. Change it only if a real bug turns up. | Not recorded |
-| QĐ-02 | Keep the 2.5% fee on the developer's share in every outcome. Full refunds to the client carry no fee. | Not recorded |
+| QĐ-02 | Keep the 2.5% fee on the developer's share in every outcome. Full refunds to the client carry no fee. Replaced by QĐ-33. | Not recorded |
 | QĐ-03 | Keep all contract timing: review 7 days after the delivery deadline, evidence 72 hours, challenge 7 days, final notice 24 hours, arbiter stall 30 days. | Not recorded |
 | QĐ-04 | Keep pull payments: a `claimable` balance and a `claim()` call. | Not recorded |
 | QĐ-05 | Keep `escrowId` as a string. The backend generates `escrowKey` and stores its hash before deposit. | Not recorded |
@@ -79,3 +79,4 @@ Source: `docs/plan/BACKEND_EXECUTION_PLAN.md` §2. The file was first committed 
 | QĐ-30 | Admin bootstrap through the `ADMIN_WALLETS` variable and a `grant-admin` CLI. | Not recorded |
 | QĐ-31 | Merge `origin/main` before anything else, keeping this branch's code on conflicts. | Not recorded |
 | QĐ-32 | AI comes after the money flow and may be cut. Security gaps in AI Guard must be fixed in week 1. | Not recorded |
+| QĐ-33 | Raise the platform fee to 10% and have the client pay it on top of the bounty: a 100 USDC bounty costs the client 110 USDC, and the developer receives the full 100. The fee applies only to the developer's share; on a split or refund the unused part of the fee goes back to the client. Needs a new contract deployment. | 23 Nov 2026 |

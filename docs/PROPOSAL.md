@@ -190,7 +190,7 @@ So sánh này nêu vị trí sản phẩm, không khẳng định ưu thế đ�
 ### UC-02 — Submission, Client release, and review timeout
 
 1. `Developer` gọi `submitWork` và có thể thay thế delivery hash đến hết delivery deadline.
-2. Sau `Submission` đầu tiên, `Client` có thể gọi `releaseFunds` cho phiên bản mới nhất; release áp dụng platform fee 2,5%.
+2. Sau `Submission` đầu tiên, `Client` có thể gọi `releaseFunds` cho phiên bản mới nhất; khi deposit, `Client` đã nạp bounty cộng platform fee 10% (bounty 100 USDC thì nạp 110 USDC); release trả đủ bounty cho `Developer` và 10% cho fee recipient (QĐ-33).
 3. Nếu `Client` không phản hồi, `Developer` có thể gọi `claimReviewTimeout` sau mốc cố định `deliveryDeadline + 7 days` và nhận toàn bộ amount.
 4. `Submission` ở phút cuối không được dời review deadline vì deadline này luôn tính từ delivery deadline ban đầu.
 
@@ -200,7 +200,7 @@ So sánh này nêu vị trí sản phẩm, không khẳng định ưu thế đ�
 
 ### UC-03 — Missed delivery
 
-Nếu không có `Submission` sau delivery deadline, `Client` gọi `claimMissedDeliveryRefund` để nhận full refund. Exit này fee-free và độc lập với review timeout vì chưa có work được submit.
+Nếu không có `Submission` sau delivery deadline, `Client` gọi `claimMissedDeliveryRefund` để nhận lại toàn bộ số đã nạp, gồm cả phần phí. Exit này fee-free và độc lập với review timeout vì chưa có work được submit.
 
 ![Figure 6 — Missed-delivery refund](diagrams/rendered/07-missed-delivery.png)
 
@@ -208,7 +208,7 @@ Nếu không có `Submission` sau delivery deadline, `Client` gọi `claimMissed
 
 ### UC-04 — Mutual Settlement
 
-Một participant có thể gọi `proposeSettlement` với Client payout ratio từ 0 đến 10.000 basis points. Chỉ counterparty được accept; proposer có thể revoke. Khi accept, contract phân phối đúng ratio, không thu platform fee. `Settlement` khả dụng trong mọi non-terminal phase, kể cả `Dispute` và ruling-notice phase.
+Một participant có thể gọi `proposeSettlement` với Client payout ratio từ 0 đến 10.000 basis points. Chỉ counterparty được accept; proposer có thể revoke. Khi accept, contract chia bounty theo đúng ratio. Phí 10% chỉ tính trên phần của `Developer`; phần phí đã nạp còn lại trả về `Client` (QĐ-33). `Settlement` khả dụng trong mọi non-terminal phase, kể cả `Dispute` và ruling-notice phase.
 
 ![Figure 7 — Mutual Settlement](diagrams/rendered/08-mutual-settlement.png)
 
@@ -220,7 +220,7 @@ Một participant có thể gọi `proposeSettlement` với Client payout ratio 
 2. `Arbiter Safe` đăng initial `Ruling` gồm Client payout ratio và decision hash, bắt đầu notice window 24 giờ.
 3. Mỗi `Escrow` chỉ cho phép một challenge trong notice window đầu tiên. Sau challenge, `Arbiter Safe` phải đăng final `Ruling`, bắt đầu notice window thứ hai 24 giờ và không thể challenge tiếp.
 4. Bất kỳ địa chỉ nào cũng có thể execute một `Ruling` đã đủ notice period.
-5. Nếu không có final `Ruling` trong 30 ngày sau challenge, một participant có thể gọi arbiter-timeout exit để thực hiện split 50/50, fee-free.
+5. Nếu không có final `Ruling` trong 30 ngày sau challenge, một participant có thể gọi arbiter-timeout exit để thực hiện split 50/50; phí 10% chỉ tính trên nửa của `Developer`.
 
 ![Figure 8 — Dispute and Ruling lifecycle](diagrams/rendered/09-dispute-rulings.png)
 
@@ -304,7 +304,7 @@ Contract controls của revision gồm `SafeERC20`, checks-effects-interactions,
 
 1. Participant authority đến từ `msg.sender`; backend, Indexer, authentication và deployment credentials không thể impersonate `Client`, `Developer` hoặc `Arbiter Safe`.
 2. Tổng transfer từ một `Escrow` bằng đúng deposit amount; không terminal transition nào được execute hai lần.
-3. Refund, timeout, `Settlement`, `Ruling` và arbiter-stall exits là fee-free; các path này không gọi fee recipient.
+3. `Client` nạp bounty cộng 10% phí. Ở mọi exit, `Developer` nhận đủ phần bounty của mình, fee recipient nhận 10% của phần đó, phần phí còn lại trả về `Client`. Full refund không trả gì cho fee recipient (QĐ-33).
 4. Review deadline cố định tại `deliveryDeadline + 7 days`; last-minute `Submission` không dời deadline.
 5. Pause chỉ chặn `deposit`; mọi funded exit vẫn phải khả dụng khi paused.
 6. Receipt chưa có safe-head canonical `Chain Event` vẫn là pending; off-chain data không phải payment authority.
@@ -384,7 +384,7 @@ Cột "Đang có" phản ánh khai báo trong `package.json` trên `main`. Đó 
 | `Chain Event` | Contract log có identity theo chain, address, transaction và log index |
 | `Projection` | Query model được fold từ canonical `Chain Event`; không phải funds authority |
 | `Submission` | Developer delivery hash, có thể thay thế đến delivery deadline |
-| `Settlement` | Fee-free payout ratio do proposer đưa ra và counterparty accept |
+| `Settlement` | Payout ratio do proposer đưa ra và counterparty accept; phí chỉ tính trên phần `Developer` |
 | `Dispute` | Frozen phase chứa evidence-manifest hashes |
 | `Ruling` | Arbiter Safe payout ratio và decision hash |
 | `Invariant` | Điều kiện luôn đúng trong mọi valid state transition |
@@ -453,7 +453,7 @@ Phân công có thể thay đổi theo năng lực và tiến độ; quyền s�
 | Participant ký stale terms | Cao | Bind amount, token, deadline, `Developer` và terms hash vào EIP-712 intent còn hạn |
 | Backend hiển thị trạng thái khác blockchain | Cao | Dựng `Projection` từ safe-head `Chain Event`; block-hash comparison; canonical flag; replay checkpoint |
 | Mất hoặc lộ khóa | Rất cao | Không giữ private key người dùng; dùng secret manager; multisig cho vai trò quản trị |
-| `Arbiter Safe` không phản hồi hoặc lạm quyền | Cao | Giới hạn authority; một challenge; final notice; 30-day fee-free 50/50 exit |
+| `Arbiter Safe` không phản hồi hoặc lạm quyền | Cao | Giới hạn authority; một challenge; final notice; 30-day 50/50 exit |
 | Evidence hoặc file chat bị lộ | Cao | Private Storage bucket, expiring URL, access control; chỉ content hash được đưa on-chain |
 | Phạm vi AI làm trễ MVP | Trung bình | Đặt AI sau luồng cốt lõi; cho phép cắt khỏi MVP mà không ảnh hưởng thanh toán |
 | Tiêu chí hoàn thành không rõ | Cao | Gắn acceptance criteria vào từng backlog item và review trước khi triển khai |
@@ -466,7 +466,7 @@ MVP được xem là sẵn sàng để đánh giá khi:
 - các flow tạo `Issue`, gửi `Application`, chọn `Developer`, chat, deposit và terminal `Escrow` chạy được trên môi trường demo;
 - unauthorized access bị reject ở API, Socket.IO và smart contract;
 - contract suite test deployment roles, token decimals, duplicate IDs, authorization, allowance/balance failures, future deadlines, fee-on-transfer rejection, revision cutoff, latest-hash release, fee accounting, missed-delivery refund, fixed review timeout, arbitrary `Settlement` ratios, `Settlement` trong `Dispute`, `Ruling` paths, một challenge, final notice, arbiter stall, pause semantics và two-step governance;
-- CI gate chạy compile, unit test, fuzz/invariant test, coverage, static analysis và deployment-script dry run; các invariant bắt buộc gồm total outflow không vượt deposit, không repeated terminal exit, không unauthorized role action và fee-free exit không trả fee recipient;
+- CI gate chạy compile, unit test, fuzz/invariant test, coverage, static analysis và deployment-script dry run; các invariant bắt buộc gồm total outflow không vượt deposit, không repeated terminal exit, không unauthorized role action và full-refund exit không trả fee recipient;
 - frontend phân biệt rõ waiting-for-signature, submitted, pending-safe-head, confirmed và failed;
 - không có secret trong repository và không có backend key có thể ký thay người dùng;
 - tài liệu thiết lập cho phép một người đánh giá tái tạo môi trường;

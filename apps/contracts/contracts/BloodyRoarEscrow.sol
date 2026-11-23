@@ -20,7 +20,7 @@ contract BloodyRoarEscrow is Ownable2Step, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint256 public constant MAX_BPS = 10_000;
-    uint256 public constant PLATFORM_FEE_BPS = 250;
+    uint256 public constant PLATFORM_FEE_BPS = 1_000;
     uint256 public constant REVIEW_PERIOD = 7 days;
     uint256 public constant EVIDENCE_RESPONSE_PERIOD = 72 hours;
     uint256 public constant CHALLENGE_PERIOD = 7 days;
@@ -240,11 +240,13 @@ contract BloodyRoarEscrow is Ownable2Step, Pausable, ReentrancyGuard {
             revert InvalidDeadline();
         }
 
+        // The client pays the bounty plus the platform fee on top; the developer is owed the full bounty.
+        uint256 total = amount + _depositFee(amount);
         uint256 balanceBefore = token.balanceOf(address(this));
-        token.safeTransferFrom(msg.sender, address(this), amount);
+        token.safeTransferFrom(msg.sender, address(this), total);
         uint256 balanceAfter = token.balanceOf(address(this));
         uint256 received = balanceAfter >= balanceBefore ? balanceAfter - balanceBefore : 0;
-        if (received != amount) revert InvalidReceivedAmount(amount, received);
+        if (received != total) revert InvalidReceivedAmount(total, received);
 
         _escrows[escrowId] = Escrow({
             client: msg.sender,
@@ -260,7 +262,7 @@ contract BloodyRoarEscrow is Ownable2Step, Pausable, ReentrancyGuard {
             resolutionKind: ResolutionKind.NONE,
             submittedAt: 0
         });
-        totalUnresolvedPrincipal += amount;
+        totalUnresolvedPrincipal += total;
 
         emit Deposited(escrowId, msg.sender, developer, arbiter, feeRecipient, amount, deliveryDeadline, termsHash);
         _assertSolvent();
@@ -572,15 +574,17 @@ contract BloodyRoarEscrow is Ownable2Step, Pausable, ReentrancyGuard {
         Escrow storage escrow = _escrows[escrowId];
         if (escrow.phase == Phase.RESOLVED) revert InvalidPhase(escrowId, escrow.phase);
 
-        uint256 clientAmount = Math.mulDiv(escrow.amount, clientBps, MAX_BPS);
-        uint256 developerGross = escrow.amount - clientAmount;
-        uint256 platformFee = Math.mulDiv(developerGross, PLATFORM_FEE_BPS, MAX_BPS);
-        uint256 developerAmount = escrow.amount - clientAmount - platformFee;
+        // Fee is charged only on the developer's share; the unused part of the deposited fee goes back to the client.
+        uint256 depositFee = _depositFee(escrow.amount);
+        uint256 clientShare = Math.mulDiv(escrow.amount, clientBps, MAX_BPS);
+        uint256 developerAmount = escrow.amount - clientShare;
+        uint256 platformFee = Math.mulDiv(developerAmount, PLATFORM_FEE_BPS, MAX_BPS);
+        uint256 clientAmount = clientShare + depositFee - platformFee;
 
         escrow.phase = Phase.RESOLVED;
         escrow.resolutionKind = kind;
-        totalUnresolvedPrincipal -= escrow.amount;
-        totalClaimable += escrow.amount;
+        totalUnresolvedPrincipal -= escrow.amount + depositFee;
+        totalClaimable += escrow.amount + depositFee;
         claimable[escrow.client] += clientAmount;
         claimable[escrow.developer] += developerAmount;
         claimable[escrow.feeRecipient] += platformFee;
@@ -588,6 +592,10 @@ contract BloodyRoarEscrow is Ownable2Step, Pausable, ReentrancyGuard {
 
         emit EscrowResolved(escrowId, kind, clientAmount, developerAmount, platformFee, decisionHash);
         _assertSolvent();
+    }
+
+    function _depositFee(uint256 amount) internal pure returns (uint256) {
+        return Math.mulDiv(amount, PLATFORM_FEE_BPS, MAX_BPS);
     }
 
     function _requireProspectiveRole(address candidate) internal view {

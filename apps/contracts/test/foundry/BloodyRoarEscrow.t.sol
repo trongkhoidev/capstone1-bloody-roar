@@ -65,7 +65,7 @@ contract EscrowHandler is ForgeTest {
         uint256 duration = uint256(rawDuration) % 30 days + 1;
         vm.prank(client);
         try escrow.deposit(escrowId, developer, amount, block.timestamp + duration, keccak256(bytes(escrowId))) {
-            ghostDeposited += amount;
+            ghostDeposited += amount + amount * escrow.PLATFORM_FEE_BPS() / escrow.MAX_BPS();
         } catch {}
         _record(index);
     }
@@ -175,9 +175,15 @@ contract BloodyRoarEscrowFuzzTest is ForgeTest {
         vm.prank(DEVELOPER);
         escrow.acceptSettlement("fuzz");
 
+        // The client deposits the bounty plus the platform fee; the developer keeps its full share.
+        uint256 total = amount + amount * escrow.PLATFORM_FEE_BPS() / escrow.MAX_BPS();
         uint256 credits = escrow.claimable(CLIENT) + escrow.claimable(DEVELOPER) + escrow.claimable(FEE_RECIPIENT);
-        assertEq(credits, amount, "allocation must conserve principal");
-        assertEq(escrow.accountedBalance(), amount, "accounted balance must equal deposit");
+        assertEq(credits, total, "allocation must conserve principal");
+        assertEq(
+            escrow.claimable(DEVELOPER), amount - amount * clientBps / escrow.MAX_BPS(), "developer share lost the fee"
+        );
+        assertTrue(escrow.claimable(FEE_RECIPIENT) <= total - amount, "fee exceeds the deposited fee");
+        assertEq(escrow.accountedBalance(), total, "accounted balance must equal deposit");
         assertTrue(escrow.isSolvent(), "resolved escrow must remain solvent");
     }
 

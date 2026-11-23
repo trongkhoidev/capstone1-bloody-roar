@@ -39,7 +39,7 @@ const ISSUE_QUERY = `
     issue(id: $id) {
       id title description category status githubRepo bountyAmount { formatted raw decimals } requiredSkills difficulty timeEstimate
       expiresAt viewCount applicationCount createdAt clientId developerId noExecutableTests
-      viewerCapabilities { canApply canSelect canFund canSubmit canRelease canRequestChanges canDispute canProposeSettlement canRevokeSettlement canAcceptSettlement canSubmitEvidence canChallengeRuling canFinalizeRuling canFinalizeArbiterTimeoutSplit canClaimMissedDeliveryRefund canClaimReviewTimeout }
+      viewerCapabilities { canApply canSelect canFund canSubmit canRelease canRequestChanges canDispute canProposeSettlement canRevokeSettlement canAcceptSettlement canSubmitEvidence canChallengeRuling canFinalizeRuling canFinalizeArbiterTimeoutSplit canClaimMissedDeliveryRefund canClaimReviewTimeout similarFixIssueId }
       escrow { availableActions { action reasonDisabled } }
       reservation @include(if: $initial) { id status }
       ownerApplications @include(if: $initial) {
@@ -117,7 +117,7 @@ type PreparedStep = { intentId: string; method: string; contractAddress: string;
 
 type ReservationRow = { id: string; status: string; chainId: number; contractAddress: string; tokenAddress: string; escrowKey: string; termsHash: string; amountRaw: string; deliveryDeadline: string; clientWallet: string; developerWallet: string };
 
-type ViewerCapabilities = { canApply?: boolean; canSelect: boolean; canFund: boolean; canSubmit: boolean; canRelease: boolean; canRequestChanges: boolean; canDispute: boolean; canProposeSettlement: boolean; canRevokeSettlement: boolean; canAcceptSettlement: boolean; canSubmitEvidence: boolean; canChallengeRuling: boolean; canFinalizeRuling: boolean; canFinalizeArbiterTimeoutSplit: boolean; canClaimMissedDeliveryRefund: boolean; canClaimReviewTimeout: boolean };
+type ViewerCapabilities = { canApply?: boolean; canSelect: boolean; canFund: boolean; canSubmit: boolean; canRelease: boolean; canRequestChanges: boolean; canDispute: boolean; canProposeSettlement: boolean; canRevokeSettlement: boolean; canAcceptSettlement: boolean; canSubmitEvidence: boolean; canChallengeRuling: boolean; canFinalizeRuling: boolean; canFinalizeArbiterTimeoutSplit: boolean; canClaimMissedDeliveryRefund: boolean; canClaimReviewTimeout: boolean; similarFixIssueId?: string | null };
 type IssueDetail = IssueItem & { noExecutableTests: boolean; githubRepo?: string | null; bountyRaw: string; bountyDecimals: number; clientId: string; developerId?: string | null; developer?: IssueItem["client"] | null; viewerCapabilities?: ViewerCapabilities | null; escrow?: { availableActions: Array<{ action: string; reasonDisabled: string | null }> } | null };
 type Application = { id: string; status: string; message?: string | null; createdAt: string; developer: IssueItem["client"] & { skills?: string[] } };
 
@@ -600,6 +600,11 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                 Deadline: {issue.expiresAt ? new Date(issue.expiresAt).toLocaleDateString() : "Flexible"}
               </span>
               <span className="cd hot">{feePercent} platform fee paid by the client</span>
+              {issue.viewerCapabilities?.similarFixIssueId && (
+                <Link href={`/issues/${issue.viewerCapabilities.similarFixIssueId}`} className="cd" data-testid="similar-fix-label">
+                  You fixed a similar problem
+                </Link>
+              )}
             </div>
           </div>
 

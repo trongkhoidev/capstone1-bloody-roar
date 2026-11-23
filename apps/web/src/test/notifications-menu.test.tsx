@@ -42,6 +42,15 @@ describe("notifications menu", () => {
     expect(request).not.toHaveBeenCalled();
   });
 
+  it("links a similar-issue notification to the new bounty", () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 60_000 } } });
+    const similar = { id: "n2", type: "SIMILAR_ISSUE_POSTED", title: "Similar issue posted", body: 'A new bounty looks like an issue you fixed: "Fix login".', isRead: false, link: "/issues/new-1", createdAt: "2026-01-01T00:00:00Z" };
+    client.setQueryData(["notifications", "user-1"], { unreadNotificationCount: 1, notifications: [similar] });
+    renderMenu(client);
+    fireEvent.click(screen.getByRole("button", { name: "Notifications, 1 unread" }));
+    expect(screen.getByText(similar.body).closest("a")?.getAttribute("href")).toBe("/issues/new-1");
+  });
+
   it("only displays the signed-in user's cached notifications", () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 60_000 } } });
     client.setQueryData(["notifications", "user-1"], { unreadNotificationCount: 7, notifications: [notification] });

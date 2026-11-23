@@ -231,6 +231,7 @@ export function CreateIssueForm() {
           <h1 className="h1">Post a bounty</h1>
           <p className="sub">
             Publishing is free and needs no signature. You sign only when you fund a selected developer.
+            By publishing you agree that the developer keeps a non-exclusive licence to reuse their fix.
           </p>
         </div>
       </div>

@@ -26,8 +26,8 @@ import type { IssueItem } from "./issue-card";
 import { sendPreparedCalls } from "@/lib/web3/send-prepared";
 import { signFundingIntent } from "@/lib/web3/funding-intent";
 import { uploadFile } from "@/lib/upload";
-import { depositTotal, formatTokenAmount, splitPayout } from "@bloody-roar/shared/money";
-import { PLATFORM_FEE_BPS } from "@bloody-roar/shared/constants";
+import { bpsOf, depositTotal, formatTokenAmount, splitPayout } from "@bloody-roar/shared/money";
+import { PLATFORM_FEE_BPS, REUSE_PRICE_BPS } from "@bloody-roar/shared/constants";
 
 // Date input value (YYYY-MM-DD) seven days out; the contract deadline is the end of that day in UTC.
 const defaultDeliveryDeadline = () => new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
@@ -40,10 +40,10 @@ const ISSUE_QUERY = `
       id title description category status githubRepo bountyAmount { formatted raw decimals } requiredSkills difficulty timeEstimate
       expiresAt viewCount applicationCount createdAt clientId developerId noExecutableTests
       viewerCapabilities { canApply canSelect canFund canSubmit canRelease canRequestChanges canDispute canProposeSettlement canRevokeSettlement canAcceptSettlement canSubmitEvidence canChallengeRuling canFinalizeRuling canFinalizeArbiterTimeoutSplit canClaimMissedDeliveryRefund canClaimReviewTimeout similarFixIssueId }
-      escrow { availableActions { action reasonDisabled } }
-      reservation @include(if: $initial) { id status }
+      escrow { amountRaw availableActions { action reasonDisabled } }
+      reservation @include(if: $initial) { id status amountRaw }
       ownerApplications @include(if: $initial) {
-        id status message createdAt
+        id status message createdAt reuseOfIssueId
         developer { id name avatar walletAddress reputationScore isGithubVerified skills }
       }
       viewerApplication @include(if: $initial) { id status message }
@@ -61,7 +61,7 @@ const ISSUE_QUERY = `
 const APPLICATIONS_QUERY = `
   query IssueApplications($issueId: String!) {
     applications(issueId: $issueId) {
-      id status message createdAt
+      id status message createdAt reuseOfIssueId
       developer { id name avatar walletAddress reputationScore isGithubVerified skills }
     }
   }
@@ -118,12 +118,12 @@ type PreparedStep = { intentId: string; method: string; contractAddress: string;
 type ReservationRow = { id: string; status: string; chainId: number; contractAddress: string; tokenAddress: string; escrowKey: string; termsHash: string; amountRaw: string; deliveryDeadline: string; clientWallet: string; developerWallet: string };
 
 type ViewerCapabilities = { canApply?: boolean; canSelect: boolean; canFund: boolean; canSubmit: boolean; canRelease: boolean; canRequestChanges: boolean; canDispute: boolean; canProposeSettlement: boolean; canRevokeSettlement: boolean; canAcceptSettlement: boolean; canSubmitEvidence: boolean; canChallengeRuling: boolean; canFinalizeRuling: boolean; canFinalizeArbiterTimeoutSplit: boolean; canClaimMissedDeliveryRefund: boolean; canClaimReviewTimeout: boolean; similarFixIssueId?: string | null };
-type IssueDetail = IssueItem & { noExecutableTests: boolean; githubRepo?: string | null; bountyRaw: string; bountyDecimals: number; clientId: string; developerId?: string | null; developer?: IssueItem["client"] | null; viewerCapabilities?: ViewerCapabilities | null; escrow?: { availableActions: Array<{ action: string; reasonDisabled: string | null }> } | null };
-type Application = { id: string; status: string; message?: string | null; createdAt: string; developer: IssueItem["client"] & { skills?: string[] } };
+type IssueDetail = IssueItem & { noExecutableTests: boolean; githubRepo?: string | null; bountyRaw: string; bountyDecimals: number; clientId: string; developerId?: string | null; developer?: IssueItem["client"] | null; viewerCapabilities?: ViewerCapabilities | null; escrow?: { amountRaw?: string; availableActions: Array<{ action: string; reasonDisabled: string | null }> } | null };
+type Application = { id: string; status: string; message?: string | null; createdAt: string; reuseOfIssueId?: string | null; developer: IssueItem["client"] & { skills?: string[] } };
 
 type DetailResponse = { issue: (Omit<IssueDetail, "bountyAmount" | "bountyRaw" | "bountyDecimals"> & {
   bountyAmount: { formatted: string; raw: string; decimals: number };
-  reservation?: Pick<ReservationRow, "id" | "status"> | null;
+  reservation?: (Pick<ReservationRow, "id" | "status"> & { amountRaw?: string }) | null;
   ownerApplications?: Application[];
   viewerApplication?: { id: string; status: string; message?: string | null } | null;
   viewerSubmissions?: Submission[];
@@ -148,6 +148,8 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const [issue, setIssue] = useState<IssueDetail | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [applicationText, setApplicationText] = useState("");
+  const [reuseFix, setReuseFix] = useState(false);
+  const [reservedRaw, setReservedRaw] = useState<string | null>(null);
   const [disputeReason, setDisputeReason] = useState("");
   const [reservationId, setReservationId] = useState<string | null>(null);
   const [settlementPercent, setSettlementPercent] = useState("50");
@@ -207,6 +209,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
         if (initial) {
           const { reservation, ownerApplications, viewerApplication, viewerSubmissions } = result.issue;
           setReservationId(reservation?.status === "AWAITING_FUNDING" && result.issue.clientId === user?.id ? reservation.id : null);
+          setReservedRaw(reservation?.amountRaw ?? null);
           setApplications(ownerApplications ?? []);
           setMyApplication(viewerApplication ?? null);
           setSubmissions(viewerSubmissions ?? []);
@@ -409,7 +412,8 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     event.preventDefault();
     setIsWorking(true); setError(null); setNotice(null);
     try {
-      await graphqlRequest(APPLY_MUTATION, { input: { issueId, ...(applicationText.trim() ? { message: applicationText.trim() } : {}) } });
+      const reuseOfIssueId = reuseFix ? issue?.viewerCapabilities?.similarFixIssueId : null;
+      await graphqlRequest(APPLY_MUTATION, { input: { issueId, ...(applicationText.trim() ? { message: applicationText.trim() } : {}), ...(reuseOfIssueId ? { reuseOfIssueId } : {}) } });
       setNotice("Application sent. The client will be notified.");
       setApplicationText("");
       await load();
@@ -555,10 +559,15 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     );
   }
 
-  const payout = splitPayout(BigInt(issue.bountyRaw), PLATFORM_FEE_BPS);
+  // After selection the escrowed amount can be the reuse price (US-108), not the posted bounty.
+  const principalRaw = BigInt(issue.escrow?.amountRaw ?? reservedRaw ?? issue.bountyRaw);
+  const payout = splitPayout(principalRaw, PLATFORM_FEE_BPS);
   const devShare = formatTokenAmount(payout.developer, issue.bountyDecimals);
   const platformFee = formatTokenAmount(payout.fee, issue.bountyDecimals);
-  const clientTotal = formatTokenAmount(depositTotal(BigInt(issue.bountyRaw), PLATFORM_FEE_BPS), issue.bountyDecimals);
+  const clientTotal = formatTokenAmount(depositTotal(principalRaw, PLATFORM_FEE_BPS), issue.bountyDecimals);
+  const reuseRaw = bpsOf(BigInt(issue.bountyRaw), REUSE_PRICE_BPS);
+  const reusePrice = formatTokenAmount(reuseRaw, issue.bountyDecimals);
+  const reuseDeposit = formatTokenAmount(depositTotal(reuseRaw, PLATFORM_FEE_BPS), issue.bountyDecimals);
   const feePercent = `${PLATFORM_FEE_BPS / 100}%`;
 
   const statusInfo = issueStatus(issue.status);
@@ -856,6 +865,14 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                               <p style={{ margin: "4px 0 0 0", fontSize: 13, color: "var(--ink-2)" }}>
                                 {app.message || "No cover letter provided."}
                               </p>
+                              {app.reuseOfIssueId && (
+                                <p data-testid="reuse-price" style={{ margin: "4px 0 0 0", fontSize: 12, color: "var(--ink-2)" }}>
+                                  Reuses their fix of <Link href={`/issues/${app.reuseOfIssueId}`}>a similar issue</Link>. Bounty{" "}
+                                  <b className="mono">{issue.bountyAmount} {issue.token.symbol}</b>, reuse price{" "}
+                                  <b className="mono">{reusePrice} {issue.token.symbol}</b>, you deposit{" "}
+                                  <b className="mono">{reuseDeposit} {issue.token.symbol}</b> with the fee.
+                                </p>
+                              )}
                             </div>
                             <Button type="button" variant="outline" size="sm" onClick={() => { void graphqlRequest<{ openApplicationChat: string }>(`mutation OpenChat($id: ID!) { openApplicationChat(applicationId: $id) }`, { id: app.id }).then((r) => router.push(`/messages?c=${r.openApplicationChat}`)).catch((e) => setError(e.message)); }}>Message</Button>
                             {app.status === "PENDING" && issue.status === "OPEN" && issue.viewerCapabilities?.canSelect && (
@@ -1289,6 +1306,12 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                               placeholder="Relevant experience, how you would approach it, your timeline."
                             />
                           </FormField>
+                          {issue.viewerCapabilities?.similarFixIssueId && (
+                            <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13 }}>
+                              <input type="checkbox" checked={reuseFix} onChange={(e) => setReuseFix(e.target.checked)} />
+                              Reuse my fix of issue BR-{issue.viewerCapabilities.similarFixIssueId.slice(0, 8)} for {reusePrice} {issue.token.symbol} ({REUSE_PRICE_BPS / 100}% of the bounty)
+                            </label>
+                          )}
                           <button type="submit" className="btn btn-p" disabled={isWorking || Boolean(issue.viewerCapabilities && !issue.viewerCapabilities.canApply)}>
                             <MessageSquare className="ico" style={{ width: 14, height: 14 }} /> Apply to this task
                           </button>
@@ -1384,6 +1407,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                     <li><b>24 h</b> client funding reservation</li>
                     <li><b>7 days</b> review window after the latest submission</li>
                     <li><b>72 h</b> dispute evidence submission</li>
+                    <li><b>Reuse</b> the developer keeps a non-exclusive licence to reuse their fix</li>
                   </ol>
                 </div>
               </section>

@@ -60,7 +60,10 @@ builder.queryField("submissions", (t) =>
         throw gqlError("Only participants or admins can view submissions", "FORBIDDEN");
       return ctx.db.submission.findMany({
         ...query,
-        where: { issueId: args.issueId },
+        where: {
+          issueId: args.issueId,
+          ...(user.role !== "ADMIN" && issue.clientId === user.id && issue.developerId !== user.id && { status: { not: SubmissionStatus.DRAFT } }),
+        },
         orderBy: [{ submittedAt: "desc" }, { id: "asc" }],
         include: SUBMISSION_INCLUDE,
       });

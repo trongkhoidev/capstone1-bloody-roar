@@ -54,6 +54,12 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("Submission on the test database
     const denied = await execute(`query($id: String!) { submissions(issueId: $id) { id } }`, { user: outsider, db: prisma }, { id: issueId });
     expect(denied.errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
     await prisma.submission.update({ where: { id: initial.id }, data: { status: "SUBMITTED" } });
+    const list = `query($id: String!) { submissions(issueId: $id) { status } }`;
+    for (const [user, expected] of [[client, ["SUBMITTED"]], [developer, ["DRAFT", "SUBMITTED"]], [{ ...outsider, role: "ADMIN" }, ["DRAFT", "SUBMITTED"]]] as const) {
+      const visible = await execute(list, { user, db: prisma }, { id: issueId });
+      expect(visible.errors).toBeUndefined();
+      expect((visible.data?.submissions as { status: string }[]).map((row) => row.status).sort()).toEqual(expected);
+    }
     await prisma.escrowProjection.update({ where: { escrowIdHash }, data: { deliveryHash: initial.deliveryHash } });
     expect((await execute(CHANGES, { user: outsider, db: prisma }, { id: initial.id })).errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
     expect((await execute(CHANGES, { user: client, db: prisma }, { id: initial.id })).errors).toBeUndefined();

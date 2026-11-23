@@ -69,3 +69,21 @@ Warm SSR is fast. The slowness is (1) on-demand compile per route in dev, and (2
 - DB RTT from your machine (ICMP blocked); read real numbers from Prisma query logs.
 - `AUTH_PRIVATE_KEY`/thirdweb `authenticate` CPU cost per call.
 - `chat-room`, Socket.io and SSE load.
+
+## Đo trước và sau ngày 2026-11-23
+
+Dùng Playwright headless qua CLI để mở từng trang trên hai production build. Baseline là `9d5fc0d`. Cả hai dùng PostgreSQL local `bloody_e2e_plan_test`, `DEBUG_PRISMA=1`, cùng bounty `DISPUTED` và cùng các vai. RPC local trả chain ID và giờ block cho các resolver. Mỗi trang dùng một browser context mới. Đếm request GraphQL và câu SQL ghi trong log đến khi trang tải xong, chờ network idle và thêm 1,2 giây để thu lượt tải của các panel và badge. Số đo gồm xác thực, request ghi lượt xem và các lượt refresh từ Socket.io quan sát được trong cửa sổ đó. Cả bảy trang trả HTTP 200 và các response GraphQL đã đọc đều thành công.
+
+| Trang | Vai | SQL trước → sau | GraphQL trước → sau | Ước tính Supabase nếu SQL chạy tuần tự, trước → sau |
+|---|---|---:|---:|---:|
+| `/` | Khách | 21 → 21 | 3 → 3 | 1.890 → 1.890 ms |
+| `/marketplace` | Khách | 15 → 15 | 2 → 2 | 1.350 → 1.350 ms |
+| `/dashboard` | Developer | 29 → 27 | 5 → 5 | 2.610 → 2.430 ms |
+| `/issues/[id]` | Client | 91 → 59 | 14 → 9 | 8.190 → 5.310 ms |
+| `/issues/[id]` | Developer | 87 → 56 | 12 → 9 | 7.830 → 5.040 ms |
+| `/messages` | Developer | 35 → 34 | 5 → 5 | 3.150 → 3.060 ms |
+| `/admin` | Admin | 29 → 24 | 7 → 7 | 2.610 → 2.160 ms |
+
+Cột cuối lấy số câu SQL nhân 90 ms để ước tính trường hợp tuần tự hóa toàn bộ SQL. Các resolver và request chạy song song nên đây là cận trên theo mô hình RTT của kế hoạch. Phép đo chưa xác định số query nằm trên đường tới hạn hoặc thời gian tải thật trên Supabase.
+
+Dữ liệu chính của bounty detail dùng hai query `IssueDetail` và `UnreadMessages`. Bảy request còn lại trong lượt đo sau sửa gồm ba panel của tab Overview, ba lượt gọi từ badge của thanh điều hướng và mutation ghi lượt xem chạy nền. Chạy lại riêng các thao tác qua GraphQL handler cũng cho thấy SQL giảm từ 58 xuống 42 ở client và từ 55 xuống 42 ở developer. Log của fixture `DISPUTED` cho thấy các lượt đọc đầu tiên trong `viewerCapabilities` đã chạy song song. Fixture này chưa cung cấp bằng chứng để đổi thứ tự các truy vấn phụ thuộc vào phán quyết hoặc delivery hash.

@@ -27,6 +27,7 @@ export type TermsInput = {
   amountRaw: string;
   deliveryDeadline: string; // unix seconds
   githubRepo: string;
+  reuseOfIssueId?: string; // US-108: set only for a reuse-priced selection
 };
 
 // BE-39, QĐ-22
@@ -81,6 +82,8 @@ export function computeTermsHash(input: TermsInput): Hex {
       amountRaw: input.amountRaw,
       deliveryDeadline: input.deliveryDeadline,
       githubRepo: input.githubRepo,
+      // Omitted when absent so every full-price terms hash stays what it was.
+      ...(input.reuseOfIssueId ? { reuseOfIssueId: input.reuseOfIssueId } : {}),
     }),
   );
 }

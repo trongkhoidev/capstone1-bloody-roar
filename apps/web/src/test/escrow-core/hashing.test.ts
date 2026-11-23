@@ -33,6 +33,10 @@ const terms: TermsInput = {
 const TERMS_JSON =
   '{"acceptanceCriteria":[{"id":"c1","text":"A"},{"id":"c2","text":"B"}],"amountRaw":"1250000000","category":"BUG_FIX","deliveryDeadline":"1791828000","descriptionSha256":"0000000000000000000000000000000000000000000000000000000000000000","githubRepo":"bloody-roar/capstone1","issueId":"issue-1","termsVersion":1,"title":"Fix login","token":"0x036CbD53842c5426634e7929541eC2318f3dCF7e"}';
 const TERMS_HASH = "0x63710365bb46fd288f7df1eb11c385952b61aca9372367c618bcd66e892af6c3";
+// US-108: reuse price (half of 1250) and the reused issue are both committed.
+const REUSE_TERMS_JSON =
+  '{"acceptanceCriteria":[{"id":"c1","text":"A"},{"id":"c2","text":"B"}],"amountRaw":"625000000","category":"BUG_FIX","deliveryDeadline":"1791828000","descriptionSha256":"0000000000000000000000000000000000000000000000000000000000000000","githubRepo":"bloody-roar/capstone1","issueId":"issue-1","reuseOfIssueId":"issue-0","termsVersion":1,"title":"Fix login","token":"0x036CbD53842c5426634e7929541eC2318f3dCF7e"}';
+const REUSE_TERMS_HASH = "0x3c24a79cf212eeae66b16f640485193a02ea39784f3c05ce59211113914cc283";
 
 const delivery: DeliveryManifest = {
   issueId: "issue-1",
@@ -82,6 +86,14 @@ describe("canonicalJson and keccakUtf8", () => {
 });
 
 describe("computeTermsHash", () => {
+  it("matches the frozen reuse vector and changes with the reuse price", () => {
+    const reuse = { ...terms, amountRaw: "625000000", reuseOfIssueId: "issue-0" };
+    expect(keccakUtf8(REUSE_TERMS_JSON)).toBe(REUSE_TERMS_HASH);
+    expect(computeTermsHash(reuse)).toBe(REUSE_TERMS_HASH);
+    expect(computeTermsHash({ ...reuse, amountRaw: "1250000000" })).not.toBe(REUSE_TERMS_HASH);
+    expect(computeTermsHash({ ...reuse, reuseOfIssueId: "issue-9" })).not.toBe(REUSE_TERMS_HASH);
+  });
+
   it("hashes the QĐ-20 fields in canonical form with approved criteria sorted by id", () => {
     expect(canonicalJson(JSON.parse(TERMS_JSON))).toBe(TERMS_JSON);
     expect(keccakUtf8(TERMS_JSON)).toBe(TERMS_HASH);

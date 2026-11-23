@@ -2,7 +2,7 @@
 // Chọn người và giữ chỗ ký quỹ (UC-01): BE-23, BE-31, BE-38, BE-41f.
 // Chỉ ghi FundingReservation và đổi trạng thái Issue. Không gọi chain.
 
-import { DAY_MS, HOUR_MS } from "@bloody-roar/shared/constants";
+import { DAY_MS, HOUR_MS, REUSE_PRICE_BPS } from "@bloody-roar/shared/constants";
 import { ensureWorkConversation } from "@bloody-roar/database";
 import { createHash } from "node:crypto";
 import { z } from "zod";
@@ -21,7 +21,7 @@ import {
   keccakUtf8,
   type Hex,
 } from "@bloody-roar/shared/escrow";
-import { parseTokenAmount } from "@bloody-roar/shared/money";
+import { bpsOf, parseTokenAmount } from "@bloody-roar/shared/money";
 
 import { builder } from "../../builder";
 import { requireAuth } from "../../context";
@@ -83,11 +83,14 @@ type TermsCriterion = {
   testFilePath?: string | null;
 };
 
-// BE-39, QĐ-22: hash này được deposit() và effect FUNDED so khớp với reservation
+// BE-39, QĐ-22: hash này được deposit() và effect FUNDED so khớp với reservation.
+// US-108: amountRaw là số đã giảm khi tái sử dụng, nên chữ ký EIP-712 và termsHash cam kết đúng giá đó.
 function reservationTermsHash(
   issue: TermsIssue,
   criteria: TermsCriterion[],
   deliveryDeadline: Date,
+  amountRaw: bigint,
+  reuseOfIssueId: string | null,
 ): Hex {
   return computeTermsHash({
     issueId: issue.id,
@@ -101,9 +104,10 @@ function reservationTermsHash(
       approved: criterion.isApproved,
     })),
     token: issue.token.address as Hex,
-    amountRaw: parseTokenAmount(issue.bountyAmount.toFixed(), issue.token.decimals).toString(),
+    amountRaw: amountRaw.toString(),
     deliveryDeadline: String(Math.floor(deliveryDeadline.getTime() / 1000)),
     githubRepo: issue.githubRepo ?? "",
+    ...(reuseOfIssueId ? { reuseOfIssueId } : {}),
   });
 }
 
@@ -181,7 +185,9 @@ builder.mutationField("selectDeveloper", (t) =>
             const contractToken = await readEscrowToken(target.contractAddress, target.chainId);
             if (contractToken.toLowerCase() !== issue.token.address.toLowerCase())
               throw gqlError("Token does not match the escrow contract", "INVALID_TOKEN");
-            const amountRaw = parseTokenAmount(issue.bountyAmount.toFixed(), issue.token.decimals);
+            const bountyRaw = parseTokenAmount(issue.bountyAmount.toFixed(), issue.token.decimals);
+            // Priced from the bounty at selection time, so an edited bounty cannot drift from a stored offer.
+            const amountRaw = application.reuseOfIssueId ? bpsOf(bountyRaw, REUSE_PRICE_BPS) : bountyRaw;
 
             const reservation = await tx.fundingReservation.create({
               data: {
@@ -196,7 +202,7 @@ builder.mutationField("selectDeveloper", (t) =>
                 tokenAddress: issue.token.address,
                 amountRaw: amountRaw.toString(),
                 deliveryDeadline,
-                termsHash: reservationTermsHash(issue, criteria, deliveryDeadline),
+                termsHash: reservationTermsHash(issue, criteria, deliveryDeadline, amountRaw, application.reuseOfIssueId ?? null),
                 termsVersion: issue.termsVersion,
                 expiresAt: new Date(now.getTime() + ESCROW_CONSTANTS.RESERVATION_HOURS * HOUR_MS),
               },

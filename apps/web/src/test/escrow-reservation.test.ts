@@ -134,6 +134,23 @@ describe("selectDeveloper (BE-23, BE-41f)", () => {
     expect(db.tx.fundingReservation.create).not.toHaveBeenCalled();
   });
 
+  it("reserves the reuse price and commits it with the reused issue in the terms hash (US-108)", async () => {
+    const full = await execute(SELECT, { user: client, db: fakeDb() }, selectVariables(inDays(30)));
+    const db = fakeDb();
+    db.tx.application.findFirst.mockResolvedValue({ id: "app-1", issueId: "issue-1", developerId: developer.id, reuseOfIssueId: "old-issue" } as never);
+    const result = await execute(SELECT, { user: client, db }, selectVariables(inDays(30)));
+    expect(result.errors).toBeUndefined();
+    const reuse = result.data?.selectDeveloper as { amountRaw: string; termsHash: string };
+    expect(reuse.amountRaw).toBe("50000000");
+    expect(reuse.termsHash).not.toBe((full.data?.selectDeveloper as { termsHash: string }).termsHash);
+    const terms = { issueId: "issue-1", termsVersion: 1, title: "Fix the escrow release button",
+      descriptionSha256: createHash("sha256").update(description, "utf8").digest("hex"), category: "BUG_FIX",
+      acceptanceCriteria: [{ id: "tc-1", text: "Given the client approves the work, when the developer releases funds, then the developer receives the payout", approved: true }],
+      token: TOKEN_ADDRESS as `0x${string}`, amountRaw: "50000000", githubRepo: "",
+      deliveryDeadline: String(Math.floor(new Date((db.tx.fundingReservation.create.mock.calls[0]![0].data.deliveryDeadline as Date)).getTime() / 1000)) };
+    expect(reuse.termsHash).toBe(computeTermsHash({ ...terms, reuseOfIssueId: "old-issue" }));
+  });
+
   it("creates an AWAITING_FUNDING reservation with the escrow key, hash and terms", async () => {
     const db = fakeDb();
     const deliveryDeadline = inDays(30);

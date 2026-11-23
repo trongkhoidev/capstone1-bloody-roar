@@ -33,6 +33,12 @@ describe("checkDepositAgainstReservation", () => {
     expect(checkDepositAgainstReservation({ ...reservation, ...change }, reservation)).toEqual([reason]);
   });
 
+  it("accepts a reuse-priced deposit of 50 and flags the full 100 (US-108)", () => {
+    const reuse = { ...reservation, amount: 50_000_000n };
+    expect(checkDepositAgainstReservation({ ...reuse }, reuse)).toEqual([]);
+    expect(checkDepositAgainstReservation({ ...reuse, amount: 100_000_000n }, reuse)).toEqual(["amount"]);
+  });
+
   it("reports every mismatch in field order", () => {
     const deposit = { ...reservation, amount: 1n, token: "0x1111111111111111111111111111111111111111" as const };
     expect(checkDepositAgainstReservation(deposit, reservation)).toEqual(["amount", "token"]);

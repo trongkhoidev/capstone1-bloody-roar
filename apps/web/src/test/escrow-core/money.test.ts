@@ -1,6 +1,7 @@
 // apps/web/src/test/escrow-core/money.test.ts
 import { describe, expect, it } from "vitest";
 import { bpsOf, formatTokenAmount, parseTokenAmount, splitPayout, depositTotal } from "@bloody-roar/shared/money";
+import { PLATFORM_FEE_BPS, REUSE_PRICE_BPS } from "@bloody-roar/shared/constants";
 
 const UINT256_MAX = 2n ** 256n - 1n;
 
@@ -89,6 +90,13 @@ describe("splitPayout", () => {
     const bounty = parseTokenAmount("100", 6);
     expect(depositTotal(bounty, 1_000)).toBe(parseTokenAmount("110", 6));
     expect(splitPayout(bounty, 1_000)).toEqual({ developer: bounty, fee: parseTokenAmount("10", 6), client: 0n });
+  });
+
+  it("prices a reuse at half the bounty: the client deposits 55 and the developer gets 50 (US-108)", () => {
+    const reuse = bpsOf(parseTokenAmount("100", 6), REUSE_PRICE_BPS);
+    expect(reuse).toBe(parseTokenAmount("50", 6));
+    expect(depositTotal(reuse, PLATFORM_FEE_BPS)).toBe(parseTokenAmount("55", 6));
+    expect(splitPayout(reuse, PLATFORM_FEE_BPS)).toEqual({ developer: reuse, fee: parseTokenAmount("5", 6), client: 0n });
   });
 
   it("rounds the fee down", () => {

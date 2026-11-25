@@ -106,7 +106,6 @@ export function setWalletKind(kind: WalletKind | null): void {
     if (kind) window.localStorage.setItem(WALLET_KIND_KEY, kind);
     else window.localStorage.removeItem(WALLET_KIND_KEY);
   } catch {
-    // Storage can be disabled by the browser.
   }
 }
 

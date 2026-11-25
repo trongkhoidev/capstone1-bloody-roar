@@ -1,4 +1,3 @@
-// Shared by the browser auth store: keep server-only SDKs (thirdweb v4 signing) out of this module.
 
 export type SiweLoginPayload = {
   domain: string;

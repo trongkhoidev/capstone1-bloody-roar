@@ -4,7 +4,6 @@ import { AUTH_COOKIE_NAME, verifySessionJWT } from "./auth";
 
 type Role = "CLIENT" | "DEVELOPER" | "ADMIN";
 
-/** Returns null for a confirmed guest and undefined when session restoration should retry. */
 export async function getServerUser() {
   const token = cookies().get(AUTH_COOKIE_NAME)?.value;
   if (!token) return null;

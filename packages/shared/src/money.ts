@@ -40,14 +40,10 @@ export function bpsOf(amount: bigint, bps: number): bigint {
   return (amount * BigInt(bps)) / BPS_DENOMINATOR;
 }
 
-// Số Client phải nạp: bounty cộng phí nền tảng (100 USDC bounty, phí 10% -> nạp 110).
 export function depositTotal(principal: bigint, feeBps: number): bigint {
   return principal + bpsOf(principal, feeBps);
 }
 
-// Theo _resolve trong BloodyRoarEscrow.sol: Developer nhận đủ phần bounty của mình. Phí chỉ tính trên phần Developer;
-// phần phí đã nạp mà không dùng tới trả lại Client. Tổng ba phần bằng depositTotal(principal).
-// clientBps mặc định 0 (release): Developer nhận đủ principal, nền tảng nhận phí.
 export function splitPayout(
   principal: bigint,
   feeBps: number,

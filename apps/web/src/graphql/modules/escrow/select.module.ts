@@ -84,8 +84,6 @@ type TermsCriterion = {
   testFilePath?: string | null;
 };
 
-// BE-39, QĐ-22: hash này được deposit() và effect FUNDED so khớp với reservation.
-// US-108: amountRaw là số đã giảm khi tái sử dụng, nên chữ ký EIP-712 và termsHash cam kết đúng giá đó.
 function reservationTermsHash(
   issue: TermsIssue,
   criteria: TermsCriterion[],
@@ -188,7 +186,6 @@ builder.mutationField("selectDeveloper", (t) =>
             if (contractToken.toLowerCase() !== issue.token.address.toLowerCase())
               throw gqlError("Token does not match the escrow contract", "INVALID_TOKEN");
             const bountyRaw = parseTokenAmount(issue.bountyAmount.toFixed(), issue.token.decimals);
-            // Priced from the bounty at selection time, so an edited bounty cannot drift from a stored offer.
             const amountRaw = application.reuseOfIssueId ? bpsOf(bountyRaw, REUSE_PRICE_BPS) : bountyRaw;
 
             const reservation = await tx.fundingReservation.create({

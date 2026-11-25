@@ -539,7 +539,6 @@ async function run() {
     }, "myClaimable reaches 0");
     check("S1", "myClaimable returns 0 / empty", true);
 
-    // Dev gets the full bounty; the 10% fee was paid by the client on top
     const finalDevBal = await getUsdcBalance(tokenAddress, dev.address);
     const diff = finalDevBal - initialDevBal;
     check("S1", "Dev received the full bounty (100 USDC)", diff === 100_000_000n, `delta: ${diff}`);

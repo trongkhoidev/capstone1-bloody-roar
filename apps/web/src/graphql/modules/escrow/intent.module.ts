@@ -182,7 +182,6 @@ builder.mutationField("prepareEscrowDeposit", (t) =>
       if (chain.token.toLowerCase() !== reservation.tokenAddress.toLowerCase()) throw gqlError("Token does not match the escrow contract", "INVALID_TOKEN");
       if (chain.paused) throw gqlError("Escrow is paused", "ESCROW_PAUSED");
       if (chain.blockTimestamp >= intent.deliveryDeadline) throw gqlError("The delivery deadline has passed", "DELIVERY_DEADLINE_INVALID");
-      // The contract pulls the bounty plus the platform fee.
       const total = depositTotal(intent.amount, ESCROW_CONSTANTS.FEE_BPS);
       if (chain.balance < total) throw gqlError("Insufficient token balance", "INSUFFICIENT_BALANCE");
       const expiry = new Date(Math.min(reservation.expiresAt.getTime(), reservation.intentExpiresAt.getTime(), now.getTime() + ESCROW_CONSTANTS.INTENT_MINUTES * MINUTE_MS));

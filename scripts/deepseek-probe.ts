@@ -1,11 +1,7 @@
-// Run once before wiring DeepSeek into the testgen job: bun scripts/deepseek-probe.ts
-// Answers three questions the docs leave open: does a 2nd call with the same prefix hit the cache,
-// do reasoning tokens eat max_tokens (blank content), and how fast is non-thinking vs thinking low.
 const key = process.env.DEEPSEEK_API_KEY;
 if (!key) throw new Error("Set DEEPSEEK_API_KEY");
 const model = process.env.DEEPSEEK_MODEL_TESTGEN ?? "deepseek-flash";
 
-// ~6k tokens of fixed prefix so the cache has something to hit.
 const prefix = Array.from({ length: 400 }, (_, i) => `export function f${i}(a: number): number { return a * ${i} + ${i % 7}; }`).join("\n");
 const messages = (tail: string) => [
   { role: "system", content: "You write vitest tests. Reply in json like {\"code\":\"...\"}." },
@@ -34,5 +30,4 @@ await new Promise((r) => setTimeout(r, 5000)); // cache entries take seconds to 
 await call("2 no-think (same prefix)", "Write a json test for f5(1).", off, 800);
 await call("3 think low", "Write a json test for f9(4).", { thinking: { type: "enabled" }, reasoning_effort: "low" }, 2000);
 await call("4 think default, 300 max", "Write a json test for f11(3).", {}, 300);
-// Expect: call 2 hit ≈ prefix size; call 4 blank=true if reasoning counts toward max_tokens.
 export {};

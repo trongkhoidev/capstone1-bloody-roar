@@ -15,7 +15,6 @@ import { useUiPreferences } from "@/lib/ui-preferences";
 import type { PreparedCall } from "@/lib/web3/send-prepared";
 import type * as SendPrepared from "@/lib/web3/send-prepared";
 
-// Wallet code (ethers, thirdweb) loads on the first claim, not with the page.
 const sendPreparedCalls: typeof SendPrepared.sendPreparedCalls = async (...args) => (await import("@/lib/web3/send-prepared")).sendPreparedCalls(...args);
 
 const CLAIMABLE_QUERY = `query MyClaimable { myClaimable { chainId contractAddress address amountRaw autoClaimPending } }`;

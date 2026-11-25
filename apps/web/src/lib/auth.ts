@@ -88,7 +88,6 @@ export async function verifyJWT(token: string) {
 
 // Session restoration must distinguish an unavailable database from an invalid token.
 // A page load fires several requests with the same token; share one lookup for a moment.
-// shortcut: per-process cache, use shared invalidation when running multiple replicas.
 const AUTH_CACHE_MS = 30_000;
 type CachedSession = { expiresAt: number; result: Promise<Awaited<ReturnType<typeof loadSession>>["user"]> };
 const authGlobals = globalThis as typeof globalThis & { bloodyRoarAuthCache?: Map<string, CachedSession> };

@@ -6,7 +6,6 @@ export type PreparedCall = { intentId: string; contractAddress: string; data: st
 
 const short = (address: string) => `${address.slice(0, 6)}…${address.slice(-4)}`;
 
-// Signer on the active chain for the signed-in account.
 export async function walletSigner(expected: string): Promise<ethers.Signer & Pick<ethers.Wallet, "_signTypedData">> {
   if (getWalletKind() === "in-app") {
     const { restoreInAppAccount, inAppEthersSigner } = await import("./in-app");

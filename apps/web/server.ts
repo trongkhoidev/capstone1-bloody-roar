@@ -159,7 +159,6 @@ app.prepare().then(async () => {
           const issueId = body.data?.issues?.edges[0]?.node.id;
           if (issueId) await fetch(`http://localhost:${port}/issues/${encodeURIComponent(issueId)}`, { redirect: "manual" });
         } catch {
-          // The server must still start if the issue query or warm-up fails.
         }
       })();
     }

@@ -19,7 +19,6 @@ function getClient() {
 }
 
 function getWallet() {
-  // Use an EOA because ERC-1271 signatures break SIWE verification and smart accounts change escrow's msg.sender.
   return (wallet ??= inAppWallet({ auth: { options: ["google"] } }));
 }
 
@@ -41,7 +40,6 @@ export function inAppEthersSigner(account: Account) {
 }
 
 export async function disconnectInApp(): Promise<void> {
-  // After reload the SDK needs autoConnect to bind the client before disconnect can clear storage.
   if (!wallet?.getAccount()) await restoreInAppAccount();
   await wallet?.disconnect();
 }

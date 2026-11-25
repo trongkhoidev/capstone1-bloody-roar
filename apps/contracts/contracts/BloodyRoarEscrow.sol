@@ -240,7 +240,6 @@ contract BloodyRoarEscrow is Ownable2Step, Pausable, ReentrancyGuard {
             revert InvalidDeadline();
         }
 
-        // The client pays the bounty plus the platform fee on top; the developer is owed the full bounty.
         uint256 total = amount + _depositFee(amount);
         uint256 balanceBefore = token.balanceOf(address(this));
         token.safeTransferFrom(msg.sender, address(this), total);
@@ -574,7 +573,6 @@ contract BloodyRoarEscrow is Ownable2Step, Pausable, ReentrancyGuard {
         Escrow storage escrow = _escrows[escrowId];
         if (escrow.phase == Phase.RESOLVED) revert InvalidPhase(escrowId, escrow.phase);
 
-        // Fee is charged only on the developer's share; the unused part of the deposited fee goes back to the client.
         uint256 depositFee = _depositFee(escrow.amount);
         uint256 clientShare = Math.mulDiv(escrow.amount, clientBps, MAX_BPS);
         uint256 developerAmount = escrow.amount - clientShare;

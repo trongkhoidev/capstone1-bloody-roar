@@ -13,10 +13,7 @@ const nextConfig = (phase) => ({
   // External packages that should not be bundled by Next.js
   // (they're used in the custom server, not in the browser)
   experimental: {
-    // thirdweb v4 + ethers are server-side auth only (lib/auth.ts, reached from the root layout); bundling them
-    // added thousands of modules to every page compile in dev.
     serverComponentsExternalPackages: ["pino", "pino-pretty", "socket.io", "@thirdweb-dev/auth", "@thirdweb-dev/wallets", "@thirdweb-dev/sdk", "ethers"],
-    // The in-app barrel also exports wallet icons that pull in unrelated wallet SDKs.
     optimizePackageImports: ["thirdweb/wallets/in-app"],
     // Container builds set NEXT_BUILD_CPUS to cap parallel workers and avoid OOM kills.
     ...(process.env.NEXT_BUILD_CPUS && { cpus: Number(process.env.NEXT_BUILD_CPUS) }),
@@ -52,7 +49,6 @@ const nextConfig = (phase) => ({
       net: false,
       tls: false,
     };
-    // Optional x402 peers of @coinbase/cdp-sdk (pulled in via thirdweb's wallet list); we never use x402 payments.
     config.resolve.alias = {
       ...config.resolve.alias,
       "@x402/core": false,

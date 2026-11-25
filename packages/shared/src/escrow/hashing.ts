@@ -85,7 +85,6 @@ export function computeTermsHash(input: TermsInput): Hex {
       amountRaw: input.amountRaw,
       deliveryDeadline: input.deliveryDeadline,
       githubRepo: input.githubRepo,
-      // Omit absent optional fields to preserve legacy terms hashes.
       ...(input.licence ? { licence: input.licence } : {}),
       ...(input.reuseOfIssueId ? { reuseOfIssueId: input.reuseOfIssueId } : {}),
     }),

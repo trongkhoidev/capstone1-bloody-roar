@@ -1,5 +1,3 @@
-// US-107 / S-119: when a bounty is published, find COMPLETED issues that solve the same problem and tell their developer.
-// Postgres full-text narrows the candidates; the AI only confirms them. Any failure skips the suggestion, never the publish.
 import { z } from "zod";
 import { createNotificationIdempotent, type PrismaClient } from "@bloody-roar/database";
 import { completeAI, isAIConfigured, parseAIJson } from "../../ai/model-router";
@@ -9,7 +7,6 @@ import { createLogger } from "../logger";
 
 const log = createLogger("similar-issues");
 
-// Only near-duplicates earn a "you fixed this before" ping; lower scores are related topics, not reusable fixes.
 export const SIMILARITY_MIN_SCORE = 0.8;
 const MAX_CANDIDATES = 5;
 
@@ -21,8 +18,6 @@ type Candidate = { id: string; title: string; description: string; developerId: 
 
 export async function findSimilarCandidates(db: PrismaClient, issue: { id: string; title: string; description: string; clientId: string; requiredSkills: string[] }) {
   if (!issue.requiredSkills.length) return [];
-  // OR the English lexemes so partial matches still rank. Use 'simple' to keep them from being stemmed twice,
-  // and quote them so punctuation cannot break to_tsquery.
   return db.$queryRaw<Candidate[]>`
     WITH q AS (
       SELECT to_tsquery('simple', array_to_string(ARRAY(
@@ -71,7 +66,6 @@ export async function detectSimilarIssues(
   for (const match of matches) {
     const old = byId.get(match.issueId)!;
     await db.issueSimilarity.createMany({ data: [{ issueId: issue.id, similarIssueId: old.id, developerId: old.developerId, score: match.score }], skipDuplicates: true });
-    // Only the old title goes out: the developer already knows it, and nothing else of the earlier client's issue leaks.
     await createNotificationIdempotent(db, {
       userId: old.developerId,
       type: "SIMILAR_ISSUE_POSTED",
@@ -84,7 +78,6 @@ export async function detectSimilarIssues(
   }
 }
 
-/** Runs after the publish has committed; a slow or failing AI must not hold locks or fail the mutation. */
 export function detectSimilarIssuesInBackground(db: PrismaClient, issueId: string, user: { id: string; role: string }) {
   void detectSimilarIssues(db, issueId, user).catch((error) => log.warn({ error, issueId }, "Similar issue detection skipped"));
 }

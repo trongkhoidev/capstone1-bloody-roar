@@ -1,55 +1,57 @@
-# Capstone1 (BloodyRoar) — AGENTS.md
+# AGENTS.md
 
-Shared instructions for **Claude Code**, **Codex**, **agy**, and **OpenCode**.
+Shared rules for Claude Code, Codex, agy and OpenCode. Claude-only notes live in `CLAUDE.md`.
 
----
+Bloody-Roar is a bounty marketplace: clients post issues, developers apply and deliver, payment goes through a USDC escrow contract on Base Sepolia (`chainId 84532`, local Hardhat `31337`). AI features are advisory only.
 
-## 1. Project Overview & Architecture
+- Bun only. Never use `npm`, `pnpm` or `npx`; ask before `bun add`.
+- Workspaces: `apps/web` (Next.js + `server.ts`, GraphQL Yoga, port 4000), `apps/worker` (indexer, reconciler, jobs), `apps/contracts` (Hardhat, Foundry for fuzz), `packages/database` (Prisma), `packages/shared`. Full-stack E2E lives in `tests/e2e`, plans and specs in `docs/`.
+- Dependencies point one way: `web` and `worker` may import `database` and `shared`. Never import `web` from `worker` or the reverse.
+- After changing `BloodyRoarEscrow.sol`, run `bun run contracts:compile`, then `bun run apps/contracts/scripts/export-abi.ts`. Do not edit `packages/shared/src/escrow/abi.ts` by hand.
+- After changing `schema.prisma`, run `bun run db:generate`. Ask before `db:migrate`, `db:push` or `db:reset` against anything but a local `_test` database. Never hand-edit an applied migration.
+- The default branch is `main`. Never commit to `main`; base new branches and worktrees on `main` or `origin/main`. Commit or push only when asked.
+- Ask before deploying contracts or changing `ESCROW_ADDRESS`. A changed contract ABI is a one-way door.
+- Ask before any production command: `db:migrate:prod`, `db:seed:prod`, `deploy:base-sepolia`, force-push.
+- Never read, print or commit real secrets or `.env` values (`.env`, `.env.bak`, `demo-wallets/`, `~/.jira.env`). New env vars go into `.env.example` with a placeholder.
 
-Monorepo powered by **Bun** (`bun.lock`):
+## Branches and Commits
 
-```
-capstone1/
-├── apps/
-│   ├── web/            # Next.js web application (port 4000)
-│   └── contracts/      # Smart contracts (Hardhat / Foundry / Solidity)
-├── packages/
-│   └── database/       # Database schema & migrations (Drizzle / Prisma)
-└── docs/               # Architecture docs & proposals
-```
+- Branch: `feat/US-N-short-name` or `fix/US-N-short-name`, using the Jira story number.
+- Commit: `type(scope): subject (US-N)`, for example `fix(worker): keep build dirs out of fileTree (US-35)`. Scopes: `web`, `worker`, `db`, `contracts`, `shared`, `e2e`, `docs`.
+- No AI or co-author attribution lines.
 
----
+## Style Guide
 
-## 2. Key Commands (Bun only)
+- Shortest working diff. Reuse helpers in `apps/web` and `packages/` before writing new ones; no unrequested abstractions.
+- Find code with CodeGraph first (`codegraph_explore` or `codegraph explore "<symbols>"`), then grep.
+- No code comments unless asked.
+- Keep things in one function unless composable or reusable.
+- Avoid `try`/`catch` and the `any` type where possible.
+- Rely on type inference; annotate only exports or where it adds clarity.
+- Use Bun APIs when possible, like `Bun.file()`.
+- UI in `apps/web` follows `.agents/rules/claude-design-rules.md` and the screens in `docs/claude-design/`.
 
-```bash
-# Web Application
-bun run dev                     # Start web dev server (port 4000)
-bun run build                   # Build web app
-bun run lint                    # Lint web app
-bun run typecheck               # Typecheck web app
-bun run test:e2e:backend        # Backend E2E tests
+## Testing
 
-# Database
-bun run db:generate             # Generate migrations from schema
-bun run db:migrate              # Apply migrations
-bun run db:studio               # Open DB studio GUI
+- Write the failing test first, then the fix.
+- Avoid mocks; test real behaviour against a local database whose name ends in `_test`. Do not copy logic into tests.
+- Money paths (fee, payout, reuse price) need a test that checks exact amounts.
+- `apps/web`: `bun run test` (Vitest). `apps/worker`: `bun run test`. `packages/database`: `bun run test`. Contracts: `bun run contracts:test`, fuzz with `bun run --cwd apps/contracts test:fuzz`.
+- Backend E2E: `bun run test:e2e:backend` from the repo root, with `TEST_DATABASE_URL` set to a local database whose name ends in `_test`.
+- Test from the CLI only (Vitest, Playwright, `bun test`, `curl`). Do not drive a real browser through screenshots or clicks.
+- Manual local stack (Postgres on `localhost:5433`, Hardhat node, web on `:4010`): `docs/LOCAL_DEV.md`.
 
-# Smart Contracts
-bun run contracts:compile       # Compile contracts
-bun run contracts:test          # Run contract tests
-bun run contracts:deploy        # Deploy to local network
-```
+## Before Finishing
 
----
+- Run `bun run typecheck` and `bun run lint` from the repo root, plus the tests for the area you touched.
+- Say what you ran and what you skipped.
 
-## 3. Token Optimization & Code Efficiency (Ponytail & Codegraph)
+## Jira
 
-- **Code Navigation**: This repo has `.codegraph/`. Use `codegraph_explore` or `codegraph explore` first to trace symbols and call paths before grepping.
-- **Pack Context**: For large reviews, run `repomix --compress` to extract clean AST context with minimal tokens.
-- **Ponytail Ladder of Laziness**:
-  1. Does this feature need to exist? (Strict YAGNI).
-  2. Does a helper/util already exist in `apps/web` or `packages/`? Reuse it.
-  3. Standard library or framework built-ins? Use them.
-  4. Write the **Shortest Working Diff**. Avoid unnecessary wrappers, unrequested boilerplate, and bloated abstractions.
-- **Verification Gate**: Always run `bun run typecheck` and `bun run lint` before finishing any task.
+- Site `trongkhoidev.atlassian.net`, project `US` (old `KAN-xx` keys are stale).
+- Use the Atlassian MCP when available, otherwise REST with creds from `~/.jira.env`:
+  `curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" "$JIRA_BASE_URL/rest/api/3/search/jql?jql=project=US"`
+
+## Undoing AI Changes
+
+When I ask you to undo an AI-written change, and the mistake isn't obvious or already covered here, suggest an AGENTS.md edit to prevent the same problem. Always ask permission before making the edit.

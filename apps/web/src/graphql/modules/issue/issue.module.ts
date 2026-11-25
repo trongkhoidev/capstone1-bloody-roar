@@ -699,6 +699,7 @@ builder.mutationField("updateIssue", (t) =>
       if (current.status !== IssueStatus.OPEN)
         throw gqlError("A bounty that has been taken cannot be edited", "ISSUE_NOT_EDITABLE");
 
+      // shortcut: editing title, description or skills does not re-run similar-issue detection, so old IssueSimilarity rows stay; re-run it here if edits after publish become common.
       const raw = Object.fromEntries(
         Object.entries(args.input).filter(([key, value]) => key !== "id" && value !== null),
       );

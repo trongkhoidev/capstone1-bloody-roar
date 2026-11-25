@@ -21,6 +21,13 @@ contract HashVectorsTest {
         );
     }
 
+    function testReuseLicenceTermsHashVector() public pure {
+        assertHash(
+            '{"acceptanceCriteria":[{"id":"c1","text":"A"},{"id":"c2","text":"B"}],"amountRaw":"625000000","category":"BUG_FIX","deliveryDeadline":"1791828000","descriptionSha256":"0000000000000000000000000000000000000000000000000000000000000000","githubRepo":"bloody-roar/capstone1","issueId":"issue-1","licence":"non-exclusive-reuse-v1","reuseOfIssueId":"issue-0","termsVersion":1,"title":"Fix login","token":"0x036CbD53842c5426634e7929541eC2318f3dCF7e"}',
+            bytes32(0x8f559fbe72b926af73fce5fbac1e76eb633b2b5eca03530d4574771bfc0816b9)
+        );
+    }
+
     function testDeliveryHashVector() public pure {
         assertHash(
             '{"attachments":[{"key":"delivery/a.png","mime":"image/png","sha256":"1111111111111111111111111111111111111111111111111111111111111111","size":2048}],"commitSha":"abcdef1","descriptionSha256":"0000000000000000000000000000000000000000000000000000000000000000","issueId":"issue-1","prUrl":"https://github.com/bloody-roar/capstone1/pull/7","submissionId":"sub-1"}',

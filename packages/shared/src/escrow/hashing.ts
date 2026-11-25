@@ -15,6 +15,8 @@ export function keccakUtf8(text: string): Hex {
   return keccak256(toBytes(text));
 }
 
+export const REUSE_LICENCE_TERMS = "non-exclusive-reuse-v1";
+
 // QĐ-20. amountRaw và deliveryDeadline là chuỗi số thập phân để không mất độ chính xác khi JCS.
 export type TermsInput = {
   issueId: string;
@@ -27,6 +29,7 @@ export type TermsInput = {
   amountRaw: string;
   deliveryDeadline: string; // unix seconds
   githubRepo: string;
+  licence?: string;
   reuseOfIssueId?: string; // US-108: set only for a reuse-priced selection
 };
 
@@ -82,7 +85,8 @@ export function computeTermsHash(input: TermsInput): Hex {
       amountRaw: input.amountRaw,
       deliveryDeadline: input.deliveryDeadline,
       githubRepo: input.githubRepo,
-      // Omitted when absent so every full-price terms hash stays what it was.
+      // Omit absent optional fields to preserve legacy terms hashes.
+      ...(input.licence ? { licence: input.licence } : {}),
       ...(input.reuseOfIssueId ? { reuseOfIssueId: input.reuseOfIssueId } : {}),
     }),
   );

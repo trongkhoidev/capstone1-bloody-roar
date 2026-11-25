@@ -3,7 +3,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { assertTestDatabase } from "@bloody-roar/database/test-guard";
 import { prisma } from "@bloody-roar/database";
-import { computeTermsHash, keccakUtf8, type Hex } from "@bloody-roar/shared/escrow";
+import { computeTermsHash, keccakUtf8, REUSE_LICENCE_TERMS, type Hex } from "@bloody-roar/shared/escrow";
 import { execute, loadSchema } from "./graphql-execute";
 const mock = vi.hoisted(() => ({ token: "" }));
 vi.mock("../lib/escrow/token", () => ({ readEscrowToken: async () => mock.token }));
@@ -69,7 +69,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("acceptance criteria terms on th
       expect(reservation.termsHash).toBe(computeTermsHash({ issueId, termsVersion: issue.termsVersion, title: issue.title,
         descriptionSha256: createHash("sha256").update(issue.description).digest("hex"), category: issue.category,
         acceptanceCriteria: [{ id: current.id, text: `Given ${current.given}, when ${current.when}, then ${current.then}`, approved: current.isApproved }],
-        token: mock.token as Hex, amountRaw: "100000000", deliveryDeadline: String(Math.floor(deadline.getTime() / 1000)), githubRepo: "" }));
+        token: mock.token as Hex, amountRaw: "100000000", deliveryDeadline: String(Math.floor(deadline.getTime() / 1000)), githubRepo: "", licence: REUSE_LICENCE_TERMS }));
     }
   }, 60_000);
 });

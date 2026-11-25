@@ -19,6 +19,7 @@ import {
   computeTermsHash,
   ESCROW_CONSTANTS,
   keccakUtf8,
+  REUSE_LICENCE_TERMS,
   type Hex,
 } from "@bloody-roar/shared/escrow";
 import { bpsOf, parseTokenAmount } from "@bloody-roar/shared/money";
@@ -107,6 +108,7 @@ function reservationTermsHash(
     amountRaw: amountRaw.toString(),
     deliveryDeadline: String(Math.floor(deliveryDeadline.getTime() / 1000)),
     githubRepo: issue.githubRepo ?? "",
+    licence: REUSE_LICENCE_TERMS,
     ...(reuseOfIssueId ? { reuseOfIssueId } : {}),
   });
 }

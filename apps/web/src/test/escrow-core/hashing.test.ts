@@ -100,6 +100,14 @@ describe("computeTermsHash", () => {
     expect(computeTermsHash(terms)).toBe(TERMS_HASH);
   });
 
+  it("commits the reuse licence in canonical key order", () => {
+    const json = REUSE_TERMS_JSON.replace('"reuseOfIssueId":', '"licence":"non-exclusive-reuse-v1","reuseOfIssueId":');
+    const hash = "0x8f559fbe72b926af73fce5fbac1e76eb633b2b5eca03530d4574771bfc0816b9";
+    expect(canonicalJson(JSON.parse(json))).toBe(json);
+    expect(keccakUtf8(json)).toBe(hash);
+    expect(computeTermsHash({ ...terms, amountRaw: "625000000", licence: "non-exclusive-reuse-v1", reuseOfIssueId: "issue-0" })).toBe(hash);
+  });
+
   it("ignores unapproved criteria and the order criteria arrive in", () => {
     const reordered = { ...terms, acceptanceCriteria: [...terms.acceptanceCriteria].reverse() };
     expect(computeTermsHash(reordered)).toBe(TERMS_HASH);

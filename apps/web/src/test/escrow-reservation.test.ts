@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { Prisma } from "@bloody-roar/database";
-import { computeTermsHash, keccakUtf8 } from "@bloody-roar/shared/escrow";
+import { computeTermsHash, keccakUtf8, REUSE_LICENCE_TERMS } from "@bloody-roar/shared/escrow";
 import { execute, loadSchema } from "./graphql-execute";
 import { CONTRACT } from "./helpers/contract";
 
@@ -148,7 +148,7 @@ describe("selectDeveloper (BE-23, BE-41f)", () => {
       acceptanceCriteria: [{ id: "tc-1", text: "Given the client approves the work, when the developer releases funds, then the developer receives the payout", approved: true }],
       token: TOKEN_ADDRESS as `0x${string}`, amountRaw: "50000000", githubRepo: "",
       deliveryDeadline: String(Math.floor(new Date((db.tx.fundingReservation.create.mock.calls[0]![0].data.deliveryDeadline as Date)).getTime() / 1000)) };
-    expect(reuse.termsHash).toBe(computeTermsHash({ ...terms, reuseOfIssueId: "old-issue" }));
+    expect(reuse.termsHash).toBe(computeTermsHash({ ...terms, licence: REUSE_LICENCE_TERMS, reuseOfIssueId: "old-issue" }));
   });
 
   it("creates an AWAITING_FUNDING reservation with the escrow key, hash and terms", async () => {
@@ -181,6 +181,7 @@ describe("selectDeveloper (BE-23, BE-41f)", () => {
         amountRaw: "100000000",
         deliveryDeadline: String(Math.floor(new Date(deliveryDeadline).getTime() / 1000)),
         githubRepo: "",
+        licence: REUSE_LICENCE_TERMS,
       }),
       termsVersion: 1,
     });

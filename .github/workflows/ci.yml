@@ -49,11 +49,22 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Generate Prisma client
         run: bun run db:generate
-      - name: Lint, typecheck, unit tests
+      - name: Lint and typecheck
         run: |
           bun run lint
           bun run typecheck
-          bun run --cwd apps/web test
+      - name: Create and migrate the unit test database
+        working-directory: packages/database
+        env:
+          DATABASE_URL: postgresql://postgres:ci-${{ github.run_id }}@localhost:5432/bloody_roar_ci_test?schema=public
+          DIRECT_URL: postgresql://postgres:ci-${{ github.run_id }}@localhost:5432/bloody_roar_ci_test?schema=public
+        run: |
+          psql "postgresql://postgres:ci-${{ github.run_id }}@localhost:5432/postgres" -c "CREATE DATABASE bloody_roar_ci_test;"
+          bun x prisma migrate deploy
+      - name: Unit tests
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:ci-${{ github.run_id }}@localhost:5432/bloody_roar_ci_test?schema=public
+        run: bun run --cwd apps/web test
       - name: Build
         run: bun run build
       - name: Migrate and seed

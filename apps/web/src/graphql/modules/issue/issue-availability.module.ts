@@ -1,6 +1,8 @@
 import { builder } from "../../builder";
 import type { GraphQLContext } from "../../context";
-import { IssueRef } from "./issue.module";
+import { IssueRef, publishBlockReason } from "./issue.module";
+import { criteriaBlockReason } from "../ai/ai.module";
+import { withdrawBlockReason } from "../application/application.module";
 import { FundingReservationRef } from "../escrow/reservation.module";
 import { EscrowPhaseEnum, ResolutionKindEnum } from "../escrow/escrow.module";
 import { SubmissionRef, SUBMISSION_INCLUDE } from "../submission/submission.module";
@@ -49,6 +51,28 @@ const CapabilityRef = builder.objectRef<Capabilities>("ViewerCapabilities").impl
 }) });
 
 builder.prismaObjectFields(IssueRef, (t) => ({
+  availableActions: t.field({
+    type: [ActionRef],
+    description: "Non-escrow actions for the viewer; reasonDisabled is the error code the mutation would return",
+    resolve: async (issue, _args, ctx) => {
+      const userId = ctx.user?.id;
+      const [application, reserved] = userId
+        ? await Promise.all([
+            ctx.db.application.findUnique({ where: { issueId_developerId: { issueId: issue.id, developerId: userId } }, select: { id: true, developerId: true, status: true } }),
+            ctx.db.fundingReservation.findMany({ where: { issueId: issue.id, status: { in: ["AWAITING_FUNDING", "FUNDED"] } }, select: { applicationId: true } }),
+          ])
+        : [null, []];
+      const reasons = userId
+        ? {
+            withdrawApplication: withdrawBlockReason(application, userId, reserved.some((r) => r.applicationId === application?.id)),
+            editCriteria: criteriaBlockReason(issue, userId, reserved.length > 0),
+            setSource: criteriaBlockReason(issue, userId, reserved.length > 0),
+            publish: publishBlockReason(issue, userId, new Date()),
+          }
+        : { withdrawApplication: "UNAUTHORIZED", editCriteria: "UNAUTHORIZED", setSource: "UNAUTHORIZED", publish: "UNAUTHORIZED" };
+      return Object.entries(reasons).map(([action, reasonDisabled]) => ({ action, enabledAt: null, reasonDisabled }));
+    },
+  }),
   escrow: t.field({ type: EscrowProjectionRef, nullable: true, resolve: (issue, _args, ctx) => ctx.db.escrowProjection.findUnique({ where: { issueId: issue.id } }) }),
   reservation: t.field({ type: FundingReservationRef, nullable: true, resolve: (issue, _args, ctx) => {
     if (!ctx.user) return null;

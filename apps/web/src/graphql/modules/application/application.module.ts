@@ -244,6 +244,23 @@ builder.mutationField("applyToIssue", (t) =>
   }),
 );
 
+const WITHDRAW_BLOCK_MESSAGES = {
+  NOT_FOUND: "Application not found",
+  FORBIDDEN: "You cannot withdraw this application",
+  APPLICATION_NOT_WITHDRAWABLE: "This application cannot be withdrawn",
+} as const;
+
+export function withdrawBlockReason(
+  application: { developerId: string; status: ApplicationStatus } | null,
+  userId: string,
+  activeReservation: boolean,
+): keyof typeof WITHDRAW_BLOCK_MESSAGES | null {
+  if (!application) return "NOT_FOUND";
+  if (application.developerId !== userId) return "FORBIDDEN";
+  if (application.status !== ApplicationStatus.PENDING || activeReservation) return "APPLICATION_NOT_WITHDRAWABLE";
+  return null;
+}
+
 builder.mutationField("withdrawApplication", (t) =>
   t.field({
     type: ApplicationRef,
@@ -253,11 +270,8 @@ builder.mutationField("withdrawApplication", (t) =>
       const application = await ctx.db.application.findUnique({
         where: { id: String(args.id) },
       });
-      if (!application) throw gqlError("Application not found", "NOT_FOUND");
-      if (application.developerId !== user.id)
-        throw gqlError("You cannot withdraw this application", "FORBIDDEN");
-      if (application.status !== ApplicationStatus.PENDING)
-        throw gqlError("This application cannot be withdrawn", "APPLICATION_NOT_WITHDRAWABLE");
+      const early = withdrawBlockReason(application, user.id, false);
+      if (early || !application) throw gqlError(WITHDRAW_BLOCK_MESSAGES[early ?? "NOT_FOUND"], early ?? "NOT_FOUND");
       return ctx.db.$transaction(async (tx) => {
         await tx.$queryRaw`SELECT id FROM issues WHERE id = ${application.issueId} FOR UPDATE`;
         const active = await tx.fundingReservation.count({
@@ -266,7 +280,7 @@ builder.mutationField("withdrawApplication", (t) =>
             status: { in: [ReservationStatus.AWAITING_FUNDING, ReservationStatus.FUNDED] },
           },
         });
-        if (active > 0)
+        if (withdrawBlockReason(application, user.id, active > 0))
           throw gqlError("This application is being funded and cannot be withdrawn", "APPLICATION_NOT_WITHDRAWABLE");
         const withdrawn = await tx.application.updateMany({
           where: {

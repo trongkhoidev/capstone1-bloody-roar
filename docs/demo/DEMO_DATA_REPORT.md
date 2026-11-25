@@ -70,7 +70,7 @@
 Do mạng testnet Base Sepolia không tua được thời gian (`evm_increaseTime` chỉ có trên Hardhat local), các trạng thái sau được thiết kế để xảy ra tự nhiên:
 
 1. **Review Timeout (7 ngày):**
-   - 4 bài nộp submission để mở, sau 7 ngày thật kể từ lúc nộp, bất kỳ ai cũng có thể gọi `prepareClaimReviewTimeout` để giải phóng 97.5% cho developer và 2.5% cho fee Safe.
+   - 4 bài nộp submission để mở, sau 7 ngày thật kể từ lúc nộp, bất kỳ ai cũng có thể gọi `prepareClaimReviewTimeout` để trả đủ bounty cho developer và trả 10% bounty cho fee Safe từ khoản phí client đã nạp thêm (QĐ-33).
 2. **Challenge Expiry (7 ngày):**
    - Phán quyết sơ bộ (INITIAL_RULING) sau 7 ngày không bị challenge sẽ cho phép gọi `prepareFinalizeRuling`.
 3. **Arbiter Stall Timeout (30 ngày):**

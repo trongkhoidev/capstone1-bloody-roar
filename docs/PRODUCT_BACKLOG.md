@@ -312,7 +312,7 @@
 | **S1-SC-05** | Implement`releaseFunds(escrowId)`                    | Kiên | 2h       | S1-SC-04 | Client release, platform fee 10% (client trả thêm, QĐ-33) |
 | **S1-SC-06** | Implement missed-delivery refund                      | Kiên | 1h       | S1-SC-03 | Client claim sau delivery deadline      |
 | **S1-SC-07** | Implement review-timeout claim                        | Kiên | 1h       | S1-SC-04 | Developer claim sau deadline + 7 ngày |
-| **S1-SC-08** | Implement mutual `Settlement`                         | Kiên | 2h       | S1-SC-03 | Propose/accept/revoke, fee-free         |
+| **S1-SC-08** | Implement mutual `Settlement`                         | Kiên | 2h       | S1-SC-03 | Propose/accept/revoke, 10% fee on the Developer's share from the Client's fee deposit, with the unused fee returned to the Client (QĐ-33)         |
 | **S1-SC-09** | Implement`raiseDispute(escrowId, evidenceHash)`       | Kiên | 1h       | S1-SC-03 | Participant-only, freeze normal exits   |
 | **S1-SC-10** | Implement `Ruling`, challenge và timeout exits        | Kiên | 2h       | S1-SC-09 | 24h notices, 30-day 50/50 fallback      |
 | **S1-SC-11** | Implement pause deposits + two-step role transfer     | Kiên | 1h       | S1-SC-02 | Existing funds always retain safe exits |

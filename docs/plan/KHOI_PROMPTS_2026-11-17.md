@@ -1,6 +1,6 @@
 # Prompt cho từng ticket của Khôi
 
-> Ngày: 17/11/2026. Dựa trên `docs/KHOI_TODO_2026-11-17.md`.
+> Ngày: 17/11/2026. Dựa trên `docs/plan/KHOI_TODO_2026-11-17.md`.
 > Jira đã kiểm lại ngày 17/11: 25 task mở, sprint và link "blocks" khớp với tài liệu.
 > Cách dùng: mở phiên Claude Code mới ở root repo, dán **khối chung** rồi dán **prompt của ticket**. Mỗi ticket một phiên, một branch.
 
@@ -15,7 +15,7 @@ Quy tắc:
 - Tra code bằng `codegraph explore "<symbol>"` trước khi grep hoặc đọc file.
 - Branch mới từ main mới nhất: `git fetch origin && git switch -c <branch> origin/main`.
 - Mô tả gốc của ticket nằm trên Jira (project US). Đọc bằng curl theo AGENTS.md mục 4, không in token.
-- Kế hoạch và hiện trạng code: docs/KHOI_TODO_2026-11-17.md.
+- Kế hoạch và hiện trạng code: docs/plan/KHOI_TODO_2026-11-17.md.
 - Viết test đỏ trước, rồi mới sửa code. Diff nhỏ nhất đủ làm xong; không thêm option, wrapper hay tính năng ngoài ticket.
 - Test cần DB dùng Postgres local localhost:5433 qua TEST_DATABASE_URL. Không chạy lệnh ghi nào lên DB Supabase.
 - Lệnh test: web `bun run --cwd apps/web test <file>`, worker `bun run --cwd apps/worker test <file>`, database `bun run --cwd packages/database test`.
@@ -272,7 +272,7 @@ Cổng kiểm: bun run typecheck, bun run lint. Commit riêng, message có (US-8
 
 ## Post-release
 
-Làm sau 05/12. Thứ tự và lý do xem `docs/KHOI_TODO_2026-11-17.md` mục 3.
+Làm sau 05/12. Thứ tự và lý do xem `docs/plan/KHOI_TODO_2026-11-17.md` mục 3.
 
 ### US-61 · S-803 · Prompt AI review không công cụ, kiểm trích dẫn
 

@@ -1,4 +1,4 @@
-Bạn đang làm việc trong repo `/Users/admin/repos/capstone1` (Bun monorepo). Đọc `AGENTS.md` và `docs/plan/PERF_SLOW_PAGES.md` trước khi làm.
+Bạn đang làm việc trong repo `/Users/admin/repos/capstone1` (Bun monorepo). Đọc `AGENTS.md` và `docs/plan/PERF_SLOW_PAGES_2026-11-15.md` trước khi làm.
 
 Tạo nhánh mới `fix/ui-bugs-and-page-speed` từ `origin/main` (`9d5fc0d`). Mỗi task là một commit riêng, theo dạng `fix(web): ...` hoặc `perf(web): ...`, kèm key Jira nếu có.
 
@@ -67,7 +67,7 @@ Query `submissions` (`apps/web/src/graphql/modules/submission/submission.module.
 
 ### Cách đo (làm trước khi sửa và sau khi sửa)
 
-Không đo trên Supabase. Chạy web với DB local (`TEST_DATABASE_URL`) và `DEBUG_PRISMA=1`, rồi đếm **số query DB** và **số request GraphQL** khi mở các trang `/`, `/marketplace`, `/dashboard`, `/issues/[id]` (với vai client và developer), `/messages`, `/admin`. Ghi bảng trước và sau vào cuối `docs/plan/PERF_SLOW_PAGES.md`, kèm cột "ước tính trên Supabase = số query tuần tự × 90 ms".
+Không đo trên Supabase. Chạy web với DB local (`TEST_DATABASE_URL`) và `DEBUG_PRISMA=1`, rồi đếm **số query DB** và **số request GraphQL** khi mở các trang `/`, `/marketplace`, `/dashboard`, `/issues/[id]` (với vai client và developer), `/messages`, `/admin`. Ghi bảng trước và sau vào cuối `docs/plan/PERF_SLOW_PAGES_2026-11-15.md`, kèm cột "ước tính trên Supabase = số query tuần tự × 90 ms".
 
 ### B1: `recordIssueView` chiếm kết nối và xóa cache auth của mọi người
 

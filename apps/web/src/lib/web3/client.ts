@@ -48,8 +48,7 @@ export interface WalletOption {
   id: string;
   name: string;
   icon: string;
-  type: "injected" | "coinbase" | "walletconnect" | "social";
-  provider?: "google" | "github" | "email";
+  type: "injected" | "coinbase" | "walletconnect";
 }
 
 type InjectedEthereum = {
@@ -90,29 +89,26 @@ export const WALLET_OPTIONS: WalletOption[] = [
   },
 ];
 
-export const SOCIAL_OPTIONS: WalletOption[] = [
-  {
-    id: "google",
-    name: "Continue with Google",
-    icon: "🌐",
-    type: "social",
-    provider: "google",
-  },
-  {
-    id: "github",
-    name: "Continue with GitHub",
-    icon: "🐙",
-    type: "social",
-    provider: "github",
-  },
-  {
-    id: "email",
-    name: "Sign in with email OTP",
-    icon: "✉️",
-    type: "social",
-    provider: "email",
-  },
-];
+type WalletKind = "in-app" | "injected";
+const WALLET_KIND_KEY = "bloody-roar-wallet-kind";
+
+export function getWalletKind(): WalletKind | null {
+  try {
+    const kind = window.localStorage.getItem(WALLET_KIND_KEY);
+    return kind === "in-app" || kind === "injected" ? kind : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setWalletKind(kind: WalletKind | null): void {
+  try {
+    if (kind) window.localStorage.setItem(WALLET_KIND_KEY, kind);
+    else window.localStorage.removeItem(WALLET_KIND_KEY);
+  } catch {
+    // Storage can be disabled by the browser.
+  }
+}
 
 /**
  * Check if an injected Ethereum provider (MetaMask, etc.) is available

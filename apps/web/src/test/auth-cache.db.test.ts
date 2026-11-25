@@ -7,8 +7,7 @@ import { assertTestDatabase } from "@bloody-roar/database/test-guard";
 it.skipIf(!process.env.TEST_DATABASE_URL)("keeps sessions cached for view tracking and denies the very next request after a ban", async () => {
   assertTestDatabase(process.env.TEST_DATABASE_URL);
   vi.stubEnv("AUTH_PRIVATE_KEY", "0x" + "1".padStart(64, "0"));
-  const { issueAuthToken } = await import("../lib/auth/siwe");
-  const { thirdwebAuth } = await import("../lib/auth");
+  const { issueAuthToken, thirdwebAuth } = await import("../lib/auth");
   const { POST } = await import("../app/api/graphql/route");
   const users: string[] = [];
   const signIn = async (role: "ADMIN" | "DEVELOPER") => {

@@ -6,6 +6,10 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { createLoginMessage, useAuthStore } from "../lib/store/use-auth-store";
 import type { AuthUser } from "../lib/store/use-auth-store";
 import { apiClient } from "../lib/api-client";
+import { getWalletKind, setWalletKind } from "@/lib/web3/client";
+import { disconnectInApp } from "@/lib/web3/in-app";
+
+vi.mock("@/lib/web3/in-app", () => ({ disconnectInApp: vi.fn() }));
 
 describe("useAuthStore", () => {
   const mockUser: AuthUser = {
@@ -25,6 +29,7 @@ describe("useAuthStore", () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    setWalletKind(null);
     useAuthStore.setState({ user: null, status: "idle", error: null });
   });
 
@@ -73,6 +78,16 @@ describe("useAuthStore", () => {
     const state = useAuthStore.getState();
     expect(state.user).toBeNull();
     expect(state.status).toBe("idle");
+  });
+
+  it("clears wallet kind and disconnects the Google wallet on logout", async () => {
+    setWalletKind("in-app");
+    vi.mocked(disconnectInApp).mockRejectedValueOnce(new Error("Disconnected already"));
+
+    useAuthStore.getState().logout();
+
+    expect(getWalletKind()).toBeNull();
+    await vi.waitFor(() => expect(disconnectInApp).toHaveBeenCalledOnce());
   });
 
   it("should handle successful SIWE loginWithSignature flow", async () => {

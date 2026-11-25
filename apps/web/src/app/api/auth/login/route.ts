@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ACTIVE_CHAIN_ID } from "@bloody-roar/shared";
-import { clearAuthCache, AUTH_COOKIE_NAME, thirdwebAuth } from "../../../../lib/auth";
-import { authDomain, authUri, issueAuthToken } from "../../../../lib/auth/siwe";
+import { clearAuthCache, AUTH_COOKIE_NAME, issueAuthToken, thirdwebAuth } from "../../../../lib/auth";
+import { authDomain, authUri } from "../../../../lib/auth/siwe";
 import { validateSiwePayload } from "../../../../lib/auth/siwe-validation";
 import { buildChallengeIdentity, ChallengeReplayError, consumeSiweChallenge } from "../../../../lib/auth/challenge";
 import { prisma, UserRole } from "@bloody-roar/database";

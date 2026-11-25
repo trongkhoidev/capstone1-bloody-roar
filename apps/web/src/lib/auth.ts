@@ -1,4 +1,4 @@
-import { ThirdwebAuth } from "@thirdweb-dev/auth";
+import { buildJWT, ThirdwebAuth } from "@thirdweb-dev/auth";
 import { PrivateKeyWallet } from "@thirdweb-dev/wallets";
 import { prisma } from "@bloody-roar/database";
 import { createLogger } from "./logger";
@@ -140,4 +140,23 @@ async function loadSession(token: string) {
   const user = session.user;
   if (user.walletAddress !== authUser.address.toLowerCase() || user.isBanned) return invalid;
   return { user, expiresAt: session.expiresAt.getTime() };
+}
+
+export async function issueAuthToken(walletAddress: string): Promise<string> {
+  const privateKey = process.env.AUTH_PRIVATE_KEY;
+  if (!privateKey) {
+    throw new Error("AUTH_PRIVATE_KEY is not configured");
+  }
+  const wallet = new PrivateKeyWallet(privateKey);
+  return buildJWT({
+    wallet,
+    payload: {
+      iss: await wallet.getAddress(),
+      sub: walletAddress,
+      aud: authDomain(),
+      nbf: new Date(),
+      exp: new Date(Date.now() + 1000 * 60 * 60 * 24),
+      iat: new Date(),
+    },
+  });
 }

@@ -2,7 +2,7 @@
 "use client";
 
 import { toast } from "@/lib/toast";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { X, AlertCircle } from "lucide-react";
 import { WolfLogo } from "@/components/ui/wolf-logo";
@@ -14,25 +14,48 @@ import {
   hasInjectedProvider,
   connectInjectedWallet,
   ensureActiveChain,
+  setWalletKind,
   signMessageWithInjected,
 } from "../../lib/web3/client";
 import type { WalletOption } from "../../lib/web3/client";
+import type * as InAppWallet from "@/lib/web3/in-app";
 
 interface ConnectModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const GOOGLE_SIGN_IN_FAILED = "Google sign-in failed. Please try again.";
+
 export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
   const [activeTab, setActiveTab] = useState<"web3" | "social">("web3");
   const [selectedWallet, setSelectedWallet] = useState<WalletOption | null>(null);
+  const [googleWallet, setGoogleWallet] = useState<typeof InAppWallet | null>(null);
 
   const router = useRouter();
   const pathname = usePathname();
 
   const { status, error, loginWithSignature, clearError, setStatus } = useAuthStore();
 
+  useEffect(() => {
+    if (!isOpen || activeTab !== "social" || googleWallet || error) return;
+    let active = true;
+    void import("@/lib/web3/in-app").then((module) => {
+      if (active) setGoogleWallet(module);
+    }).catch(() => {
+      if (active) setStatus("error", GOOGLE_SIGN_IN_FAILED);
+    });
+    return () => { active = false; };
+  }, [activeTab, error, googleWallet, isOpen, setStatus]);
+
   if (!isOpen) return null;
+
+  const finishLogin = (kind: "in-app" | "injected") => {
+    setWalletKind(kind);
+    onClose();
+    router.replace(`${pathname}${window.location.search}`);
+    router.refresh();
+  };
 
   const handleWalletSelect = async (option: WalletOption) => {
     clearError();
@@ -58,15 +81,30 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
           signMessageWithInjected(address, msg, option.id)
         );
 
-        if (success) {
-          onClose();
-          router.replace(`${pathname}${window.location.search}`);
-          router.refresh();
-        }
+        if (success) finishLogin("injected");
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Unable to connect wallet. Please try again.";
         setStatus("error", message);
       }
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    if (!googleWallet?.isInAppConfigured()) return;
+    setStatus("connecting");
+    try {
+      const account = await googleWallet.connectGoogle();
+      const success = await loginWithSignature(account.address, (message) => account.signMessage({ message }));
+      if (success) finishLogin("in-app");
+      else setStatus("error", GOOGLE_SIGN_IN_FAILED);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      const message = /opening pop-up|(?:pop-?up|window).*blocked|blocked.*(?:pop-?up|window)/i.test(detail)
+        ? "Your browser blocked the Google sign-in window. Allow pop-ups for this site and try again."
+        : /closed login window|(?:pop-?up|window).*closed|cancel(?:l?ed|lation)|access_denied/i.test(detail)
+          ? "Google sign-in was cancelled."
+          : GOOGLE_SIGN_IN_FAILED;
+      setStatus("error", message);
     }
   };
 
@@ -77,7 +115,9 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
   };
 
   const isProcessing =
-    status === "signing" || status === "requesting_nonce" || status === "verifying" || status === "authenticated";
+    status === "connecting" || status === "signing" || status === "requesting_nonce" || status === "verifying" || status === "authenticated";
+  const isGoogleSignIn = isProcessing && activeTab === "social";
+  const isGoogleConfigured = googleWallet?.isInAppConfigured();
 
   const isMetaMaskDetected = typeof window !== "undefined" && Boolean((window as unknown as { ethereum?: { isMetaMask?: boolean } }).ethereum?.isMetaMask);
 
@@ -104,10 +144,12 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
           <WolfLogo size={38} />
           <div style={{ minWidth: 0, flex: 1 }}>
             <h2 id="login-t" style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "var(--ink)" }}>
-              {isProcessing && selectedWallet ? "Connecting to wallet..." : "Sign in to Bloody-Roar"}
+              {isGoogleSignIn ? "Signing in with Google…" : isProcessing && selectedWallet ? "Connecting to wallet..." : "Sign in to Bloody-Roar"}
             </h2>
             <p style={{ fontSize: 12, color: "var(--ink-3)", margin: "2px 0 0 0" }}>
-              {isProcessing
+              {isGoogleSignIn
+                ? "Complete Google sign-in to continue."
+                : isProcessing
                 ? "Please confirm the action in your wallet"
                 : "Your wallet is your account. New wallets get an account on first sign-in."}
             </p>
@@ -117,7 +159,7 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
             className="ibtn"
             aria-label="Close"
             onClick={onClose}
-            disabled={status === "authenticated"}
+            disabled={isGoogleSignIn || status === "authenticated"}
             style={{ width: 32, height: 32, marginLeft: 8 }}
           >
             <X className="ico" style={{ width: 14, height: 14 }} />
@@ -129,7 +171,7 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
           {/* Active Connection or Error State */}
           {isProcessing || error ? (
             <div className="states" style={{ width: "100%" }}>
-              {status === "signing" && (
+              {status === "signing" && !isGoogleSignIn && (
                 <div className="st">
                   <div className="st-h">
                     <span className="dot" style={{ background: "var(--warn)" }} />
@@ -151,13 +193,13 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
                 </div>
               )}
 
-              {(status === "requesting_nonce" || status === "verifying") && (
+              {(status === "connecting" || status === "requesting_nonce" || status === "verifying" || (status === "signing" && isGoogleSignIn)) && (
                 <div className="st">
                   <div className="st-h">
                     <span className="spin" aria-hidden="true" />
-                    {status === "requesting_nonce" ? "Requesting authentication challenge..." : "Verifying signature..."}
+                    {status === "connecting" ? "Waiting for Google…" : status === "requesting_nonce" ? "Requesting authentication challenge..." : status === "signing" ? "Signing the authentication challenge…" : "Verifying signature..."}
                   </div>
-                  <p style={{ color: "var(--ink-2)" }}>Securing your session with the Bloody-Roar backend.</p>
+                  {status !== "connecting" && <p style={{ color: "var(--ink-2)" }}>Securing your session with the Bloody-Roar backend.</p>}
                 </div>
               )}
 
@@ -211,7 +253,7 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
                   className={activeTab === "social" ? "on" : ""}
                   onClick={() => setActiveTab("social")}
                 >
-                  Google · coming soon
+                  Google
                 </button>
               </div>
 
@@ -271,21 +313,19 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
 
               {activeTab === "social" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <div className="how" style={{ fontSize: 13, lineHeight: 1.6 }}>
-                    <b style={{ color: "var(--ink)" }}>Wallet-first identity</b>
-                    <p style={{ margin: 0 }}>
-                      Social logins (Google, GitHub) cannot directly control smart contract escrow.
-                      Please connect your wallet first, then you can link GitHub from your profile settings.
-                    </p>
-                  </div>
                   <button
                     type="button"
-                    className="btn btn-o btn-sm"
-                    onClick={() => setActiveTab("web3")}
-                    style={{ alignSelf: "flex-start" }}
+                    className="wopt"
+                    data-testid="social-btn-google"
+                    onClick={handleGoogleSignIn}
+                    disabled={!isGoogleConfigured}
                   >
-                    Switch to wallet sign-in
+                    Continue with Google
                   </button>
+                  <p className="how">
+                    We create a wallet for your Google account. You&apos;ll need test ETH on {ACTIVE_CHAIN.name} for gas before funding or submitting work.
+                  </p>
+                  {isGoogleConfigured === false && <p>Google sign-in is not configured on this server.</p>}
                 </div>
               )}
             </>

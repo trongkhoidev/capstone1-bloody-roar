@@ -6,6 +6,7 @@ import { createContext, useContext } from "react";
 import { createStore, useStore } from "zustand";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client";
 import { createLoginMessage, type SiweLoginPayload } from "@/lib/auth/siwe";
+import { getWalletKind, setWalletKind } from "@/lib/web3/client";
 
 export { createLoginMessage } from "@/lib/auth/siwe";
 
@@ -84,6 +85,10 @@ export function createAuthStore(initialUser: AuthUser | null = null) {
         if (get().user) {
           void apiClient.post("/api/auth/logout").catch(() => undefined);
         }
+        if (getWalletKind() === "in-app") {
+          void import("@/lib/web3/in-app").then(({ disconnectInApp }) => disconnectInApp()).catch(() => undefined);
+        }
+        setWalletKind(null);
         set({
           user: null,
           status: "idle",

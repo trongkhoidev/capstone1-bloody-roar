@@ -4,13 +4,21 @@
 
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { IssueCard } from "../components/marketplace/issue-card";
 import type { IssueItem } from "../components/marketplace/issue-card";
 import { MarketplaceFilterBar } from "../components/marketplace/filter-bar";
 import { MarketplaceEmpty } from "../components/marketplace/marketplace-empty";
 import { ConnectModal } from "../components/auth/connect-modal";
 import { Button } from "../components/ui/button";
+import { AuthStoreContext, createAuthStore } from "@/lib/store/use-auth-store";
+import { getWalletKind, setWalletKind } from "@/lib/web3/client";
+import { connectGoogle, isInAppConfigured } from "@/lib/web3/in-app";
+
+vi.mock("@/lib/web3/in-app", () => ({
+  connectGoogle: vi.fn(),
+  isInAppConfigured: vi.fn(),
+}));
 
 const mockIssue: IssueItem = {
   id: "test-issue-1",
@@ -137,20 +145,80 @@ describe("MarketplaceEmpty", () => {
 });
 
 describe("ConnectModal", () => {
-  it("should render wallet options and explain wallet-first account linking", () => {
+  it("renders the Google tab and disables sign-in without a client ID", async () => {
+    vi.mocked(isInAppConfigured).mockReturnValue(false);
     render(<ConnectModal isOpen={true} onClose={vi.fn()} />);
 
     expect(screen.getByText("Sign in to Bloody-Roar")).toBeInTheDocument();
     expect(screen.getByTestId("wallet-btn-metamask")).toBeInTheDocument();
     expect(screen.getByTestId("wallet-btn-coinbase")).toBeInTheDocument();
 
-    // Switch to Social tab
-    const socialTab = screen.getByTestId("tab-social-btn");
+    const socialTab = screen.getByRole("tab", { name: "Google" });
     fireEvent.click(socialTab);
 
-    expect(screen.queryByTestId("social-btn-google")).not.toBeInTheDocument();
+    expect(socialTab).toHaveAttribute("aria-selected", "true");
+    expect(await screen.findByText("Google sign-in is not configured on this server.")).toBeInTheDocument();
+    expect(screen.getByTestId("social-btn-google")).toBeDisabled();
     expect(screen.queryByTestId("email-input")).not.toBeInTheDocument();
-    expect(screen.getByText(/link GitHub from your profile/i)).toBeInTheDocument();
+  });
+
+  async function openGoogleTab(onClose: () => void, store = createAuthStore()) {
+    vi.mocked(isInAppConfigured).mockReturnValue(true);
+    render(
+      <AuthStoreContext.Provider value={store}>
+        <ConnectModal isOpen={true} onClose={onClose} />
+      </AuthStoreContext.Provider>,
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "Google" }));
+    const button = screen.getByTestId("social-btn-google");
+    await waitFor(() => expect(button).toBeEnabled());
+    return button;
+  }
+
+  it("signs the SIWE challenge with the Google account and closes the modal", async () => {
+    setWalletKind(null);
+    const address = `0x${"a".repeat(40)}` as const;
+    const signMessage = vi.fn().mockResolvedValue("0xsigned");
+    vi.mocked(connectGoogle).mockResolvedValueOnce({
+      address,
+      signMessage,
+      sendTransaction: vi.fn(),
+      signTypedData: vi.fn(),
+    });
+    const store = createAuthStore();
+    const loginWithSignature = vi.fn<ReturnType<typeof store.getState>["loginWithSignature"]>()
+      .mockImplementation(async (_address, sign) => {
+        expect(getWalletKind()).toBeNull();
+        expect(await sign("SIWE challenge")).toBe("0xsigned");
+        return true;
+      });
+    store.setState({ loginWithSignature });
+    const onClose = vi.fn();
+
+    const button = await openGoogleTab(onClose, store);
+    fireEvent.click(button);
+    expect(connectGoogle).toHaveBeenCalled();
+    expect(screen.getByRole("heading", { name: "Signing in with Google…" })).toBeInTheDocument();
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(loginWithSignature).toHaveBeenCalledWith(address, expect.any(Function));
+    expect(signMessage).toHaveBeenCalledWith({ message: "SIWE challenge" });
+    expect(getWalletKind()).toBe("in-app");
+    setWalletKind(null);
+  });
+
+  it.each([
+    ["User closed login window", "Google sign-in was cancelled."],
+    ["Something went wrong opening pop-up", "Your browser blocked the Google sign-in window. Allow pop-ups for this site and try again."],
+  ])("lets the user retry after %s", async (detail, message) => {
+    vi.mocked(connectGoogle).mockRejectedValueOnce(new Error(detail));
+    const onClose = vi.fn();
+    const button = await openGoogleTab(onClose);
+    fireEvent.click(button);
+
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(screen.getByTestId("social-btn-google")).toBeEnabled();
   });
 });
 

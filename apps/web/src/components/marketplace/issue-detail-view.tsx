@@ -478,12 +478,13 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const assign = async (applicationId: string) => {
     setIsWorking(true); setError(null); setNotice(null);
     try {
-      const result = await graphqlRequest<{ selectDeveloper: { id: string } }>(SELECT_DEVELOPER, {
+      const result = await graphqlRequest<{ selectDeveloper: { id: string; amountRaw: string } }>(SELECT_DEVELOPER, {
         issue: issueId,
         application: applicationId,
         deadline: new Date(`${deliveryDeadline}T23:59:59Z`).toISOString(),
       });
       setReservationId(result.selectDeveloper.id);
+      setReservedRaw(result.selectDeveloper.amountRaw);
       setNotice("Developer selected. Fund the escrow to start the work.");
       await load();
       setApplications((await graphqlRequest<ApplicationResponse>(APPLICATIONS_QUERY, { issueId })).applications);
@@ -515,6 +516,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     try {
       await graphqlRequest(CANCEL_RESERVATION, { id: reservationId });
       setReservationId(null);
+      setReservedRaw(null);
       setNotice("Reservation cancelled.");
       void load();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not cancel the reservation."); }

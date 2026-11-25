@@ -34,7 +34,11 @@ async function show() {
   await act(async () => { render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><IssueDetailView issueId="issue" /></QueryClientProvider>); });
   await screen.findByText("Fix login");
 }
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  session.user.id = "dev";
+  session.user.role = "DEVELOPER";
+});
 
 describe("similar fix label (US-107)", () => {
   it("links the developer who fixed a similar issue to it", async () => {
@@ -76,4 +80,40 @@ describe("similar fix label (US-107)", () => {
     await show();
     expect(screen.queryByTestId("similar-fix-label")).not.toBeInTheDocument();
   });
+});
+
+it("updates the escrow total when selecting a reuse application and cancelling its reservation", async () => {
+  session.user.id = "client";
+  session.user.role = "CLIENT";
+  mockIssue(null);
+  const baseRequest = request.getMockImplementation()!;
+  const applications = [{ id: "application", status: "PENDING", developer: person("dev"), reuseOfIssueId: "old-issue" }];
+  let reserved = false;
+  request.mockImplementation(async (query: string) => {
+    if (query.includes("mutation SelectDeveloper")) {
+      reserved = true;
+      return { selectDeveloper: { id: "reservation", amountRaw: "50000000" } };
+    }
+    if (query.includes("cancelReservation(")) {
+      reserved = false;
+      return { cancelReservation: { id: "reservation" } };
+    }
+    if (query.includes("query IssueApplications")) return { applications };
+    const result = await baseRequest(query);
+    if (!query.includes("query IssueDetail")) return result;
+    return { issue: {
+      ...result.issue,
+      status: reserved ? "AWAITING_FUNDING" : "OPEN",
+      ownerApplications: applications,
+      viewerCapabilities: { canSelect: !reserved, canFund: reserved },
+    } };
+  });
+  await show();
+  expect(screen.getByRole("img", { name: /client pays 110$/ })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Select developer" }));
+  await screen.findByRole("button", { name: "Cancel reservation" });
+  expect(screen.getByRole("img", { name: /client pays 55$/ })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Cancel reservation" }));
+  await screen.findByRole("button", { name: "Select developer" });
+  expect(screen.getByRole("img", { name: /client pays 110$/ })).toBeInTheDocument();
 });

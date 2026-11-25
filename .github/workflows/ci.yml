@@ -1,5 +1,5 @@
 # .github/workflows/ci.yml
-# Web checks and build, the e2e scripts that need no chain, the schema-vs-migrations check, and secret scanning.
+# Web checks and build, end-to-end tests, the schema-vs-migrations check, and secret scanning.
 
 name: ci
 
@@ -97,6 +97,51 @@ jobs:
       - name: Server log
         if: failure()
         run: cat server.log
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-${{ github.run_id }}
+          POSTGRES_DB: bloody_roar_e2e_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.0"
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Generate Prisma client
+        run: bun run db:generate
+      - name: Install Playwright Chromium
+        working-directory: apps/web
+        run: bun x playwright install --with-deps chromium
+      - name: Run Hardhat E2E
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:ci-${{ github.run_id }}@localhost:5432/bloody_roar_e2e_test?schema=public
+          AI_HASH_KEY: ci-only-not-a-secret
+        run: |
+          KEY=$(openssl rand -hex 32)
+          echo "::add-mask::$KEY"
+          AUTH_PRIVATE_KEY="0x$KEY" bun run test:e2e:local
+      - name: Upload E2E logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hardhat-e2e-logs
+          path: tests/e2e/.run/*.log
+          include-hidden-files: true
 
   database:
     runs-on: ubuntu-latest

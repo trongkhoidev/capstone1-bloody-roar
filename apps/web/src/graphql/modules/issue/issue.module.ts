@@ -100,7 +100,7 @@ export const ISSUE_INCLUDE = {
   client: true,
   developer: true,
   attachments: { where: { purpose: "ISSUE_IMAGE", status: "ATTACHED", fileMime: { startsWith: "image/" } } },
-  _count: { select: { applications: { where: { status: { not: "WITHDRAWN" } } } } },
+  _count: { select: { applications: { where: { status: { not: "WITHDRAWN" } } }, comments: true } },
 } satisfies Prisma.IssueInclude;
 
 /** Shape của 1 dòng Issue sau khi include relations */
@@ -175,12 +175,11 @@ export const IssueRef = builder.prismaObject("Issue", {
     }),
     applicationCount: t.int({
       description: "Number of active (non-withdrawn) applications",
-      select: { _count: { select: { applications: { where: { status: { not: "WITHDRAWN" } } } } } },
+      // Counts come from ISSUE_INCLUDE; a field-level select made Pothos refetch every issue of a list.
       resolve: (issue) => issue._count.applications,
     }),
     commentCount: t.int({
       description: "Number of comments on the bounty",
-      select: { _count: { select: { comments: true } } },
       resolve: (issue) => issue._count.comments,
     }),
     attachments: t.field({

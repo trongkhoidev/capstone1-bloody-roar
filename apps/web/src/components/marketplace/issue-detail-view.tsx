@@ -23,11 +23,15 @@ import { AuthRequiredPanel } from "@/components/auth/auth-required-panel";
 import { useUiPreferences } from "@/lib/ui-preferences";
 import { MarketplaceEmpty } from "./marketplace-empty";
 import type { IssueItem } from "./issue-card";
-import { sendPreparedCalls } from "@/lib/web3/send-prepared";
-import { signFundingIntent } from "@/lib/web3/funding-intent";
 import { uploadFile } from "@/lib/upload";
 import { bpsOf, depositTotal, formatTokenAmount, splitPayout } from "@bloody-roar/shared/money";
 import { PLATFORM_FEE_BPS, REUSE_PRICE_BPS } from "@bloody-roar/shared/constants";
+import type * as SendPrepared from "@/lib/web3/send-prepared";
+import type * as FundingIntent from "@/lib/web3/funding-intent";
+
+// Wallet code (ethers, thirdweb) loads on the first on-chain action, not with the page.
+const sendPreparedCalls: typeof SendPrepared.sendPreparedCalls = async (...args) => (await import("@/lib/web3/send-prepared")).sendPreparedCalls(...args);
+const signFundingIntent: typeof FundingIntent.signFundingIntent = async (...args) => (await import("@/lib/web3/funding-intent")).signFundingIntent(...args);
 
 // Date input value (YYYY-MM-DD) seven days out; the contract deadline is the end of that day in UTC.
 const defaultDeliveryDeadline = () => new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);

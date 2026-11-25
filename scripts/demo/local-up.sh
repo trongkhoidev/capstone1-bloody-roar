@@ -90,6 +90,7 @@ await Bun.write(".env", env);
 console.log(`  escrow ${m.address} · token ${m.token} · block ${m.deployBlock}`);
 if (m.token.toLowerCase() !== "0x5fbdb2315678afecb367f032d93f642f64180aa3") console.log("  ⚠ token khác 0x5FbDB…, bảng tokens trong DB sẽ không khớp");
 '
+ALLOW_REMOTE_DB=1 bun run db:seed:local
 
 echo "▸ Worker :4300"
 nohup bun run worker:start </dev/null >"$LOG/worker.log" 2>&1 &
@@ -99,7 +100,7 @@ wait_for "Worker" "lsof -ti tcp:4300 -sTCP:LISTEN" 60
 remember worker-listener "$(lsof -ti tcp:4300 -sTCP:LISTEN)"
 
 echo "▸ Web :4000 (xoá cache .next cũ vì 2 server từng ghi chung)"
-rm -rf apps/web/.next
+rm -rf apps/web/.next apps/web/.next-dev
 PORT=4000 NEXT_PUBLIC_APP_URL=http://localhost:4000 nohup bun run dev </dev/null >"$LOG/web.log" 2>&1 &
 remember web "$!"
 disown

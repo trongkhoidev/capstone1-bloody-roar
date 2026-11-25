@@ -6,11 +6,11 @@ import { uploadFile } from "@/lib/upload";
 import { io, type Socket } from "socket.io-client";
 import { Check, CircleHelp, FileText, Paperclip, Send, ShieldCheck, X } from "lucide-react";
 import Image from "next/image";
-import { ALLOWED_FILE_TYPES } from "@bloody-roar/shared";
+import { ALLOWED_FILE_TYPES } from "@bloody-roar/shared/constants";
 import { graphqlRequest } from "@/lib/graphql-client";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { Button } from "@/components/ui/button";
-import type { ChatMessagePayload } from "@bloody-roar/shared";
+import type { ChatMessagePayload } from "@bloody-roar/shared/types";
 
 const CHAT_QUERY = `
   query TaskMessages($conversationId: ID!, $after: String) {

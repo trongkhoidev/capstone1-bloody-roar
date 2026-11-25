@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
-import { ISSUE_CATEGORIES, ISSUE_DIFFICULTY, BOUNTY_MIN_AMOUNT, BOUNTY_MAX_AMOUNT } from "@bloody-roar/shared";
+import { ISSUE_CATEGORIES, ISSUE_DIFFICULTY, BOUNTY_MIN_AMOUNT, BOUNTY_MAX_AMOUNT } from "@bloody-roar/shared/constants";
 import { graphqlRequest } from "@/lib/graphql-client";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { Button } from "@/components/ui/button";

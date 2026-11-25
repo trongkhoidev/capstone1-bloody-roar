@@ -51,13 +51,15 @@ export async function fund(f: Fixture) {
   const { depositTotal } = await import("@bloody-roar/shared/money");
   const { PLATFORM_FEE_BPS } = await import("@bloody-roar/shared/constants");
   await mintUsdc(f, f.accounts[2]!, depositTotal(BigInt(reservation.amountRaw.toFixed()), PLATFORM_FEE_BPS));
+  const { tokenBalance } = await import("./payout");
+  const clientBalanceBeforeDeposit = await tokenBalance(f, f.client.walletAddress);
   const prepared = await gqlAs(f.client, `mutation($id: ID!) { prepareEscrowDeposit(reservationId: $id) { steps { intentId method contractAddress data value } } }`, { id });
   if (prepared.errors?.length) throw new Error(`Prepare deposit: ${prepared.errors[0]?.message}`);
   const steps = (prepared.data?.prepareEscrowDeposit as { steps: Prepared[] }).steps;
   for (const step of steps) await sendPrepared(f.client, f.accounts[2]!, step);
   await waitFor(async () => (await f.prisma.escrowProjection.findUnique({ where: { issueId: f.issueId } }))?.phase === "FUNDED");
   await waitFor(async () => (await f.prisma.transactionIntent.count({ where: { id: { in: steps.map((step) => step.intentId) }, status: "CONFIRMED" } })) === steps.length);
-  return { reservation, steps };
+  return { reservation, steps, clientBalanceBeforeDeposit };
 }
 
 export async function externalDeposit(f: Fixture, reservation: Awaited<ReturnType<Fixture["prisma"]["fundingReservation"]["findUniqueOrThrow"]>>, overrides: { amount?: bigint; developer?: Hex } = {}) {

@@ -28,12 +28,11 @@ test("E35: a reuse-priced bounty costs the client 55 USDC and pays 50 to the dev
   const f = await reuseFixture();
   const fee = await feeUser(f);
   for (const user of [f.developer, fee]) if ((await claimable(f.prisma, user.walletAddress)) > 0n) await claimFunds(f, user);
-  const clientBefore = await tokenBalance(f, f.client.walletAddress);
   const escrowBefore = await tokenBalance(f, process.env.ESCROW_ADDRESS!);
-  const { reservation } = await fund(f);
+  const { reservation, clientBalanceBeforeDeposit } = await fund(f);
   expect(reservation.amountRaw.toFixed()).toBe("50000000");
-  // fund() mints exactly the deposit total to the client first, so the wallet's spend is the mint minus the net change.
-  expect(55_000_000n - (await tokenBalance(f, f.client.walletAddress) - clientBefore)).toBe(55_000_000n);
+  const clientAfter = await tokenBalance(f, f.client.walletAddress);
+  expect(clientBalanceBeforeDeposit - clientAfter).toBe(55_000_000n);
   expect(await tokenBalance(f, process.env.ESCROW_ADDRESS!) - escrowBefore).toBe(55_000_000n);
 
   await submitWork(f, "Reused the earlier fix");

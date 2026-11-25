@@ -62,14 +62,16 @@ export async function applyFunded(
     throw new Error("Deposit contract or chain does not match the reservation");
   }
   if (reservation.status === ReservationStatus.FUNDED) return;
+  await tx.$queryRaw`SELECT id FROM issues WHERE id = ${reservation.issueId} FOR UPDATE`;
 
   const issue = await tx.issue.findUniqueOrThrow({
     where: { id: reservation.issueId },
     select: { status: true, title: true },
   });
-  const [client, developer] = await Promise.all([
+  const [client, developer, application] = await Promise.all([
     tx.user.findUniqueOrThrow({ where: { id: reservation.clientId }, select: { walletAddress: true } }),
     tx.user.findUniqueOrThrow({ where: { id: reservation.developerId }, select: { walletAddress: true } }),
+    tx.application.findUniqueOrThrow({ where: { id: reservation.applicationId }, select: { status: true } }),
   ]);
   const reasons = checkDepositAgainstReservation(
     {
@@ -87,6 +89,7 @@ export async function applyFunded(
       termsHash: reservation.termsHash as Hex,
     },
   );
+  if (application.status !== ApplicationStatus.PENDING) reasons.push("application");
 
   // QĐ-17: deposit đến sau hạn được nhận nếu issue vẫn OPEN (không có reservation khác đang chạy)
   const late = reservation.status !== ReservationStatus.AWAITING_FUNDING;
@@ -94,8 +97,19 @@ export async function applyFunded(
     await acceptDeposit(tx, reservation, effect, meta, issue.title, issue.status);
     return;
   }
-  await markMismatch(tx, reservation, issue, reasons, meta, late);
+  await markMismatch(tx, reservation, issue, reasons.length ? reasons : ["late"], meta, late);
 }
+
+const mismatchReasonText: Record<string, string> = {
+  client: "the client wallet differs",
+  developer: "the developer wallet differs",
+  amount: "the amount differs",
+  deadline: "the delivery deadline differs",
+  termsHash: "the terms hash differs",
+  token: "the token differs",
+  application: "the Application is no longer pending",
+  late: "it arrived after the reservation expired and the Issue is no longer open",
+};
 
 async function acceptDeposit(
   tx: Prisma.TransactionClient,
@@ -171,20 +185,20 @@ async function acceptDeposit(
   const data = { issueId: reservation.issueId, reservationId: reservation.id };
   const link = `/issues/${reservation.issueId}`;
   await notify(tx, meta, [reservation.clientId], {
-    type: "DEPOSIT_CONFIRMED", title: "Đã nạp ký quỹ",
-    body: `Ký quỹ cho “${issueTitle}” đã được ghi nhận on-chain.`, link, data,
+    type: "DEPOSIT_CONFIRMED", title: "Deposit confirmed",
+    body: `The deposit for “${issueTitle}” was recorded on-chain.`, link, data,
   });
   await notify(tx, meta, [reservation.developerId], {
-    type: "APPLICATION_ACCEPTED", title: "Ứng tuyển được chấp nhận",
-    body: `Bạn đã được chọn thực hiện “${issueTitle}”.`, link, data,
+    type: "APPLICATION_ACCEPTED", title: "Application accepted",
+    body: `You were selected to work on “${issueTitle}”.`, link, data,
   });
   await notify(tx, meta, [reservation.developerId], {
-    type: "TASK_ASSIGNED", title: "Công việc đã sẵn sàng",
-    body: `Ký quỹ cho “${issueTitle}” đã được nạp; bạn có thể bắt đầu.`, link, data,
+    type: "TASK_ASSIGNED", title: "Work is ready to start",
+    body: `The deposit for “${issueTitle}” is funded; you can start now.`, link, data,
   });
   await notify(tx, meta, rejected.map((application) => application.developerId), {
-    type: "APPLICATION_REJECTED", title: "Ứng tuyển chưa được chọn",
-    body: `Một ứng viên khác đã được chọn cho “${issueTitle}”.`, link, data,
+    type: "APPLICATION_REJECTED", title: "Application not selected",
+    body: `Another applicant was selected for “${issueTitle}”.`, link, data,
   });
 }
 
@@ -217,8 +231,8 @@ async function markMismatch(
     [reservation.clientId, reservation.developerId, ...admins.map((admin) => admin.id)],
     {
       type: "DEPOSIT_MISMATCHED",
-      title: "Ký quỹ không khớp điều khoản",
-      body: `Ký quỹ cho “${issue.title}” khác điều khoản đã chọn. Cần xử lý thủ công.`,
+      title: "Deposit does not match the terms",
+      body: `The deposit for “${issue.title}” does not match: ${reasons.map((reason) => mismatchReasonText[reason] ?? reason).join("; ")}. Manual review is required.`,
       link: `/issues/${reservation.issueId}`,
       data: {
         issueId: reservation.issueId,

@@ -15,8 +15,8 @@ export async function applyClaimed(tx: Prisma.TransactionClient, effect: Claimed
   const recipient = await tx.user.findUnique({ where: { walletAddress: address }, select: { id: true } }) ??
     await tx.user.findFirst({ where: { walletAddress: { equals: address, mode: "insensitive" } }, select: { id: true } });
   if (!recipient) return;
-  const notification = await createNotificationIdempotent(tx, { userId: recipient.id, type: "PAYMENT_RECEIVED", title: "Đã nhận tiền",
-    body: "Khoản tiền có thể rút đã được chuyển tới ví của bạn.", link: "/dashboard",
+  const notification = await createNotificationIdempotent(tx, { userId: recipient.id, type: "PAYMENT_RECEIVED", title: "Payment received",
+    body: "Your claimable funds were sent to your wallet.", link: "/dashboard",
     data: { chainId: String(meta.chainId), contractAddress, address, amountRaw: effect.amount.toString() },
     dedupeKey: `${meta.chainEventId}:${recipient.id}:PAYMENT_RECEIVED` });
   if (notification) await notifyNotificationCreated(tx, { userId: recipient.id, id: notification.id });

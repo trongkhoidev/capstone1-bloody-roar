@@ -108,3 +108,20 @@ describe("automated checks warning on the issue page", () => {
     expect(screen.queryByText(headline)).not.toBeInTheDocument();
   });
 });
+
+describe("approving a delivery", () => {
+  it("does not offer release when the submission has no delivery hash", async () => {
+    const handler = request.getMockImplementation()!;
+    request.mockImplementation(async (query: string) => {
+      if (query.includes("query IssueDetail")) {
+        const { issue } = await handler(query) as { issue: object };
+        return { issue: { ...issue, status: "IN_PROGRESS", viewerCapabilities: { canRelease: true }, escrow: { availableActions: [{ action: "releaseFunds", reasonDisabled: null }] }, viewerSubmissions: [{ id: "submission", status: "SUBMITTED", deliveryHash: null, submittedAt: "2026-11-17T00:00:00Z", developer: { name: "developer", walletAddress: "0x1111111111111111111111111111111111111111" } }] } };
+      }
+      return handler(query);
+    });
+    await showIssue();
+    await screen.findByText("Fix addition");
+    await act(async () => { fireEvent.click(screen.getByRole("tab", { name: /delivery/i })); });
+    expect(await screen.findByRole("button", { name: "Approve delivery" })).toBeDisabled();
+  });
+});

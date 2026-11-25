@@ -33,7 +33,9 @@ six-decimal USDC token and the three distinct Safe roles documented in
 2. The developer calls `submitWork(issueId, deliveryHash)` before the delivery
    deadline, then confirms action `WORK`. Submission descriptions and PR records
    in the app are separate from this on-chain commitment.
-3. The client calls `releaseFunds`. A missed delivery permits a full refund
+3. The client calls `releaseFunds(escrowId, expectedDeliveryHash)` with the
+   delivery hash they reviewed. If the developer resubmitted in the meantime, it
+   reverts with `DeliveryChanged(expected, current)`. A missed delivery permits a full refund
    after the deadline. Delivered work permits release seven days after the latest
    `submitWork` through `claimReviewTimeout` (`submittedAt + REVIEW_PERIOD`). A
    resubmission starts a fresh seven-day review window. Existing deployments keep

@@ -87,6 +87,22 @@ export const ESCROW_ABI = [
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "expected",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "current",
+        "type": "bytes32"
+      }
+    ],
+    "name": "DeliveryChanged",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "EmptyEscrowId",
     "type": "error"
@@ -1598,6 +1614,11 @@ export const ESCROW_ABI = [
         "internalType": "string",
         "name": "escrowId",
         "type": "string"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "expectedDeliveryHash",
+        "type": "bytes32"
       }
     ],
     "name": "releaseFunds",

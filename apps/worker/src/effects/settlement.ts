@@ -23,8 +23,8 @@ export async function applySettlement(tx: Prisma.TransactionClient, effect: Sett
   if (!recipient) return;
   const type = effect.kind;
   const notification = await createNotificationIdempotent(tx, { userId: recipient.id, type,
-    title: type === "SETTLEMENT_PROPOSED" ? "Có đề xuất thỏa thuận" : "Đề xuất thỏa thuận đã được thu hồi",
-    body: type === "SETTLEMENT_PROPOSED" ? "Bên còn lại đã đề xuất tỷ lệ phân chia." : "Bên đề xuất đã thu hồi thỏa thuận.",
+    title: type === "SETTLEMENT_PROPOSED" ? "Settlement proposed" : "Settlement proposal withdrawn",
+    body: type === "SETTLEMENT_PROPOSED" ? "The other party proposed a split." : "The proposing party withdrew the settlement.",
     ...(projection.issueId ? { link: `/issues/${projection.issueId}` } : {}),
     data: { escrowIdHash: effect.escrowIdHash, ...(projection.issueId ? { issueId: projection.issueId } : {}) }, dedupeKey: `${meta.chainEventId}:${recipient.id}:${type}` });
   if (notification) await notifyNotificationCreated(tx, { userId: recipient.id, id: notification.id });

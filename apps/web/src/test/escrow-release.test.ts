@@ -69,6 +69,10 @@ const PREPARE = (name: string) => `mutation($issueId: ID!) {
   ${name}(issueId: $issueId) { intentId method contractAddress data value args { name value } }
 }`;
 
+const RELEASE = `mutation($issueId: ID!, $deliveryHash: String!) {
+  prepareReleaseFunds(issueId: $issueId, deliveryHash: $deliveryHash) { intentId method contractAddress data value args { name value } }
+}`;
+
 beforeEach(() => {
   clock.readChainTime.mockImplementation(async () => new Date());
   vi.stubEnv("ESCROW_ADDRESS", CONTRACT);
@@ -79,16 +83,19 @@ describe("prepareReleaseFunds (BE-42)", () => {
   it("returns releaseFunds calldata bound to the escrow key", async () => {
     const db = fakeDb(projectionRow({ deliveryHash: DELIVERY_HASH }));
 
-    const result = await execute(PREPARE("prepareReleaseFunds"), { user: client, db }, { issueId: "issue-1" });
+    const result = await execute(RELEASE, { user: client, db }, { issueId: "issue-1", deliveryHash: DELIVERY_HASH });
 
     expect(result.errors).toBeUndefined();
     expect(result.data?.prepareReleaseFunds).toEqual({
       intentId: "intent-1",
       method: "releaseFunds",
       contractAddress: CONTRACT,
-      data: encodeEscrowCall("releaseFunds", { escrowId: "br_issue-1_1" }),
+      data: encodeEscrowCall("releaseFunds", { escrowId: "br_issue-1_1", expectedDeliveryHash: DELIVERY_HASH }),
       value: "0",
-      args: [{ name: "escrowId", value: "br_issue-1_1" }],
+      args: [
+        { name: "escrowId", value: "br_issue-1_1" },
+        { name: "expectedDeliveryHash", value: DELIVERY_HASH },
+      ],
     });
     expect(db.transactionIntent.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ issueId: "issue-1", method: "releaseFunds", status: "AWAITING_SIGNATURE" }),
@@ -96,13 +103,13 @@ describe("prepareReleaseFunds (BE-42)", () => {
   });
 
   it("refuses when the caller is not the client", async () => {
-    const result = await execute(PREPARE("prepareReleaseFunds"), { user: developer, db: fakeDb() }, { issueId: "issue-1" });
+    const result = await execute(RELEASE, { user: developer, db: fakeDb() }, { issueId: "issue-1", deliveryHash: DELIVERY_HASH });
 
     expect(result.errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
   });
 
   it("refuses without a delivery on chain", async () => {
-    const result = await execute(PREPARE("prepareReleaseFunds"), { user: client, db: fakeDb() }, { issueId: "issue-1" });
+    const result = await execute(RELEASE, { user: client, db: fakeDb() }, { issueId: "issue-1", deliveryHash: DELIVERY_HASH });
 
     expect(result.errors?.[0]?.extensions?.code).toBe("NO_DELIVERY");
   });
@@ -110,13 +117,13 @@ describe("prepareReleaseFunds (BE-42)", () => {
   it("refuses when the escrow is not FUNDED", async () => {
     const db = fakeDb(projectionRow({ phase: "DISPUTED", deliveryHash: DELIVERY_HASH }));
 
-    const result = await execute(PREPARE("prepareReleaseFunds"), { user: client, db }, { issueId: "issue-1" });
+    const result = await execute(RELEASE, { user: client, db }, { issueId: "issue-1", deliveryHash: DELIVERY_HASH });
 
     expect(result.errors?.[0]?.extensions?.code).toBe("INVALID_PHASE");
   });
 
   it("refuses an issue without an escrow", async () => {
-    const result = await execute(PREPARE("prepareReleaseFunds"), { user: client, db: fakeDb(null) }, { issueId: "issue-1" });
+    const result = await execute(RELEASE, { user: client, db: fakeDb(null) }, { issueId: "issue-1", deliveryHash: DELIVERY_HASH });
 
     expect(result.errors?.[0]?.extensions?.code).toBe("NOT_FOUND");
   });

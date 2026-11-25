@@ -211,7 +211,7 @@ describe("BloodyRoarEscrow", () => {
       await escrow.connect(owner).pause();
       await expect(deposit("paused")).to.be.revertedWithCustomError(escrow, "EnforcedPause");
       await escrow.connect(developer).submitWork("funded", hash("delivery"));
-      await escrow.connect(client).releaseFunds("funded");
+      await escrow.connect(client).releaseFunds("funded", hash("delivery"));
       await escrow.connect(owner).unpause();
       await expect(deposit("unpaused")).to.not.be.reverted;
     });
@@ -287,11 +287,32 @@ describe("BloodyRoarEscrow", () => {
     });
   });
 
+  describe("release bound to the reviewed delivery", () => {
+    it("rejects a release naming a superseded or zero delivery hash", async () => {
+      await deposit("stale", 100n);
+      await escrow.connect(developer).submitWork("stale", hash("A"));
+      await escrow.connect(developer).submitWork("stale", hash("B"));
+      await expect(escrow.connect(client).releaseFunds("stale", hash("A")))
+        .to.be.revertedWithCustomError(escrow, "DeliveryChanged")
+        .withArgs(hash("A"), hash("B"));
+      await expect(escrow.connect(client).releaseFunds("stale", ethers.ZeroHash))
+        .to.be.revertedWithCustomError(escrow, "DeliveryChanged")
+        .withArgs(ethers.ZeroHash, hash("B"));
+    });
+
+    it("releases when the expected hash matches the latest delivery", async () => {
+      await deposit("fresh", 100n);
+      await escrow.connect(developer).submitWork("fresh", hash("A"));
+      await escrow.connect(developer).submitWork("fresh", hash("B"));
+      await expect(escrow.connect(client).releaseFunds("fresh", hash("B"))).to.emit(escrow, "EscrowResolved");
+    });
+  });
+
   describe("resolution credits and independent claims", () => {
     it("allocates release credits with floor-rounded fee and no push transfers", async () => {
       await deposit("release", 101n);
       await escrow.connect(developer).submitWork("release", hash("delivery"));
-      await expect(escrow.connect(client).releaseFunds("release"))
+      await expect(escrow.connect(client).releaseFunds("release", hash("delivery")))
         .to.emit(escrow, "EscrowResolved")
         .withArgs("release", 1, 0, 101, 10, ethers.ZeroHash);
       expect(await token.balanceOf(developer.address)).to.equal(0);
@@ -549,7 +570,7 @@ describe("BloodyRoarEscrow", () => {
         escrow,
         "EscrowNotFound",
       );
-      await expect(escrow.releaseFunds("")).to.be.revertedWithCustomError(escrow, "EmptyEscrowId");
+      await expect(escrow.releaseFunds("", hash("delivery"))).to.be.revertedWithCustomError(escrow, "EmptyEscrowId");
       await expect(escrow.claimMissedDeliveryRefund("")).to.be.revertedWithCustomError(
         escrow,
         "EmptyEscrowId",
@@ -574,7 +595,7 @@ describe("BloodyRoarEscrow", () => {
         escrow,
         "NoPendingSettlement",
       );
-      await expect(escrow.connect(client).releaseFunds("ordinary-errors")).to.be.revertedWithCustomError(
+      await expect(escrow.connect(client).releaseFunds("ordinary-errors", hash("delivery"))).to.be.revertedWithCustomError(
         escrow,
         "NoDelivery",
       );
@@ -587,11 +608,11 @@ describe("BloodyRoarEscrow", () => {
         escrow,
         "NoDelivery",
       );
-      await expect(escrow.connect(developer).releaseFunds("ordinary-errors")).to.be.revertedWithCustomError(
+      await expect(escrow.connect(developer).releaseFunds("ordinary-errors", hash("delivery"))).to.be.revertedWithCustomError(
         escrow,
         "NotAuthorized",
       );
-      await escrow.connect(client).releaseFunds("ordinary-errors");
+      await escrow.connect(client).releaseFunds("ordinary-errors", hash("delivery"));
       await expect(escrow.connect(developer).submitWork("ordinary-errors", hash("again"))).to.be.revertedWithCustomError(
         escrow,
         "InvalidPhase",
@@ -686,7 +707,7 @@ describe("BloodyRoarEscrow", () => {
       await deposit("a", USDC(10));
       await deposit("b", USDC(20));
       await escrow.connect(developer).submitWork("a", hash("a"));
-      await escrow.connect(client).releaseFunds("a");
+      await escrow.connect(client).releaseFunds("a", hash("a"));
       expect(await escrow.totalUnresolvedPrincipal()).to.equal(USDC(22));
       expect(await escrow.totalClaimable()).to.equal(USDC(11));
       expect(await escrow.accountedBalance()).to.equal(USDC(33));
@@ -700,8 +721,8 @@ describe("BloodyRoarEscrow", () => {
     it("prevents double allocation and irreversible terminal transitions", async () => {
       await deposit("terminal");
       await escrow.connect(developer).submitWork("terminal", hash("delivery"));
-      await escrow.connect(client).releaseFunds("terminal");
-      await expect(escrow.connect(client).releaseFunds("terminal")).to.be.revertedWithCustomError(
+      await escrow.connect(client).releaseFunds("terminal", hash("delivery"));
+      await expect(escrow.connect(client).releaseFunds("terminal", hash("delivery"))).to.be.revertedWithCustomError(
         escrow,
         "InvalidPhase",
       );

@@ -65,7 +65,7 @@ builder.mutationField("prepareReleaseFunds", (t) =>
   t.field({
     description: "Client prepares releaseFunds once the delivery is on-chain (BE-42)",
     type: PreparedCallRef,
-    args: { issueId: t.arg.id({ required: true }) },
+    args: { issueId: t.arg.id({ required: true }), deliveryHash: t.arg.string({ required: true }) },
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
       const projection = await projectionFor(String(args.issueId), ctx);
@@ -75,10 +75,12 @@ builder.mutationField("prepareReleaseFunds", (t) =>
         throw gqlError("Escrow is not in the FUNDED state", "INVALID_PHASE");
       if (!projection.deliveryHash)
         throw gqlError("No delivery on-chain yet", "NO_DELIVERY");
+      if (args.deliveryHash.toLowerCase() !== projection.deliveryHash.toLowerCase())
+        throw gqlError("A newer Submission was made. Refresh and review it before releasing", "DELIVERY_CHANGED");
       return createPreparedCall(ctx.db, {
         userId: user.id,
         method: "releaseFunds",
-        args: { escrowId: projection.escrowKey },
+        args: { escrowId: projection.escrowKey, expectedDeliveryHash: projection.deliveryHash },
         issueId: projection.issueId,
       });
     },

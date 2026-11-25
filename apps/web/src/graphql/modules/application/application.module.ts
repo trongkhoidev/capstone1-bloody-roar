@@ -1,4 +1,4 @@
-import { ApplicationStatus, IssueStatus, Prisma, UserRole } from "@bloody-roar/database";
+import { ApplicationStatus, IssueStatus, Prisma, ReservationStatus, UserRole } from "@bloody-roar/database";
 import { z } from "zod";
 import { builder } from "../../builder";
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "@bloody-roar/shared";
@@ -258,19 +258,30 @@ builder.mutationField("withdrawApplication", (t) =>
         throw gqlError("You cannot withdraw this application", "FORBIDDEN");
       if (application.status !== ApplicationStatus.PENDING)
         throw gqlError("This application cannot be withdrawn", "APPLICATION_NOT_WITHDRAWABLE");
-      const withdrawn = await ctx.db.application.updateMany({
-        where: {
-          id: application.id,
-          developerId: user.id,
-          status: ApplicationStatus.PENDING,
-        },
-        data: { status: ApplicationStatus.WITHDRAWN },
-      });
-      if (withdrawn.count !== 1)
-        throw gqlError("This application was just processed and cannot be withdrawn", "APPLICATION_NOT_WITHDRAWABLE");
-      return ctx.db.application.findUniqueOrThrow({
-        where: { id: application.id },
-        include: APPLICATION_INCLUDE,
+      return ctx.db.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT id FROM issues WHERE id = ${application.issueId} FOR UPDATE`;
+        const active = await tx.fundingReservation.count({
+          where: {
+            applicationId: application.id,
+            status: { in: [ReservationStatus.AWAITING_FUNDING, ReservationStatus.FUNDED] },
+          },
+        });
+        if (active > 0)
+          throw gqlError("This application is being funded and cannot be withdrawn", "APPLICATION_NOT_WITHDRAWABLE");
+        const withdrawn = await tx.application.updateMany({
+          where: {
+            id: application.id,
+            developerId: user.id,
+            status: ApplicationStatus.PENDING,
+          },
+          data: { status: ApplicationStatus.WITHDRAWN },
+        });
+        if (withdrawn.count !== 1)
+          throw gqlError("This application was just processed and cannot be withdrawn", "APPLICATION_NOT_WITHDRAWABLE");
+        return tx.application.findUniqueOrThrow({
+          where: { id: application.id },
+          include: APPLICATION_INCLUDE,
+        });
       });
     },
   }),

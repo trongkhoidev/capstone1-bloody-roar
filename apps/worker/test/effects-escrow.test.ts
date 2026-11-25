@@ -215,6 +215,8 @@ test("retries when a reservation changes before deposit is applied", async () =>
     fundingReservation: { findUnique: async () => s.reservation, updateMany: async () => ({ count: 0 }) },
     issue: { findUniqueOrThrow: async () => ({ status: "AWAITING_FUNDING", title: s.issue.title }) },
     user: { findUniqueOrThrow: async ({ where }: { where: { id: string } }) => ({ walletAddress: where.id === client.id ? client.walletAddress : developer.walletAddress }) },
+    application: { findUniqueOrThrow: async () => ({ status: "PENDING" }) },
+    $queryRaw: async () => [],
   } as unknown as Prisma.TransactionClient;
   await expect(applyFoldEffects(fake, [s.effect()], meta(s.escrowIdHash))).rejects.toThrow("Reservation changed");
   await expect(applyFoldEffects(fake, [s.effect({ amount: 1n })], meta(s.escrowIdHash))).rejects.toThrow("Reservation changed");

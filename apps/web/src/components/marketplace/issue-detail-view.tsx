@@ -51,7 +51,7 @@ const ISSUE_QUERY = `
       }
       viewerApplication @include(if: $initial) { id status message }
       viewerSubmissions @include(if: $initial) {
-        id status description pullRequestUrl submittedAt reviewedAt reviewNotes developer { name walletAddress }
+        id status deliveryHash description pullRequestUrl submittedAt reviewedAt reviewNotes developer { name walletAddress }
       }
       token { symbol name }
       attachments { id fileName fileUrl fileMime }
@@ -93,7 +93,7 @@ const CANCEL_RESERVATION = `mutation CancelReservation($id: ID!) { cancelReserva
 const RECORD_TX = `mutation RecordTx($id: ID!, $hash: String!) { recordTransactionSubmitted(intentId: $id, txHash: $hash) { id } }`;
 const CREATE_DRAFT = `mutation CreateDraft($issue: ID!, $submission: ID, $description: String!, $pullRequestUrl: String, $commitSha: String, $files: [ID!]) { createSubmissionDraft(issueId: $issue, submissionId: $submission, description: $description, pullRequestUrl: $pullRequestUrl, commitSha: $commitSha, attachmentIds: $files) { id } }`;
 const PREPARE_SUBMIT = `mutation PrepareSubmit($id: ID!) { prepareSubmitWork(submissionId: $id) { intentId method contractAddress data value } }`;
-const PREPARE_RELEASE = `mutation PrepareRelease($id: ID!) { prepareReleaseFunds(issueId: $id) { intentId method contractAddress data value } }`;
+const PREPARE_RELEASE = `mutation PrepareRelease($id: ID!, $deliveryHash: String!) { prepareReleaseFunds(issueId: $id, deliveryHash: $deliveryHash) { intentId method contractAddress data value } }`;
 const REQUEST_CHANGES = `mutation RequestChanges($id: ID!, $notes: String!) { requestChanges(submissionId: $id, notes: $notes) { changesRequested } }`;
 const CREATE_EVIDENCE = `mutation CreateEvidence($issue: ID!, $statement: String!, $files: [ID!]) { createEvidenceManifest(issueId: $issue, statement: $statement, attachmentIds: $files) { id } }`;
 const SUBMIT_COUNTERPARTY = `mutation PrepareCounterparty($issue: ID!, $manifest: ID!) { prepareSubmitCounterpartyEvidence(issueId: $issue, manifestId: $manifest) { intentId method contractAddress data value } }`;
@@ -111,7 +111,7 @@ const ESCROW_ACTIONS: Array<{ action: string; flag: keyof ViewerCapabilities; la
 ];
 const PREPARE_RAISE_DISPUTE = `mutation PrepareRaise($issue: ID!, $manifest: ID!) { prepareRaiseDispute(issueId: $issue, manifestId: $manifest) { intentId method contractAddress data value } }`;
 const CANCEL_MUTATION = `mutation Cancel($id: ID!) { cancelIssue(id: $id) { id status } }`;
-const SUBMISSIONS_QUERY = `query TaskSubmissions($issueId: String!) { submissions(issueId: $issueId) { id status description pullRequestUrl submittedAt reviewedAt reviewNotes developer { name walletAddress } } }`;
+const SUBMISSIONS_QUERY = `query TaskSubmissions($issueId: String!) { submissions(issueId: $issueId) { id status deliveryHash description pullRequestUrl submittedAt reviewedAt reviewNotes developer { name walletAddress } } }`;
 
 const recordView = (id: string) =>
   graphqlRequest("mutation RecordIssueView($id: ID!) { recordIssueView(issueId: $id) }", { id }).catch(() => undefined);
@@ -133,7 +133,7 @@ type DetailResponse = { issue: (Omit<IssueDetail, "bountyAmount" | "bountyRaw" |
 }) | null };
 
 type ApplicationResponse = { applications: Application[] };
-type Submission = { id: string; status: string; description?: string | null; pullRequestUrl?: string | null; submittedAt: string; reviewedAt?: string | null; reviewNotes?: string | null; developer: { name?: string | null; walletAddress: string } };
+type Submission = { id: string; status: string; deliveryHash?: string | null; description?: string | null; pullRequestUrl?: string | null; submittedAt: string; reviewedAt?: string | null; reviewNotes?: string | null; developer: { name?: string | null; walletAddress: string } };
 type SubmissionResponse = { submissions: Submission[] };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -358,11 +358,11 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     finally { setIsWorking(false); }
   };
 
-  const reviewDelivery = async (submissionId: string, approved: boolean) => {
+  const reviewDelivery = async (submissionId: string, approved: boolean, deliveryHash?: string) => {
     setIsWorking(true); setError(null); setNotice(null);
     try {
       if (approved) {
-        const prepared = await graphqlRequest<{ prepareReleaseFunds: PreparedStep }>(PREPARE_RELEASE, { id: issueId });
+        const prepared = await graphqlRequest<{ prepareReleaseFunds: PreparedStep }>(PREPARE_RELEASE, { id: issueId, deliveryHash });
         await sendPreparedCalls([prepared.prepareReleaseFunds], recordTx, user!.walletAddress);
         setNotice("Escrow released on-chain. The developer can claim the payout.");
         awaitChain();
@@ -1072,9 +1072,9 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                                   <button
                                     type="button"
                                     className="btn btn-ok btn-sm"
-                                    disabled={isWorking || !actionEnabled("releaseFunds")}
+                                    disabled={isWorking || !actionEnabled("releaseFunds") || !sub.deliveryHash}
                                     title={actionOf("releaseFunds")?.reasonDisabled ?? undefined}
-                                    onClick={() => void reviewDelivery(sub.id, true)}
+                                    onClick={() => { if (sub.deliveryHash) void reviewDelivery(sub.id, true, sub.deliveryHash); }}
                                   >
                                     Approve delivery
                                   </button>

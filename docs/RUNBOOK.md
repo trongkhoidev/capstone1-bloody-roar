@@ -43,6 +43,9 @@ Lệnh đặt role `ADMIN` và ghi một dòng `AdminLog` (action `grant_admin`,
 
 ## Auto-claim
 
+Bản release (MVP) tắt auto-claim: để trống `RELAYER_PRIVATE_KEY`, worker vẫn chạy
+bình thường và bỏ qua job. Người dùng rút tiền bằng Withdraw trên dashboard.
+
 Worker dùng `RELAYER_PRIVATE_KEY` để trả gas cho `claim(recipient)`. Ví nhận tiền
 vẫn là client/developer, không phải relayer. Không có key thì job tắt. Chỉ nạp ETH
 gas vào relayer; không dùng ví client, developer hoặc fee recipient.

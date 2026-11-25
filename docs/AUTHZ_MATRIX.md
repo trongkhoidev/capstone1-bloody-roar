@@ -32,7 +32,7 @@ Các ô của khách và người ngoài được kiểm bởi `tests/e2e/e28-au
 | `generateTestCases` | UNAUTHORIZED | FORBIDDEN | ✅ (chủ bài, role CLIENT) | CLIENT_ROLE_REQUIRED | CLIENT_ROLE_REQUIRED | UNAUTHORIZED | Chỉ chủ bài với role CLIENT. |
 | `updateTestCase` | UNAUTHORIZED | FORBIDDEN | ✅ (chủ bài) | FORBIDDEN | FORBIDDEN | UNAUTHORIZED | |
 | `applyToIssue` | UNAUTHORIZED | ✅ (không phải chủ bài, QĐ-21) | SELF_APPLICATION | ✅ | ADMIN_NOT_ALLOWED | UNAUTHORIZED | Bỏ chặn theo role (QĐ-21). Chủ bài không ứng tuyển bài của mình. |
-| `withdrawApplication` | UNAUTHORIZED | FORBIDDEN | FORBIDDEN | ✅ (đơn của mình) | FORBIDDEN | UNAUTHORIZED | |
+| `withdrawApplication` | UNAUTHORIZED | FORBIDDEN | FORBIDDEN | ✅ (đơn của mình) | FORBIDDEN | UNAUTHORIZED | `APPLICATION_NOT_WITHDRAWABLE` khi đơn không còn PENDING hoặc có giữ chỗ đang chờ nạp hay đã nạp (`AWAITING_FUNDING`/`FUNDED`). Giữ chỗ hết hạn, đã hủy hoặc lệch điều khoản không chặn. |
 | `rejectApplication` | UNAUTHORIZED | FORBIDDEN | ✅ (chủ bài) | FORBIDDEN | FORBIDDEN | UNAUTHORIZED | |
 | `selectDeveloper` | UNAUTHORIZED | FORBIDDEN | ✅ (chủ bài) | — | — | UNAUTHORIZED | Thay `assignDeveloper` (BE-23). Các ô còn lại chưa kiểm. |
 | `createSubmissionDraft` | UNAUTHORIZED | FORBIDDEN / NOT_FOUND | — | — | — | UNAUTHORIZED | Bản nháp bài nộp. Các ô còn lại chưa kiểm. |
@@ -64,7 +64,7 @@ Quy tắc theo `lib/escrow/access.ts` và `lib/escrow/confirmation.ts`. Phần n
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `depositToEscrow` | đã gỡ (nạp qua `prepareEscrowDeposit`) | | | | | | | |
 | `releaseFunds` | đã gỡ (thay bằng `prepareReleaseFunds`) | | | | | | | |
-| `prepareReleaseFunds` | UNAUTHORIZED | NOT_FOUND | — | — | — | UNAUTHORIZED | Thay `releaseFunds`. Chưa có escrow thì `NOT_FOUND`. Các ô còn lại chưa kiểm. |
+| `prepareReleaseFunds` | UNAUTHORIZED | NOT_FOUND | — | — | — | UNAUTHORIZED | Thay `releaseFunds`. Chưa có escrow thì `NOT_FOUND`. `deliveryHash` khác bản giao mới nhất thì `DELIVERY_CHANGED`. Các ô còn lại chưa kiểm. |
 | `confirmEscrowTransaction` | đã gỡ (tách thành các mutation `prepare*`) | | | | | | | |
 | `cancelEscrow` | đã gỡ khỏi schema | | | | | | | |
 

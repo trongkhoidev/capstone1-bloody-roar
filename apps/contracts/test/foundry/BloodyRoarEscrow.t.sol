@@ -6,6 +6,7 @@ import {MockUSDC} from "../../contracts/MockUSDC.sol";
 
 interface Vm {
     function assume(bool condition) external;
+    function expectRevert(bytes calldata revertData) external;
     function prank(address sender) external;
     function startPrank(address sender) external;
     function stopPrank() external;
@@ -80,7 +81,7 @@ contract EscrowHandler is ForgeTest {
     function release(uint256 seed) external {
         uint256 index = seed % 8;
         vm.prank(client);
-        try escrow.releaseFunds(id(index)) {} catch {}
+        try escrow.releaseFunds(id(index), escrow.getEscrow(id(index)).deliveryHash) {} catch {}
         _record(index);
     }
 
@@ -120,7 +121,7 @@ contract EscrowHandler is ForgeTest {
     function attackAuthorization(uint256 seed) external {
         uint256 index = seed % 8;
         vm.prank(outsider);
-        try escrow.releaseFunds(id(index)) {
+        try escrow.releaseFunds(id(index), escrow.getEscrow(id(index)).deliveryHash) {
             authorizationBroken = true;
         } catch {}
         _record(index);
@@ -194,9 +195,20 @@ contract BloodyRoarEscrowFuzzTest is ForgeTest {
         vm.prank(DEVELOPER);
         escrow.submitWork("auth", keccak256("delivery"));
         vm.prank(caller);
-        (bool success,) = address(escrow).call(abi.encodeCall(escrow.releaseFunds, ("auth")));
+        (bool success,) = address(escrow).call(abi.encodeCall(escrow.releaseFunds, ("auth", keccak256("delivery"))));
         assertTrue(!success, "outsider resolved escrow");
         assertEq(uint256(escrow.getEscrow("auth").phase), uint256(BloodyRoarEscrow.Phase.FUNDED), "phase changed");
+    }
+
+    function testFuzz_releaseRejectsStaleDeliveryHash(bytes32 expected, bytes32 current) public {
+        vm.assume(current != bytes32(0) && expected != current);
+        vm.prank(CLIENT);
+        escrow.deposit("stale", DEVELOPER, 1_000_000, block.timestamp + 1 days, keccak256("terms"));
+        vm.prank(DEVELOPER);
+        escrow.submitWork("stale", current);
+        vm.prank(CLIENT);
+        vm.expectRevert(abi.encodeWithSelector(BloodyRoarEscrow.DeliveryChanged.selector, expected, current));
+        escrow.releaseFunds("stale", expected);
     }
 
     function test_timestampBoundariesPreferFallback() public {

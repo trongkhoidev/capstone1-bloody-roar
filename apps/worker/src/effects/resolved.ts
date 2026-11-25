@@ -24,8 +24,8 @@ export async function applyResolved(tx: Prisma.TransactionClient, effect: Resolv
   if (!projection.issueId) {
     const recipients = await tx.user.findMany({ where: { walletAddress: { in: [...credits.keys()], mode: "insensitive" } }, select: { id: true } });
     for (const recipient of recipients) {
-      const notification = await createNotificationIdempotent(tx, { userId: recipient.id, type: "FUNDS_CLAIMABLE", title: "Tiền đã có thể rút",
-        body: "Bạn có tiền có thể rút từ ký quỹ.", data: { escrowIdHash: effect.escrowIdHash, resolution: effect.resolution },
+      const notification = await createNotificationIdempotent(tx, { userId: recipient.id, type: "FUNDS_CLAIMABLE", title: "Funds ready to claim",
+        body: "You have funds to claim from the escrow.", data: { escrowIdHash: effect.escrowIdHash, resolution: effect.resolution },
         dedupeKey: `${meta.chainEventId}:${recipient.id}:FUNDS_CLAIMABLE` });
       if (notification) await notifyNotificationCreated(tx, { userId: recipient.id, id: notification.id });
     }
@@ -44,10 +44,10 @@ export async function applyResolved(tx: Prisma.TransactionClient, effect: Resolv
     await tx.dispute.updateMany({ where: { issueId: projection.issueId }, data: { status: "RESOLVED", phase: "RESOLVED", finalClientBps: effect.resolution === "ARBITER_TIMEOUT_SPLIT" ? 5000 : ruling?.clientBps ?? null, resolvedAt: new Date(Number(meta.blockTimestamp) * 1000) } });
   }
   const send = async (userId: string, type: "ESCROW_RESOLVED" | "DISPUTE_RESOLVED" | "FUNDS_CLAIMABLE", body: string) => {
-    const notification = await createNotificationIdempotent(tx, { userId, type, title: type === "FUNDS_CLAIMABLE" ? "Tiền đã có thể rút" : "Ký quỹ đã kết thúc", body,
+    const notification = await createNotificationIdempotent(tx, { userId, type, title: type === "FUNDS_CLAIMABLE" ? "Funds ready to claim" : "Escrow resolved", body,
       link: `/issues/${projection.issueId}`, data: { issueId: projection.issueId!, resolution: effect.resolution, chainEventId: meta.chainEventId }, dedupeKey: `${meta.chainEventId}:${userId}:${type}` });
     if (notification) await notifyNotificationCreated(tx, { userId, id: notification.id });
   };
-  for (const id of new Set([issue.clientId, issue.developerId].filter((id): id is string => !!id))) await send(id, disputeResolution ? "DISPUTE_RESOLVED" : "ESCROW_RESOLVED", `Ký quỹ cho “${issue.title}” đã được kết thúc.`);
-  for (const recipient of recipients) await send(recipient.id, "FUNDS_CLAIMABLE", `Bạn có tiền có thể rút từ “${issue.title}”.`);
+  for (const id of new Set([issue.clientId, issue.developerId].filter((id): id is string => !!id))) await send(id, disputeResolution ? "DISPUTE_RESOLVED" : "ESCROW_RESOLVED", `The escrow for “${issue.title}” was resolved.`);
+  for (const recipient of recipients) await send(recipient.id, "FUNDS_CLAIMABLE", `You have funds to claim from “${issue.title}”.`);
 }

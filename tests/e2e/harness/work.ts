@@ -16,7 +16,9 @@ export async function submitWork(f: Fixture, description: string) {
   return submission;
 }
 export async function releaseFunds(f: Fixture) {
-  const prepared = await gqlAs(f.client, `mutation($id: ID!) { prepareReleaseFunds(issueId: $id) { intentId method contractAddress data value } }`, { id: f.issueId });
+  const latest = await gqlAs(f.client, `query($id: ID!) { issue(id: $id) { latestSubmission { deliveryHash } } }`, { id: f.issueId });
+  const deliveryHash = (latest.data?.issue as { latestSubmission: { deliveryHash: string } }).latestSubmission.deliveryHash;
+  const prepared = await gqlAs(f.client, `mutation($id: ID!, $hash: String!) { prepareReleaseFunds(issueId: $id, deliveryHash: $hash) { intentId method contractAddress data value } }`, { id: f.issueId, hash: deliveryHash });
   if (prepared.errors?.length) throw new Error(`Prepare release: ${prepared.errors[0]?.message}`);
   await sendPrepared(f.client, f.accounts[2]!, prepared.data?.prepareReleaseFunds as Prepared);
   await waitFor(async () => (await f.prisma.issue.findUnique({ where: { id: f.issueId } }))?.status === "COMPLETED");

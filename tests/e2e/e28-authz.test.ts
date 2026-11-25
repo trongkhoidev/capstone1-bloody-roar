@@ -50,7 +50,7 @@ const rows: Row[] = [
   { name: "adminHideIssue", decl: "$issue: ID!, $reason: String!", args: "issueId: $issue, reason: $reason", ret: "", vars: (f) => ({ issue: f.issueId, reason: "Outsider attempt" }), outsider: ["FORBIDDEN"] },
   { name: "adminUnhideIssue", decl: "$issue: ID!", args: "issueId: $issue", ret: "", vars: (f) => ({ issue: f.issueId }), outsider: ["FORBIDDEN"] },
   // Phase D–F: escrow, phán quyết, bằng chứng, đánh giá
-  { name: "prepareReleaseFunds", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), outsider: ["NOT_FOUND", "FORBIDDEN"] },
+  { name: "prepareReleaseFunds", decl: "$issue: ID!, $hash: String!", args: "issueId: $issue, deliveryHash: $hash", ret: obj, vars: (f) => ({ issue: f.issueId, hash: `0x${"00".repeat(32)}` }), outsider: ["NOT_FOUND", "FORBIDDEN"] },
   { name: "prepareSubmitCounterpartyEvidence", decl: "$issue: ID!, $manifest: ID!", args: "issueId: $issue, manifestId: $manifest", ret: obj, vars: (f) => ({ issue: f.issueId, manifest: "missing-manifest" }), outsider: ["NOT_FOUND", "FORBIDDEN"] },
   { name: "prepareChallengeRuling", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), outsider: ["NOT_FOUND", "FORBIDDEN"] },
   { name: "prepareFinalizeRuling", decl: "$issue: ID!", args: "issueId: $issue", ret: obj, vars: (f) => ({ issue: f.issueId }), allowed: true },

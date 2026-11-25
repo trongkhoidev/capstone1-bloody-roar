@@ -470,7 +470,7 @@ async function run() {
     // 6. Dev createSubmissionDraft + prepareSubmitWork
     const s1Draft = await gql(
       dev.cookie,
-      `mutation($issue: ID!, $desc: String!) { createSubmissionDraft(issueId: $issue, description: $desc) { id } }`,
+      `mutation($issue: ID!, $desc: String!) { createSubmissionDraft(issueId: $issue, description: $desc) { id deliveryHash } }`,
       { issue: s1IssueId, desc: "Delivery for S1 complete work" },
     );
     const s1SubId = (s1Draft.data as any)?.createSubmissionDraft?.id;
@@ -498,8 +498,8 @@ async function run() {
     // 7. Client prepareReleaseFunds
     const s1PrepRel = await gql(
       client.cookie,
-      `mutation($id: ID!) { prepareReleaseFunds(issueId: $id) { intentId method contractAddress data value } }`,
-      { id: s1IssueId },
+      `mutation($id: ID!, $hash: String!) { prepareReleaseFunds(issueId: $id, deliveryHash: $hash) { intentId method contractAddress data value } }`,
+      { id: s1IssueId, hash: (s1Draft.data as any)?.createSubmissionDraft?.deliveryHash },
     );
     await sendPrepared(client, (s1PrepRel.data as any).prepareReleaseFunds);
 
@@ -580,7 +580,7 @@ async function run() {
     check("S2", "CHANGES_REQUESTED notification received", true);
 
     // Dev submits 2nd work
-    const d2 = await gql(dev.cookie, `mutation($i: ID!, $d: String!) { createSubmissionDraft(issueId: $i, description: $d) { id } }`, { i: f.issueId, d: "Draft 2 revised" });
+    const d2 = await gql(dev.cookie, `mutation($i: ID!, $d: String!) { createSubmissionDraft(issueId: $i, description: $d) { id deliveryHash } }`, { i: f.issueId, d: "Draft 2 revised" });
     const sub2Id = (d2.data as any).createSubmissionDraft.id;
     const prep2 = await gql(dev.cookie, `mutation($id: ID!) { prepareSubmitWork(submissionId: $id) { intentId method contractAddress data value } }`, { id: sub2Id });
     await sendPrepared(dev, (prep2.data as any).prepareSubmitWork);
@@ -593,8 +593,8 @@ async function run() {
     // Client releases funds for 2nd submission
     const prepRel = await gql(
       client.cookie,
-      `mutation($id: ID!) { prepareReleaseFunds(issueId: $id) { intentId method contractAddress data value } }`,
-      { id: f.issueId },
+      `mutation($id: ID!, $hash: String!) { prepareReleaseFunds(issueId: $id, deliveryHash: $hash) { intentId method contractAddress data value } }`,
+      { id: f.issueId, hash: (d2.data as any).createSubmissionDraft.deliveryHash },
     );
     await sendPrepared(client, (prepRel.data as any).prepareReleaseFunds);
 
@@ -1094,7 +1094,7 @@ async function run() {
     check("S9", "Guest prepareClaim rejected with UNAUTHORIZED", guestCall.errors?.[0]?.extensions?.code === "UNAUTHORIZED");
 
     // 2. Outsider cannot prepareReleaseFunds on someone else's issue
-    const outRel = await gql(outsider.cookie, `mutation { prepareReleaseFunds(issueId: "nonexistent") { intentId } }`);
+    const outRel = await gql(outsider.cookie, `mutation { prepareReleaseFunds(issueId: "nonexistent", deliveryHash: "0x00") { intentId } }`);
     check("S9", "Outsider prepareReleaseFunds rejected", outRel.errors?.[0]?.extensions?.code === "NOT_FOUND" || outRel.errors?.[0]?.extensions?.code === "FORBIDDEN");
 
     // 3. Admin cannot create issue

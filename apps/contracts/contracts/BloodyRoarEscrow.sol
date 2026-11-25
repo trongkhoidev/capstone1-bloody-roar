@@ -158,6 +158,7 @@ contract BloodyRoarEscrow is Ownable2Step, Pausable, ReentrancyGuard {
     error DeadlinePassed(uint256 deadline);
     error DeadlineNotReached(uint256 deadline);
     error NoDelivery();
+    error DeliveryChanged(bytes32 expected, bytes32 current);
     error ReviewWindowNotReached(uint256 reviewDeadline);
     error InvalidBasisPoints(uint256 clientBps);
     error NoPendingSettlement();
@@ -279,11 +280,14 @@ contract BloodyRoarEscrow is Ownable2Step, Pausable, ReentrancyGuard {
         emit WorkSubmitted(escrowId, msg.sender, deliveryHash);
     }
 
-    function releaseFunds(string calldata escrowId) external escrowExists(escrowId) {
+    function releaseFunds(string calldata escrowId, bytes32 expectedDeliveryHash) external escrowExists(escrowId) {
         Escrow storage escrow = _escrows[escrowId];
         if (escrow.phase != Phase.FUNDED) revert InvalidPhase(escrowId, escrow.phase);
         if (msg.sender != escrow.client) revert NotAuthorized(msg.sender);
         if (escrow.deliveryHash == bytes32(0)) revert NoDelivery();
+        if (escrow.deliveryHash != expectedDeliveryHash) {
+            revert DeliveryChanged(expectedDeliveryHash, escrow.deliveryHash);
+        }
         _resolve(escrowId, 0, ResolutionKind.RELEASE, bytes32(0));
     }
 

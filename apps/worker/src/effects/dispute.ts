@@ -31,25 +31,25 @@ export async function applyDispute(tx: Prisma.TransactionClient, effect: Dispute
     if (!raiser) throw new Error("Dispute raiser has no matching user");
     const manifest = await tx.evidenceManifest.findFirst({ where: { issueId: issue.id, manifestHash: { equals: effect.evidenceManifestHash, mode: "insensitive" } } });
     const content = manifest?.manifest as { statement?: { text?: unknown } } | undefined;
-    const reason = typeof content?.statement?.text === "string" ? content.statement.text : "(bằng chứng nộp ngoài hệ thống)";
+    const reason = typeof content?.statement?.text === "string" ? content.statement.text : "(evidence submitted outside the system)";
     const values = { status: "OPEN" as const, phase: "DISPUTED" as const, raisedById: raiser.id, raisedAt: now, reason, evidenceManifestHash: effect.evidenceManifestHash,
       evidenceResponseDeadline: new Date(now.getTime() + 3 * day), arbiterTimeoutAt: new Date(now.getTime() + 30 * day) };
     const dispute = await tx.dispute.upsert({ where: { issueId: issue.id }, create: { issueId: issue.id, ...values }, update: values });
     await attach(effect.evidenceManifestHash, dispute.id);
     await tx.issue.update({ where: { id: issue.id }, data: { status: "DISPUTED" } });
-    await notify([...parties.filter((id) => id !== raiser.id), ...await admins()], "DISPUTE_RAISED", "Tranh chấp đã được mở");
+    await notify([...parties.filter((id) => id !== raiser.id), ...await admins()], "DISPUTE_RAISED", "A dispute was opened");
   } else {
     const dispute = await tx.dispute.findUniqueOrThrow({ where: { issueId: issue.id } });
     if (effect.kind === "COUNTERPARTY_EVIDENCE_SUBMITTED") {
       await tx.dispute.update({ where: { id: dispute.id }, data: { counterpartyEvidenceHash: effect.evidenceManifestHash } });
       await attach(effect.evidenceManifestHash, dispute.id);
-      await notify([dispute.raisedById], "EVIDENCE_SUBMITTED", "Đã nộp bằng chứng phản hồi");
+      await notify([dispute.raisedById], "EVIDENCE_SUBMITTED", "Counterparty evidence submitted");
     } else if (effect.kind === "RULING_CHALLENGED") {
       const challenger = await findUser(effect.challengedBy);
       if (!challenger) throw new Error("Ruling challenger has no matching user");
       const challengedAt = date(effect.challengedAt);
       await tx.dispute.update({ where: { id: dispute.id }, data: { status: "CHALLENGED", phase: "CHALLENGED", challengedAt, challengedById: challenger.id, arbiterTimeoutAt: new Date(challengedAt.getTime() + 30 * day) } });
-      await notify([...parties, ...await admins()], "RULING_CHALLENGED", "Phán quyết đã bị kháng cáo");
+      await notify([...parties, ...await admins()], "RULING_CHALLENGED", "The ruling was challenged");
     } else {
       const initial = effect.kind === "INITIAL_RULING_POSTED";
       const endsAt = date(initial ? effect.challengeEndsAt : effect.noticeEndsAt);
@@ -62,7 +62,7 @@ export async function applyDispute(tx: Prisma.TransactionClient, effect: Dispute
         logger.warn({ decisionHash: effect.decisionHash, escrowIdHash: effect.escrowIdHash }, "Unknown on-chain ruling decision hash");
         await tx.reconciliationFinding.create({ data: { escrowIdHash: effect.escrowIdHash, kind: "UNKNOWN_DECISION_HASH", expected: { knownDraft: true }, actual: { decisionHash: effect.decisionHash, chainEventId: meta.chainEventId }, blockNumber: meta.blockNumber } });
       }
-      await notify(parties, "RULING_POSTED", "Phán quyết đã được công bố");
+      await notify(parties, "RULING_POSTED", "A ruling was posted");
     }
   }
   const methods: Partial<Record<DisputeEffect["kind"], string>> = { DISPUTE_RAISED: "raiseDispute", COUNTERPARTY_EVIDENCE_SUBMITTED: "submitCounterpartyEvidence", RULING_CHALLENGED: "challengeRuling" };

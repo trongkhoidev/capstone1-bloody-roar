@@ -13,8 +13,8 @@ export async function applyWorkSubmitted(tx: Prisma.TransactionClient, effect: E
     data: { status: SubmissionStatus.SUPERSEDED, supersededAt: new Date(Number(meta.blockTimestamp) * 1000) } });
   if (delivery) await tx.submission.update({ where: { id: delivery.id }, data: { status: SubmissionStatus.SUBMITTED, submittedAt: new Date(Number(meta.blockTimestamp) * 1000), supersededAt: null, onChainEventId: meta.chainEventId } });
   await tx.transactionIntent.updateMany({ where: { escrowKey: projection.escrowKey, method: "submitWork", txHash: meta.txHash.toLowerCase(), status: { in: [IntentStatus.SUBMITTED, IntentStatus.PENDING_SAFE_HEAD] } }, data: { status: IntentStatus.CONFIRMED, confirmedByEventId: meta.chainEventId } });
-  const notification = await createNotificationIdempotent(tx, { userId: issue.clientId, type: "WORK_SUBMITTED", title: "Developer đã giao công việc",
-    body: `Bài giao cho “${issue.title}” đã được ghi nhận on-chain.`, link: `/issues/${projection.issueId}`,
+  const notification = await createNotificationIdempotent(tx, { userId: issue.clientId, type: "WORK_SUBMITTED", title: "Developer submitted work",
+    body: `The Submission for “${issue.title}” was recorded on-chain.`, link: `/issues/${projection.issueId}`,
     data: { issueId: projection.issueId, deliveryHash: effect.deliveryHash }, dedupeKey: `${meta.chainEventId}:${issue.clientId}:WORK_SUBMITTED` });
   if (notification) await notifyNotificationCreated(tx, { userId: issue.clientId, id: notification.id });
 }

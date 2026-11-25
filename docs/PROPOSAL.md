@@ -190,7 +190,7 @@ So sánh này nêu vị trí sản phẩm, không khẳng định ưu thế đ�
 ### UC-02 — Submission, Client release, and review timeout
 
 1. `Developer` gọi `submitWork` và có thể thay thế delivery hash đến hết delivery deadline.
-2. Sau `Submission` đầu tiên, `Client` có thể gọi `releaseFunds` cho phiên bản mới nhất; khi deposit, `Client` đã nạp bounty cộng platform fee 10% (bounty 100 USDC thì nạp 110 USDC); release trả đủ bounty cho `Developer` và 10% cho fee recipient (QĐ-33).
+2. Sau `Submission` đầu tiên, `Client` gọi `releaseFunds(escrowId, expectedDeliveryHash)` với delivery hash đã review; contract chỉ release khi hash này khớp `Submission` mới nhất. Khi deposit, `Client` đã nạp bounty cộng platform fee 10% (bounty 100 USDC thì nạp 110 USDC); release trả đủ bounty cho `Developer` và 10% cho fee recipient (D-33).
 3. Nếu `Client` không phản hồi, `Developer` có thể gọi `claimReviewTimeout` sau mốc cố định `deliveryDeadline + 7 days` và nhận toàn bộ amount.
 4. `Submission` ở phút cuối không được dời review deadline vì deadline này luôn tính từ delivery deadline ban đầu.
 

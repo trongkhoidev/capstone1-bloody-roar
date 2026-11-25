@@ -19,7 +19,7 @@ const hash = (byte: string) => `0x${byte.repeat(32)}`;
 const samples: Record<EscrowMethod, Record<string, string>> = {
   deposit: { escrowId, developer, amount: "1250000000", deliveryDeadline: "1791828000", termsHash: hash("11") },
   submitWork: { escrowId, deliveryHash: hash("22") },
-  releaseFunds: { escrowId },
+  releaseFunds: { escrowId, expectedDeliveryHash: hash("77") },
   claimMissedDeliveryRefund: { escrowId },
   claimReviewTimeout: { escrowId },
   proposeSettlement: { escrowId, clientBps: "3000" },
@@ -57,10 +57,19 @@ describe("encodeEscrowCall", () => {
     expect(amount.toString()).toBe("1250000000");
   });
 
+  it("binds releaseFunds to the expected delivery hash", () => {
+    const [decodedEscrowId, expectedDeliveryHash] = iface.decodeFunctionData(
+      "releaseFunds",
+      encodeEscrowCall("releaseFunds", samples.releaseFunds),
+    );
+    expect(decodedEscrowId).toBe(escrowId);
+    expect(expectedDeliveryHash).toBe(hash("77"));
+  });
+
   it("rejects an unknown method, a missing argument, an extra argument and non-integer amounts", () => {
     expect(() => encodeEscrowCall("nope" as EscrowMethod, {})).toThrow(/unknown escrow method/);
     expect(() => encodeEscrowCall("releaseFunds", {})).toThrow(/missing argument "escrowId"/);
-    expect(() => encodeEscrowCall("releaseFunds", { escrowId, extra: "x" })).toThrow(/no argument "extra"/);
+    expect(() => encodeEscrowCall("releaseFunds", { ...samples.releaseFunds, extra: "x" })).toThrow(/no argument "extra"/);
     for (const amount of ["1.5", "-1", "", "1e6"]) {
       expect(() => encodeEscrowCall("deposit", { ...samples.deposit, amount }), amount).toThrow(/decimal integer/);
     }

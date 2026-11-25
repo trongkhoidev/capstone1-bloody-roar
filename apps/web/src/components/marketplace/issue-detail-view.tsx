@@ -29,7 +29,6 @@ import { PLATFORM_FEE_BPS, REUSE_PRICE_BPS } from "@bloody-roar/shared/constants
 import type * as SendPrepared from "@/lib/web3/send-prepared";
 import type * as FundingIntent from "@/lib/web3/funding-intent";
 
-// Wallet code (ethers, thirdweb) loads on the first on-chain action, not with the page.
 const sendPreparedCalls: typeof SendPrepared.sendPreparedCalls = async (...args) => (await import("@/lib/web3/send-prepared")).sendPreparedCalls(...args);
 const signFundingIntent: typeof FundingIntent.signFundingIntent = async (...args) => (await import("@/lib/web3/funding-intent")).signFundingIntent(...args);
 
@@ -256,6 +255,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     setMyApplication(cached?.viewerApplication ?? null);
     setSubmissions(cached?.viewerSubmissions ?? []);
     setReservationId(null);
+    setReservedRaw(null);
     void load(true);
   }, [issueId, load, queryClient, user?.id, setError]);
 
@@ -565,7 +565,6 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     );
   }
 
-  // After selection the escrowed amount can be the reuse price (US-108), not the posted bounty.
   const principalRaw = BigInt(issue.escrow?.amountRaw ?? reservedRaw ?? issue.bountyRaw);
   const payout = splitPayout(principalRaw, PLATFORM_FEE_BPS);
   const devShare = formatTokenAmount(payout.developer, issue.bountyDecimals);
@@ -1181,7 +1180,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                         <dd className="mono" style={{ color: "var(--gold)", fontWeight: 600 }}>
                           {clientTotal} {issue.token.symbol}
                         </dd>
-                        <dt>Developer Net (full bounty)</dt>
+                        <dt>Developer Net</dt>
                         <dd className="mono">{devShare} {issue.token.symbol}</dd>
                         <dt>Platform Fee ({feePercent})</dt>
                         <dd className="mono">{platformFee} {issue.token.symbol}</dd>

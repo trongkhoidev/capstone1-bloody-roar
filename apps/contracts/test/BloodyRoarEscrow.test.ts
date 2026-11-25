@@ -560,6 +560,58 @@ describe("BloodyRoarEscrow", () => {
     });
   });
 
+  describe.skip("dispute opening rules (S-203a)", () => {
+    const evidence = (id: string) => hash(`evidence:${id}`);
+
+    it("rejects a dispute from either party before any delivery", async () => {
+      await deposit("rule-no-delivery");
+      for (const raiser of [client, developer]) {
+        await expect(
+          escrow.connect(raiser).raiseDispute("rule-no-delivery", evidence("rule-no-delivery")),
+        ).to.be.revertedWithCustomError(escrow, "NoDelivery");
+      }
+    });
+
+    it("lets either party dispute inside the review window", async () => {
+      for (const raiser of [client, developer]) {
+        const id = `rule-in-window-${raiser.address}`;
+        await deposit(id);
+        await escrow.connect(developer).submitWork(id, hash("delivery"));
+        await escrow.connect(raiser).raiseDispute(id, evidence(id));
+        expect((await escrow.getDispute(id)).raisedBy).to.equal(raiser.address);
+      }
+    });
+
+    it("rejects a dispute once the review window has closed and keeps the timeout claim open", async () => {
+      await deposit("rule-closed", USDC(1_000), 30 * DAY);
+      await escrow.connect(developer).submitWork("rule-closed", hash("delivery"));
+      const deadline = BigInt(await time.latest()) + 7n * BigInt(DAY);
+      await time.setNextBlockTimestamp(deadline);
+      await expect(escrow.connect(client).raiseDispute("rule-closed", evidence("rule-closed")))
+        .to.be.revertedWithCustomError(escrow, "DeadlinePassed")
+        .withArgs(deadline);
+      await escrow.connect(outsider).claimReviewTimeout("rule-closed");
+    });
+
+    it("moves the dispute deadline when the developer resubmits", async () => {
+      await deposit("rule-resubmit", USDC(1_000), 30 * DAY);
+      await escrow.connect(developer).submitWork("rule-resubmit", hash("first"));
+      await time.increase(6 * DAY);
+      await escrow.connect(developer).submitWork("rule-resubmit", hash("second"));
+      await time.increase(2 * DAY);
+      await escrow.connect(client).raiseDispute("rule-resubmit", evidence("rule-resubmit"));
+    });
+
+    it("allows only one dispute per escrow", async () => {
+      await deposit("rule-once");
+      await escrow.connect(developer).submitWork("rule-once", hash("delivery"));
+      await escrow.connect(client).raiseDispute("rule-once", evidence("rule-once"));
+      await expect(
+        escrow.connect(developer).raiseDispute("rule-once", evidence("rule-once-again")),
+      ).to.be.revertedWithCustomError(escrow, "InvalidPhase");
+    });
+  });
+
   describe("accounting invariants", () => {
     it("covers missing escrow and authorization failure surfaces", async () => {
       await expect(escrow.submitWork("", hash("delivery"))).to.be.revertedWithCustomError(

@@ -18,7 +18,14 @@ export async function advanceTime(seconds: number) {
 
 // Reverts the chain, then waits until the worker has reconciled its checkpoint with the reverted chain.
 export async function restoreChain(snapshot: string, { prisma }: { prisma: PrismaClient }) {
+  // Keep transaction hashes unique because the database still records reverted transactions.
+  const accounts = await rpc<string[]>("eth_accounts");
+  const nonces = await Promise.all(accounts.map(async (account) => ({
+    account,
+    nonce: await rpc<string>("eth_getTransactionCount", [account, "latest"]),
+  })));
   if (!(await rpc<boolean>("evm_revert", [snapshot]))) throw new Error("evm_revert failed");
+  for (const { account, nonce } of nonces) await rpc("hardhat_setNonce", [account, nonce]);
   const where = { chainId: 31337, contractAddress: process.env.ESCROW_ADDRESS!.toLowerCase() };
   const checkpoint = await prisma.projectionCheckpoint.findFirstOrThrow({ where });
   while (BigInt(await rpc<string>("eth_blockNumber")) < checkpoint.lastScannedBlock) await rpc("evm_mine");

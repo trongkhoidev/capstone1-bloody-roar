@@ -1,6 +1,6 @@
 import { beforeAll, expect, test } from "bun:test";
 import { assertTestDatabase } from "@bloody-roar/database/test-guard";
-import { restoreChain, snapshotChain } from "./harness/chain";
+import { restoreChain, rpc, snapshotChain } from "./harness/chain";
 import { externalDeposit } from "./harness/funding";
 import { fixture } from "./harness/fixture";
 import { waitFor } from "./harness/waitFor";
@@ -19,8 +19,10 @@ test("E22: a reorged deposit is marked non-canonical and the projection follows 
     const chainEvent = (txHash: string) => f.prisma.chainEvent.findFirst({ where: { txHash, escrowIdHash: reservation.escrowIdHash } });
     const depositA = (await externalDeposit(f, reservation)).toLowerCase();
     await waitFor(async () => (await chainEvent(depositA))?.canonical === true);
+    const nonce = await rpc<string>("eth_getTransactionCount", [f.client.walletAddress, "latest"]);
     await restoreChain(snapshot, f);
     clean = await snapshotChain();
+    expect(await rpc<string>("eth_getTransactionCount", [f.client.walletAddress, "latest"])).toBe(nonce);
     const depositB = (await externalDeposit(f, reservation)).toLowerCase();
     expect(depositB).not.toBe(depositA);
     await waitFor(async () => (await chainEvent(depositB))?.canonical === true);

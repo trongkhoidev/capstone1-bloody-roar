@@ -93,3 +93,9 @@ tanstack-react-query-5.51.21.tgz
 
 # Worker source snapshots
 .data/
+
+# Personal agent prompts, TODOs and one-off probes stay local
+docs/plan/*PROMPT*.md
+docs/plan/KHOI_TODO_*.md
+docs/plan/DIAGRAM_ASSIGNMENT_*.md
+scripts/deepseek-probe.ts

@@ -1,0 +1,5 @@
+version: 2
+secret:
+  ignored_matches:
+    - name: Throwaway Postgres password of CI service containers
+      match: ci-${{ github.run_id }}

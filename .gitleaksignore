@@ -1,2 +1,8 @@
 # Public Hardhat test key (account #2), removed in the next commit.
 d9fadf2ab9acb85098d6e7427d9665f5c4b3eb10:scripts/demo/wallets.ts:generic-api-key:53
+# Token addresses inside escrow terms JSON fixtures, not secrets.
+840989189df634a8aecfff2fb7672f250a174e43:apps/web/src/test/escrow-core/hashing.test.ts:generic-api-key:38
+840989189df634a8aecfff2fb7672f250a174e43:apps/contracts/test/foundry/HashVectors.t.sol:generic-api-key:19
+b3121fbe3e5d95c02467b8b92b72655a1ca78658:apps/contracts/test/foundry/HashVectors.t.sol:generic-api-key:26
+# Empty env assignments in a local prompt file (no value), file is no longer tracked.
+b68d341e4f6d5721a21225d40644dda4ca78ce5a:docs/plan/OPUS_PROMPT_REVIEW_FEE10_REUSE_2026-11-23.md:generic-api-key:147

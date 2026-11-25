@@ -45,7 +45,7 @@ function maskSeedPhrases(content: string): { content: string; matched: boolean }
   const spans: Array<[number, number]> = [];
   let checks = 0;
 
-  for (let i = 0; i < tokens.length && checks < MAX_SEED_PHRASE_CHECKS; i++) {
+  outer: for (let i = 0; i < tokens.length; i++) {
     for (const length of SEED_PHRASE_LENGTHS) {
       const window = tokens.slice(i, i + length);
       const [first] = window;
@@ -53,7 +53,10 @@ function maskSeedPhrases(content: string): { content: string; matched: boolean }
       if (!first || !last || window.length < length || !window.every((token) => BIP39_WORDS.has(token.word.toLowerCase()))) break;
       // Only letters and whitespace between the first and last word means the run is contiguous.
       if (!/^[A-Za-z\s]+$/.test(content.slice(first.start, last.end))) continue;
-      checks++;
+      if (checks++ >= MAX_SEED_PHRASE_CHECKS) {
+        spans.push([first.start, content.length]);
+        break outer;
+      }
       if (!validateMnemonic(window.map((token) => token.word.toLowerCase()).join(" "), wordlist)) continue;
       spans.push([first.start, last.end]);
       i += length - 1;

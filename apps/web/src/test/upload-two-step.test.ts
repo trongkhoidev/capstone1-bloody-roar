@@ -28,7 +28,7 @@ vi.mock("node:fs/promises", () => ({
 vi.mock("@bloody-roar/database", async () => {
   const { vi } = await import("vitest");
   const attachmentCreate = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({ id: "att-1", ...data }));
-  const attachmentUpdate = vi.fn(async () => ({}));
+  const attachmentUpdate = vi.fn(async () => ({ count: 1 }));
   const userUpdate = vi.fn(async () => ({}));
   state.db = { attachmentCreate, attachmentUpdate, userUpdate } as never;
   return {
@@ -38,9 +38,10 @@ vi.mock("@bloody-roar/database", async () => {
         create: attachmentCreate,
         findUnique: async () => state.attachment,
         update: attachmentUpdate,
+        updateMany: attachmentUpdate,
       },
       user: { update: userUpdate },
-      $transaction: async (operations: Promise<unknown>[]) => Promise.all(operations),
+      $transaction: async (run: (tx: unknown) => Promise<unknown>) => run({ attachment: { updateMany: attachmentUpdate }, user: { update: userUpdate } }),
     },
   };
 });

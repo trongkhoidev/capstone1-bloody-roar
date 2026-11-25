@@ -6,7 +6,7 @@ import { uploadFile } from "@/lib/upload";
 import { io, type Socket } from "socket.io-client";
 import { Check, CircleHelp, FileText, Paperclip, Send, ShieldCheck, X } from "lucide-react";
 import Image from "next/image";
-import { ALLOWED_FILE_TYPES } from "@bloody-roar/shared/constants";
+import { CHAT_FILE_TYPES } from "@bloody-roar/shared/constants";
 import { graphqlRequest } from "@/lib/graphql-client";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { Button } from "@/components/ui/button";
@@ -306,7 +306,7 @@ export function ChatRoom({
       {readOnly ? <p className="border-t border-[hsl(var(--border))] bg-[hsl(var(--background-secondary))] px-4 py-3 text-xs text-[hsl(var(--foreground-muted))]">Read-only now. The bounty is complete, or a dispute is under review.</p> : <>
         {pendingFile && <div className="flex items-center justify-between gap-3 border-t border-[hsl(var(--border))] px-4 py-2 text-xs text-[hsl(var(--foreground-muted))]"><span className="truncate">Attached: {pendingFile.name}</span><button type="button" onClick={() => { setPendingFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }} className="rounded p-1 hover:bg-[hsl(var(--background-secondary))]" aria-label="Remove attachment"><X className="h-3.5 w-3.5" /></button></div>}
         <form onSubmit={send} className="flex items-end gap-2 border-t border-[hsl(var(--border))] bg-[hsl(var(--card))] p-3 sm:gap-3 sm:p-4">
-          <input ref={fileInputRef} type="file" accept={ALLOWED_FILE_TYPES.join(",")} className="hidden" onChange={(event) => setPendingFile(event.target.files?.[0] ?? null)} aria-label="Attach file" />
+          <input ref={fileInputRef} type="file" accept={CHAT_FILE_TYPES.join(",")} className="hidden" onChange={(event) => setPendingFile(event.target.files?.[0] ?? null)} aria-label="Attach file" />
           <Button type="button" variant="ghost" size="icon" disabled={connection !== "ready" || isSending} onClick={() => fileInputRef.current?.click()} aria-label="Attach a file"><Paperclip className="h-4 w-4" /></Button>
           <textarea value={content} onChange={(event) => setContent(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); if (!sendDisabled) event.currentTarget.form?.requestSubmit(); } }} rows={1} maxLength={4000} placeholder={connection === "ready" ? "Write a message…" : "Connecting to the private room…"} disabled={connection !== "ready"} className="min-h-10 max-h-28 flex-1 resize-y rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2.5 text-sm outline-none focus:border-[hsl(var(--primary)/0.5)] disabled:cursor-not-allowed disabled:opacity-60" />
           <Button type="submit" size="icon" disabled={sendDisabled} aria-label="Send message" title="Send message"><Send className="h-4 w-4" /></Button>

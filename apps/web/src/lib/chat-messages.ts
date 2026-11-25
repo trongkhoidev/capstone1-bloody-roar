@@ -36,7 +36,7 @@ export async function saveConversationMessage(db: PrismaClient, user: User, raw:
           if (duplicate) return { message: duplicate, room, duplicate: true };
         }
         if (input.replyToId && !await tx.message.findFirst({ where: { id: input.replyToId, conversationId: room.id, isDeleted: false } })) throw gqlError("The message you are replying to was not found", "NOT_FOUND");
-        const attachment = input.type === "FILE" ? await tx.attachment.findFirst({ where: { fileUrl: input.fileUrl ?? "", issueId: room.issueId, uploaderId: user.id, status: "ATTACHED", messageId: null, OR: [{ conversationId: room.id, purpose: "CHAT" }, ...(room.kind === "ISSUE_WORK" ? [{ conversationId: null, purpose: "DELIVERY" as const }] : [])] } }) : null;
+        const attachment = input.type === "FILE" ? await tx.attachment.findFirst({ where: { fileUrl: input.fileUrl ?? "", issueId: room.issueId, uploaderId: user.id, status: "ATTACHED", messageId: null, conversationId: room.id, purpose: "CHAT" } }) : null;
         if (input.type === "FILE" && !attachment) throw gqlError("Complete the upload for this conversation first", "INVALID_ATTACHMENT");
         const maskedName = scanAndMask(attachment?.fileName ?? "");
         const dispute = await tx.dispute.findUnique({ where: { issueId: room.issueId }, select: { raisedAt: true } });

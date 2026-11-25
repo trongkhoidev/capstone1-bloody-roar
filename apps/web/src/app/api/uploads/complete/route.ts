@@ -76,22 +76,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Stored file size does not match the declared size" }, { status: 400 });
 
   const rejection = attachment.purpose === "CHAT" ? chatRejection(attachment.fileMime, bytes, attachment.fileName) : null;
+  const alreadyComplete = NextResponse.json({ error: "Upload is already complete" }, { status: 409 });
   if (rejection) {
+    const { count } = await prisma.attachment.updateMany({ where: { id: attachment.id, status: "PENDING" }, data: { status: "REJECTED" } });
+    if (!count) return alreadyComplete;
     const s3 = getS3Storage();
     const localPath = localUploadPath(key);
-    if (s3) await s3.client.send(new DeleteObjectCommand({ Bucket: s3.bucket, Key: key }));
+    if (s3) await s3.client.send(new DeleteObjectCommand({ Bucket: s3.bucket, Key: key })).catch(console.error);
     else if (localPath) await unlink(localPath.destination).catch(() => undefined);
-    await prisma.attachment.update({ where: { id: attachment.id }, data: { status: "REJECTED" } });
     return NextResponse.json(rejection, { status: 422 });
   }
 
   const sha256 = createHash("sha256").update(bytes).digest("hex");
-  await prisma.$transaction([
-    prisma.attachment.update({ where: { id: attachment.id }, data: { sha256, status: "ATTACHED" } }),
-    ...(attachment.purpose === "AVATAR"
-      ? [prisma.user.update({ where: { id: user.id }, data: { avatar: attachment.fileUrl } })]
-      : []),
-  ]);
+  const count = await prisma.$transaction(async (tx) => {
+    const { count } = await tx.attachment.updateMany({ where: { id: attachment.id, status: "PENDING" }, data: { sha256, status: "ATTACHED" } });
+    if (count && attachment.purpose === "AVATAR") await tx.user.update({ where: { id: user.id }, data: { avatar: attachment.fileUrl } });
+    return count;
+  });
+  if (!count) return alreadyComplete;
   if (attachment.purpose === "AVATAR") clearAuthCache();
   return NextResponse.json({ attachmentId: attachment.id, sha256 });
 }

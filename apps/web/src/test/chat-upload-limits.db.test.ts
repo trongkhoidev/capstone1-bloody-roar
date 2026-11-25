@@ -176,6 +176,20 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("chat upload type and size limit
     }
   });
 
+  it("still rejects a seed phrase hidden after many invalid BIP-39 windows", async () => {
+    const text = `${"abandon ".repeat(1_100)}.\n${"abandon ".repeat(11)}about`;
+    const { id } = await stored("text/plain", new TextEncoder().encode(text));
+    const response = await complete(post("http://localhost/api/uploads/complete", { attachmentId: id }));
+    expect(response.status).toBe(422);
+    expect(await response.json()).toMatchObject({ code: "FILE_CONTAINS_SECRET" });
+  });
+
+  it("completes a pending upload only once when two completes race", async () => {
+    const { id } = await stored("text/plain", new TextEncoder().encode("race"));
+    const statuses = (await Promise.all([1, 2].map(() => complete(post("http://localhost/api/uploads/complete", { attachmentId: id }))))).map((response) => response.status);
+    expect(statuses.sort()).toEqual([200, 409]);
+  });
+
   it("attaches a valid chat file at complete", async () => {
     const { id, destination } = await stored("text/plain", new TextEncoder().encode("hello chat"));
     const response = await complete(post("http://localhost/api/uploads/complete", { attachmentId: id }));

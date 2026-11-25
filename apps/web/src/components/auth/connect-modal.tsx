@@ -96,7 +96,6 @@ export function ConnectModal({ isOpen, onClose }: ConnectModalProps) {
       const account = await googleWallet.connectGoogle();
       const success = await loginWithSignature(account.address, (message) => account.signMessage({ message }));
       if (success) finishLogin("in-app");
-      else setStatus("error", GOOGLE_SIGN_IN_FAILED);
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
       const message = /opening pop-up|(?:pop-?up|window).*blocked|blocked.*(?:pop-?up|window)/i.test(detail)

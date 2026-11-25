@@ -6,6 +6,7 @@ import { prisma } from "@bloody-roar/database";
 import { assertTestDatabase } from "@bloody-roar/database/test-guard";
 import { ACTIVE_CHAIN_ID } from "@bloody-roar/shared/constants";
 import type { AICompletion } from "../ai/model-router";
+import { aiRateLimit } from "../lib/rate-limit";
 import { detectSimilarIssues, findSimilarCandidates } from "../lib/services/similar-issues";
 import { execute, loadSchema } from "./graphql-execute";
 
@@ -84,6 +85,19 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("similar issue detection on test
     const id = await newIssue(title, LOGIN_BUG);
     const found = await findSimilarCandidates(prisma, await prisma.issue.findUniqueOrThrow({ where: { id } }));
     expect(found.map((c) => c.id)).toEqual([solvedId]);
+  });
+
+  it("uses a separate 20-call similarity quota and workload", async () => {
+    vi.stubEnv("AI_BASE_URL", "http://127.0.0.1:4019");
+    const id = await newIssue("Safari wallet login spins after SIWE signature", LOGIN_BUG);
+    const actor = { id: await user("CLIENT"), role: "CLIENT" };
+    const complete = answer(JSON.stringify({ matches: [] }));
+
+    await detectSimilarIssues(prisma, id, actor, complete);
+    expect(complete).toHaveBeenCalledWith(expect.objectContaining({ task: "SIMILARITY" }));
+    for (let i = 0; i < 10; i++) expect(() => aiRateLimit(actor)).not.toThrow();
+    for (let i = 0; i < 20; i++) await detectSimilarIssues(prisma, id, actor, complete);
+    expect(complete).toHaveBeenCalledTimes(20);
   });
 
   it("notifies the old developer once for a confirmed match and shows them the label", async () => {

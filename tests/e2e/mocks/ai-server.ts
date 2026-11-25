@@ -19,6 +19,8 @@ export function startAiMock() {
           given: "the task is ready", when: `the user exercises ${name}`,
           then: "the expected result is returned", priority: "NORMAL", isEdgeCase: name === "edge case",
         })) };
+      } else if (system.includes("same problem as newIssue")) {
+        result = { matches: [] };
       } else if (system.includes("suggestedClientBps")) {
         let evidence: { task?: { id?: string } };
         try { evidence = JSON.parse(user); } catch { return new Response("Invalid evidence", { status: 400 }); }

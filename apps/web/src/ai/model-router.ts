@@ -1,7 +1,7 @@
 import { AILogStatus, prisma } from "@bloody-roar/database";
 import { auditHash } from "./hash";
 
-export type AIWorkload = "GUARD" | "TESTGEN" | "DEBATE";
+export type AIWorkload = "GUARD" | "TESTGEN" | "DEBATE" | "SIMILARITY";
 export type AIMessage = { role: "system" | "user"; content: string };
 
 export interface AICompletionInput {
@@ -53,12 +53,14 @@ export interface AIRouterDependencies {
 
 const GROQ_MODELS: Record<AIWorkload, string> = {
   GUARD: "openai/gpt-oss-20b",
+  SIMILARITY: "openai/gpt-oss-20b",
   TESTGEN: "openai/gpt-oss-120b",
   DEBATE: "openai/gpt-oss-120b",
 };
 
 const OPENAI_MODELS: Record<AIWorkload, string> = {
   GUARD: "gpt-4.1-mini",
+  SIMILARITY: "gpt-4.1-mini",
   TESTGEN: "gpt-4.1-mini",
   DEBATE: "gpt-4.1-mini",
 };

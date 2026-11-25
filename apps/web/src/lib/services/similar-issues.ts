@@ -4,7 +4,7 @@ import { z } from "zod";
 import { createNotificationIdempotent, type PrismaClient } from "@bloody-roar/database";
 import { completeAI, isAIConfigured, parseAIJson } from "../../ai/model-router";
 import { scanAndMask } from "../../ai/guard/scanner";
-import { aiRateLimit } from "../rate-limit";
+import { rateLimit } from "../rate-limit";
 import { createLogger } from "../logger";
 
 const log = createLogger("similar-issues");
@@ -50,14 +50,17 @@ export async function detectSimilarIssues(
   const issue = await db.issue.findUnique({ where: { id: issueId }, select: { id: true, title: true, description: true, clientId: true, requiredSkills: true } });
   if (!issue) return;
   const candidates = await findSimilarCandidates(db, issue);
-  if (!candidates.length || !isAIConfigured("TESTGEN")) return;
-  aiRateLimit(user);
+  if (!candidates.length || !isAIConfigured("SIMILARITY")) return;
+  if (!rateLimit(`similar:${user.id}`, { limit: 20, windowMs: 3_600_000 }).ok) {
+    log.debug({ issueId }, "Similarity rate limit reached");
+    return;
+  }
 
   const content = scanAndMask(JSON.stringify({
     newIssue: { title: issue.title, description: issue.description },
     candidates: candidates.map((c) => ({ issueId: c.id, title: c.title, description: c.description })),
   })).content;
-  const completion = await complete({ task: "TESTGEN", issueId: issue.id, jsonMode: true, maxTokens: 800, messages: [
+  const completion = await complete({ task: "SIMILARITY", issueId: issue.id, jsonMode: true, maxTokens: 800, messages: [
     { role: "system", content: 'Decide which candidate issues describe the same problem as newIssue, so the earlier fix could be reused. Return JSON only: {"matches":[{"issueId":string,"score":number between 0 and 1,"reason":string}]}. Omit unrelated candidates.' },
     { role: "user", content },
   ] });

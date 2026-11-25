@@ -21,11 +21,11 @@ type Candidate = { id: string; title: string; description: string; developerId: 
 
 export async function findSimilarCandidates(db: PrismaClient, issue: { id: string; title: string; description: string; clientId: string; requiredSkills: string[] }) {
   if (!issue.requiredSkills.length) return [];
-  // OR of every word in the new issue so a partial overlap still ranks; 'english' drops stopwords that would match everything,
-  // and quoting keeps punctuation from breaking to_tsquery.
+  // OR the English lexemes so partial matches still rank. Use 'simple' to keep them from being stemmed twice,
+  // and quote them so punctuation cannot break to_tsquery.
   return db.$queryRaw<Candidate[]>`
     WITH q AS (
-      SELECT to_tsquery('english', array_to_string(ARRAY(
+      SELECT to_tsquery('simple', array_to_string(ARRAY(
         SELECT quote_literal(word) FROM unnest(tsvector_to_array(to_tsvector('english', ${`${issue.title} ${issue.description.slice(0, 2000)}`}))) AS word
       ), ' | ')) AS query
     )

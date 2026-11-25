@@ -63,6 +63,17 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("similar issue detection on test
     expect(found[0]?.developerId).toBe(oldDev);
   });
 
+  it("matches lexemes already stemmed by the English vector", async () => {
+    const title = "University";
+    const description = "The parties agreed at the university";
+    const solved = await issue({ title, description, clientId: oldClient, status: "COMPLETED", developerId: oldDev });
+    const id = await newIssue(title, description);
+    const fresh = await prisma.issue.findUniqueOrThrow({ where: { id } });
+    expect((await findSimilarCandidates(prisma, fresh)).map((c) => c.id)).toEqual([solved]);
+    const found = await findSimilarCandidates(prisma, { ...fresh, description: "Agreed at the university" });
+    expect(found.map((c) => c.id)).toEqual([solved]);
+  });
+
   it("notifies the old developer once for a confirmed match and shows them the label", async () => {
     vi.stubEnv("AI_BASE_URL", "http://127.0.0.1:4019");
     const id = await newIssue("Wallet login spins on Safari after signing", "After the SIWE signature the login button keeps spinning on Safari.");

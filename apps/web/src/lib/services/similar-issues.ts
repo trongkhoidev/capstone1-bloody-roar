@@ -33,6 +33,8 @@ export async function findSimilarCandidates(db: PrismaClient, issue: { id: strin
     FROM issues i, q
     WHERE i.status = 'COMPLETED' AND i."developerId" IS NOT NULL AND i.id <> ${issue.id}
       AND i."clientId" <> ${issue.clientId} AND i."developerId" <> ${issue.clientId}
+      AND i."hiddenAt" IS NULL
+      AND NOT EXISTS (SELECT 1 FROM users u WHERE u.id = i."developerId" AND u."isBanned")
       AND i."requiredSkills" && ${issue.requiredSkills}::text[]
       AND to_tsvector('english', i.title || ' ' || i.description) @@ q.query
     ORDER BY ts_rank(to_tsvector('english', i.title || ' ' || i.description), q.query) DESC, i.id

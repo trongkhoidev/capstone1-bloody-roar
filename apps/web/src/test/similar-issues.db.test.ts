@@ -74,6 +74,18 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("similar issue detection on test
     expect(found.map((c) => c.id)).toEqual([solved]);
   });
 
+  it("excludes hidden issues and issues solved by banned developers", async () => {
+    const title = "Safari wallet login spins after SIWE signature";
+    const bannedDev = await user("DEVELOPER");
+    await prisma.user.update({ where: { id: bannedDev }, data: { isBanned: true } });
+    const hidden = await issue({ title, description: LOGIN_BUG, clientId: oldClient, status: "COMPLETED", developerId: oldDev });
+    await prisma.issue.update({ where: { id: hidden }, data: { hiddenAt: new Date() } });
+    await issue({ title, description: LOGIN_BUG, clientId: oldClient, status: "COMPLETED", developerId: bannedDev });
+    const id = await newIssue(title, LOGIN_BUG);
+    const found = await findSimilarCandidates(prisma, await prisma.issue.findUniqueOrThrow({ where: { id } }));
+    expect(found.map((c) => c.id)).toEqual([solvedId]);
+  });
+
   it("notifies the old developer once for a confirmed match and shows them the label", async () => {
     vi.stubEnv("AI_BASE_URL", "http://127.0.0.1:4019");
     const id = await newIssue("Wallet login spins on Safari after signing", "After the SIWE signature the login button keeps spinning on Safari.");

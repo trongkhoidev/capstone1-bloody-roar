@@ -2,6 +2,7 @@
 import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { prisma } from "@bloody-roar/database";
+import { ACTIVE_CHAIN_ID } from "@bloody-roar/shared";
 import { assertTestDatabase } from "@bloody-roar/database/test-guard";
 import { execute, loadSchema } from "./graphql-execute";
 
@@ -26,7 +27,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("issue availableActions match mu
     client = await prisma.user.create({ data: { walletAddress: hex(20), role: "CLIENT" } });
     developer = await prisma.user.create({ data: { walletAddress: hex(20), role: "DEVELOPER" } });
     outsider = await prisma.user.create({ data: { walletAddress: hex(20), role: "DEVELOPER" } });
-    tokenId = (await prisma.token.create({ data: { name: "Act", symbol: "ACT", address: hex(20), decimals: 6, chainId: 31337 } })).id;
+    tokenId = (await prisma.token.create({ data: { name: "Act", symbol: "ACT", address: hex(20), decimals: 6, chainId: ACTIVE_CHAIN_ID } })).id;
   }, 60_000);
 
   afterAll(async () => {
@@ -48,7 +49,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("issue availableActions match mu
     issueIds.push(issue.id);
     const application = await prisma.application.create({ data: { issueId: issue.id, developerId: developer.id } });
     if (data.reserved) await prisma.fundingReservation.create({ data: { issueId: issue.id, applicationId: application.id, clientId: client.id, developerId: developer.id,
-      escrowKey: hex(16), escrowIdHash: hex(32), chainId: 31337, contractAddress: hex(20), tokenAddress: hex(20), amountRaw: "100000000", deliveryDeadline: new Date(Date.now() + 86_400_000),
+      escrowKey: hex(16), escrowIdHash: hex(32), chainId: ACTIVE_CHAIN_ID, contractAddress: hex(20), tokenAddress: hex(20), amountRaw: "100000000", deliveryDeadline: new Date(Date.now() + 86_400_000),
       termsHash: hex(32), termsVersion: 1, expiresAt: new Date(Date.now() + 3_600_000), status: "AWAITING_FUNDING" } });
     return { issueId: issue.id, applicationId: application.id };
   }
@@ -60,17 +61,18 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("issue availableActions match mu
     return Object.fromEntries(actions.map((a) => [a.action, a.reasonDisabled])) as Record<Action, string | null>;
   }
 
-  async function expectMatchesMutations(user: unknown, ids: { issueId: string; applicationId: string }) {
+  async function expectMatchesMutations(user: { id: string }, ids: { issueId: string }) {
     const advertised = await reasons(user, ids.issueId);
+    const own = await prisma.application.findUnique({ where: { issueId_developerId: { issueId: ids.issueId, developerId: user.id } }, select: { id: true } });
     for (const action of ["withdrawApplication", "editCriteria", "setSource", "publish"] as const) {
-      const result = await as(user, mutations[action], ids);
+      const result = await as(user, mutations[action], { issueId: ids.issueId, applicationId: own?.id ?? "no-application" });
       expect({ action, code: result.errors?.[0]?.extensions?.code ?? null }).toEqual({ action, code: advertised[action] });
     }
   }
 
   it("matches mutations for the owner of a draft", async () => {
     const ids = await makeIssue({ isDraft: true });
-    expect(await reasons(client, ids.issueId)).toMatchObject({ editCriteria: null, setSource: null, publish: null, withdrawApplication: "FORBIDDEN" });
+    expect(await reasons(client, ids.issueId)).toMatchObject({ editCriteria: null, setSource: null, publish: null, withdrawApplication: "NOT_FOUND" });
     await expectMatchesMutations(client, ids);
   });
 

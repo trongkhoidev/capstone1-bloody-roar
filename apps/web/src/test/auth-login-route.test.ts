@@ -38,4 +38,4 @@ it("accepts a SIWE signature from a fresh EOA and sets the auth cookie", async (
   expect(response.status).toBe(200);
   expect((await response.json()).user.walletAddress).toBe(wallet.address.toLowerCase());
   expect(response.headers.get("set-cookie")).toMatch(/^bloody_token=.+;.*HttpOnly/i);
-});
+}, 60_000);

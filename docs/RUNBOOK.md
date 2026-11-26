@@ -130,3 +130,41 @@ from projection_checkpoints where "chainId" = <CHAIN_ID>;
 | Log có `reorg detected; cursor rewound` ngay sau cold start | Hash tại cursor không khớp node: thường do `RPC_URL` trỏ sang chain khác hoặc node local đã được khởi động lại. Kiểm tra `CHAIN_ID` và `RPC_URL`. |
 | `REORG_BEYOND_WINDOW` và `reorgAlerted = true` | Hash biên cửa sổ đổi hoặc thiếu. Có thể xảy ra nếu reorg đến trước khi tick đầu sau migration điền map. Worker dừng tiến cursor; xác nhận chain đúng rồi chạy `bun run worker:replay --from <ESCROW_DEPLOY_BLOCK>`. Replay đặt `lastCanonicalBlockHash = ""`, nên tick kế tiếp quét thành công và tự đặt `reorgAlerted = false`. |
 | Hardhat local khởi động lại, cursor cao hơn block hiện tại | Chain mới, checkpoint cũ không còn hợp lệ. Xóa dòng checkpoint của `chainId` 31337 và địa chỉ escrow cũ, rồi deploy và chạy lại. |
+
+## Máy demo: khởi động và khôi phục (S-113, US-83)
+
+Đã chạy thử ngày 2026-11-26 trên WSL2 Ubuntu. Khi thử, cổng 8545/4000 đang bận nên các bước của `local-up.sh` được chạy tay trên 8645/4311/4110 (`LOCAL_RPC_URL`, `WORKER_PORT`, `PORT` trong `.env`); **`local-up.sh` chưa được chạy nguyên bản trên máy này**. Máy chạy với Docker Desktop (bật WSL Integration cho distro), Bun 1.4, Postgres 16 trong `docker-compose.yml` (cổng 5433). Máy demo dùng Postgres local, **không dùng Supabase** (G-17).
+
+**Một lần:**
+
+```bash
+docker compose up -d postgres
+docker exec bloody_roar_postgres createdb -U postgres bloody_roar_demo
+docker build -t bloodyroar-test-runner:1 -f apps/worker/runner/Dockerfile apps/worker/runner
+docker pull python:3.12-slim
+bun install --frozen-lockfile && bun run db:generate
+```
+
+`.env` của máy demo: `DATABASE_URL`/`DIRECT_URL` trỏ `localhost:5433/bloody_roar_demo`, `CHAIN_ID=31337`, `RPC_URL=http://127.0.0.1:8545`, `FINALITY=latest`, `TEST_RUNNER_ENABLED=true`, `AUTH_PRIVATE_KEY` sinh riêng (`openssl rand -hex 32`), `ADMIN_WALLETS` là tài khoản Hardhat #1.
+
+**Khởi động, đúng thứ tự:** Hardhat → deploy → migration → worker → web.
+
+```bash
+(cd packages/database && bun --env-file=../../.env x prisma migrate deploy)
+bash scripts/demo/local-up.sh     # Hardhat 8545, deploy, ghi ESCROW_* vào .env, seed token, worker 4300, web 4000
+BASE_URL=http://localhost:4000 bun run scripts/demo/runner-smoke.ts
+```
+
+`runner-smoke.ts` đăng nhập bằng tài khoản Hardhat #2, tạo bounty, tải source ZIP, chờ snapshot `READY`, cho base check chạy trong Docker tới `PASSED`, rồi tải link snapshot (200 với chủ bounty, 401 khi không có phiên). In `OK issue <id>` khi đạt.
+
+- Link tải snapshot (G-11) chỉ chạy khi web và worker cùng máy, cùng bản checkout: cả hai đọc `SNAPSHOT_DIR` (mặc định `<repo>/.data/snapshots`).
+- Test viết tay phải có `[TC:<testCaseId>]` trong tên test. Thiếu thẻ này, runner ghi `No assertion results` và run `FAILED` dù Vitest báo pass.
+- `local-up.sh` seed bằng `ALLOW_REMOTE_DB=1`, tức bỏ chặn "chỉ DB localhost". Kiểm `.env` không trỏ Supabase trước khi chạy.
+
+**Khôi phục sau khi Hardhat khởi động lại hoặc bị reset:**
+
+Triệu chứng: worker `/health` trả `ok:false` với `rpcErrorStreak` tăng, log `ECONNREFUSED`. Web `/api/health` vẫn `ok` vì chỉ kiểm database.
+
+1. Chạy lại `bash scripts/demo/local-up.sh`. Script tắt tiến trình cũ, dựng chain mới, deploy và ghi `ESCROW_ADDRESS`/`ESCROW_DEPLOY_BLOCK` mới vào `.env`, rồi khởi động lại worker và web.
+2. Bắt buộc khởi động lại worker sau khi đổi `.env`. Deploy lại cho **địa chỉ escrow khác**; worker cũ vẫn báo `ok:true` sau `reorg detected; cursor rewound` nhưng đang theo dõi địa chỉ không còn contract.
+3. Chạy lại `runner-smoke.ts`. Bounty và escrow cũ trong DB thuộc chain đã mất; dùng bounty mới cho demo.

@@ -71,6 +71,7 @@ describe("BloodyRoarEscrow", () => {
 
   async function dispute(id: string, raiser = client) {
     await deposit(id);
+    await escrow.connect(developer).submitWork(id, hash(`delivery:${id}`));
     await escrow.connect(raiser).raiseDispute(id, hash(`evidence:${id}:${raiser.address}`));
     return escrow.getDispute(id);
   }
@@ -158,6 +159,7 @@ describe("BloodyRoarEscrow", () => {
       expect(newRoles.arbiter).to.equal(nextArbiter.address);
       expect(newRoles.feeRecipient).to.equal(nextFeeRecipient.address);
 
+      await escrow.connect(developer).submitWork("old-roles", hash("old delivery"));
       await escrow.connect(client).raiseDispute("old-roles", hash("old evidence"));
       const d = await escrow.getDispute("old-roles");
       await time.setNextBlockTimestamp(d.raisedAt + 72n * 60n * 60n);
@@ -441,7 +443,7 @@ describe("BloodyRoarEscrow", () => {
   });
 
   describe("dispute evidence, rulings, and liveness", () => {
-    it("allows either party to dispute before delivery with one nonzero immutable manifest", async () => {
+    it("allows either party to dispute a delivery with one nonzero immutable manifest", async () => {
       const d = await dispute("evidence", developer);
       expect(d.raisedBy).to.equal(developer.address);
       expect(d.raiserEvidenceHash).to.equal(hash(`evidence:evidence:${developer.address}`));
@@ -560,7 +562,7 @@ describe("BloodyRoarEscrow", () => {
     });
   });
 
-  describe.skip("dispute opening rules (S-203a)", () => {
+  describe("dispute opening rules (S-203a)", () => {
     const evidence = (id: string) => hash(`evidence:${id}`);
 
     it("rejects a dispute from either party before any delivery", async () => {
@@ -692,6 +694,7 @@ describe("BloodyRoarEscrow", () => {
       await expect(
         escrow.connect(client).raiseDispute("dispute-errors", ethers.ZeroHash),
       ).to.be.revertedWithCustomError(escrow, "ZeroHash");
+      await escrow.connect(developer).submitWork("dispute-errors", hash("delivery"));
       await escrow.connect(client).raiseDispute("dispute-errors", hash("evidence"));
       await expect(
         escrow.connect(outsider).acceptSettlement("dispute-errors"),

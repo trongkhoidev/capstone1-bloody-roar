@@ -350,6 +350,9 @@ contract BloodyRoarEscrow is Ownable2Step, Pausable, ReentrancyGuard {
         Escrow storage escrow = _escrows[escrowId];
         if (escrow.phase != Phase.FUNDED) revert InvalidPhase(escrowId, escrow.phase);
         if (evidenceManifestHash == bytes32(0)) revert ZeroHash();
+        if (escrow.deliveryHash == bytes32(0)) revert NoDelivery();
+        uint256 reviewDeadline = escrow.submittedAt + REVIEW_PERIOD;
+        if (block.timestamp >= reviewDeadline) revert DeadlinePassed(reviewDeadline);
 
         escrow.phase = Phase.DISPUTED;
         _disputes[escrowId] = Dispute({

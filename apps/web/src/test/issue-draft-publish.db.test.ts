@@ -2,12 +2,13 @@
 import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { prisma } from "@bloody-roar/database";
+import { ACTIVE_CHAIN_ID } from "@bloody-roar/shared";
 import { assertTestDatabase } from "@bloody-roar/database/test-guard";
 import { execute, loadSchema } from "./graphql-execute";
 
 const hex = (n: number) => `0x${randomBytes(n).toString("hex")}`;
-const createMutation = `mutation($input: CreateIssueInput!) { createIssue(input: $input) { id isDraft } }`;
-const publishMutation = `mutation($id: ID!) { publishIssue(id: $id) { id isDraft } }`;
+const createMutation = `mutation($input: CreateIssueInput!) { createIssue(input: $input) { id } }`;
+const publishMutation = `mutation($id: ID!) { publishIssue(id: $id) { id } }`;
 const applyMutation = `mutation($input: ApplyToIssueInput!) { applyToIssue(input: $input) { id } }`;
 const listQuery = `query { issues(first: 100) { edges { node { id } } } }`;
 
@@ -21,7 +22,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("draft bounties and publishIssue
     await loadSchema();
     client = await prisma.user.create({ data: { walletAddress: hex(20), role: "CLIENT" } });
     developer = await prisma.user.create({ data: { walletAddress: hex(20), role: "DEVELOPER" } });
-    tokenId = (await prisma.token.create({ data: { name: "Draft", symbol: "DRF", address: hex(20), decimals: 6, chainId: 31337 } })).id;
+    tokenId = (await prisma.token.create({ data: { name: "Draft", symbol: "DRF", address: hex(20), decimals: 6, chainId: ACTIVE_CHAIN_ID } })).id;
   }, 60_000);
 
   afterAll(async () => {
@@ -47,23 +48,23 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("draft bounties and publishIssue
       ...(isDraft === undefined ? {} : { isDraft }),
     } });
     expect(result.errors).toBeUndefined();
-    const issue = result.data?.createIssue as { id: string; isDraft: boolean };
-    issueIds.push(issue.id);
-    return issue;
+    const { id } = result.data?.createIssue as { id: string };
+    issueIds.push(id);
+    return prisma.issue.findUniqueOrThrow({ where: { id } });
   };
   const code = (result: Awaited<ReturnType<typeof as>>) => result.errors?.[0]?.extensions?.code;
 
   it("publishes immediately when isDraft is omitted", async () => {
     const issue = await createIssue();
     expect(issue.isDraft).toBe(false);
-    expect((await prisma.issue.findUniqueOrThrow({ where: { id: issue.id } })).publishedAt).not.toBeNull();
+    expect(issue.publishedAt).not.toBeNull();
     expect(await listed()).toContain(issue.id);
   });
 
   it("keeps a draft out of the marketplace and blocks applications", async () => {
     const draft = await createIssue(true);
     expect(draft.isDraft).toBe(true);
-    expect((await prisma.issue.findUniqueOrThrow({ where: { id: draft.id } })).publishedAt).toBeNull();
+    expect(draft.publishedAt).toBeNull();
     expect(await listed()).not.toContain(draft.id);
     expect(code(await as(developer, applyMutation, { input: { issueId: draft.id } }))).toBe("NOT_FOUND");
   });
@@ -74,8 +75,8 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("draft bounties and publishIssue
 
     const published = await as(client, publishMutation, { id: draft.id });
     expect(published.errors).toBeUndefined();
-    expect(published.data?.publishIssue).toMatchObject({ id: draft.id, isDraft: false });
-    expect((await prisma.issue.findUniqueOrThrow({ where: { id: draft.id } })).publishedAt).not.toBeNull();
+    expect(published.data?.publishIssue).toMatchObject({ id: draft.id });
+    expect(await prisma.issue.findUniqueOrThrow({ where: { id: draft.id } })).toMatchObject({ isDraft: false, publishedAt: expect.any(Date) });
     expect(await listed()).toContain(draft.id);
     expect((await as(developer, applyMutation, { input: { issueId: draft.id } })).errors).toBeUndefined();
 

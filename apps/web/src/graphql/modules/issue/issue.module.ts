@@ -115,7 +115,6 @@ export const IssueRef = builder.prismaObject("Issue", {
     description: t.exposeString("description"),
     category: t.expose("category", { type: IssueCategoryEnum }),
     status: t.expose("status", { type: IssueStatusEnum }),
-    isDraft: t.exposeBoolean("isDraft"),
     bountyAmount: t.field({
       type: TokenAmountRef,
       description: "Budget in token units: raw, decimals, symbol, formatted",

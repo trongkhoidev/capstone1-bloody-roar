@@ -1,6 +1,6 @@
 # Quy tắc mở tranh chấp (S-203a, US-29)
 
-Trạng thái: **chờ Khôi duyệt** mục 2.2 và 2.4. Mục 2.1 và 2.3 đã chốt với Khôi ngày 25/11.
+Trạng thái: **đã chốt** ngày 26/11. Triển khai ở S-203b (US-50).
 
 Tham chiếu: `docs/plan/COMPLETION_PLAN_2026-11-15.md` mục 4.1 (G-6), 4.3 (W-1, W-2), 6.8.
 
@@ -18,7 +18,7 @@ Tham chiếu: `docs/plan/COMPLETION_PLAN_2026-11-15.md` mục 4.1 (G-6), 4.3 (W-
 
 Mở tranh chấp không mất phí, không đặt cọc. Lý do: escrow là thỏa thuận hai bên cùng có lợi, đặt cọc làm người ít tiền ngại dùng tranh chấp chính đáng. Hậu quả của tranh chấp sai nằm ở uy tín (2.3).
 
-### 2.2 Ai và khi nào (đề xuất)
+### 2.2 Ai và khi nào
 
 | Điều kiện | Quy tắc | Lý do |
 |---|---|---|
@@ -46,13 +46,13 @@ Bên mở tranh chấp mà thua hoàn toàn thì bị ghi một lần "tranh ch�
 
 Thỏa thuận (`SETTLEMENT`) không bị ghi vì hai bên tự đồng ý. Chia đôi do trọng tài quá hạn không phải lỗi của bên nào.
 
-### 2.4 Lưu và hiển thị (đề xuất)
+### 2.4 Lưu và hiển thị
 
-- Thêm `User.disputesLost Int @default(0)`. Worker tăng giá trị này trong cùng transaction với effect `RESOLVED`, và trừ lại khi reorg hoàn tác effect đó (`indexer/undo.ts`).
+- Thêm `User.disputesLost Int @default(0)`. `recalcReputation` đếm lại từ `Dispute` và `Issue.outcome = RULING` thay vì cộng dồn, nên reorg hoàn tác không cần trừ tay. Worker gọi hàm này cho cả client và dev sau khi ghi phán quyết (`effects/resolved.ts`) và sau khi hoàn tác (`indexer/undo.ts`).
 - Không trộn vào `reputationScore`, vì điểm này là trung bình đánh giá của client cho dev, còn client cũng có thể thua tranh chấp.
 - Hiện số này ở hồ sơ công khai và ở danh sách ứng viên khi client chọn dev, cạnh điểm đánh giá.
 
-## 3. Test đỏ (đã viết, đang skip)
+## 3. Test
 
 `apps/contracts/test/BloodyRoarEscrow.test.ts`, khối `dispute opening rules (S-203a)`:
 
@@ -63,7 +63,7 @@ Thỏa thuận (`SETTLEMENT`) không bị ghi vì hai bên tự đồng ý. Chia
 5. Nộp lại bài làm hạn mở tranh chấp dời theo.
 6. Không mở được tranh chấp lần hai.
 
-S-203b (US-50) bỏ skip, sửa `raiseDispute`, sửa helper `dispute()` trong test để nộp bài trước, cập nhật E2E tranh chấp, thêm điều kiện ở server (`availableActions.raiseDispute`) và phần uy tín ở mục 2.4.
+S-203b (US-50) đã bỏ skip. Server khóa nút trước khi ký: `availableActions.raiseDispute` và `prepareRaiseDispute` trả `NO_DELIVERY` hoặc `REVIEW_WINDOW_CLOSED`. Test uy tín nằm ở `apps/worker/test/effects-resolved.test.ts`.
 
 ## 4. Rủi ro
 

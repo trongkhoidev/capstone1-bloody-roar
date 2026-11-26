@@ -108,7 +108,6 @@ export async function undoResolved(tx: Prisma.TransactionClient, eventId: string
     const current = await tx.issue.findUniqueOrThrow({ where: { id: snapshot.issue.id } });
     if (current.status !== IssueStatus.COMPLETED || current.outcome !== snapshot.resolution) throw new Error("Cannot safely undo resolution: issue changed since projection");
     await tx.issue.update({ where: { id: snapshot.issue.id }, data: { status: snapshot.issue.status, outcome: snapshot.issue.outcome, completedAt: snapshot.issue.completedAt ? new Date(snapshot.issue.completedAt) : null } });
-    if (current.developerId) await recalcReputation(tx, current.developerId);
   }
   if (snapshot.settlement) {
     const restored = await tx.settlementProposal.updateMany({ where: { id: snapshot.settlement.id, closedEventId: eventId, status: { in: ["ACCEPTED", "VOIDED"] } }, data: { status: snapshot.settlement.status, closedEventId: snapshot.settlement.closedEventId } });
@@ -121,6 +120,10 @@ export async function undoResolved(tx: Prisma.TransactionClient, eventId: string
   for (const intent of snapshot.intents) await tx.transactionIntent.updateMany({ where: { id: intent.id, confirmedByEventId: eventId }, data: { status: intent.status, confirmedByEventId: intent.confirmedByEventId } });
   await tx.notification.deleteMany({ where: { dedupeKey: { startsWith: `${eventId}:` } } });
   if (snapshot.dispute) await undoDispute(tx, eventId, snapshot.dispute);
+  if (snapshot.issue) {
+    const parties = await tx.issue.findUniqueOrThrow({ where: { id: snapshot.issue.id }, select: { clientId: true, developerId: true } });
+    for (const id of new Set([parties.clientId, parties.developerId].filter((id): id is string => !!id))) await recalcReputation(tx, id);
+  }
 }
 
 export type SettlementUndo = {

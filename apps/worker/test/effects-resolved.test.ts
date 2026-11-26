@@ -99,4 +99,31 @@ test("a release counts toward the developer's completed tasks, and undo takes it
   expect((await prisma.user.findUniqueOrThrow({ where: { id: developer.id } })).completedTaskCount).toBe(before.completedTaskCount);
 });
 
+for (const [raiser, clientBps, loser] of [["client", 0, "client"], ["developer", 10_000, "developer"], ["client", 5_000, null], ["developer", 0, null]] as const)
+  test(`a ruling of ${clientBps} on a dispute raised by the ${raiser} marks ${loser ?? "nobody"} as having lost`, async () => {
+    const parties = { client: await prisma.user.create({ data: { walletAddress: address(), role: "CLIENT" } }), developer: await prisma.user.create({ data: { walletAddress: address(), role: "DEVELOPER" } }) };
+    const issue = await prisma.issue.create({ data: { title: "Ruled dispute", description: "ruling", category: "BUG_FIX", status: "DISPUTED", bountyAmount: "100", tokenId, clientId: parties.client.id, developerId: parties.developer.id, requiredSkills: [] } });
+    issueIds.push(issue.id);
+    const key = `ruling-${issue.id}`, escrowIdHash = keccakUtf8(key), deadline = new Date(Date.now() + 86400_000), decisionHash = `0x${randomBytes(32).toString("hex")}` as Hex;
+    escrowHashes.push(escrowIdHash);
+    await prisma.escrowProjection.create({ data: { issueId: issue.id, escrowKey: key, escrowIdHash, chainId, contractAddress, client: parties.client.walletAddress, developer: parties.developer.walletAddress, arbiter: address(), feeRecipient: fee.walletAddress, amountRaw: "100", depositedAt: new Date(), deliveryDeadline: deadline, reviewDeadline: deadline, termsHash: `0x${"11".repeat(32)}`, phase: "FINAL_RULING", lastProjectedBlock: 100n } });
+    await prisma.dispute.create({ data: { issueId: issue.id, reason: "ruling test", raisedById: parties[raiser].id, status: "OPEN" } });
+    await prisma.rulingRecord.create({ data: { escrowIdHash, kind: "FINAL", clientBps, decisionHash, arbiter: address(), postedAt: new Date(), noticeEndsAt: new Date(), chainEventId: `ruling-record-${issue.id}` } });
+    const effect: Extract<FoldEffect, { kind: "ESCROW_RESOLVED" }> = { kind: "ESCROW_RESOLVED", escrowIdHash, resolution: "RULING", client: parties.client.walletAddress as Hex, developer: parties.developer.walletAddress as Hex, feeRecipient: fee.walletAddress as Hex, clientAmount: 10n, developerAmount: 90n, platformFee: 0n, decisionHash };
+    const meta = { chainId, contractAddress, chainEventId: `ruling-${issue.id}`, escrowIdHash, blockNumber: 101n, blockHash: `0x${"11".repeat(32)}` as Hex, txHash: `0x${"22".repeat(32)}` as Hex, txIndex: 0, logIndex: 0, blockTimestamp: BigInt(Math.floor(Date.now() / 1000)) };
+    eventIds.push(meta.chainEventId);
+    const lost = async () => Object.fromEntries(await Promise.all((["client", "developer"] as const).map(async (side) => [side, (await prisma.user.findUniqueOrThrow({ where: { id: parties[side].id } })).disputesLost])));
+    const undo = await prisma.$transaction(async (tx) => { const snapshot = await captureResolvedUndo(tx, effect); await applyFoldEffects(tx, [effect], meta); return snapshot; });
+    expect(await lost()).toEqual({ client: loser === "client" ? 1 : 0, developer: loser === "developer" ? 1 : 0 });
+    await prisma.$transaction((tx) => undoResolved(tx, meta.chainEventId, undo, chainId, contractAddress));
+    expect(await lost()).toEqual({ client: 0, developer: 0 });
+    await prisma.notification.deleteMany({ where: { userId: { in: [parties.client.id, parties.developer.id] } } });
+    await prisma.rulingRecord.deleteMany({ where: { escrowIdHash } });
+    await prisma.dispute.deleteMany({ where: { issueId: issue.id } });
+    await prisma.escrowProjection.deleteMany({ where: { escrowIdHash } });
+    await prisma.claimableBalance.deleteMany({ where: { chainId, contractAddress, address: { in: [parties.client.walletAddress, parties.developer.walletAddress] } } });
+    await prisma.issue.deleteMany({ where: { id: issue.id } });
+    await prisma.user.deleteMany({ where: { id: { in: [parties.client.id, parties.developer.id] } } });
+  });
+
 });

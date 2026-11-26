@@ -38,7 +38,7 @@ export function availableActions(p: Projection, now: Date, ruling: Ruling | null
     add("releaseFunds", !!p.deliveryHash, null, "No delivery on-chain yet");
     if (p.deliveryHash) timed("claimReviewTimeout", p.reviewDeadline);
     else timed("claimMissedDeliveryRefund", p.deliveryDeadline, true);
-    add("raiseDispute", true);
+    add("raiseDispute", !!p.deliveryHash && now < p.reviewDeadline, null, p.deliveryHash ? "The review window has closed" : "No delivery on-chain yet");
   } else if (p.phase === "DISPUTED") {
     const evidenceEnd = p.disputeRaisedAt ? new Date(p.disputeRaisedAt.getTime() + ESCROW_CONSTANTS.EVIDENCE_HOURS * hour) : null;
     add("submitCounterpartyEvidence", !!evidenceEnd && now < evidenceEnd && !p.counterpartyEvidenceHash, null, "Expired or evidence already submitted");

@@ -10,9 +10,19 @@ export async function recalcReputation(tx: Prisma.TransactionClient, userId: str
       OR: [{ outcome: null }, { outcome: { not: "MISSED_DELIVERY_REFUND" } }],
     },
   });
+  const disputesLost = await tx.dispute.count({
+    where: {
+      raisedById: userId,
+      issue: { status: "COMPLETED", outcome: "RULING" },
+      OR: [
+        { finalClientBps: 0, issue: { clientId: userId } },
+        { finalClientBps: 10_000, issue: { developerId: userId } },
+      ],
+    },
+  });
   const average = ratings._avg.rating ?? 0;
   await tx.user.update({
     where: { id: userId },
-    data: { reputationScore: Math.round(average * 100) / 100, completedTaskCount },
+    data: { reputationScore: Math.round(average * 100) / 100, completedTaskCount, disputesLost },
   });
 }

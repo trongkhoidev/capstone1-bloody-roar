@@ -168,3 +168,56 @@ Triệu chứng: worker `/health` trả `ok:false` với `rpcErrorStreak` tăng,
 1. Chạy lại `bash scripts/demo/local-up.sh`. Script tắt tiến trình cũ, dựng chain mới, deploy và ghi `ESCROW_ADDRESS`/`ESCROW_DEPLOY_BLOCK` mới vào `.env`, rồi khởi động lại worker và web.
 2. Bắt buộc khởi động lại worker sau khi đổi `.env`. Deploy lại cho **địa chỉ escrow khác**; worker cũ vẫn báo `ok:true` sau `reorg detected; cursor rewound` nhưng đang theo dõi địa chỉ không còn contract.
 3. Chạy lại `runner-smoke.ts`. Bounty và escrow cũ trong DB thuộc chain đã mất; dùng bounty mới cho demo.
+
+## Egress (S-106, US-16)
+
+Máy worker gọi ra ngoài tới:
+
+| Đích | Dùng cho | Cấu hình |
+|---|---|---|
+| RPC của chain | indexer, kiểm cấu hình lúc khởi động, gas relayer | `RPC_URL` |
+| `github.com` (HTTPS) | `git clone` repo public khi tạo source snapshot | URL repo do client nhập |
+| Storage S3 (hoặc tương thích S3) | tải ZIP source đã upload | `AWS_S3_BUCKET`, `S3_ENDPOINT`; bỏ trống thì đọc đĩa local |
+| Webhook cảnh báo | gửi cảnh báo | `ALERT_WEBHOOK_URL`; bỏ trống thì chỉ ghi log |
+| Registry npm, PyPI | **chỉ** bước cài dependency trong container test (`--network bridge`) | không cấu hình được |
+
+Worker không gọi API model AI; AI chạy ở web (`AI_BASE_URL`, khóa API của provider).
+
+Container test: bước cài dependency có mạng (`bridge`), bước chạy test **không có mạng** (`--network none`), chạy UID 1000, root filesystem chỉ đọc, giới hạn CPU/RAM/PID (`apps/worker/src/runner/sandbox.ts`). Khi deploy thật, chặn egress của container cài dependency tới dải IP nội bộ, loopback và endpoint metadata cloud ở firewall của host.
+
+## Deploy có migration (S-106, US-16)
+
+Đúng thứ tự. **Không chạy `db:migrate` (migrate dev) trên DB production**: lệnh đó có thể đòi reset DB. Production chỉ dùng `db:migrate:prod` (`prisma migrate deploy`).
+
+1. Sao lưu: trên Supabase chụp backup trong dashboard (chưa kiểm trong runbook này). Với Postgres tự quản:
+   ```bash
+   pg_dump -Fc <database> > backup.dump && pg_restore -l backup.dump | grep -c "TABLE DATA"
+   ```
+2. Áp migration rồi kiểm:
+   ```bash
+   bun run --cwd packages/database db:migrate:prod
+   (cd packages/database && bun --env-file=../../.env x prisma migrate status)   # phải báo "Database schema is up to date!"
+   ```
+3. Khởi động worker, chờ `/health` trả `ok:true`: `bun run worker:start`.
+4. Khởi động web, chờ `/api/health` trả `"database":"connected"`: `bun run start`.
+
+Worker đi trước web vì web đọc dữ liệu do worker chiếu từ chain. Migration chỉ thêm cột nullable hoặc có default (mục 1), nên web cũ vẫn chạy trong lúc chuyển.
+
+Đã chạy ngày 2026-11-26 trên DB demo `bloody_roar_demo`: `pg_dump` (39 bảng có dữ liệu), `db:migrate:prod` ("No pending migrations to apply"), `prisma migrate status` ("up to date"), rồi worker và web như mục Máy demo. Backup Supabase và deploy Railway chưa chạy thử.
+
+## Cảnh báo của worker (S-106, US-16)
+
+Job `alerts` chạy mỗi 30 giây (`apps/worker/src/alerts.ts`). Mỗi cảnh báo ghi log `"worker alert"` và gửi `ALERT_WEBHOOK_URL` nếu có.
+
+| Cảnh báo | Nghĩa | Làm gì |
+|---|---|---|
+| `projection lag Ns is over 300s` | Cursor indexer đứng yên hơn 5 phút trong khi safe head đã đi trước | Xem log `job":"indexer"`. Thường do RPC chậm hoặc giới hạn range; nếu do lỗi dữ liệu thì sửa rồi chạy `bun run worker:replay --from <block>` |
+| `N RPC errors in a row` | RPC lỗi liên tiếp từ 5 lần (`/health` báo `rpcErrorStreak`) | Kiểm `RPC_URL`, node còn chạy không, hạn mức của provider. Với Hardhat local: node đã tắt thì làm theo "Khôi phục" ở mục Máy demo |
+| `REORG_BEYOND_WINDOW` | Reorg sâu hơn `INDEXER_REORG_WINDOW` (mặc định 64 block); worker dừng tiến cursor | Xem mục Cold start indexer: xác nhận đúng chain rồi `worker:replay` |
+| `RELAYER_LOW_GAS` | Ví relayer dưới `RELAYER_MIN_GAS_WEI`; chỉ báo một lần mỗi khi xuống ngưỡng | Nạp ETH cho ví relayer (mục Auto-claim). MVP tắt relayer nên thường không gặp |
+| `QUEUED_RUN_OVERDUE <runId>` | Test run nằm `QUEUED` quá 15 phút (S-401) | Kiểm `TEST_RUNNER_ENABLED=true`, Docker chạy, image `bloodyroar-test-runner:1` có sẵn (`docker images`), log `job":"test-runs"`. Mỗi run chỉ báo một lần |
+| `DB_UNREACHABLE` | Job không đọc được bảng `test_runs` | Kiểm Postgres, `DATABASE_URL`; web `/api/health` cũng sẽ báo 503 |
+
+Ngưỡng và cách gộp được kiểm bằng `apps/worker/test/alerts.test.ts` và `alerts.db.test.ts`. Trên máy demo đã thấy thật khi tắt Hardhat: `/health` trả `ok:false`, `rpcErrorStreak` tăng, log `ECONNREFUSED`. Chưa kích hoạt thật `REORG_BEYOND_WINDOW`, `RELAYER_LOW_GAS`, `QUEUED_RUN_OVERDUE`, `DB_UNREACHABLE`.
+
+**Các mục do người khác viết, đã có trong runbook này:** cold start indexer (S-501, Kiên), relayer và auto-claim (S-109, Kiên), khởi động và khôi phục máy demo (S-113).

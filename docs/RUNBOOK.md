@@ -130,3 +130,22 @@ from projection_checkpoints where "chainId" = <CHAIN_ID>;
 | Log có `reorg detected; cursor rewound` ngay sau cold start | Hash tại cursor không khớp node: thường do `RPC_URL` trỏ sang chain khác hoặc node local đã được khởi động lại. Kiểm tra `CHAIN_ID` và `RPC_URL`. |
 | `REORG_BEYOND_WINDOW` và `reorgAlerted = true` | Hash biên cửa sổ đổi hoặc thiếu. Có thể xảy ra nếu reorg đến trước khi tick đầu sau migration điền map. Worker dừng tiến cursor; xác nhận chain đúng rồi chạy `bun run worker:replay --from <ESCROW_DEPLOY_BLOCK>`. Replay đặt `lastCanonicalBlockHash = ""`, nên tick kế tiếp quét thành công và tự đặt `reorgAlerted = false`. |
 | Hardhat local khởi động lại, cursor cao hơn block hiện tại | Chain mới, checkpoint cũ không còn hợp lệ. Xóa dòng checkpoint của `chainId` 31337 và địa chỉ escrow cũ, rồi deploy và chạy lại. |
+
+## Test reorg giả trên Hardhat
+
+`apps/worker/test/reorg.hardhat.test.ts` tạo reorg thật trên Hardhat bằng `evm_snapshot`,
+`evm_revert` và `evm_mine` (helper `fakeReorg` trong `tests/e2e/harness/chain.ts`). Test
+kiểm tra hai việc: reorg 2 block tự phục hồi và projection khớp chain mới; reorg sâu hơn
+`INDEXER_REORG_WINDOW` (đặt là 4 trong test) dừng worker và chỉ gửi một alert
+`REORG_BEYOND_WINDOW`. Không cần deploy escrow; test tự gắn một contract phát log bằng
+`hardhat_setCode`.
+
+```bash
+bun run --cwd apps/contracts node --port 8546
+cd apps/worker && RPC_URL=http://127.0.0.1:8546 \
+  TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5433/bloody_roar_test \
+  bun test test/reorg.hardhat.test.ts
+```
+
+Database phải có tên kết thúc bằng `_test` và đã migrate. Nếu RPC không phản hồi, không phải Hardhat (chain id 31337) hoặc
+thiếu `TEST_DATABASE_URL`, test tự skip. Skip cũng hiện màu xanh, nên hãy xác nhận output có `2 pass`.

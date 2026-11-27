@@ -11,6 +11,11 @@ export async function rpc<T>(method: string, params: unknown[] = []): Promise<T>
 
 export const snapshotChain = () => rpc<string>("evm_snapshot");
 
+export async function fakeReorg(snapshot: string, blocks: number) {
+  if (!(await rpc<boolean>("evm_revert", [snapshot]))) throw new Error("evm_revert failed");
+  for (let i = 0; i < blocks; i++) await rpc("evm_mine");
+}
+
 export async function advanceTime(seconds: number) {
   await rpc("evm_increaseTime", [seconds]);
   await rpc("evm_mine");
@@ -24,7 +29,7 @@ export async function restoreChain(snapshot: string, { prisma }: { prisma: Prism
     account,
     nonce: await rpc<string>("eth_getTransactionCount", [account, "latest"]),
   })));
-  if (!(await rpc<boolean>("evm_revert", [snapshot]))) throw new Error("evm_revert failed");
+  await fakeReorg(snapshot, 0);
   for (const { account, nonce } of nonces) await rpc("hardhat_setNonce", [account, nonce]);
   const where = { chainId: 31337, contractAddress: process.env.ESCROW_ADDRESS!.toLowerCase() };
   const checkpoint = await prisma.projectionCheckpoint.findFirstOrThrow({ where });

@@ -63,7 +63,7 @@ function toDisplayMessage(node: HistoryMessage): DisplayMessage {
   return {
     id: node.id,
     content: node.content,
-    type: node.type === "SYSTEM" ? "TEXT" : node.type,
+    type: node.type,
     senderId: node.senderId,
     senderName: node.sender.name ?? "Member",
     ...(node.sender.avatar ? { senderAvatar: node.sender.avatar } : {}),
@@ -95,11 +95,13 @@ export function ChatRoom({
   conversationId,
   issueTitle,
   readOnly = false,
+  kind,
 }: {
   issueId: string;
   conversationId: string;
   issueTitle?: string;
   readOnly?: boolean;
+  kind?: string;
 }) {
   const user = useAuthStore((state) => state.user);
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -122,6 +124,22 @@ export function ChatRoom({
     let active = true;
     const client = io({ transports: ["websocket", "polling"], withCredentials: true });
     setSocket(client);
+    const controller = new AbortController();
+    const loadLatest = (first: boolean) => graphqlRequest<HistoryResponse>(CHAT_QUERY, { conversationId, after: null }, controller.signal)
+      .then((response) => {
+        if (!active) return;
+        const history = response.messages.edges.map(({ node }) => toDisplayMessage(node));
+        setMessages((current) => mergeMessages(history, current));
+        if (first) {
+          setHasOlderMessages(response.messages.pageInfo.hasNextPage);
+          setHistoryCursor(response.messages.pageInfo.startCursor ?? null);
+        }
+        const latest = history.at(-1);
+        if (latest) void graphqlRequest(`mutation Read($id: ID!, $message: ID!) { markConversationRead(conversationId: $id, throughMessageId: $message) }`, { id: conversationId, message: latest.id }).catch(() => undefined);
+      })
+      .catch((reason) => {
+        if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : "Could not load chat history.");
+      });
 
     client.on("connect", () => {
       if (!active) return;
@@ -135,6 +153,7 @@ export function ChatRoom({
           return;
         }
         setConnection("ready");
+        if (kind === "ISSUE_WORK") client.emit("task:join", issueId, () => undefined);
       });
     });
     client.on("disconnect", () => {
@@ -153,20 +172,8 @@ export function ChatRoom({
       if (document.visibilityState === "visible") void graphqlRequest(`mutation Read($id: ID!, $message: ID!) { markConversationRead(conversationId: $id, throughMessageId: $message) }`, { id: conversationId, message: message.id }).catch(() => undefined);
     });
 
-    const controller = new AbortController();
-    void graphqlRequest<HistoryResponse>(CHAT_QUERY, { conversationId, after: null }, controller.signal)
-      .then((response) => {
-        if (!active) return;
-        const history = response.messages.edges.map(({ node }) => toDisplayMessage(node));
-        setMessages((current) => mergeMessages(history, current));
-        setHasOlderMessages(response.messages.pageInfo.hasNextPage);
-        setHistoryCursor(response.messages.pageInfo.startCursor ?? null);
-        const latest = history.at(-1);
-        if (latest) void graphqlRequest(`mutation Read($id: ID!, $message: ID!) { markConversationRead(conversationId: $id, throughMessageId: $message) }`, { id: conversationId, message: latest.id }).catch(() => undefined);
-      })
-      .catch((reason) => {
-        if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : "Could not load chat history.");
-      });
+    if (kind === "ISSUE_WORK") client.on("escrow:invalidate", () => { if (active) void loadLatest(false); });
+    void loadLatest(true);
 
     return () => {
       active = false;
@@ -174,7 +181,7 @@ export function ChatRoom({
       if (client.connected) client.emit("conversation:leave", conversationId);
       client.disconnect();
     };
-  }, [issueId, conversationId, user, setError]);
+  }, [issueId, conversationId, kind, user, setError]);
 
   useLayoutEffect(() => {
     const container = scrollContainerRef.current;
@@ -280,9 +287,14 @@ export function ChatRoom({
         {hasOlderMessages && <div className="text-center"><Button type="button" size="sm" variant="ghost" disabled={isLoadingHistory} onClick={() => void loadOlderMessages()}>{isLoadingHistory ? "Loading earlier messages…" : "Load earlier messages"}</Button></div>}
         {messages.length === 0 && <div className="flex min-h-[230px] flex-col items-center justify-center text-center"><span className="flex h-10 w-10 items-center justify-center rounded-full bg-[hsl(var(--card))] text-[hsl(var(--foreground-muted))]"><CircleHelp className="h-5 w-5" /></span><p className="mt-3 text-sm font-medium">No messages yet</p><p className="mt-1 max-w-xs text-xs leading-5 text-[hsl(var(--foreground-muted))]">Agree on scope, share progress and hand over the work here.</p></div>}
         {messages.map((message) => {
+          if (message.type === "SYSTEM") return (
+            <p key={message.id} data-message-type="SYSTEM" className="truncate px-4 text-center text-[11px] leading-5 text-[color:var(--ink-3)]">
+              <span>{message.content}</span> · <time dateTime={message.createdAt}>{formatMessageTime(message.createdAt)}</time>
+            </p>
+          );
           const own = message.senderId === user.id;
           return (
-            <article key={message.id} className={`flex items-end gap-2.5 ${own ? "justify-end" : "justify-start"}`}>
+            <article key={message.id} data-message-type={message.type} className={`flex items-end gap-2.5 ${own ? "justify-end" : "justify-start"}`}>
               {!own && <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[hsl(var(--card))] text-[10px] font-semibold text-[hsl(var(--foreground-muted))] ring-1 ring-[hsl(var(--border))]">
                 {message.senderAvatar ? <Image src={message.senderAvatar} alt="" width={28} height={28} unoptimized className="h-full w-full object-cover" /> : initials(message.senderName || "Member")}
               </span>}
@@ -322,5 +334,5 @@ export function IssueChatRoom({ issueId, ...props }: { issueId: string; issueTit
   const [id, setId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => { let active = true; setId(null); setError(null); void graphqlRequest<{ workConversation: string }>(`mutation WorkRoom($issue: ID!) { workConversation(issueId: $issue) }`, { issue: issueId }).then((r) => { if (active) setId(r.workConversation); }).catch((e) => { if (active) setError(e.message); }); return () => { active = false; }; }, [issueId]);
-  return id ? <ChatRoom key={id} issueId={issueId} conversationId={id} {...props} /> : <p role={error ? "alert" : "status"}>{error ?? "Loading conversation…"}</p>;
+  return id ? <ChatRoom key={id} issueId={issueId} conversationId={id} kind="ISSUE_WORK" {...props} /> : <p role={error ? "alert" : "status"}>{error ?? "Loading conversation…"}</p>;
 }

@@ -9,7 +9,7 @@ import { rateLimit } from "./rate-limit";
 
 export const MessageInputSchema = z.object({
   conversationId: z.string().min(1), issueId: z.string().min(1), content: z.string().trim().min(1).max(4000),
-  type: z.enum(["TEXT", "FILE"]).default("TEXT"), clientMessageId: z.string().min(1).max(200).optional(),
+  type: z.enum(["TEXT", "FILE"]).default("TEXT"), clientMessageId: z.string().min(1).max(200).refine((id) => !id.endsWith(":sys"), "This message id is reserved").optional(),
   replyToId: z.string().optional(), fileUrl: z.string().max(2000).optional(),
 });
 export function enforceMessageRate(userId: string) {
@@ -35,7 +35,7 @@ export async function saveConversationMessage(db: PrismaClient, user: User, raw:
           const duplicate = await tx.message.findFirst({ where: { conversationId: room.id, senderId: user.id, clientMessageId: input.clientMessageId }, include });
           if (duplicate) return { message: duplicate, room, duplicate: true };
         }
-        if (input.replyToId && !await tx.message.findFirst({ where: { id: input.replyToId, conversationId: room.id, isDeleted: false } })) throw gqlError("The message you are replying to was not found", "NOT_FOUND");
+        if (input.replyToId && !await tx.message.findFirst({ where: { id: input.replyToId, conversationId: room.id, isDeleted: false, type: { not: "SYSTEM" } } })) throw gqlError("The message you are replying to was not found", "NOT_FOUND");
         const attachment = input.type === "FILE" ? await tx.attachment.findFirst({ where: { fileUrl: input.fileUrl ?? "", issueId: room.issueId, uploaderId: user.id, status: "ATTACHED", messageId: null, OR: [{ conversationId: room.id, purpose: "CHAT" }, ...(room.kind === "ISSUE_WORK" ? [{ conversationId: null, purpose: "DELIVERY" as const }] : [])] } }) : null;
         if (input.type === "FILE" && !attachment) throw gqlError("Complete the upload for this conversation first", "INVALID_ATTACHMENT");
         const maskedName = scanAndMask(attachment?.fileName ?? "");

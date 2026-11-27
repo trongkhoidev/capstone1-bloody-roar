@@ -55,7 +55,7 @@ export function InboxView() {
       </aside>
       <section className={!selected ? "hidden md:block" : ""}>
         {selected && <Button variant="ghost" className="mb-3 md:hidden" onClick={() => open(null)}>Back to conversations</Button>}
-        {active ? <ChatRoom key={active.id} issueId={active.issueId} conversationId={active.id} issueTitle={active.issue.title} readOnly={!active.canWrite} /> : <p className="rounded-xl border border-[var(--line)] p-6 text-sm">{selected ? "This conversation is unavailable or on a later page." : "Choose a conversation."}</p>}
+        {active ? <ChatRoom key={active.id} issueId={active.issueId} conversationId={active.id} kind={active.kind} issueTitle={active.issue.title} readOnly={!active.canWrite} /> : <p className="rounded-xl border border-[var(--line)] p-6 text-sm">{selected ? "This conversation is unavailable or on a later page." : "Choose a conversation."}</p>}
       </section>
     </div>
   </main>;

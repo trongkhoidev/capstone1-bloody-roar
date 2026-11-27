@@ -51,6 +51,9 @@ function setup(options: { applicationStatus: string; reservationStatus: string; 
     },
     escrowProjection: { create: async ({ data }: { data: unknown }) => projections.push(data) },
     transactionIntent: { updateMany: async () => ({ count: 1 }) },
+    conversation: { findFirst: async () => ({ id: "conversation" }), update: async () => ({}) },
+    conversationParticipant: { deleteMany: async () => ({ count: 0 }), upsert: async () => ({}) },
+    message: { createMany: async () => ({ count: 1 }), findUniqueOrThrow: async () => ({ createdAt: new Date() }) },
     notification: {
       createMany: async ({ data }: { data: (typeof notifications)[number][] }) => {
         notifications.push(...data);

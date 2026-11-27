@@ -1,15 +1,17 @@
 // @vitest-environment node
 import { createHash, randomBytes } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { prisma } from "@bloody-roar/database";
+import { Client } from "pg";
+import { PROJECTION_CHANGED_CHANNEL, prisma } from "@bloody-roar/database";
 import { assertTestDatabase } from "@bloody-roar/database/test-guard";
 import { computeDeliveryHash, type DeliveryManifest } from "@bloody-roar/shared/escrow";
 import { execute, loadSchema } from "./graphql-execute";
 vi.mock("../lib/escrow/chain-time", () => ({ readChainTime: async () => new Date() }));
 const randomHex = (n: number) => `0x${randomBytes(n).toString("hex")}`;
+const sha = (text: string) => createHash("sha256").update(text).digest("hex");
 const CREATE = `mutation($issue: ID!, $id: ID, $text: String!) { createSubmissionDraft(issueId: $issue, submissionId: $id, description: $text) { id status deliveryHash } }`;
 const PREPARE = `mutation($id: ID!) { prepareSubmitWork(submissionId: $id) { intentId data args { name value } } }`;
-const CHANGES = `mutation($id: ID!) { requestChanges(submissionId: $id, notes: "please revise") { id changesRequested } }`;
+const CHANGES = `mutation($id: ID!, $notes: String! = "please revise") { requestChanges(submissionId: $id, notes: $notes) { id changesRequested } }`;
 describe.skipIf(!process.env.TEST_DATABASE_URL)("Submission on the test database", () => {
   let client: Awaited<ReturnType<typeof prisma.user.create>>, developer: typeof client, outsider: typeof client;
   let tokenId = "", issueId = "", escrowIdHash = "";
@@ -62,8 +64,24 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("Submission on the test database
     }
     await prisma.escrowProjection.update({ where: { escrowIdHash }, data: { deliveryHash: initial.deliveryHash } });
     expect((await execute(CHANGES, { user: outsider, db: prisma }, { id: initial.id })).errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
+    const emitted: [string, string, { type?: string; content?: string; conversationId?: string; unreadDelta?: number }][] = [];
+    (global as Record<string, unknown>).__socketIO = { to: (room: string) => ({ emit: (event: string, payload: { type?: string; content?: string; conversationId?: string; unreadDelta?: number }) => emitted.push([room, event, payload]) }) };
+    const listener = new Client({ connectionString: process.env.TEST_DATABASE_URL });
+    const projectionEvents: string[] = [];
+    await listener.connect(); listener.on("notification", (msg) => projectionEvents.push(msg.payload ?? "")); await listener.query(`LISTEN ${PROJECTION_CHANGED_CHANNEL}`);
     expect((await execute(CHANGES, { user: client, db: prisma }, { id: initial.id })).errors).toBeUndefined();
     expect(await prisma.notification.count({ where: { userId: developer.id, type: "CHANGES_REQUESTED", data: { path: ["issueId"], equals: issueId } } })).toBe(1);
+    expect((await execute(CHANGES, { user: client, db: prisma }, { id: initial.id })).errors).toBeUndefined();
+    await new Promise((resolve) => setTimeout(resolve, 200)); await listener.end();
+    expect(projectionEvents.filter((payload) => payload.includes(issueId))).toEqual([]);
+    const conversation = await prisma.conversation.findFirstOrThrow({ where: { issueId, kind: "ISSUE_WORK" } });
+    expect(emitted.map(([room, event, payload]) => [room, event, payload.type ?? payload.conversationId, payload.content ?? payload.unreadDelta])).toEqual([
+      [`conv:${conversation.id}`, "message:new", "SYSTEM", "Changes requested"], [`user:${developer.id}`, "inbox:update", conversation.id, 1]]);
+    expect((await prisma.message.findMany({ where: { issueId, type: "SYSTEM" } })).map((m) => ({ content: m.content, senderId: m.senderId, clientMessageId: m.clientMessageId })))
+      .toEqual([{ content: "Changes requested", senderId: client.id, clientMessageId: `changes:${initial.id}:${sha("please revise")}:sys` }]);
+    expect((await execute(CHANGES, { user: client, db: prisma }, { id: initial.id, notes: "also fix the tests" })).errors).toBeUndefined();
+    expect((await prisma.message.findMany({ where: { issueId, type: "SYSTEM" }, select: { clientMessageId: true } })).map((m) => m.clientMessageId).sort())
+      .toEqual([`changes:${initial.id}:${sha("also fix the tests")}:sys`, `changes:${initial.id}:${sha("please revise")}:sys`].sort());
   }, 60_000);
   it("preserves every prepared hash when edit and prepare race", async () => {
     const created = await execute(CREATE, { user: developer, db: prisma }, { issue: issueId, text: "parallel original" });

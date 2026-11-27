@@ -9,6 +9,7 @@ import {
   EscrowPhase,
   IntentStatus,
   IssueStatus,
+  postSystemMessage,
   Prisma,
   ReservationStatus,
   UserRole,
@@ -182,6 +183,7 @@ async function acceptDeposit(
     },
     data: { status: IntentStatus.CONFIRMED, confirmedByEventId: meta.chainEventId },
   });
+  await postSystemMessage(tx, { id: reservation.issueId, clientId: reservation.clientId, developerId: reservation.developerId }, reservation.clientId, "Escrow funded", `${meta.chainEventId}:sys`);
   const data = { issueId: reservation.issueId, reservationId: reservation.id };
   const link = `/issues/${reservation.issueId}`;
   await notify(tx, meta, [reservation.clientId], {

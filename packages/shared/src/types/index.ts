@@ -76,7 +76,7 @@ export interface ChatMessagePayload {
   conversationId?: string;
   id: string;
   content: string;
-  type: "TEXT" | "FILE";
+  type: "TEXT" | "FILE" | "SYSTEM";
   senderId: string;
   senderName?: string;
   senderAvatar?: string;

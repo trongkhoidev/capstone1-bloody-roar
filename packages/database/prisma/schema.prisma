@@ -472,6 +472,7 @@ model Message {
   @@index([issueId, createdAt]) // Load lịch sử chat theo room + đúng thứ tự
   @@index([senderId])
   @@index([clientMessageId])
+  @@unique([conversationId, clientMessageId])
   @@map("messages")
 }
 

@@ -208,7 +208,7 @@ async function findOwnWritableMessage(ctx: GraphQLContext, id: string, db: Prism
     include: { ...MESSAGE_INCLUDE, issue: { select: { clientId: true, developerId: true, status: true } } },
   });
   if (!message || message.isDeleted) throw new GraphQLError("Message not found", { extensions: { code: "NOT_FOUND" } });
-  if (message.senderId !== user.id) throw new GraphQLError("Only the sender can change this message", { extensions: { code: "FORBIDDEN" } });
+  if (message.senderId !== user.id || message.type === "SYSTEM") throw new GraphQLError("Only the sender can change this message", { extensions: { code: "FORBIDDEN" } });
   if (!message.conversationId) throw gqlError("Message has not been migrated", "NOT_FOUND");
   await accessibleConversation(db, message.conversationId, user, true);
   if (!message.issue) throw new GraphQLError("Chat is closed for this task", { extensions: { code: "FORBIDDEN" } });

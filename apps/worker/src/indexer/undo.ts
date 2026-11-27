@@ -43,6 +43,7 @@ export async function undoDeposit(tx: Prisma.TransactionClient, eventId: string,
   await tx.fundingReservation.update({ where: { id: reservation.id }, data: { status: snapshot.reservation.status, fundedAt: snapshot.reservation.fundedAt ? new Date(snapshot.reservation.fundedAt) : null } });
   await tx.issue.update({ where: { id: issue.id }, data: { status: snapshot.issue.status, developerId: snapshot.issue.developerId } });
   await tx.notification.deleteMany({ where: { dedupeKey: { startsWith: `${eventId}:` } } });
+  await deleteSystemMessages(tx, eventId);
 }
 
 export type WorkUndo = {
@@ -75,6 +76,7 @@ export async function undoWork(tx: Prisma.TransactionClient, eventId: string, sn
   }
   for (const intent of snapshot.intents) await tx.transactionIntent.updateMany({ where: { id: intent.id, confirmedByEventId: eventId }, data: { status: intent.status, confirmedByEventId: intent.confirmedByEventId } });
   await tx.notification.deleteMany({ where: { dedupeKey: { startsWith: `${eventId}:` } } });
+  await deleteSystemMessages(tx, eventId);
 }
 
 export type ResolvedUndo = {
@@ -120,6 +122,7 @@ export async function undoResolved(tx: Prisma.TransactionClient, eventId: string
   }
   for (const intent of snapshot.intents) await tx.transactionIntent.updateMany({ where: { id: intent.id, confirmedByEventId: eventId }, data: { status: intent.status, confirmedByEventId: intent.confirmedByEventId } });
   await tx.notification.deleteMany({ where: { dedupeKey: { startsWith: `${eventId}:` } } });
+  await deleteSystemMessages(tx, eventId);
   if (snapshot.dispute) await undoDispute(tx, eventId, snapshot.dispute);
 }
 
@@ -210,4 +213,15 @@ export async function undoDispute(tx: Prisma.TransactionClient, eventId: string,
   await tx.reconciliationFinding.deleteMany({ where: { kind: "UNKNOWN_DECISION_HASH", actual: { path: ["chainEventId"], equals: eventId } } });
   for (const intent of snapshot.intents) await tx.transactionIntent.updateMany({ where: { id: intent.id, confirmedByEventId: eventId }, data: { status: intent.status, confirmedByEventId: intent.confirmedByEventId } });
   await tx.notification.deleteMany({ where: { data: { path: ["chainEventId"], equals: eventId } } });
+}
+
+async function deleteSystemMessages(tx: Prisma.TransactionClient, eventId: string) {
+  const where = { type: "SYSTEM" as const, clientMessageId: { startsWith: `${eventId}:` } };
+  const rows = await tx.message.findMany({ where, select: { conversationId: true }, distinct: ["conversationId"] });
+  await tx.message.deleteMany({ where });
+  for (const { conversationId } of rows) {
+    if (!conversationId) continue;
+    const { _max } = await tx.message.aggregate({ where: { conversationId }, _max: { createdAt: true } });
+    await tx.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: _max.createdAt } });
+  }
 }

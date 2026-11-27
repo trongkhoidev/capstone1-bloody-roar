@@ -124,13 +124,18 @@ describe("requestChanges", () => {
   const query = `mutation($id: ID!, $notes: String!) { requestChanges(submissionId: $id, notes: $notes) { id status } }`;
   const client = { ...actor, id: "client", walletAddress: "0x2222222222222222222222222222222222222222" };
   function reviewDb() {
-    const submission = { id: "draft", issueId: "issue", developerId: actor.id, status: "SUBMITTED", deliveryHash: "0xaaa", issue: { clientId: client.id } };
+    const submission = { id: "draft", issueId: "issue", developerId: actor.id, status: "SUBMITTED", deliveryHash: "0xaaa", issue: { id: "issue", clientId: client.id, developerId: actor.id } };
     const chain = { phase: "FUNDED", client: client.walletAddress, deliveryHash: "0xaaa" };
     const tx = { $queryRaw: vi.fn().mockResolvedValue([]), $executeRaw: vi.fn().mockResolvedValue(1),
       submission: { findUnique: vi.fn(async () => submission), update: vi.fn(async (_args: { data: Record<string, unknown> }) => submission) },
       escrowProjection: { findUnique: vi.fn(async () => chain) },
-      notification: { createMany: vi.fn(async (_args: { data: Array<Record<string, unknown>> }) => ({ count: 1 })), findUniqueOrThrow: vi.fn(async () => ({ id: "notification" })) } };
-    return { submission, chain, tx, $transaction: vi.fn(async (fn: (value: typeof tx) => unknown) => fn(tx)) };
+      notification: { createMany: vi.fn(async (_args: { data: Array<Record<string, unknown>> }) => ({ count: 1 })), findUniqueOrThrow: vi.fn(async () => ({ id: "notification" })) },
+      conversation: { findFirst: async () => ({ id: "conversation" }), update: async () => ({}) },
+      conversationParticipant: { deleteMany: async () => ({ count: 0 }), upsert: async () => ({}) },
+      message: { createMany: vi.fn(async (_args: { data: Record<string, unknown> }) => ({ count: 1 })), findUniqueOrThrow: vi.fn(async () => ({ id: "message", type: "SYSTEM", content: "Changes requested", createdAt: new Date(), attachments: [], sender: { id: client.id, name: null, avatar: null } })) } };
+    const emit = vi.fn();
+    (global as Record<string, unknown>).__socketIO = { to: () => ({ emit }) };
+    return { submission, chain, tx, emit, $transaction: vi.fn(async (fn: (value: typeof tx) => unknown) => fn(tx)) };
   }
   it("records notes and notifies the developer", async () => {
     const database = reviewDb();
@@ -138,7 +143,9 @@ describe("requestChanges", () => {
     expect(result.errors).toBeUndefined();
     expect(database.tx.submission.update.mock.calls[0]![0].data).toMatchObject({ changesRequested: true, reviewNotes: "please revise" });
     expect(database.tx.notification.createMany.mock.calls[0]![0].data[0]).toMatchObject({ userId: actor.id, type: "CHANGES_REQUESTED" });
-    expect(database.tx.$executeRaw).toHaveBeenCalledOnce();
+    expect(database.tx.message.createMany.mock.calls[0]![0].data).toMatchObject({ type: "SYSTEM", content: "Changes requested", senderId: client.id, clientMessageId: "changes:draft:251fa28498e3c16a6c9aa0526518734f436b6ac1d94ab613e8f082e359fd9b90:sys" });
+    expect(database.tx.$executeRaw).toHaveBeenCalledTimes(1);
+    expect(database.emit).toHaveBeenCalledWith("message:new", expect.objectContaining({ type: "SYSTEM", content: "Changes requested" }));
   });
   it("retries a serialization conflict before notifying the developer", async () => {
     const database = reviewDb();
@@ -154,5 +161,14 @@ describe("requestChanges", () => {
     database.chain.deliveryHash = "0xbb";
     expect((await execute(query, { user: client, db: database }, { id: "draft", notes: "revise" })).errors?.[0]?.extensions?.code).toBe("SUBMISSION_NOT_REVIEWABLE");
     expect(database.tx.notification.createMany).not.toHaveBeenCalled();
+  });
+  it("requests changes in an HTTP-only deployment without a socket server", async () => {
+    const database = reviewDb();
+    const io = (global as Record<string, unknown>).__socketIO;
+    delete (global as Record<string, unknown>).__socketIO;
+    const result = await execute(query, { user: client, db: database }, { id: "draft", notes: "please revise" });
+    (global as Record<string, unknown>).__socketIO = io;
+    expect(result.errors).toBeUndefined();
+    expect(database.emit).not.toHaveBeenCalled();
   });
 });

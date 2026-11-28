@@ -9,7 +9,10 @@ import type { Prisma } from "@bloody-roar/database";
 import { UserRef } from "../user/user.module";
 import type { GraphQLContext } from "../../context";
 import { guardMessage } from "../../../ai/guard/service";
-import { getSocketIO, toMessagePayload } from "../../../socket/handlers";
+import { getSocketIO, broadcastMessageModified } from "../../../socket/handlers";
+import { createLogger } from "../../../lib/logger";
+
+const log = createLogger("chat");
 
 // D-4 GraphQL Setup
 
@@ -229,7 +232,7 @@ async function updateOwnWritableMessage(ctx: GraphQLContext, id: string, data: P
 // Live clients refresh the message; a deleted one arrives with empty content.
 function broadcastModified(message: MessageNode) {
   try {
-    getSocketIO().to(`conv:${message.conversationId}`).emit("message:modified", toMessagePayload(message, message.sender));
+    void broadcastMessageModified(getSocketIO(), message).catch((error) => log.error({ error, messageId: message.id }, "Failed to broadcast message edit"));
   } catch {
     /* Socket server may not be available in isolated tests. */
   }

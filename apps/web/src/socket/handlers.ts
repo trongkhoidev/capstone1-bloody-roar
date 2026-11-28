@@ -18,6 +18,61 @@ const log = createLogger("socket.io");
 type StoredMessage = Prisma.MessageGetPayload<{
   include: { attachments: true };
 }>;
+type ChatRoom = Prisma.ConversationGetPayload<{
+  include: { issue: true; application: true; participants: true };
+}>;
+type BroadcastMessage = StoredMessage & {
+  sender: { id: string; name: string | null; avatar: string | null };
+};
+type EvictableSocket = {
+  id: string;
+  data: { token?: string };
+  leave(room: string): Promise<void> | void;
+  disconnect(close?: boolean): void;
+};
+type RoomServer = {
+  in(room: string): { fetchSockets(): Promise<EvictableSocket[]> };
+};
+
+const roomNames = (room: ChatRoom) => room.kind === "ISSUE_WORK" ? [`conv:${room.id}`, `task:${room.issueId}`] : [`conv:${room.id}`];
+
+async function socketUser(token: string | undefined) {
+  const verified = token ? await verifyJWT(token) : null;
+  if (!verified) return null;
+  const user = await prisma.user.findUnique({
+    where: { id: verified.id },
+    select: { id: true, role: true, isBanned: true },
+  });
+  return user && !user.isBanned ? user : null;
+}
+
+async function evictUnauthorized(io: RoomServer, room: ChatRoom, rooms: string[]): Promise<void> {
+  const sockets = new Map<string, EvictableSocket>();
+  for (const name of rooms) for (const socket of await io.in(name).fetchSockets()) sockets.set(socket.id, socket);
+  await Promise.all([...sockets.values()].map(async (socket) => {
+    const user = await socketUser(socket.data.token);
+    const member = Boolean(user && room.participants.some((participant) => participant.userId === user.id));
+    if (user && canReadConversation(room, room.issue, room.application, user, member)) return;
+    await Promise.all(rooms.map((name) => socket.leave(name)));
+    if (!user) socket.disconnect(true);
+  }));
+}
+
+export async function evictIssueChat(io: RoomServer, issueId: string): Promise<void> {
+  const room = await prisma.conversation.findFirst({
+    where: { issueId, kind: "ISSUE_WORK" },
+    include: { issue: true, application: true, participants: true },
+  });
+  if (room) await evictUnauthorized(io, room, roomNames(room));
+}
+
+export function notifyIssueAccessChanged(issueId: string): void {
+  try {
+    void evictIssueChat(getSocketIO(), issueId).catch((error) => log.error({ error, issueId }, "Failed to update chat room access"));
+  } catch {
+    return;
+  }
+}
 
 export function toMessagePayload(
   message: StoredMessage,
@@ -118,8 +173,8 @@ export function registerSocketHandlers(
         const room = data.conversationId ? await accessibleConversation(prisma, data.conversationId, user, true) : await prisma.$transaction((tx) => workConversation(tx, data.issueId, user));
         if (!socket.rooms.has(`conv:${room.id}`) && !(room.kind === "ISSUE_WORK" && socket.rooms.has(`task:${room.issueId}`))) return callback?.("Join this task room before sending a message");
         const result = await saveConversationMessage(prisma, user, { ...data, conversationId: room.id });
-        await broadcastConversationMessage(io, result);
         callback?.();
+        void broadcastConversationMessage(io, result).catch((error) => log.error({ error, conversationId: room.id }, "Failed to broadcast message"));
       } catch (error) {
         log.error({ error }, "Failed to process message");
         const code = error && typeof error === "object" && "extensions" in error ? (error.extensions as { code?: string }).code : null;
@@ -159,12 +214,20 @@ export function disconnectUserSockets(userId: string): void {
 
 export async function broadcastConversationMessage(io: Server<ClientToServerEvents, ServerToClientEvents>, result: Awaited<ReturnType<typeof saveConversationMessage>>) {
   const { room } = result;
-  for (const socket of await io.in(`conv:${room.id}`).fetchSockets()) {
-    const user = socket.data.user;
-    if (!user || !canReadConversation(room, room.issue, room.application, user, room.participants.some((p) => p.userId === user.id))) socket.leave(`conv:${room.id}`);
-  }
-  io.to(`conv:${result.room.id}`).emit("message:new", toMessagePayload(result.message, result.message.sender));
+  await evictUnauthorized(io, room, roomNames(room));
+  io.to(`conv:${room.id}`).emit("message:new", toMessagePayload(result.message, result.message.sender));
   if (!result.duplicate) for (const member of result.room.participants.filter((p) => p.userId !== result.message.senderId)) {
     io.to(`user:${member.userId}`).emit("inbox:update", { conversationId: result.room.id, lastMessageAt: result.message.createdAt.toISOString(), unreadDelta: 1 });
   }
+}
+
+export async function broadcastMessageModified(io: Server<ClientToServerEvents, ServerToClientEvents>, message: BroadcastMessage): Promise<void> {
+  if (!message.conversationId) return;
+  const room = await prisma.conversation.findUnique({
+    where: { id: message.conversationId },
+    include: { issue: true, application: true, participants: true },
+  });
+  if (!room) return;
+  await evictUnauthorized(io, room, roomNames(room));
+  io.to(`conv:${room.id}`).emit("message:modified", toMessagePayload(message, message.sender));
 }

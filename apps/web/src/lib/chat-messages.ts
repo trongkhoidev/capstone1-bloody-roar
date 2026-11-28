@@ -6,6 +6,7 @@ import { guardMessage } from "../ai/guard/service";
 import { scanAndMask } from "../ai/guard/scanner";
 import { auditHash } from "../ai/hash";
 import { rateLimit } from "./rate-limit";
+import { chatQuotaAllows } from "./chat-quota";
 
 export const MessageInputSchema = z.object({
   conversationId: z.string().min(1), issueId: z.string().min(1), content: z.string().trim().min(1).max(4000),
@@ -38,6 +39,7 @@ export async function saveConversationMessage(db: PrismaClient, user: User, raw:
         if (input.replyToId && !await tx.message.findFirst({ where: { id: input.replyToId, conversationId: room.id, isDeleted: false } })) throw gqlError("The message you are replying to was not found", "NOT_FOUND");
         const attachment = input.type === "FILE" ? await tx.attachment.findFirst({ where: { fileUrl: input.fileUrl ?? "", issueId: room.issueId, uploaderId: user.id, status: "ATTACHED", messageId: null, OR: [{ conversationId: room.id, purpose: "CHAT" }, ...(room.kind === "ISSUE_WORK" ? [{ conversationId: null, purpose: "DELIVERY" as const }] : [])] } }) : null;
         if (input.type === "FILE" && !attachment) throw gqlError("Complete the upload for this conversation first", "INVALID_ATTACHMENT");
+        if (attachment?.purpose === "DELIVERY" && !(await chatQuotaAllows(tx, user.id, attachment.fileSize))) throw gqlError("Daily chat upload limit reached", "RATE_LIMITED");
         const maskedName = scanAndMask(attachment?.fileName ?? "");
         const dispute = await tx.dispute.findUnique({ where: { issueId: room.issueId }, select: { raisedAt: true } });
         const message = await tx.message.create({ data: { issueId: room.issueId, conversationId: room.id, senderId: user.id, type: input.type, content: guard.content,

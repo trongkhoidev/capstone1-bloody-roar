@@ -3,6 +3,7 @@ import { Client } from "pg";
 import type { Server } from "socket.io";
 import { NOTIFICATION_CREATED_CHANNEL, PROJECTION_CHANGED_CHANNEL } from "@bloody-roar/database";
 import { createLogger } from "../logger";
+import { evictIssueChat } from "../../socket/handlers";
 
 const log = createLogger("escrow-bridge");
 const RECONNECT_MS = 5_000;
@@ -18,6 +19,14 @@ export function routeNotification(io: Server, channel: string, rawPayload: strin
     io.to(`user:${payload.userId}`).emit("notification:new", { id: payload.id });
     notify?.(payload.userId);
   }
+}
+
+export async function handleNotification(io: Server, channel: string, rawPayload: string, notify?: (userId: string) => void): Promise<void> {
+  if (channel === PROJECTION_CHANGED_CHANNEL) {
+    const payload = JSON.parse(rawPayload) as { issueId?: unknown };
+    if (typeof payload.issueId === "string") await evictIssueChat(io, payload.issueId);
+  }
+  routeNotification(io, channel, rawPayload, notify);
 }
 
 // LISTEN needs a session, so it uses DIRECT_URL. A transaction-pooled URL drops LISTEN.
@@ -41,11 +50,9 @@ export function startEscrowBridge(io: Server, notify?: (userId: string) => void)
 
     client.on("error", retry);
     client.on("notification", (msg) => {
-      try {
-        routeNotification(io, msg.channel, msg.payload ?? "{}", notify);
-      } catch (err) {
+      void handleNotification(io, msg.channel, msg.payload ?? "{}", notify).catch((err) => {
         log.error({ err, channel: msg.channel }, "bad escrow notification payload");
-      }
+      });
     });
     client
       .connect()

@@ -62,6 +62,7 @@ test("an unavailable RPC block does not orphan events or move the checkpoint", a
   await cleanupChain(prisma, config);
   const chain = newChain();
   chain.safe = 101n;
+  chain.blockHash.set(99n, "0xA99");
   chain.blockHash.set(100n, "0xA100");
   chain.blockHash.set(101n, "0xA101");
   chain.logs = [rawLog({ address, block: 100, blockHash: "0xA100", tx: "0xmissing" })];
@@ -75,6 +76,7 @@ test("an unavailable RPC block does not orphan events or move the checkpoint", a
   await expect(handleReorg({ db: prisma, rpc: fakeRpc(chain), config })).rejects.toThrow("no block for 101");
   chain.blockHash.set(101n, "0xB101");
   chain.blockHash.set(100n, "0xA100");
+  chain.blockHash.delete(99n);
   await expect(handleReorg({ db: prisma, rpc: fakeRpc(chain), config })).rejects.toThrow("no block for 99");
   expect((await prisma.chainEvent.findFirstOrThrow({ where: { ...where, txHash: "0xmissing" } })).canonical).toBe(true);
 });
@@ -110,6 +112,63 @@ test("two-block reorg recovers with no escrow event at the window boundary", asy
   await scanToHead({ db: prisma, rpc: fakeRpc(chain), config: limited });
   expect((await prisma.projectionCheckpoint.findUniqueOrThrow({ where: { chainId_contractAddress: where } })).lastScannedBlock).toBe(300n);
   expect((await prisma.chainEvent.findFirstOrThrow({ where: { ...where, txHash: "0xshallow" } })).canonical).toBe(false);
+});
+
+test("a reorg right after the migration with an empty hash map rewinds to the deploy block instead of alerting", async () => {
+  await cleanupChain(prisma, config);
+  const limited = { ...config, escrowDeployBlock: 100n, reorgWindow: 64, alertWebhookUrl: "https://example.test/alert" };
+  const chain = newChain(); chain.safe = 300n;
+  for (let n = 99n; n <= 300n; n++) chain.blockHash.set(n, `0xA${n}`);
+  chain.logs = [
+    rawLog({ address, block: 236, blockHash: "0xA236", tx: "0xboundary" }),
+    rawLog({ address, block: 300, blockHash: "0xA300", tx: "0xpostmigration" }),
+  ];
+  await scanToHead({ db: prisma, rpc: fakeRpc(chain), config: limited });
+  await prisma.projectionCheckpoint.update({ where: { chainId_contractAddress: where }, data: { canonicalBlockHashes: {} } });
+  for (let n = 236n; n <= 300n; n++) chain.blockHash.set(n, `0xB${n}`);
+  chain.logs = [
+    rawLog({ address, block: 236, blockHash: "0xB236", tx: "0xboundary" }),
+    rawLog({ address, block: 300, blockHash: "0xB300", tx: "0xpostmigration" }),
+  ];
+  const originalFetch = globalThis.fetch;
+  let alertCount = 0;
+  globalThis.fetch = (async () => { alertCount++; return new Response(); }) as typeof fetch;
+  try {
+    expect(await handleReorg({ db: prisma, rpc: fakeRpc(chain), config: limited })).toEqual({ rewoundTo: 99n });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  expect(alertCount).toBe(0);
+  expect(await prisma.projectionCheckpoint.findUniqueOrThrow({ where: { chainId_contractAddress: where } })).toMatchObject({
+    lastScannedBlock: 99n, lastCanonicalBlockHash: "0xA99", reorgAlerted: false,
+  });
+  const stale = await prisma.chainEvent.findMany({ where, orderBy: { txHash: "asc" } });
+  expect(stale.map((event) => [event.txHash, event.canonical])).toEqual([["0xboundary", false], ["0xpostmigration", false]]);
+  await scanToHead({ db: prisma, rpc: fakeRpc(chain), config: limited });
+  expect(await prisma.projectionCheckpoint.findUniqueOrThrow({ where: { chainId_contractAddress: where } })).toMatchObject({
+    lastScannedBlock: 300n, lastCanonicalBlockHash: "0xB300",
+  });
+  const recovered = await prisma.chainEvent.findMany({ where, orderBy: { txHash: "asc" } });
+  expect(recovered.map((event) => [event.txHash, event.canonical, event.blockHash])).toEqual([
+    ["0xboundary", true, "0xB236"],
+    ["0xpostmigration", true, "0xB300"],
+  ]);
+});
+
+test("raising the reorg window rewinds without a false beyond-window alert", async () => {
+  await cleanupChain(prisma, config);
+  const narrow = { ...config, escrowDeployBlock: 100n, reorgWindow: 2 };
+  const chain = newChain(); chain.safe = 300n;
+  for (let n = 99n; n <= 300n; n++) chain.blockHash.set(n, `0xA${n}`);
+  chain.logs = [rawLog({ address, block: 300, blockHash: "0xA300", tx: "0xwindow" })];
+  await scanToHead({ db: prisma, rpc: fakeRpc(chain), config: narrow });
+  const wide = { ...narrow, reorgWindow: 64 };
+  chain.blockHash.set(300n, "0xB300");
+  chain.logs = [];
+  expect(await handleReorg({ db: prisma, rpc: fakeRpc(chain), config: wide })).toEqual({ rewoundTo: 236n });
+  expect(await prisma.projectionCheckpoint.findUniqueOrThrow({ where: { chainId_contractAddress: where } })).toMatchObject({
+    lastScannedBlock: 236n, lastCanonicalBlockHash: "0xA236", reorgAlerted: false,
+  });
 });
 
 test("a reorg beyond the window stops without changing the cursor or events", async () => {

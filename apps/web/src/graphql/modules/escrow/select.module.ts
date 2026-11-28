@@ -30,6 +30,7 @@ import { gqlError, parseOrThrow } from "../../errors";
 import { escrowTarget } from "../../../lib/escrow/prepare";
 import { readEscrowToken } from "../../../lib/escrow/token";
 import { createLogger } from "../../../lib/logger";
+import { notifyIssueAccessChanged } from "../../../socket/handlers";
 
 import { FundingReservationRef } from "./reservation.module";
 
@@ -239,6 +240,7 @@ builder.mutationField("selectDeveloper", (t) =>
         link: `/issues/${result.issue.id}`,
         data: { issueId: result.issue.id, reservationId: result.reservation.id },
       });
+      notifyIssueAccessChanged(result.issue.id);
       return result.reservation;
     },
   }),
@@ -258,7 +260,7 @@ builder.mutationField("cancelReservation", (t) =>
       if (reservation.clientId !== user.id)
         throw gqlError("Only the client can cancel the reservation", "FORBIDDEN");
 
-      return ctx.db.$transaction(async (tx) => {
+      const cancelled = await ctx.db.$transaction(async (tx) => {
         const cancelled = await tx.fundingReservation.updateMany({
           where: { id: reservation.id, status: ReservationStatus.AWAITING_FUNDING },
           data: { status: ReservationStatus.CANCELLED },
@@ -271,6 +273,8 @@ builder.mutationField("cancelReservation", (t) =>
         });
         return tx.fundingReservation.findUniqueOrThrow({ where: { id: reservation.id } });
       });
+      notifyIssueAccessChanged(cancelled.issueId);
+      return cancelled;
     },
   }),
 );

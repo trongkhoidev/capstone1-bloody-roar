@@ -37,9 +37,49 @@ export async function handleReorg({ db, rpc, config }: ScanDeps & { config: Scan
     ? { verifiedTip: { number: checkpoint.lastScannedBlock, hash: checkpoint.lastCanonicalBlockHash } } : null;
 
   const floor = config.escrowDeployBlock - 1n;
-  const target = maxBigInt(floor, checkpoint.lastScannedBlock - BigInt(config.reorgWindow));
+  let target = maxBigInt(floor, checkpoint.lastScannedBlock - BigInt(config.reorgWindow));
+  let targetHash = "";
+  if (target >= 0n) {
+    const targetBlock = await getBlockByNumber(rpc, target);
+    if (!targetBlock) throw new Error(`RPC returned no block for ${target}`);
+    targetHash = targetBlock.hash;
+  }
+  if (target > floor) {
+    const hashes = checkpoint.canonicalBlockHashes as Record<string, string>;
+    const boundary = hashes[target.toString()];
+    if (boundary) {
+      if (boundary.toLowerCase() !== targetHash.toLowerCase()) {
+        const claimed = await db.projectionCheckpoint.updateMany({ where: { ...checkpointKey(config).chainId_contractAddress, reorgAlerted: false }, data: { reorgAlerted: true } });
+        if (claimed.count) {
+          const alerts = evaluateAlerts({ lagSeconds: null, rpcErrorStreak: 0, reorgBeyondWindow: true });
+          await sendAlerts(alerts, config.alertWebhookUrl).catch((error: unknown) => console.error("reorg alert webhook failed", error));
+        }
+        throw new Error("REORG_BEYOND_WINDOW: boundary hash changed; manual recovery required");
+      }
+    } else {
+      const anchorKey = Object.keys(hashes)
+        .map((key) => BigInt(key))
+        .filter((key) => key >= target)
+        .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))[0];
+      let anchorMatches = false;
+      if (anchorKey !== undefined) {
+        const anchorBlock = await getBlockByNumber(rpc, anchorKey);
+        if (!anchorBlock) throw new Error(`RPC returned no block for ${anchorKey}`);
+        anchorMatches = anchorBlock.hash.toLowerCase() === hashes[anchorKey.toString()]!.toLowerCase();
+      }
+      if (!anchorMatches) {
+        target = floor;
+        targetHash = "";
+        if (target >= 0n) {
+          const floorBlock = await getBlockByNumber(rpc, target);
+          if (!floorBlock) throw new Error(`RPC returned no block for ${target}`);
+          targetHash = floorBlock.hash;
+        }
+      }
+    }
+  }
   const candidates = await db.chainEvent.findMany({
-    where: { chainId: config.chainId, contractAddress: config.escrowAddress, canonical: true, blockNumber: { gt: target } },
+    where: { chainId: config.chainId, contractAddress: config.escrowAddress, canonical: true, blockNumber: { gte: target } },
     select: { id: true, blockNumber: true, blockHash: true, txIndex: true, logIndex: true, eventName: true, escrowIdHash: true, args: true },
   });
 
@@ -55,23 +95,6 @@ export async function handleReorg({ db, rpc, config }: ScanDeps & { config: Scan
     if (hashByBlock.get(key)?.toLowerCase() !== event.blockHash.toLowerCase()) staleIds.push(event.id);
   }
 
-  let targetHash = "";
-  if (target >= 0n) {
-    const targetBlock = await getBlockByNumber(rpc, target);
-    if (!targetBlock) throw new Error(`RPC returned no block for ${target}`);
-    targetHash = targetBlock.hash;
-  }
-  if (target > floor) {
-    const boundary = (checkpoint.canonicalBlockHashes as Record<string, string>)[target.toString()];
-    if (!boundary || boundary.toLowerCase() !== targetHash.toLowerCase()) {
-      const claimed = await db.projectionCheckpoint.updateMany({ where: { ...checkpointKey(config).chainId_contractAddress, reorgAlerted: false }, data: { reorgAlerted: true } });
-      if (claimed.count) {
-        const alerts = evaluateAlerts({ lagSeconds: null, rpcErrorStreak: 0, reorgBeyondWindow: true });
-        await sendAlerts(alerts, config.alertWebhookUrl).catch((error: unknown) => console.error("reorg alert webhook failed", error));
-      }
-      throw new Error("REORG_BEYOND_WINDOW: boundary hash changed or unavailable; manual recovery required");
-    }
-  }
   await db.$transaction(async (tx) => {
     await lockCheckpoint(tx, config, checkpoint);
     const staleSet = new Set(staleIds);

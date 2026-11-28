@@ -80,9 +80,9 @@ export function NotificationsMenu() {
 
   return (
     <div className="relative" ref={ref}>
-      <button type="button" onClick={() => setOpen((value) => !value)} aria-label={`Notifications${data?.unreadNotificationCount ? `, ${data.unreadNotificationCount} unread` : ""}`} aria-expanded={open} className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))]">
+      <button type="button" onClick={() => setOpen((value) => !value)} aria-label={`Notifications${data?.unreadNotificationCount ? `, ${data.unreadNotificationCount} unread` : ""}`} aria-expanded={open} className="ibtn">
         <Bell className="h-4 w-4" />
-        {!!data?.unreadNotificationCount && <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[hsl(var(--primary))] px-1 text-[9px] font-bold text-[hsl(var(--primary-foreground))]">{data.unreadNotificationCount > 9 ? "9+" : data.unreadNotificationCount}</span>}
+        {!!data?.unreadNotificationCount && <span className="n mono">{data.unreadNotificationCount > 9 ? "9+" : data.unreadNotificationCount}</span>}
       </button>
       {open && <section className="absolute right-0 z-50 mt-2 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-[hsl(var(--card-border))] bg-[hsl(var(--card))] shadow-[var(--shadow-lg)]" aria-label="Notifications">
         <header className="flex items-center justify-between border-b border-[hsl(var(--border))] px-4 py-3"><div><h2 className="text-sm font-semibold">Notifications</h2><p className="text-[10px] text-[hsl(var(--foreground-subtle))]">{data?.unreadNotificationCount ?? 0} unread</p></div><button type="button" onClick={async () => { try { const { unreadNotificationIds } = await graphqlRequest<{ unreadNotificationIds: string[] }>(UNREAD_IDS_QUERY); await graphqlRequest(MARK_ALL_READ, { ids: unreadNotificationIds }); await queryClient.invalidateQueries({ queryKey: key }); } catch { /* Ignore transient failure. */ } }} className="inline-flex items-center gap-1 text-[10px] text-[hsl(var(--ring))] hover:underline"><CheckCheck className="h-3 w-3" />Mark all read</button></header>

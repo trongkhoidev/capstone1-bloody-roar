@@ -5,12 +5,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowRight, BriefcaseBusiness, CircleDollarSign, ClipboardList, Clock3 } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { graphqlRequest } from "@/lib/graphql-client";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { Button } from "@/components/ui/button";
 import { issueStatus } from "@/lib/issue-status";
-import { Badge } from "@/components/ui/badge";
 import { AuthRequiredPanel } from "@/components/auth/auth-required-panel";
 import { useUiPreferences } from "@/lib/ui-preferences";
 import { dashboardQueryOptions } from "./dashboard-query";
@@ -28,9 +27,13 @@ const formatRaw = (raw: string) => (Number(raw) / 1_000_000).toLocaleString(unde
 
 type Tab = "all" | "posted" | "working" | "applications";
 
-const APPLICATION_LABELS: Record<string, string> = { PENDING: "Pending", ACCEPTED: "Accepted", REJECTED: "Not selected", WITHDRAWN: "Withdrawn" };
-const statusLabel = (status: string) => APPLICATION_LABELS[status] ?? issueStatus(status).label;
-const statusVariant = (status: string) => issueStatus(status).variant;
+const APPLICATION_STATUS: Record<string, { label: string; badge: string }> = {
+  PENDING: { label: "Pending", badge: "b-prog" },
+  ACCEPTED: { label: "Accepted", badge: "b-open" },
+  REJECTED: { label: "Not selected", badge: "b-mut" },
+  WITHDRAWN: { label: "Withdrawn", badge: "b-mut" },
+};
+const TABS = [["all", "All work"], ["posted", "Posted"], ["working", "Assigned to me"], ["applications", "Applications"]] as const;
 
 export function DashboardView() {
   const user = useAuthStore((state) => state.user);
@@ -80,55 +83,115 @@ export function DashboardView() {
   const applications = tab === "all" || tab === "applications" ? data?.myApplications ?? [] : [];
 
 
-  if (authStatus === "restoring") return <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8"><div className="h-32 animate-pulse rounded-xl bg-[hsl(var(--card))]" /></main>;
+  if (authStatus === "restoring") return <main className="wrap"><div className="content"><div className="h-32 animate-pulse rounded-lg bg-[var(--sunk)]" /></div></main>;
   if (!user) return <main className="mx-auto max-w-4xl px-4 py-16"><AuthRequiredPanel title="Your workspace is ready after wallet sign-in" description="Connect your wallet to see the bounties you posted, tasks assigned to you, and every application in one place." actionLabel="Connect wallet to open dashboard" /></main>;
+
+  const stats = data ? [
+    ["Posted", data.userStats.postedTasks],
+    ["In progress", data.userStats.workingTasks],
+    ["Completed", data.userStats.completedTasks],
+    ["Applications", data.userStats.applications],
+    ["Paid escrows", data.userStats.completedPayouts],
+  ] as const : [];
 
   return (
     <div className={`br min-h-screen ${theme === "dark" ? "dark" : ""}`}>
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <div id="wallet">
-        {BigInt(claimable) > 0n && (
-          <section className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[hsl(var(--border))] p-4">
-            <p className="text-sm">Available to withdraw: <strong>{formatRaw(claimable)} USDC</strong></p>
-            {autoClaimPending && <p className="text-sm">Đang tự chuyển về ví của bạn…</p>}
-            <Button className="btn btn-p" disabled={claiming} onClick={() => void claimFunds()}>Withdraw funds</Button>
-          </section>
-        )}
-        </div>
-        <div className="flex flex-wrap items-end justify-between gap-4 animate-fade-in">
-          <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">Workspace</p><h1 className="mt-1 font-outfit text-3xl font-bold text-[var(--ink)]">Dashboard</h1><p className="mt-1 text-sm text-[var(--ink-3)]">Track the work you posted and the tasks you applied for.</p></div>
-        </div>
-
-      {data && <section className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-5 animate-fade-in">
-        <StatCard label="Posted tasks" value={data.userStats.postedTasks} icon={<ClipboardList className="h-4 w-4" />} />
-        <StatCard label="In progress" value={data.userStats.workingTasks} icon={<BriefcaseBusiness className="h-4 w-4" />} />
-        <StatCard label="Completed" value={data.userStats.completedTasks} icon={<CircleDollarSign className="h-4 w-4" />} />
-        <StatCard label="Applications" value={data.userStats.applications} icon={<Clock3 className="h-4 w-4" />} />
-        <StatCard label="Paid escrows" value={data.userStats.completedPayouts} icon={<CircleDollarSign className="h-4 w-4" />} />
-      </section>}
-
-      <section className="mt-7 overflow-hidden rounded-xl glass animate-fade-in">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[hsl(var(--border))] px-4 py-4 sm:px-6">
-          <div><h2 className="font-semibold">Work and applications</h2><p className="text-xs text-[hsl(var(--foreground-muted))]">Updates are saved to your Bloody-Roar workspace.</p></div>
-          <div className="flex flex-wrap gap-1 rounded-lg bg-[hsl(var(--background-secondary))] p-1">
-            {([ ["all", "All work"], ["posted", "Posted"], ["working", "Assigned to me"], ["applications", "Applications"] ] as const).map(([key, label]) => <button key={key} onClick={() => setTab(key)} className={`rounded-md px-3 py-1.5 text-xs font-medium ${tab === key ? "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow" : "text-[hsl(var(--foreground-muted))]"}`}>{label}</button>)}
+      <div className="wrap">
+        <main className="content" style={{ flexBasis: "100%", display: "flex", flexDirection: "column", gap: 20 }}>
+          <div className="ph">
+            <div>
+              <h1 className="h1">Dashboard</h1>
+              <p className="sub">Track the work you posted and the tasks you applied for.</p>
+            </div>
           </div>
-        </div>
 
-        {loading ? <div className="space-y-3 p-6">{[0, 1, 2].map((key) => <div key={key} className="h-16 animate-pulse rounded-lg bg-[hsl(var(--muted))]" />)}</div> : <>
-          <div className="divide-y divide-[hsl(var(--border))]">{applications.map((application) => <Link key={application.id} href={`/issues/${application.issue.id}`} className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 transition hover:bg-[hsl(var(--background-secondary))] sm:px-6"><div className="min-w-0"><p className="truncate font-medium">{application.issue.title}</p><p className="mt-1 text-xs text-[hsl(var(--foreground-muted))]">Client: {application.issue.client.name || "Wallet user"} · Applied {new Date(application.createdAt).toLocaleDateString()}</p></div><div className="flex items-center gap-3"><Badge variant={statusVariant(application.status) as never}>{statusLabel(application.status)}</Badge><span className="text-sm font-semibold text-[hsl(var(--success))]">{application.issue.bountyAmount.toLocaleString()} {application.issue.token.symbol}</span><ArrowRight className="h-4 w-4 text-[hsl(var(--foreground-subtle))]" /></div></Link>)}{tab === "applications" && !applications.length && <EmptyState title="No applications yet" text="Browse open tasks and send your first application." />}</div>
-          {tab !== "applications" && <div className="divide-y divide-[hsl(var(--border))]">{tasks.map((task) => <Link key={task.id} href={`/issues/${task.id}`} className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 transition hover:bg-[hsl(var(--background-secondary))] sm:px-6"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="truncate font-medium">{task.title}</p><Badge variant={statusVariant(task.status) as never}>{statusLabel(task.status)}</Badge></div><p className="mt-1 text-xs text-[hsl(var(--foreground-muted))]">{task.category.replaceAll("_", " ")} · Updated {new Date(task.updatedAt).toLocaleDateString()}</p></div><div className="flex items-center gap-3"><span className="text-sm font-semibold text-[hsl(var(--success))]">{task.bountyAmount.toLocaleString()} {task.token.symbol}</span><ArrowRight className="h-4 w-4 text-[hsl(var(--foreground-subtle))]" /></div></Link>)}{!tasks.length && !applications.length && <EmptyState title="No tasks here yet" text="Create a bounty or apply for a task from the marketplace." />}</div>}
-        </>}
-      </section>
-    </main>
-  </div>
+          <div id="wallet">
+            {BigInt(claimable) > 0n && (
+              <section className="claim">
+                <div>
+                  <span className="lab">Available to withdraw</span>
+                  <p className="mono claim-v">{formatRaw(claimable)} <small>USDC</small></p>
+                  {autoClaimPending && <p className="claim-note">Sending to your wallet automatically…</p>}
+                </div>
+                <Button className="btn btn-p" disabled={claiming} onClick={() => void claimFunds()}>Withdraw funds</Button>
+              </section>
+            )}
+          </div>
+
+          {data && (
+            <section className="tiles" aria-label="Your numbers">
+              {stats.map(([label, value]) => (
+                <div key={label} className="tile">
+                  <span className="lab">{label}</span>
+                  <span className="mono v">{value}</span>
+                </div>
+              ))}
+            </section>
+          )}
+
+          <section className="list">
+            <div className="dl-head">
+              <h2>Work and applications</h2>
+              <div className="seg" role="group" aria-label="Filter work">
+                {TABS.map(([key, label]) => (
+                  <button key={key} type="button" className={tab === key ? "on" : ""} aria-pressed={tab === key} onClick={() => setTab(key)}>{label}</button>
+                ))}
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="space-y-3 p-4">{[0, 1, 2].map((key) => <div key={key} className="h-14 animate-pulse rounded-md bg-[var(--sunk)]" />)}</div>
+            ) : (
+              <>
+                {applications.map((application) => {
+                  const status = APPLICATION_STATUS[application.status] ?? { label: issueStatus(application.status).label, badge: issueStatus(application.status).badge };
+                  return (
+                    <Link key={application.id} href={`/issues/${application.issue.id}`} className="drow">
+                      <div className="min-w-0">
+                        <p className="drow-t">{application.issue.title}</p>
+                        <p className="drow-m">Application · Client {application.issue.client.name || "Wallet user"} · Applied {new Date(application.createdAt).toLocaleDateString()}</p>
+                      </div>
+                      <div className="drow-r">
+                        <span className={`badge ${status.badge}`}>{status.label}</span>
+                        <span className="mono drow-a">{application.issue.bountyAmount.toLocaleString()} <small>{application.issue.token.symbol}</small></span>
+                        <ChevronRight className="drow-i" aria-hidden />
+                      </div>
+                    </Link>
+                  );
+                })}
+                {tab === "applications" && !applications.length && <EmptyState title="No applications yet" text="Browse open tasks and send your first application." />}
+                {tab !== "applications" && tasks.map((task) => {
+                  const status = issueStatus(task.status);
+                  return (
+                    <Link key={task.id} href={`/issues/${task.id}`} className="drow">
+                      <div className="min-w-0">
+                        <p className="drow-t">{task.title}</p>
+                        <p className="drow-m">{task.clientId === user.id ? "Posted" : "Assigned"} · <span className="capitalize">{task.category.replaceAll("_", " ").toLowerCase()}</span> · Updated {new Date(task.updatedAt).toLocaleDateString()}</p>
+                      </div>
+                      <div className="drow-r">
+                        <span className={`badge ${status.badge}`}>{status.label}</span>
+                        <span className="mono drow-a">{task.bountyAmount.toLocaleString()} <small>{task.token.symbol}</small></span>
+                        <ChevronRight className="drow-i" aria-hidden />
+                      </div>
+                    </Link>
+                  );
+                })}
+                {tab !== "applications" && !tasks.length && !applications.length && <EmptyState title="No tasks here yet" text="Create a bounty or apply for a task from the marketplace." />}
+              </>
+            )}
+          </section>
+        </main>
+      </div>
+    </div>
   );
 }
 
-function StatCard({ label, value, icon }: { label: string; value: string | number; icon: React.ReactNode }) {
-  return <div className="glass rounded-xl p-4 transition-all hover:border-[hsl(var(--primary)/0.3)]"><div className="flex items-center gap-2 text-xs text-[hsl(var(--foreground-muted))]">{icon}{label}</div><p className="mt-2 truncate font-outfit text-xl font-bold">{value}</p></div>;
-}
-
 function EmptyState({ title, text }: { title: string; text: string }) {
-  return <div className="px-6 py-12 text-center"><p className="font-medium">{title}</p><p className="mt-1 text-sm text-[hsl(var(--foreground-muted))]">{text}</p><Button asChild variant="outline" size="sm" className="mt-4"><Link href="/">Explore marketplace</Link></Button></div>;
+  return (
+    <div className="px-6 py-12 text-center">
+      <p className="font-semibold text-[var(--ink)]">{title}</p>
+      <p className="mt-1 text-sm text-[var(--ink-3)]">{text}</p>
+      <Link href="/marketplace" className="btn btn-o btn-sm mt-4">Explore marketplace</Link>
+    </div>
+  );
 }

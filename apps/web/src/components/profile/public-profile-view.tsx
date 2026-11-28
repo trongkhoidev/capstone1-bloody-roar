@@ -7,8 +7,8 @@ import { graphqlRequest } from "@/lib/graphql-client";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { Avatar } from "@/components/ui/avatar";
 
-const QUERY = `query PublicProfile($id: ID!) { user(id: $id) { id name avatar bio skills location role walletAddress reputationScore completedTaskCount isGithubVerified githubUsername githubUrl linkedinUrl portfolioUrl } }`;
-type User = { id: string; name: string | null; avatar: string | null; bio: string | null; skills: string[]; location: string | null; role: string; walletAddress: string; reputationScore: number; completedTaskCount: number; isGithubVerified: boolean; githubUsername: string | null; githubUrl: string | null; linkedinUrl: string | null; portfolioUrl: string | null };
+const QUERY = `query PublicProfile($id: ID!) { user(id: $id) { id name avatar bio skills location role walletAddress reputationScore completedTaskCount disputesLost isGithubVerified githubUsername githubUrl linkedinUrl portfolioUrl } }`;
+type User = { id: string; name: string | null; avatar: string | null; bio: string | null; skills: string[]; location: string | null; role: string; walletAddress: string; reputationScore: number; completedTaskCount: number; disputesLost: number; isGithubVerified: boolean; githubUsername: string | null; githubUrl: string | null; linkedinUrl: string | null; portfolioUrl: string | null };
 
 export function PublicProfileView({ userId }: { userId: string }) {
   const me = useAuthStore((s) => s.user);
@@ -45,9 +45,10 @@ export function PublicProfileView({ userId }: { userId: string }) {
           {me?.id === u.id && <Link href="/profile" className="btn btn-sm">Edit profile</Link>}
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <div className="rounded-lg bg-[var(--surface-2)] p-3"><small className="text-[var(--ink-3)]">Reputation</small><div className="font-bold flex items-center gap-1"><Star className="w-4 h-4" />{u.reputationScore.toFixed(1)}</div></div>
           <div className="rounded-lg bg-[var(--surface-2)] p-3"><small className="text-[var(--ink-3)]">Completed bounties</small><div className="font-bold flex items-center gap-1"><CheckCircle2 className="w-4 h-4" />{u.completedTaskCount}</div></div>
+          <div className="rounded-lg bg-[var(--surface-2)] p-3"><small className="text-[var(--ink-3)]">Disputes lost</small><div className="font-bold">{u.disputesLost}</div></div>
         </div>
 
         {u.bio && <p className="text-sm whitespace-pre-wrap">{u.bio}</p>}

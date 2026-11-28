@@ -4,6 +4,8 @@ import { useToastState } from "@/lib/toast";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import Link from "next/link";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { issueStatus } from "@/lib/issue-status";
@@ -47,7 +49,7 @@ const ISSUE_QUERY = `
       reservation @include(if: $initial) { id status amountRaw }
       ownerApplications @include(if: $includeApplications) {
         id status message createdAt reuseOfIssueId
-        developer { id name avatar walletAddress reputationScore isGithubVerified skills }
+        developer { id name avatar walletAddress reputationScore disputesLost isGithubVerified skills }
       }
       viewerApplication @include(if: $includeApplications) { id status message }
       viewerSubmissions @include(if: $initial) {
@@ -111,7 +113,7 @@ type ReservationRow = { id: string; status: string; chainId: number; contractAdd
 
 type ViewerCapabilities = { canApply?: boolean; canSelect: boolean; canFund: boolean; canSubmit: boolean; canRelease: boolean; canRequestChanges: boolean; canDispute: boolean; canProposeSettlement: boolean; canRevokeSettlement: boolean; canAcceptSettlement: boolean; canSubmitEvidence: boolean; canChallengeRuling: boolean; canFinalizeRuling: boolean; canFinalizeArbiterTimeoutSplit: boolean; canClaimMissedDeliveryRefund: boolean; canClaimReviewTimeout: boolean; similarFixIssueId?: string | null };
 type IssueDetail = IssueItem & { noExecutableTests: boolean; githubRepo?: string | null; bountyRaw: string; bountyDecimals: number; clientId: string; developerId?: string | null; developer?: IssueItem["client"] | null; viewerCapabilities?: ViewerCapabilities | null; escrow?: { amountRaw?: string; availableActions?: Array<{ action: string; reasonDisabled: string | null }> } | null };
-type Application = { id: string; status: string; message?: string | null; createdAt: string; reuseOfIssueId?: string | null; developer: IssueItem["client"] & { skills?: string[] } };
+type Application = { id: string; status: string; message?: string | null; createdAt: string; reuseOfIssueId?: string | null; developer: IssueItem["client"] & { skills?: string[]; disputesLost?: number } };
 
 type DetailResponse = { issue: (Omit<IssueDetail, "bountyAmount" | "bountyRaw" | "bountyDecimals"> & {
   bountyAmount: { formatted: string; raw: string; decimals: number };
@@ -629,41 +631,34 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
             <Link href="/marketplace" style={{ color: "var(--ink-2)", display: "inline-flex", alignItems: "center", gap: 4 }}>
               <ArrowLeft style={{ width: 13, height: 13 }} /> Bounties
             </Link>{" "}
-            / <span className="mono">BR-{issue.id.slice(0, 6)}</span> / Workroom
+            / <span className="mono">BR-{issue.id.slice(0, 8)}</span>
           </div>
 
-          {/* Page Header */}
-          <div className="ph">
-            <div>
-              <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                <h1 className="h1" style={{ fontSize: 24 }}>{issue.title}</h1>
-                <span className={`badge ${statusInfo.badge}`}>{statusInfo.label}</span>
-              </div>
-              <p className="sub">
-                Client <b>{issue.client.name || "Client"}</b> ·{" "}
+          <header className="dh">
+            <div className="dh-title">
+              <h1 className="h1">{issue.title}</h1>
+              <span className={`badge ${statusInfo.badge}`}>{statusInfo.label}</span>
+            </div>
+            <div className="dh-meta">
+              <span>Client <b>{issue.client.name || "Client"}</b></span>
+              <span>
                 {issue.developer ? (
                   <>Developer <b>{issue.developer.name || issue.developer.walletAddress.slice(0, 8)}</b></>
                 ) : (
                   "Accepting applications"
                 )}
-                {" · "}
-                <span className="mono" style={{ color: "var(--ink-3)" }}>BR-{issue.id.slice(0, 8)}</span>
-              </p>
-            </div>
-
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <span className="cd">
-                <Clock className="ico" style={{ width: 14, height: 14 }} />
-                Deadline: {issue.expiresAt ? new Date(issue.expiresAt).toLocaleDateString() : "Flexible"}
               </span>
-              <span className="cd hot">{feePercent} platform fee paid by the client</span>
+              <span>Posted <b>{new Date(issue.createdAt).toLocaleDateString()}</b></span>
+              <span><Eye className="ico" aria-hidden /> <b className="mono">{issue.viewCount}</b> views</span>
+              <span><Users className="ico" aria-hidden /> <b className="mono">{issue.applicationCount ?? applications.length}</b> applicants</span>
+              <span><Clock className="ico" aria-hidden /> Deadline <b>{issue.expiresAt ? new Date(issue.expiresAt).toLocaleDateString() : "Flexible"}</b></span>
               {issue.viewerCapabilities?.similarFixIssueId && (
                 <Link href={`/issues/${issue.viewerCapabilities.similarFixIssueId}`} className="cd" data-testid="similar-fix-label">
                   You fixed a similar problem
                 </Link>
               )}
             </div>
-          </div>
+          </header>
 
           {issue.noExecutableTests === true && (
             <aside role="alert" aria-label="Automated checks warning" style={{ display: "flex", gap: 12, padding: 18, borderRadius: 10, border: "1px solid var(--gold-line)", background: "var(--warn-bg)", color: "var(--warn)" }}>
@@ -799,14 +794,21 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                   ) : (
                     <section className="card">
                       <div className="card-h">
-                        <h2>Task Description &amp; Requirements</h2>
+                        <h2>Description</h2>
                         <span className="badge b-info" style={{ marginLeft: "auto" }}>
                           {CATEGORY_LABELS[issue.category] ?? issue.category}
                         </span>
                       </div>
                       <div className="card-b">
-                        <div style={{ whiteSpace: "pre-wrap", color: "var(--ink-2)", lineHeight: 1.65 }}>
-                          {issue.description}
+                        <div className="prose-d" data-testid="issue-description">
+                          <Markdown
+                            remarkPlugins={[remarkGfm]}
+                            disallowedElements={["img"]}
+                            unwrapDisallowed
+                            components={{ a: ({ node: _node, children, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer nofollow">{children}</a> }}
+                          >
+                            {issue.description}
+                          </Markdown>
                         </div>
 
                         {issue.attachments?.length ? (
@@ -825,19 +827,15 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                           </div>
                         ) : null}
 
-                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
-                          {issue.requiredSkills.map((skill) => (
-                            <span key={skill} className="tag">
-                              {skill}
-                            </span>
-                          ))}
-                        </div>
-
-                        <div style={{ display: "flex", gap: 16, fontSize: "12.5px", color: "var(--ink-3)", marginTop: 8, paddingTop: 12, borderTop: "1px solid var(--line)" }}>
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Eye className="ico" style={{ width: 14, height: 14 }} /> {issue.viewCount} views</span>
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Users className="ico" style={{ width: 14, height: 14 }} /> {issue.applicationCount ?? applications.length} applicants</span>
-                          <span>Posted on {new Date(issue.createdAt).toLocaleDateString()}</span>
-                        </div>
+                        {issue.requiredSkills.length > 0 && (
+                          <div className="tags" style={{ marginTop: 12 }}>
+                            {issue.requiredSkills.map((skill) => (
+                              <Link key={skill} href={`/marketplace?skills=${encodeURIComponent(skill)}`} className="tag">
+                                {skill}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </section>
                   )}
@@ -902,6 +900,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                                 {app.developer.isGithubVerified && <ShieldCheck className="ico" style={{ color: "var(--ok)", width: 15, height: 15 }} />}
                                 <span className="mono" style={{ fontSize: 12, color: "var(--ink-3)" }}>
                                   {app.developer.reputationScore} rep
+                                  {!!app.developer.disputesLost && ` · ${app.developer.disputesLost} dispute${app.developer.disputesLost === 1 ? "" : "s"} lost`}
                                 </span>
                                 {app.status === "REJECTED" && (
                                   <span className="badge b-closed" style={{ fontSize: 11 }}>Rejected</span>
@@ -1223,7 +1222,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
               {activeTab === "escrow" && (
                 <section className="card">
                   <div className="card-h">
-                    <h2>Escrow Contract Rules &amp; Breakdown</h2>
+                    <h2>Escrow terms</h2>
                   </div>
                   <div className="card-b">
                     <div className="calldata">
@@ -1261,10 +1260,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
               {/* Escrow Lock Card */}
               <section className="escrow" aria-label="Escrow summary">
                 <div className="esc-top">
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span className="lab" style={{ color: "var(--gold)" }}>Escrow Bounty</span>
-                    <span className={`badge ${statusInfo.badge}`}>{statusInfo.label}</span>
-                  </div>
+                  <span className="lab" style={{ color: "var(--gold)" }}>Bounty reward</span>
                   <div style={{ display: "flex", gap: 6, alignItems: "baseline", marginTop: 6 }}>
                     <span className="big mono">{issue.bountyAmount.toLocaleString()}</span>
                     <span className="mono" style={{ color: "var(--gold)" }}>{issue.token.symbol}</span>
@@ -1433,22 +1429,20 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                 <div className="panel-h">Members</div>
                 <div className="panel-b members">
                   <div className="mem">
-                    <span className="av av1">CL</span>
+                    <span className="av av1">{(issue.client.name || "CL").slice(0, 2).toUpperCase()}</span>
                     <span style={{ fontSize: 13 }}>
                       <b>{issue.client.name || "Client"}</b>{" "}
                       <span style={{ color: "var(--ink-3)" }}>· client</span>
                     </span>
-                    <span className="online" title="Online" />
                   </div>
 
                   {issue.developer && (
                     <div className="mem">
-                      <span className="av av2">DV</span>
+                      <span className="av av2">{(issue.developer.name || issue.developer.walletAddress.slice(2, 4)).slice(0, 2).toUpperCase()}</span>
                       <span style={{ fontSize: 13 }}>
                         <b>{issue.developer.name || issue.developer.walletAddress.slice(0, 8)}</b>{" "}
                         <span style={{ color: "var(--ink-3)" }}>· developer</span>
                       </span>
-                      <span className="online" title="Online" />
                     </div>
                   )}
 

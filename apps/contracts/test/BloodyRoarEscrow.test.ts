@@ -71,6 +71,7 @@ describe("BloodyRoarEscrow", () => {
 
   async function dispute(id: string, raiser = client) {
     await deposit(id);
+    await escrow.connect(developer).submitWork(id, hash(`delivery:${id}`));
     await escrow.connect(raiser).raiseDispute(id, hash(`evidence:${id}:${raiser.address}`));
     return escrow.getDispute(id);
   }
@@ -158,6 +159,7 @@ describe("BloodyRoarEscrow", () => {
       expect(newRoles.arbiter).to.equal(nextArbiter.address);
       expect(newRoles.feeRecipient).to.equal(nextFeeRecipient.address);
 
+      await escrow.connect(developer).submitWork("old-roles", hash("old delivery"));
       await escrow.connect(client).raiseDispute("old-roles", hash("old evidence"));
       const d = await escrow.getDispute("old-roles");
       await time.setNextBlockTimestamp(d.raisedAt + 72n * 60n * 60n);
@@ -441,7 +443,7 @@ describe("BloodyRoarEscrow", () => {
   });
 
   describe("dispute evidence, rulings, and liveness", () => {
-    it("allows either party to dispute before delivery with one nonzero immutable manifest", async () => {
+    it("allows either party to dispute a delivery with one nonzero immutable manifest", async () => {
       const d = await dispute("evidence", developer);
       expect(d.raisedBy).to.equal(developer.address);
       expect(d.raiserEvidenceHash).to.equal(hash(`evidence:evidence:${developer.address}`));
@@ -560,6 +562,58 @@ describe("BloodyRoarEscrow", () => {
     });
   });
 
+  describe("dispute opening rules (S-203a)", () => {
+    const evidence = (id: string) => hash(`evidence:${id}`);
+
+    it("rejects a dispute from either party before any delivery", async () => {
+      await deposit("rule-no-delivery");
+      for (const raiser of [client, developer]) {
+        await expect(
+          escrow.connect(raiser).raiseDispute("rule-no-delivery", evidence("rule-no-delivery")),
+        ).to.be.revertedWithCustomError(escrow, "NoDelivery");
+      }
+    });
+
+    it("lets either party dispute inside the review window", async () => {
+      for (const raiser of [client, developer]) {
+        const id = `rule-in-window-${raiser.address}`;
+        await deposit(id);
+        await escrow.connect(developer).submitWork(id, hash("delivery"));
+        await escrow.connect(raiser).raiseDispute(id, evidence(id));
+        expect((await escrow.getDispute(id)).raisedBy).to.equal(raiser.address);
+      }
+    });
+
+    it("rejects a dispute once the review window has closed and keeps the timeout claim open", async () => {
+      await deposit("rule-closed", USDC(1_000), 30 * DAY);
+      await escrow.connect(developer).submitWork("rule-closed", hash("delivery"));
+      const deadline = BigInt(await time.latest()) + 7n * BigInt(DAY);
+      await time.setNextBlockTimestamp(deadline);
+      await expect(escrow.connect(client).raiseDispute("rule-closed", evidence("rule-closed")))
+        .to.be.revertedWithCustomError(escrow, "DeadlinePassed")
+        .withArgs(deadline);
+      await escrow.connect(outsider).claimReviewTimeout("rule-closed");
+    });
+
+    it("moves the dispute deadline when the developer resubmits", async () => {
+      await deposit("rule-resubmit", USDC(1_000), 30 * DAY);
+      await escrow.connect(developer).submitWork("rule-resubmit", hash("first"));
+      await time.increase(6 * DAY);
+      await escrow.connect(developer).submitWork("rule-resubmit", hash("second"));
+      await time.increase(2 * DAY);
+      await escrow.connect(client).raiseDispute("rule-resubmit", evidence("rule-resubmit"));
+    });
+
+    it("allows only one dispute per escrow", async () => {
+      await deposit("rule-once");
+      await escrow.connect(developer).submitWork("rule-once", hash("delivery"));
+      await escrow.connect(client).raiseDispute("rule-once", evidence("rule-once"));
+      await expect(
+        escrow.connect(developer).raiseDispute("rule-once", evidence("rule-once-again")),
+      ).to.be.revertedWithCustomError(escrow, "InvalidPhase");
+    });
+  });
+
   describe("accounting invariants", () => {
     it("covers missing escrow and authorization failure surfaces", async () => {
       await expect(escrow.submitWork("", hash("delivery"))).to.be.revertedWithCustomError(
@@ -640,6 +694,7 @@ describe("BloodyRoarEscrow", () => {
       await expect(
         escrow.connect(client).raiseDispute("dispute-errors", ethers.ZeroHash),
       ).to.be.revertedWithCustomError(escrow, "ZeroHash");
+      await escrow.connect(developer).submitWork("dispute-errors", hash("delivery"));
       await escrow.connect(client).raiseDispute("dispute-errors", hash("evidence"));
       await expect(
         escrow.connect(outsider).acceptSettlement("dispute-errors"),

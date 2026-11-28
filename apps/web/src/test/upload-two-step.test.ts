@@ -31,18 +31,17 @@ vi.mock("@bloody-roar/database", async () => {
   const attachmentUpdate = vi.fn(async () => ({}));
   const userUpdate = vi.fn(async () => ({}));
   state.db = { attachmentCreate, attachmentUpdate, userUpdate } as never;
-  return {
-    prisma: {
-      issue: { findUnique: async () => state.issue },
-      attachment: {
-        create: attachmentCreate,
-        findUnique: async () => state.attachment,
-        update: attachmentUpdate,
-      },
-      user: { update: userUpdate },
-      $transaction: async (operations: Promise<unknown>[]) => Promise.all(operations),
+  const prisma = {
+    issue: { findUnique: async () => state.issue },
+    attachment: {
+      create: attachmentCreate,
+      findUnique: async () => state.attachment,
+      update: attachmentUpdate,
     },
+    user: { update: userUpdate },
+    $transaction: async (operations: Promise<unknown>[] | ((tx: unknown) => Promise<unknown>)): Promise<unknown> => typeof operations === "function" ? operations(prisma) : Promise.all(operations),
   };
+  return { prisma };
 });
 
 import { POST as startUpload } from "../app/api/uploads/route";

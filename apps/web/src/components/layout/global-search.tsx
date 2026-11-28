@@ -95,7 +95,7 @@ export function GlobalSearch() {
   const empty = q.length >= 2 && !isFetching && !issues.length && !skills.length && !people.length;
 
   return (
-    <div ref={box} className="gs search hidden md:flex min-w-[200px] max-w-sm lg:max-w-md" role="search">
+    <div ref={box} className="gs search hidden md:flex min-w-[200px] max-w-[380px]" role="search">
       <Search className="gs-ico" aria-hidden />
       <input
         ref={input}

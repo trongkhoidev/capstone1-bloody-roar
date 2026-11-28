@@ -182,7 +182,7 @@ export function UserMenu() {
       <button
         type="button"
         onClick={() => setIsDropdownOpen((prev) => !prev)}
-        className="flex items-center gap-2 p-1.5 pr-2.5 rounded-full border border-[var(--line-2)] bg-[var(--surface)] hover:bg-[var(--sunk)] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+        className="flex h-9 items-center gap-2 pl-1 pr-2 rounded-full border border-[var(--line-2)] bg-[var(--surface)] hover:bg-[var(--sunk)] transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
         data-testid="user-menu-btn"
         aria-expanded={isDropdownOpen}
       >
@@ -203,20 +203,9 @@ export function UserMenu() {
         </div>
 
         {/* Short Address / Name */}
-        <div className="text-left hidden sm:block">
-          <div className="text-xs font-semibold text-[var(--ink)]">
-            {user.name || shortenAddress(user.walletAddress)}
-          </div>
-          <div className="text-[10px] text-[var(--ink-3)] flex items-center gap-1">
-            <span className="text-[var(--gold)]">⭐</span>
-            <span>{user.reputationScore.toFixed(1)}/5</span>
-            {user.isGithubVerified && (
-              <span className="text-[var(--ok)]" title="GitHub Verified">
-                ✓
-              </span>
-            )}
-          </div>
-        </div>
+        <span className="hidden lg:block max-w-[120px] truncate text-xs font-semibold text-[var(--ink)]">
+          {user.name || shortenAddress(user.walletAddress)}
+        </span>
 
         <ChevronDown className={`h-3.5 w-3.5 text-[var(--ink-3)] transition-transform duration-150 ${isDropdownOpen ? "rotate-180" : ""}`} />
       </button>

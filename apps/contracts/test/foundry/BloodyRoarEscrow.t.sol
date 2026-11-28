@@ -214,6 +214,8 @@ contract BloodyRoarEscrowFuzzTest is ForgeTest {
     function test_timestampBoundariesPreferFallback() public {
         vm.prank(CLIENT);
         escrow.deposit("boundary", DEVELOPER, 1_000_000, block.timestamp + 1 days, keccak256("terms"));
+        vm.prank(DEVELOPER);
+        escrow.submitWork("boundary", keccak256("delivery"));
         vm.prank(CLIENT);
         escrow.raiseDispute("boundary", keccak256("evidence"));
         uint256 raisedAt = escrow.getDispute("boundary").raisedAt;

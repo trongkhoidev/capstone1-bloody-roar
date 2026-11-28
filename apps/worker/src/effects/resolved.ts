@@ -34,7 +34,6 @@ export async function applyResolved(tx: Prisma.TransactionClient, effect: Resolv
   const issue = await tx.issue.findUniqueOrThrow({ where: { id: projection.issueId }, select: { clientId: true, developerId: true, status: true, title: true } });
   if (issue.status !== IssueStatus.IN_PROGRESS && issue.status !== IssueStatus.DISPUTED) throw new Error("Issue changed before escrow resolution");
   await tx.issue.update({ where: { id: projection.issueId }, data: { status: IssueStatus.COMPLETED, outcome: effect.resolution, completedAt: new Date(Number(meta.blockTimestamp) * 1000) } });
-  if (issue.developerId) await recalcReputation(tx, issue.developerId);
   await tx.transactionIntent.updateMany({ where: { issueId: projection.issueId, chainId: meta.chainId, contractAddress: { equals: meta.contractAddress, mode: "insensitive" }, txHash: meta.txHash.toLowerCase(), status: { in: [IntentStatus.SUBMITTED, IntentStatus.PENDING_SAFE_HEAD] },
     method: { in: ["releaseFunds", "claimMissedDeliveryRefund", "claimReviewTimeout", "acceptSettlement", "finalizeRuling", "finalizeArbiterTimeoutSplit"] } }, data: { status: IntentStatus.CONFIRMED, confirmedByEventId: meta.chainEventId } });
   const recipients = await tx.user.findMany({ where: { walletAddress: { in: [...credits.keys()], mode: "insensitive" } }, select: { id: true, walletAddress: true } });
@@ -43,6 +42,7 @@ export async function applyResolved(tx: Prisma.TransactionClient, effect: Resolv
     const ruling = effect.resolution === "RULING" ? await tx.rulingRecord.findFirst({ where: { escrowIdHash: effect.escrowIdHash, decisionHash: { equals: effect.decisionHash, mode: "insensitive" } }, orderBy: { postedAt: "desc" } }) : null;
     await tx.dispute.updateMany({ where: { issueId: projection.issueId }, data: { status: "RESOLVED", phase: "RESOLVED", finalClientBps: effect.resolution === "ARBITER_TIMEOUT_SPLIT" ? 5000 : ruling?.clientBps ?? null, resolvedAt: new Date(Number(meta.blockTimestamp) * 1000) } });
   }
+  for (const id of new Set([issue.clientId, issue.developerId].filter((id): id is string => !!id))) await recalcReputation(tx, id);
   const send = async (userId: string, type: "ESCROW_RESOLVED" | "DISPUTE_RESOLVED" | "FUNDS_CLAIMABLE", body: string) => {
     const notification = await createNotificationIdempotent(tx, { userId, type, title: type === "FUNDS_CLAIMABLE" ? "Funds ready to claim" : "Escrow resolved", body,
       link: `/issues/${projection.issueId}`, data: { issueId: projection.issueId!, resolution: effect.resolution, chainEventId: meta.chainEventId }, dedupeKey: `${meta.chainEventId}:${userId}:${type}` });

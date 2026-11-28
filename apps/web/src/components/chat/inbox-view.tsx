@@ -10,7 +10,7 @@ import { AuthRequiredPanel } from "@/components/auth/auth-required-panel";
 import { Button } from "@/components/ui/button";
 import { ChatRoom } from "./chat-room";
 
-type Conversation = { id: string; kind: string; issueId: string; issue: { title: string }; counterpart: { name: string | null; walletAddress: string } | null; lastMessage: { content: string } | null; lastMessageAt: string | null; unreadCount: number; canWrite: boolean };
+type Conversation = { id: string; kind: "ISSUE_WORK" | "APPLICATION"; issueId: string; issue: { title: string }; counterpart: { name: string | null; walletAddress: string } | null; lastMessage: { content: string } | null; lastMessageAt: string | null; unreadCount: number; canWrite: boolean };
 const QUERY = `query Inbox($after: ID) { myConversations(first: 30, after: $after) { id kind issueId issue { title } counterpart { name walletAddress } lastMessage { content } lastMessageAt unreadCount canWrite } }`;
 export function InboxView() {
   const authStore = useAuthStoreApi();
@@ -55,7 +55,7 @@ export function InboxView() {
       </aside>
       <section className={!selected ? "hidden md:block" : ""}>
         {selected && <Button variant="ghost" className="mb-3 md:hidden" onClick={() => open(null)}>Back to conversations</Button>}
-        {active ? <ChatRoom key={active.id} issueId={active.issueId} conversationId={active.id} issueTitle={active.issue.title} readOnly={!active.canWrite} /> : <p className="rounded-xl border border-[var(--line)] p-6 text-sm">{selected ? "This conversation is unavailable or on a later page." : "Choose a conversation."}</p>}
+        {active ? <ChatRoom key={active.id} issueId={active.issueId} conversationId={active.id} issueTitle={active.issue.title} readOnly={!active.canWrite} kind={active.kind} /> : <p className="rounded-xl border border-[var(--line)] p-6 text-sm">{selected ? "This conversation is unavailable or on a later page." : "Choose a conversation."}</p>}
       </section>
     </div>
   </main>;

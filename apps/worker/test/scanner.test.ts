@@ -2,7 +2,7 @@ import { describe } from "bun:test";
 import { assertTestDatabase } from "@bloody-roar/database/test-guard";
 import { beforeAll } from "bun:test";
 import { afterAll, expect, test } from "bun:test";
-import { prisma } from "@bloody-roar/database";
+import { PrismaClient, prisma } from "@bloody-roar/database";
 import { scanOnce } from "../src/indexer/scanner";
 import { indexerJob } from "../src/jobs/indexer";
 import type { JobContext } from "../src/runtime/scheduler";
@@ -15,7 +15,7 @@ beforeAll(() => assertTestDatabase(process.env.TEST_DATABASE_URL));
 const config = testConfig();
 const where = { chainId: config.chainId, contractAddress: config.escrowAddress };
 const cursor = () => prisma.projectionCheckpoint.findUniqueOrThrow({ where: { chainId_contractAddress: where } });
-const storedEvents = () => prisma.chainEvent.findMany({ where, orderBy: { txHash: "asc" } });
+const storedEvents = () => prisma.chainEvent.findMany({ where, orderBy: [{ blockNumber: "asc" }, { logIndex: "asc" }] });
 
 // Block hashes 100..safe, so every block the scanner asks for has a hash.
 function chainUpTo(safe: bigint) {
@@ -127,16 +127,44 @@ test("successive ticks reuse verified block hashes and refresh the window after 
   expect((await cursor()).canonicalBlockHashes).toMatchObject({ "171": "0xchanged171" });
 });
 
-test("a migrated checkpoint with an empty hash map indexes without a reorg alert", async () => {
+test("a restarted worker resumes from the stored checkpoint without reprocessing or skipping", async () => {
   await cleanupChain(prisma, config);
   const chain = chainUpTo(170n);
-  const rpc = fakeRpc(chain);
-  const ctx = { db: prisma, rpc, config, now: () => new Date(), log: { info() {}, warn() {}, error() {} } } as JobContext;
-  await indexerJob.run(ctx);
-  expect(await cursor()).toMatchObject({ lastScannedBlock: 170n, lastCanonicalBlockHash: "0xh170", reorgAlerted: false });
+  chain.logs = [rawLog({ address: config.escrowAddress, block: 150, blockHash: "0xh150", tx: "0xbefore" })];
+  const ranges: Array<[bigint, bigint]> = [];
+  const rpc = () => {
+    const fake = fakeRpc(chain);
+    return { ...fake, async call<T>(method: string, params: unknown[]): Promise<T> {
+      if (method === "eth_getLogs") {
+        const [range] = params as [{ fromBlock: string; toBlock: string }];
+        ranges.push([BigInt(range.fromBlock), BigInt(range.toBlock)]);
+      }
+      return fake.call<T>(method, params);
+    } };
+  };
+  const ctx = (db: PrismaClient) => ({ db, rpc: rpc(), config, now: () => new Date(), log: { info() {}, warn() {}, error() {} } }) as JobContext;
+  await indexerJob.run(ctx(prisma));
+  expect((await storedEvents()).map((event) => [event.txHash, event.blockNumber])).toEqual([["0xbefore", 150n]]);
+  expect(await cursor()).toMatchObject({ lastScannedBlock: 170n, lastCanonicalBlockHash: "0xh170" });
+
   await prisma.projectionCheckpoint.update({ where: { chainId_contractAddress: where }, data: { canonicalBlockHashes: {} } });
   chain.safe = 171n; chain.blockHash.set(171n, "0xh171");
-  await indexerJob.run(ctx);
+  chain.logs = [...chain.logs, rawLog({ address: config.escrowAddress, block: 171, blockHash: "0xh171", tx: "0xafter" })];
+  ranges.length = 0;
+
+  const restarted = new PrismaClient({
+    ...(process.env.DATABASE_URL ? { datasourceUrl: process.env.DATABASE_URL } : {}),
+    transactionOptions: { maxWait: 10_000, timeout: 20_000 },
+  });
+  try {
+    await indexerJob.run(ctx(restarted));
+  } finally {
+    await restarted.$disconnect();
+  }
+  expect(ranges).toEqual([[171n, 171n]]);
+
+  const events = await storedEvents();
+  expect(events.map((event) => [event.txHash, event.blockNumber])).toEqual([["0xbefore", 150n], ["0xafter", 171n]]);
   const after = await cursor();
   expect(after).toMatchObject({ lastScannedBlock: 171n, lastCanonicalBlockHash: "0xh171", reorgAlerted: false });
   expect(Object.keys(after.canonicalBlockHashes as Record<string, string>)).toHaveLength(65);

@@ -81,7 +81,11 @@ for (const [field, method] of [["prepareRaiseDispute", "raiseDispute"], ["prepar
     type: PreparedCallRef, args: { issueId: t.arg.id({ required: true }), manifestId: t.arg.id({ required: true }) },
     resolve: async (_root, args, ctx) => {
       const { user, projection, wallet, side } = await partyProjection(ctx, String(args.issueId));
-      if (method === "raiseDispute" && projection.phase !== "FUNDED") throw gqlError("Escrow is not in a disputable state", "INVALID_PHASE");
+      if (method === "raiseDispute") {
+        if (projection.phase !== "FUNDED") throw gqlError("Escrow is not in a disputable state", "INVALID_PHASE");
+        if (!projection.deliveryHash) throw gqlError("A dispute can be opened only after a Submission is on-chain", "NO_DELIVERY");
+        if (await readChainTime(projection.chainId) >= projection.reviewDeadline) throw gqlError("The review window has closed", "REVIEW_WINDOW_CLOSED");
+      }
       if (method === "submitCounterpartyEvidence") {
         if (projection.phase !== "DISPUTED") throw gqlError("This dispute is not accepting evidence", "INVALID_PHASE");
         await assertEvidenceWindow(projection, wallet);

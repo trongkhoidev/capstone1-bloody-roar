@@ -88,7 +88,8 @@ test("E32: client funds, developer delivers, client releases, developer claims, 
   const owedBeforeRelease = await claimable(f.prisma, f.developer.walletAddress);
   await client.reload({ waitUntil: "domcontentloaded" });
   await client.getByRole("tab", { name: /Delivery & Submissions/ }).click();
-  await client.getByRole("button", { name: "Approve delivery" }).click();
+  await client.getByRole("button", { name: "Release" }).click();
+  await client.getByRole("button", { name: "Confirm release" }).click();
   await waitFor(async () => (await f.prisma.issue.findUnique({ where: { id: f.issueId } }))?.status === "COMPLETED");
   await waitFor(async () => (await claimable(f.prisma, f.developer.walletAddress)) - owedBeforeRelease === 100000000n);
   await expectNoError(client);

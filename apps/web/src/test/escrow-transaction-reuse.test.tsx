@@ -78,7 +78,8 @@ describe("funding and release share the transaction status (US-39)", () => {
     transactions = [{ id: "release", method: "releaseFunds", status: "FAILED", txHash: "0xr", failureReason: "Reverted: delivery changed" }];
     await show();
     await act(async () => { fireEvent.click(screen.getByRole("tab", { name: /delivery/i })); });
-    await act(async () => { fireEvent.click(await screen.findByRole("button", { name: "Approve delivery" })); });
+    await act(async () => { fireEvent.click(await screen.findByRole("button", { name: "Release" })); });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Confirm release" })); });
     expect(send).toHaveBeenCalledWith([step("release", "releaseFunds")], expect.any(Function), session.user.walletAddress);
     const banner = await screen.findByTestId("transaction-status");
     expect(banner).toHaveTextContent("Failed");
@@ -91,7 +92,8 @@ describe("funding and release share the transaction status (US-39)", () => {
     transactions = [{ id: "release", method: "releaseFunds", status: "SUBMITTED", txHash: "0xr", failureReason: null }];
     await show();
     await act(async () => { fireEvent.click(screen.getByRole("tab", { name: /delivery/i })); });
-    await act(async () => { fireEvent.click(await screen.findByRole("button", { name: "Approve delivery" })); });
+    await act(async () => { fireEvent.click(await screen.findByRole("button", { name: "Release" })); });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Confirm release" })); });
     await act(async () => { await vi.advanceTimersByTimeAsync(130_000); });
     expect(screen.getByRole("status")).toHaveTextContent("Sent");
     vi.useRealTimers();

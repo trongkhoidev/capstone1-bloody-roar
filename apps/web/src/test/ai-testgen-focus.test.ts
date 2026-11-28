@@ -34,6 +34,9 @@ async function rejectsBadInput(args: Record<string, unknown>, database?: unknown
   expect(aiRateLimit).not.toHaveBeenCalled();
 }
 
+// The task JSON comes before the <repository_content> block (US-48).
+const taskOf = (content: string) => JSON.parse(content.split("\n\n<repository_content>")[0]!);
+
 beforeEach(() => { completeAI.mockReset(); aiRateLimit.mockReset(); });
 
 describe("generateTestCases focusFiles and hint (US-44)", () => {
@@ -59,14 +62,14 @@ describe("generateTestCases focusFiles and hint (US-44)", () => {
     await expect(callGenerate({ focusFiles: ["src/cart.ts"], hint: `  check totals, key=${secret}  ` })).rejects.toThrow();
     const prompt = completeAI.mock.calls[0]![0].messages[1].content as string;
     expect(prompt).not.toContain(secret);
-    expect(JSON.parse(prompt)).toMatchObject({ focusFiles: ["src/cart.ts"], clientHint: expect.stringContaining("check totals") });
+    expect(taskOf(prompt)).toMatchObject({ focusFiles: ["src/cart.ts"], clientHint: expect.stringContaining("check totals") });
     expect(aiRateLimit).toHaveBeenCalledOnce();
   });
 
   it("keeps the prompt unchanged without the new arguments", async () => {
     completeAI.mockRejectedValueOnce(new Error("stop after inspecting prompt"));
     await expect(callGenerate({})).rejects.toThrow();
-    const prompt = JSON.parse(completeAI.mock.calls[0]![0].messages[1].content as string);
-    expect(Object.keys(prompt)).toEqual(["title", "description", "requiredSkills", "framework", "context"]);
+    const prompt = taskOf(completeAI.mock.calls[0]![0].messages[1].content as string);
+    expect(Object.keys(prompt)).toEqual(["title", "description", "requiredSkills", "framework"]);
   });
 });

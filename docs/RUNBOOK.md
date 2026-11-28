@@ -106,11 +106,16 @@ Map rỗng sau migration là bình thường; không cần backfill.
 Cold start đúng sẽ trông như sau:
 
 - Database mới: tick đầu tạo checkpoint với cursor `ESCROW_DEPLOY_BLOCK - 1`, rồi quét
-  tới safe block. `lastCanonicalBlockHash` rỗng nên bước kiểm tra reorg được bỏ qua.
-- Database đã migrate: hash tại cursor vẫn khớp node, nên tick đầu tải lại toàn bộ
-  hash trong cửa sổ thay vì dùng cache.
-- Sau tick đầu, `canonicalBlockHashes` có tối đa `INDEXER_REORG_WINDOW + 1` khóa (65 với
-  mặc định), `reorgAlerted = false`, và `lastCanonicalBlockHash` bằng hash tại
+  tối đa `INDEXER_RANGE_SIZE` block mỗi tick (mặc định 2000). Database còn xa safe block
+  sẽ cần nhiều tick mới đuổi kịp. `lastCanonicalBlockHash` rỗng nên bước kiểm tra reorg
+  được bỏ qua.
+- Database đã migrate: map hash có thể rỗng, nhưng hash tại cursor vẫn khớp node, nên tick
+  đầu quét tiếp bình thường và điền lại map trong cửa sổ thay vì dùng cache.
+- Nếu map trống hoặc thiếu khóa biên mà một reorg xảy ra trước khi map được điền lại, worker
+  coi depth là chưa biết: nó lùi về `ESCROW_DEPLOY_BLOCK - 1` (`rewoundTo` bằng block này)
+  rồi quét lại toàn bộ thay vì báo `REORG_BEYOND_WINDOW`. Đây là hành vi mong đợi, không phải lỗi.
+- Sau khi đuổi kịp safe block, `canonicalBlockHashes` có tối đa `INDEXER_REORG_WINDOW + 1`
+  khóa (65 với mặc định), `reorgAlerted = false`, và `lastCanonicalBlockHash` bằng hash tại
   `lastScannedBlock`. `/health` báo `projectionLagBlocks` gần 0 và
   `rpcErrorStreak: 0`. Log không có dòng `reorg detected`.
 
@@ -119,14 +124,18 @@ Kiểm tra checkpoint:
 ```sql
 select "lastScannedBlock", "lastSafeBlock", "reorgAlerted",
        jsonb_array_length(jsonb_path_query_array("canonicalBlockHashes", '$.keyvalue()')) as hashes
-from projection_checkpoints where "chainId" = <CHAIN_ID>;
+from projection_checkpoints
+where "chainId" = <CHAIN_ID> and "contractAddress" = '<ESCROW_ADDRESS>';
 ```
+
+Kiểm chứng ngày 2026-11-27: `bun run --cwd apps/worker test` trên database `_test`
+đã migrate; test cold start sau restart và test reorg ngay sau migration đều xanh.
 
 | Triệu chứng | Nguyên nhân và cách xử lý |
 | --- | --- |
 | Worker crash với `Unknown argument canonicalBlockHashes` | Prisma client cũ hơn schema. Chạy `bun run db:generate` rồi restart. |
-| Lỗi `column "canonicalBlockHashes" does not exist` | Database chưa chạy migration. Chạy `prisma migrate deploy` trên database đó rồi restart. |
-| `lastScannedBlock` đứng yên, `hashes` vẫn 0 | Tick đầu chưa xong. Xem log có `RPC returned no block` (RPC thiếu block cũ, cần node lưu đủ lịch sử) hoặc lỗi giới hạn range của RPC. |
+| Lỗi `column "canonicalBlockHashes" does not exist` | Database chưa chạy migration. Chạy `bun run --cwd packages/database db:migrate:prod` trên database đó rồi restart. |
+| `lastScannedBlock` đứng yên, `hashes` vẫn 0 | Các tick đuổi kịp chưa xong, hoặc tick đang lỗi. Xem log có `RPC returned no block` (RPC thiếu block cũ, cần node lưu đủ lịch sử) hoặc lỗi giới hạn range của RPC. |
 | Log có `reorg detected; cursor rewound` ngay sau cold start | Hash tại cursor không khớp node: thường do `RPC_URL` trỏ sang chain khác hoặc node local đã được khởi động lại. Kiểm tra `CHAIN_ID` và `RPC_URL`. |
-| `REORG_BEYOND_WINDOW` và `reorgAlerted = true` | Hash biên cửa sổ đổi hoặc thiếu. Có thể xảy ra nếu reorg đến trước khi tick đầu sau migration điền map. Worker dừng tiến cursor; xác nhận chain đúng rồi chạy `bun run worker:replay --from <ESCROW_DEPLOY_BLOCK>`. Replay đặt `lastCanonicalBlockHash = ""`, nên tick kế tiếp quét thành công và tự đặt `reorgAlerted = false`. |
-| Hardhat local khởi động lại, cursor cao hơn block hiện tại | Chain mới, checkpoint cũ không còn hợp lệ. Xóa dòng checkpoint của `chainId` 31337 và địa chỉ escrow cũ, rồi deploy và chạy lại. |
+| `REORG_BEYOND_WINDOW` và `reorgAlerted = true` | Hash biên cửa sổ đã đổi, nghĩa là reorg sâu hơn `INDEXER_REORG_WINDOW`. Map thiếu khóa biên không gây alert: worker coi depth là chưa biết, lùi về `ESCROW_DEPLOY_BLOCK - 1` và quét lại toàn bộ. Khi alert thật: worker dừng tiến cursor; xác nhận chain đúng và điểm fork, rồi replay từ một block đã xác nhận nằm dưới fork. Mặc định an toàn là `bun run worker:replay --from <ESCROW_DEPLOY_BLOCK>`; nếu đã xác định fork cao hơn, dùng block thấp hơn fork nhưng không thấp hơn `ESCROW_DEPLOY_BLOCK`. Replay đặt cursor về `from - 1` và `lastCanonicalBlockHash = ""`; tick kế tiếp có thể log thêm `reorg detected; cursor rewound` một lần trước khi quét, rồi tự đặt `reorgAlerted = false`. |
+| Hardhat local khởi động lại, cursor cao hơn block hiện tại | Chain mới, checkpoint cũ không còn hợp lệ. Chạy `bun run --cwd packages/database db:reset` để dựng lại database local (lệnh này xóa toàn bộ dữ liệu local), rồi deploy và chạy lại. Nếu chỉ xóa dòng checkpoint, `chain_events` và projection cũ vẫn còn và sẽ lẫn với chain mới. Sau đó kiểm lại `ESCROW_ADDRESS`/`ESCROW_DEPLOY_BLOCK` và chạy `bun run db:seed:local` nếu cần dữ liệu local. |

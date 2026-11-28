@@ -1,5 +1,5 @@
 # .github/workflows/ci.yml
-# Web checks and build, end-to-end tests, the schema-vs-migrations check, and secret scanning.
+# Web checks and build, worker database tests, end-to-end tests, the schema-vs-migrations check, and secret scanning.
 
 name: ci
 
@@ -142,6 +142,42 @@ jobs:
           name: hardhat-e2e-logs
           path: tests/e2e/.run/*.log
           include-hidden-files: true
+
+  worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: bloody_roar_worker_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TZ: UTC
+      DATABASE_URL: postgresql://postgres@localhost:5432/bloody_roar_worker_test?schema=public
+      DIRECT_URL: postgresql://postgres@localhost:5432/bloody_roar_worker_test?schema=public
+      TEST_DATABASE_URL: postgresql://postgres@localhost:5432/bloody_roar_worker_test?schema=public
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.0"
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Generate Prisma client
+        run: bun run db:generate
+      - name: Migrate the test database
+        run: bun run --cwd packages/database db:migrate:prod
+      - name: Worker database tests
+        run: bun run --cwd apps/worker test
 
   database:
     runs-on: ubuntu-latest

@@ -6,6 +6,7 @@ import { requireAuth, type GraphQLContext } from "../../context";
 import { gqlError, parseOrThrow } from "../../errors";
 import { createNotificationSafely } from "../../../lib/services/notifications";
 import { guardMessage } from "../../../ai/guard/service";
+import { activeReuseOffer, endReuseOffer } from "../../../lib/services/similar-issues";
 import { UserRef } from "../user/user.module";
 import { ISSUE_INCLUDE, IssueRef, encodeCursor, decodeCursor } from "../issue/issue.module";
 
@@ -148,6 +149,9 @@ builder.mutationField("applyToIssue", (t) =>
             ) {
               throw gqlError("This bounty no longer accepts applications", "ISSUE_NOT_OPEN");
             }
+            const offer = await activeReuseOffer(tx, issue.id);
+            if (offer && offer.developerId !== user.id)
+              throw gqlError(`The developer who fixed a matching issue has priority until ${offer.offerExpiresAt!.toISOString()}`, "REUSE_OFFER_ACTIVE");
 
             const previous = await tx.application.findUnique({
               where: {
@@ -278,6 +282,7 @@ builder.mutationField("withdrawApplication", (t) =>
         });
         if (withdrawn.count !== 1)
           throw gqlError("This application was just processed and cannot be withdrawn", "APPLICATION_NOT_WITHDRAWABLE");
+        await endReuseOffer(tx, application.issueId, user.id);
         return tx.application.findUniqueOrThrow({
           where: { id: application.id },
           include: APPLICATION_INCLUDE,
@@ -308,6 +313,7 @@ builder.mutationField("rejectApplication", (t) =>
       });
       if (rejected.count !== 1)
         throw gqlError("Only pending applications can be declined", "APPLICATION_NOT_REJECTABLE");
+      await endReuseOffer(ctx.db, application.issueId, application.developerId);
 
       await createNotificationSafely(ctx.db, {
         userId: application.developerId,
@@ -323,6 +329,18 @@ builder.mutationField("rejectApplication", (t) =>
         where: { id: application.id },
         include: APPLICATION_INCLUDE,
       });
+    },
+  }),
+);
+
+builder.mutationField("declineReuseOffer", (t) =>
+  t.boolean({
+    args: { issueId: t.arg.id({ required: true }) },
+    resolve: async (_root, args, ctx) => {
+      const user = requireAuth(ctx);
+      const ended = await endReuseOffer(ctx.db, String(args.issueId), user.id);
+      if (ended.count === 0) throw gqlError("No open reuse offer for you on this bounty", "NOT_FOUND");
+      return true;
     },
   }),
 );

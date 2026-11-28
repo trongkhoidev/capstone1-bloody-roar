@@ -102,6 +102,7 @@ const APPLY = `mutation($input: ApplyToIssueInput!) { applyToIssue(input: $input
 function applyDb(issue: Record<string, unknown>) {
   const tx = {
     issue: { findUnique: vi.fn().mockResolvedValue(issue) },
+    issueSimilarity: { findFirst: vi.fn().mockResolvedValue(null) },
     application: {
       findUnique: vi.fn().mockResolvedValue(null),
       create: vi.fn().mockResolvedValue({ id: "application-1", status: "PENDING" }),

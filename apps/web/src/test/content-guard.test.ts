@@ -19,6 +19,7 @@ const openIssue = { id: "issue-1", clientId: "client-owner", title: "Fix the esc
 function fakeDb(issue: Record<string, unknown> = openIssue) {
   const tx = {
     issue: { findUnique: vi.fn().mockResolvedValue(issue) },
+    issueSimilarity: { findFirst: vi.fn().mockResolvedValue(null) },
     application: {
       findUnique: vi.fn().mockResolvedValue(null),
       create: vi.fn().mockResolvedValue({ id: "application-1", status: "PENDING" }),

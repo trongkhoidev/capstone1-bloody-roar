@@ -9,6 +9,15 @@ const log = createLogger("similar-issues");
 
 export const SIMILARITY_MIN_SCORE = 0.8;
 const MAX_CANDIDATES = 5;
+const REUSE_OFFER_MS = 48 * 3_600_000;
+
+export function activeReuseOffer(db: Pick<PrismaClient, "issueSimilarity">, issueId: string, now = new Date()) {
+  return db.issueSimilarity.findFirst({ where: { issueId, declinedAt: null, offerExpiresAt: { gt: now } }, select: { developerId: true, offerExpiresAt: true } });
+}
+
+export function endReuseOffer(db: Pick<PrismaClient, "issueSimilarity">, issueId: string, developerId: string) {
+  return db.issueSimilarity.updateMany({ where: { issueId, developerId, declinedAt: null, offerExpiresAt: { not: null } }, data: { declinedAt: new Date() } });
+}
 
 const MatchesSchema = z.object({
   matches: z.array(z.object({ issueId: z.string(), score: z.number().min(0).max(1), reason: z.string() })),
@@ -61,16 +70,18 @@ export async function detectSimilarIssues(
   ] });
   const byId = new Map(candidates.map((c) => [c.id, c]));
   const matches = MatchesSchema.parse(parseAIJson(completion.text)).matches
-    .filter((m) => m.score >= SIMILARITY_MIN_SCORE && byId.has(m.issueId));
+    .filter((m) => m.score >= SIMILARITY_MIN_SCORE && byId.has(m.issueId))
+    .sort((a, b) => b.score - a.score);
 
-  for (const match of matches) {
+  for (const [index, match] of matches.entries()) {
     const old = byId.get(match.issueId)!;
-    await db.issueSimilarity.createMany({ data: [{ issueId: issue.id, similarIssueId: old.id, developerId: old.developerId, score: match.score }], skipDuplicates: true });
+    const offerExpiresAt = index === 0 ? new Date(Date.now() + REUSE_OFFER_MS) : null;
+    await db.issueSimilarity.createMany({ data: [{ issueId: issue.id, similarIssueId: old.id, developerId: old.developerId, score: match.score, offerExpiresAt }], skipDuplicates: true });
     await createNotificationIdempotent(db, {
       userId: old.developerId,
       type: "SIMILAR_ISSUE_POSTED",
       title: "Similar issue posted",
-      body: `A new bounty looks like an issue you fixed: "${old.title}".`,
+      body: `A new bounty looks like an issue you fixed: "${old.title}".${offerExpiresAt ? " You have 48 hours to apply before it opens to everyone." : ""}`,
       link: `/issues/${issue.id}`,
       data: { issueId: issue.id },
       dedupeKey: `similar:${issue.id}:${old.id}`,

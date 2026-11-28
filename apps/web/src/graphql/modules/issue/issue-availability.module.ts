@@ -6,6 +6,7 @@ import { EscrowPhaseEnum, ResolutionKindEnum } from "../escrow/escrow.module";
 import { SubmissionRef, SUBMISSION_INCLUDE } from "../submission/submission.module";
 import { readChainTime } from "../../../lib/escrow/chain-time";
 import { availableActions, type AvailableAction } from "../../../lib/escrow/availability";
+import { activeReuseOffer } from "../../../lib/services/similar-issues";
 import type { EscrowProjection, RulingRecord } from "@bloody-roar/database";
 
 const chainTimes = new WeakMap<GraphQLContext, Map<number, Promise<Date>>>();
@@ -48,7 +49,7 @@ type Capabilities = { canApply: boolean; canSelect: boolean; canFund: boolean; c
   canRequestChanges: boolean; canProposeSettlement: boolean; canRevokeSettlement: boolean; canAcceptSettlement: boolean;
   canSubmitEvidence: boolean; canChallengeRuling: boolean; canFinalizeRuling: boolean; canFinalizeArbiterTimeoutSplit: boolean;
   canClaimMissedDeliveryRefund: boolean; canClaimReviewTimeout: boolean; canPostInitialRuling: boolean; canPostFinalRuling: boolean;
-  similarFixIssueId: string | null };
+  similarFixIssueId: string | null; canDeclineReuseOffer: boolean; reuseOfferUntil: string | null };
 const CapabilityRef = builder.objectRef<Capabilities>("ViewerCapabilities").implement({ fields: (t) => ({
   canApply: t.exposeBoolean("canApply"), canSelect: t.exposeBoolean("canSelect"), canFund: t.exposeBoolean("canFund"),
   canSubmit: t.exposeBoolean("canSubmit"), canRelease: t.exposeBoolean("canRelease"), canDispute: t.exposeBoolean("canDispute"),
@@ -59,6 +60,8 @@ const CapabilityRef = builder.objectRef<Capabilities>("ViewerCapabilities").impl
   canClaimMissedDeliveryRefund: t.exposeBoolean("canClaimMissedDeliveryRefund"), canClaimReviewTimeout: t.exposeBoolean("canClaimReviewTimeout"),
   canPostInitialRuling: t.exposeBoolean("canPostInitialRuling"), canPostFinalRuling: t.exposeBoolean("canPostFinalRuling"),
   similarFixIssueId: t.exposeString("similarFixIssueId", { nullable: true, description: "A completed issue the viewer fixed that matches this one (US-107); only that developer sees it" }),
+  canDeclineReuseOffer: t.exposeBoolean("canDeclineReuseOffer"),
+  reuseOfferUntil: t.exposeString("reuseOfferUntil", { nullable: true, description: "Until then only the invited old developer can apply (US-159)" }),
 }) });
 
 builder.prismaObjectFields(IssueRef, (t) => ({
@@ -75,11 +78,12 @@ builder.prismaObjectFields(IssueRef, (t) => ({
   viewerCapabilities: t.field({ type: CapabilityRef, resolve: async (issue, _args, ctx) => {
     const user = ctx.user, now = new Date();
     const enabledUser = !!user && !user.isBanned;
-    const [projection, reservation, application, similar] = await Promise.all([
+    const [projection, reservation, application, similar, offer] = await Promise.all([
       ctx.db.escrowProjection.findUnique({ where: { issueId: issue.id } }),
       user ? ctx.db.fundingReservation.findFirst({ where: { issueId: issue.id, status: "AWAITING_FUNDING", clientId: user.id }, orderBy: { createdAt: "desc" } }) : null,
       user ? ctx.db.application.findUnique({ where: { issueId_developerId: { issueId: issue.id, developerId: user.id } }, select: { status: true } }) : null,
       user ? ctx.db.issueSimilarity.findFirst({ where: { issueId: issue.id, developerId: user.id }, orderBy: { score: "desc" }, select: { similarIssueId: true } }) : null,
+      activeReuseOffer(ctx.db, issue.id, now),
     ]);
     const [ruling, chainNow] = projection
       ? await Promise.all([currentRuling(ctx.db, projection), chainTimeFor(ctx, projection.chainId)])
@@ -96,7 +100,9 @@ builder.prismaObjectFields(IssueRef, (t) => ({
     const challengePermitted = !!ruling && ((isClient && ruling.clientBps < 10000) || (isDeveloper && ruling.clientBps > 0));
     const open = issue.status === "OPEN" && !issue.isDraft && !issue.hiddenAt && (!issue.expiresAt || issue.expiresAt > now);
     return {
-      canApply: enabledUser && user!.role !== "ADMIN" && open && user!.id !== issue.clientId && (!application || application.status === "WITHDRAWN"),
+      canApply: enabledUser && user!.role !== "ADMIN" && open && user!.id !== issue.clientId && (!application || application.status === "WITHDRAWN") && (!offer || offer.developerId === user!.id),
+      canDeclineReuseOffer: enabledUser && open && !application && offer?.developerId === user!.id,
+      reuseOfferUntil: open && offer ? offer.offerExpiresAt!.toISOString() : null,
       canSelect: enabledUser && open && user!.id === issue.clientId,
       canFund: enabledUser && issue.status === "AWAITING_FUNDING" && !!reservation && reservation.expiresAt > now && user!.id === issue.clientId,
       canSubmit: isDeveloper && enabled("submitWork"), canRelease: isClient && enabled("releaseFunds"), canDispute: isParty && enabled("raiseDispute"),

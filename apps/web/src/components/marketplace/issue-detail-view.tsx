@@ -63,7 +63,7 @@ const ISSUE_QUERY = `
 const ACTIONS_QUERY = `
   query IssueActions($id: ID!) {
     issue(id: $id) {
-      viewerCapabilities { canApply canSelect canFund canSubmit canRelease canRequestChanges canDispute canProposeSettlement canRevokeSettlement canAcceptSettlement canSubmitEvidence canChallengeRuling canFinalizeRuling canFinalizeArbiterTimeoutSplit canClaimMissedDeliveryRefund canClaimReviewTimeout similarFixIssueId }
+      viewerCapabilities { canApply canSelect canFund canSubmit canRelease canRequestChanges canDispute canProposeSettlement canRevokeSettlement canAcceptSettlement canSubmitEvidence canChallengeRuling canFinalizeRuling canFinalizeArbiterTimeoutSplit canClaimMissedDeliveryRefund canClaimReviewTimeout similarFixIssueId canDeclineReuseOffer reuseOfferUntil }
       escrow { availableActions { action reasonDisabled } }
     }
   }
@@ -72,6 +72,7 @@ const ACTIONS_QUERY = `
 const APPLY_MUTATION = `mutation Apply($input: ApplyToIssueInput!) { applyToIssue(input: $input) { id status } }`;
 const WITHDRAW_APPLICATION = `mutation WithdrawApp($id: ID!) { withdrawApplication(id: $id) { id status } }`;
 const REJECT_APPLICATION = `mutation RejectApp($id: ID!) { rejectApplication(id: $id) { id status } }`;
+const DECLINE_REUSE_OFFER = `mutation DeclineReuseOffer($issueId: ID!) { declineReuseOffer(issueId: $issueId) }`;
 const UPDATE_ISSUE = `mutation UpdateIssue($input: UpdateIssueInput!) { updateIssue(input: $input) { id title description category status bountyAmount { formatted } } }`;
 const SELECT_DEVELOPER = `mutation SelectDeveloper($issue: ID!, $application: ID!, $deadline: String!) { selectDeveloper(issueId: $issue, applicationId: $application, deliveryDeadline: $deadline) { id status escrowKey termsHash amountRaw deliveryDeadline } }`;
 const RESERVATION_QUERY = `query Reservation($issueId: ID!) { reservation(issueId: $issueId) { id status chainId contractAddress tokenAddress escrowKey termsHash amountRaw deliveryDeadline clientWallet developerWallet } }`;
@@ -108,7 +109,7 @@ type PreparedStep = { intentId: string; method: string; contractAddress: string;
 
 type ReservationRow = { id: string; status: string; chainId: number; contractAddress: string; tokenAddress: string; escrowKey: string; termsHash: string; amountRaw: string; deliveryDeadline: string; clientWallet: string; developerWallet: string };
 
-type ViewerCapabilities = { canApply?: boolean; canSelect: boolean; canFund: boolean; canSubmit: boolean; canRelease: boolean; canRequestChanges: boolean; canDispute: boolean; canProposeSettlement: boolean; canRevokeSettlement: boolean; canAcceptSettlement: boolean; canSubmitEvidence: boolean; canChallengeRuling: boolean; canFinalizeRuling: boolean; canFinalizeArbiterTimeoutSplit: boolean; canClaimMissedDeliveryRefund: boolean; canClaimReviewTimeout: boolean; similarFixIssueId?: string | null };
+type ViewerCapabilities = { canApply?: boolean; canSelect: boolean; canFund: boolean; canSubmit: boolean; canRelease: boolean; canRequestChanges: boolean; canDispute: boolean; canProposeSettlement: boolean; canRevokeSettlement: boolean; canAcceptSettlement: boolean; canSubmitEvidence: boolean; canChallengeRuling: boolean; canFinalizeRuling: boolean; canFinalizeArbiterTimeoutSplit: boolean; canClaimMissedDeliveryRefund: boolean; canClaimReviewTimeout: boolean; similarFixIssueId?: string | null; canDeclineReuseOffer?: boolean; reuseOfferUntil?: string | null };
 type IssueDetail = IssueItem & { noExecutableTests: boolean; githubRepo?: string | null; bountyRaw: string; bountyDecimals: number; clientId: string; developerId?: string | null; developer?: IssueItem["client"] | null; viewerCapabilities?: ViewerCapabilities | null; escrow?: { amountRaw?: string; availableActions?: Array<{ action: string; reasonDisabled: string | null }> } | null };
 type Application = { id: string; status: string; message?: string | null; createdAt: string; reuseOfIssueId?: string | null; developer: IssueItem["client"] & { skills?: string[] } };
 
@@ -436,6 +437,16 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
       setApplicationText("");
       await load("applications");
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not apply."); }
+    finally { setIsWorking(false); }
+  };
+
+  const declineReuseOffer = async () => {
+    setIsWorking(true); setError(null); setNotice(null);
+    try {
+      await graphqlRequest(DECLINE_REUSE_OFFER, { issueId });
+      setNotice("Offer declined. The bounty is now open to everyone.");
+      await load("applications");
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not decline the offer."); }
     finally { setIsWorking(false); }
   };
 
@@ -1330,9 +1341,21 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                               Reuse my fix of issue BR-{issue.viewerCapabilities.similarFixIssueId.slice(0, 8)} for {reusePrice} {issue.token.symbol} ({REUSE_PRICE_BPS / 100}% of the bounty)
                             </label>
                           )}
+                          {issue.viewerCapabilities?.reuseOfferUntil && (
+                            <p style={{ fontSize: 13, color: "var(--ink-2)", margin: 0 }} data-testid="reuse-offer-note">
+                              {issue.viewerCapabilities.canApply
+                                ? `You fixed a matching issue, so you can apply first until ${new Date(issue.viewerCapabilities.reuseOfferUntil).toLocaleString()}.`
+                                : `Reserved for the developer who fixed a matching issue until ${new Date(issue.viewerCapabilities.reuseOfferUntil).toLocaleString()}.`}
+                            </p>
+                          )}
                           <button type="submit" className="btn btn-p" disabled={isWorking || issue.viewerCapabilities?.canApply !== true}>
                             <MessageSquare className="ico" style={{ width: 14, height: 14 }} /> Apply to this task
                           </button>
+                          {issue.viewerCapabilities?.canDeclineReuseOffer && (
+                            <button type="button" className="btn btn-o btn-sm" disabled={isWorking} onClick={declineReuseOffer}>
+                              Decline and open to everyone
+                            </button>
+                          )}
                         </form>
                       )}
                     </>

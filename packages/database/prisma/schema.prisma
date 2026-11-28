@@ -409,6 +409,8 @@ model IssueSimilarity {
   developerId    String
   developer      User     @relation(fields: [developerId], references: [id], onDelete: Cascade)
   score          Float // AI confidence 0..1, not money
+  offerExpiresAt DateTime?
+  declinedAt     DateTime?
   createdAt      DateTime @default(now())
 
   @@unique([issueId, similarIssueId])

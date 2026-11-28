@@ -150,4 +150,22 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("similar issue detection on test
     await vi.waitFor(async () => expect(await prisma.aILog.count({ where: { issueId: createdId, status: "ERROR" } })).toBeGreaterThan(0), { timeout: 15_000 });
     expect((await notifications()).length).toBe(before);
   }, 30_000);
+
+  it("offers a 48-hour priority window only to the highest-scoring developer", async () => {
+    vi.stubEnv("AI_BASE_URL", "http://127.0.0.1:4019");
+    const title = "Safari wallet login spins after SIWE signature";
+    const rival = await issue({ title, description: LOGIN_BUG, clientId: oldClient, status: "COMPLETED", developerId: otherDev });
+    const id = await newIssue(title, LOGIN_BUG);
+    const before = Date.now();
+    await detectSimilarIssues(prisma, id, await client(), answer(JSON.stringify({ matches: [
+      { issueId: rival, score: 0.85, reason: "same bug" },
+      { issueId: solvedId, score: 0.95, reason: "same bug" },
+    ] })));
+    const rows = await prisma.issueSimilarity.findMany({ where: { issueId: id } });
+    expect(rows).toHaveLength(2);
+    expect(rows.find((r) => r.developerId === otherDev)?.offerExpiresAt).toBeNull();
+    const until = rows.find((r) => r.developerId === oldDev)?.offerExpiresAt?.getTime() ?? 0;
+    expect(until - before).toBeGreaterThanOrEqual(48 * 3_600_000);
+    expect(until - Date.now()).toBeLessThanOrEqual(48 * 3_600_000);
+  });
 });

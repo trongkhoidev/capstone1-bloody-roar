@@ -52,7 +52,6 @@ export function HomePageView() {
   const status = useAuthStore((state) => state.status);
   const { theme, t } = useUiPreferences();
 
-  const [activeSort, setActiveSort] = useState<"HOT" | "CLOSING" | "HIGHEST" | "NEWEST">("HOT");
   const [issues, setIssues] = useState<IssueItem[]>([]);
   const [openBountiesCount, setOpenBountiesCount] = useState<number | null>(null);
   const [escrowTotal, setEscrowTotal] = useState<string | null>(null);
@@ -66,7 +65,7 @@ export function HomePageView() {
 
   useEffect(() => {
     let active = true;
-    queryClient.fetchQuery({ queryKey: ["home-issues"], queryFn: () => graphqlRequest<IssuesResponse>(ISSUES_QUERY, { first: 6 }) })
+    queryClient.fetchQuery({ queryKey: ["home-issues"], queryFn: () => graphqlRequest<IssuesResponse>(ISSUES_QUERY, { first: 5 }) })
       .then((res) => {
         if (!active) return;
         const edges = res?.issues?.edges ?? [];
@@ -98,17 +97,6 @@ export function HomePageView() {
     };
   }, [queryClient]);
 
-  const sortedIssues = [...issues].sort((a, b) => {
-    if (activeSort === "HIGHEST") return b.bountyAmount - a.bountyAmount;
-    if (activeSort === "CLOSING") {
-      const aTime = a.expiresAt ? new Date(a.expiresAt).getTime() : Number.POSITIVE_INFINITY;
-      const bTime = b.expiresAt ? new Date(b.expiresAt).getTime() : Number.POSITIVE_INFINITY;
-      return aTime - bTime;
-    }
-    if (activeSort === "HOT") return b.viewCount - a.viewCount;
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
-
   return (
     <div className={`br ${theme === "dark" ? "dark" : ""}`}>
       <HomeBanner stats={{ open: openBountiesCount, escrow: escrowTotal, developers: activeDevelopers }} />
@@ -119,47 +107,15 @@ export function HomePageView() {
           <div className="cols">
             {/* Left Column: Top Bounties */}
             <div style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
-              <div className="ph" style={{ alignItems: "center" }}>
-                <h2 className="h1" style={{ fontSize: 22 }}>Top bounties</h2>
-                <div className="seg" role="group" aria-label="Sort">
-                  <button
-                    type="button"
-                    className={activeSort === "HOT" ? "on" : ""}
-                    onClick={() => setActiveSort("HOT")}
-                  >
-                    Hot
-                  </button>
-                  <button
-                    type="button"
-                    className={activeSort === "CLOSING" ? "on" : ""}
-                    onClick={() => setActiveSort("CLOSING")}
-                  >
-                    Closing soon
-                  </button>
-                  <button
-                    type="button"
-                    className={activeSort === "HIGHEST" ? "on" : ""}
-                    onClick={() => setActiveSort("HIGHEST")}
-                  >
-                    Highest reward
-                  </button>
-                  <button
-                    type="button"
-                    className={activeSort === "NEWEST" ? "on" : ""}
-                    onClick={() => setActiveSort("NEWEST")}
-                  >
-                    Newest
-                  </button>
-                </div>
-              </div>
+              <h2 className="h1" style={{ fontSize: 22 }}>Latest bounties</h2>
 
               <div className="list">
-                {sortedIssues.length > 0 ? (
-                  sortedIssues.slice(0, 5).map((issue) => (
+                {issues.length > 0 ? (
+                  issues.map((issue) => (
                     <IssueCard key={issue.id} issue={issue} />
                   ))
                 ) : (
-                  <p style={{ color: "var(--ink-3)", fontSize: 14, margin: "16px 0" }}>{t("noIssuesYet")}</p>
+                  <p style={{ color: "var(--ink-3)", fontSize: 14, padding: "24px 18px" }}>{t("noIssuesYet")}</p>
                 )}
               </div>
 
@@ -183,56 +139,21 @@ export function HomePageView() {
                 </div>
               </section>
 
-              {/* Recent payouts */}
               <section className="panel">
-                <div className="panel-h">Recent payouts</div>
-                <div className="panel-b">
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-                    <span>
-                      <span className="badge b-open">Released</span>{" "}
-                      <span className="mono" style={{ color: "var(--ink-3)", fontSize: 12 }}>BR-0991</span>
-                    </span>
-                    <span className="mono" style={{ color: "var(--gold)", fontWeight: 600 }}>1,218.75</span>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-                    <span>
-                      <span className="badge b-attn">Settled 80/20</span>{" "}
-                      <span className="mono" style={{ color: "var(--ink-3)", fontSize: 12 }}>BR-0931</span>
-                    </span>
-                    <span className="mono" style={{ color: "var(--gold)", fontWeight: 600 }}>585.00</span>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-                    <span>
-                      <span className="badge b-mut">Refunded</span>{" "}
-                      <span className="mono" style={{ color: "var(--ink-3)", fontSize: 12 }}>BR-0975</span>
-                    </span>
-                    <span className="mono" style={{ color: "var(--ink-2)", fontWeight: 600 }}>400.00</span>
-                  </div>
+                <div className="panel-h">Popular skills</div>
+                <div className="panel-b flex flex-wrap gap-1.5">
+                  {["solidity", "foundry", "react", "typescript", "audit", "nextjs", "security", "slither"].map((skill) => (
+                    <Link key={skill} href={`/marketplace?skills=${encodeURIComponent(skill)}`} className="tag hover:brightness-95">
+                      {skill}
+                    </Link>
+                  ))}
                 </div>
               </section>
 
-              {/* Top developers */}
               <section className="panel">
-                <div className="panel-h">Top developers this month</div>
-                <div className="panel-b">
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span className="mono" style={{ color: "var(--ink-3)", width: 14 }}>1</span>
-                    <span className="av av2">MN</span>
-                    <span style={{ flex: 1, fontWeight: 500 }}>Minh Nguyen</span>
-                    <span className="mono" style={{ color: "var(--gold)", fontWeight: 600 }}>4,210</span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span className="mono" style={{ color: "var(--ink-3)", width: 14 }}>2</span>
-                    <span className="av av3">QL</span>
-                    <span style={{ flex: 1, fontWeight: 500 }}>Quang Le</span>
-                    <span className="mono" style={{ color: "var(--gold)", fontWeight: 600 }}>3,075</span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span className="mono" style={{ color: "var(--ink-3)", width: 14 }}>3</span>
-                    <span className="av av4">TV</span>
-                    <span style={{ flex: 1, fontWeight: 500 }}>Thao Vu</span>
-                    <span className="mono" style={{ color: "var(--gold)", fontWeight: 600 }}>1,940</span>
-                  </div>
+                <div className="panel-h">Escrow guarantee</div>
+                <div className="panel-b text-xs text-[var(--ink-2)] leading-relaxed">
+                  Each reward is locked in the escrow contract before work starts. Payouts are checked against on-chain receipts, and a full refund pays no platform fee.
                 </div>
               </section>
             </aside>
@@ -255,8 +176,6 @@ export function HomePageView() {
           <nav aria-label="Marketplace">
             <span className="lab">Marketplace</span>
             <Link href="/marketplace">Browse bounties</Link>
-            <Link href="/marketplace?skills=solidity">Skills</Link>
-            <Link href="/marketplace">Developers</Link>
             <Link href="/issues/create">Post a bounty</Link>
           </nav>
           <nav aria-label="Escrow">

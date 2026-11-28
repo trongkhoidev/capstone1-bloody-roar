@@ -40,10 +40,10 @@ export function Navbar() {
     <header className="top sticky top-0 z-40 w-full">
       <div className="top-in">
         {/* Logo with Claude Design Silver Wolf Mark */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-5 shrink-0">
           <Link href="/" className="logo text-[var(--ink)] hover:opacity-95 transition-opacity" data-testid="navbar-logo">
-            <WolfLogo size={34} />
-            <span className="font-bold tracking-tight text-base sm:text-lg">Bloody-Roar</span>
+            <WolfLogo size={30} />
+            <span className="font-bold tracking-tight text-base">Bloody-Roar</span>
           </Link>
 
           {/* Claude Design Top Nav Links */}
@@ -77,17 +77,16 @@ export function Navbar() {
         <GlobalSearch />
 
         {/* Right side controls */}
-        <div className="tb-r ml-auto flex items-center gap-3">
+        <div className="tb-r ml-auto flex items-center gap-2">
           <MessagesLink />
           <div className="hidden sm:block">
             <NotificationsMenu />
           </div>
 
-          {/* Post a bounty CTA button */}
           {isMounted && (
             <Link
               href="/issues/create"
-              className="btn btn-p btn-sm hidden sm:inline-flex items-center gap-1.5"
+              className="btn btn-p hidden sm:inline-flex items-center gap-1.5 ml-2"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>{t("createBounty") || "Post a bounty"}</span>

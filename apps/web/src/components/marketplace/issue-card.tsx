@@ -70,7 +70,7 @@ export function IssueCard({ issue, onSkillClick }: IssueCardProps) {
 
   return (
     <article
-      className="sum hover:bg-[var(--surface-2)] transition-colors border-b border-[var(--line)] last:border-b-0 p-4 sm:p-[16px_18px]"
+      className="sum"
       data-testid={`issue-card-${issue.id}`}
     >
       {/* -------------------------------------------------------------
@@ -81,6 +81,8 @@ export function IssueCard({ issue, onSkillClick }: IssueCardProps) {
           <span className="mono font-semibold">${issue.bountyAmount.toLocaleString()}</span>
           <small className="mono uppercase font-medium">{issue.token.symbol}</small>
         </div>
+
+        <span className={`badge ${status.badge}`}>{status.label}</span>
 
         <div className={`apps ${issue.applicationCount ? "has" : ""}`} title="Submitted applications">
           <span className="mono font-semibold">{issue.applicationCount || 0}</span>{" "}
@@ -104,19 +106,18 @@ export function IssueCard({ issue, onSkillClick }: IssueCardProps) {
       <div className="flex-1 min-w-0 flex flex-col justify-between">
         <div>
           {/* Top category & tags bar */}
-          <div className="s-top flex items-center gap-2 mb-1 flex-wrap text-xs text-[var(--ink-3)]">
-            <span className={`badge ${status.badge}`}>{status.label}</span>
-            <span className="badge b-info font-medium">{issue.category}</span>
+          <div className="s-top">
+            <span className="capitalize">{issue.category.toLowerCase()}</span>
             {issue.difficulty && (
-              <span className="badge b-mut font-medium">{issue.difficulty}</span>
+              <>
+                <span aria-hidden>·</span>
+                <span className="capitalize">{issue.difficulty.toLowerCase()}</span>
+              </>
             )}
-            <span className="mono text-[11px] text-[var(--ink-3)] ml-auto">
-              #{issue.id.slice(-6)}
-            </span>
+            <span className="mono ml-auto">#{issue.id.slice(-6)}</span>
           </div>
 
-          {/* Bounty Title */}
-          <h2 className="s-title mt-1">
+          <h2 className="s-title">
             <Link
               href={`/issues/${issue.id}`}
               className="text-[var(--ink)] hover:text-[var(--link)] font-semibold transition-colors"
@@ -132,13 +133,13 @@ export function IssueCard({ issue, onSkillClick }: IssueCardProps) {
           )}
 
           {/* Excerpt description */}
-          <p className="s-ex mt-1 text-[var(--ink-2)] text-[13.5px] line-clamp-2">
+          <p className="s-ex">
             {description}
           </p>
         </div>
 
         {/* Bottom meta & skills */}
-        <div className="s-meta mt-3 pt-2 flex items-center justify-between gap-3 flex-wrap border-t border-[var(--line)] border-dashed">
+        <div className="s-meta">
           {/* Skills tags */}
           <div className="tags flex gap-1.5 flex-wrap">
             {issue.requiredSkills.map((skill) => (
@@ -161,7 +162,7 @@ export function IssueCard({ issue, onSkillClick }: IssueCardProps) {
             <span className="font-semibold text-[var(--ink-2)]">
               {issue.client.name || shortenAddress(issue.client.walletAddress)}
             </span>
-            <span className="text-[var(--gold)] font-medium">
+            <span className="mono text-[var(--ink-2)]">
               {issue.client.reputationScore} rep
             </span>
             {issue.client.isGithubVerified && (

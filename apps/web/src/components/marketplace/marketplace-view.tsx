@@ -11,7 +11,7 @@ import type { IssueItem } from "./issue-card";
 import { useUiPreferences } from "@/lib/ui-preferences";
 import { LeftSidebar } from "@/components/layout/left-sidebar";
 
-const PAGE_SIZE = 12;
+const PAGE_SIZES = [15, 30, 50] as const;
 
 const ISSUES_QUERY = `
   query MarketplaceIssues(
@@ -83,15 +83,17 @@ export function MarketplaceView({ initialSearch = "", initialSkill }: { initialS
   const [issues, setIssues] = useState<IssueItem[]>([]);
   const [dataSource, setDataSource] = useState<DataSource>("loading");
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [endCursor, setEndCursor] = useState<string | null>(null);
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZES[0]);
+  const [page, setPage] = useState(0);
+  const [cursors, setCursors] = useState<(string | null)[]>([null]);
   const [totalCount, setTotalCount] = useState(0);
   const [stats, setStats] = useState<StatsResponse["marketplaceStats"] | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
 
   const variables = useMemo(() => ({
-    first: PAGE_SIZE,
+    first: pageSize,
     category: filters.category || undefined,
     status: filters.status || undefined,
     bountyMin: filters.bountyMin != null ? String(filters.bountyMin) : undefined,
@@ -105,45 +107,39 @@ export function MarketplaceView({ initialSearch = "", initialSkill }: { initialS
         : filters.sortBy === "DEADLINE"
           ? "DEADLINE"
           : "CREATED_AT",
-  }), [filters]);
+  }), [filters, pageSize]);
 
-  const fetchPage = useCallback(async (after: string | null, append: boolean, signal?: AbortSignal) => {
-    if (append) setIsLoadingMore(true);
-    else {
-      setIsLoading(true);
-      setRequestError(null);
-    }
+  const fetchPage = useCallback(async (after: string | null, signal?: AbortSignal) => {
+    setIsLoading(true);
+    setRequestError(null);
 
     try {
       const result = await queryClient.fetchQuery({ queryKey: ["marketplace-issues", variables, after], queryFn: ({ signal: querySignal }) => graphqlRequest<IssuesResponse>(ISSUES_QUERY, { ...variables, after }, querySignal) });
       if (signal?.aborted) return;
       const page = result.issues;
       const rows = page.edges.map(({ node }) => ({ ...node, bountyAmount: Number(node.bountyAmount.formatted), applicationCount: node.applicationCount ?? 0 }));
-      setIssues((previous) => append ? [...previous, ...rows] : rows);
+      setIssues(rows);
       setTotalCount(page.totalCount);
       setHasNextPage(page.pageInfo.hasNextPage);
       setEndCursor(page.pageInfo.endCursor);
       setDataSource("live");
     } catch (error) {
       if (signal?.aborted) return;
-      if (!append) {
-        setIssues([]);
-        setTotalCount(0);
-        setHasNextPage(false);
-        setEndCursor(null);
-      }
+      setIssues([]);
+      setTotalCount(0);
+      setHasNextPage(false);
+      setEndCursor(null);
       setRequestError(error instanceof Error ? error.message : "Could not load bounties.");
     } finally {
-      if (!signal?.aborted) {
-        setIsLoading(false);
-        setIsLoadingMore(false);
-      }
+      if (!signal?.aborted) setIsLoading(false);
     }
   }, [variables, queryClient]);
 
   useEffect(() => {
     const controller = new AbortController();
-    const timer = window.setTimeout(() => void fetchPage(null, false, controller.signal), filters.search ? 250 : 0);
+    setPage(0);
+    setCursors([null]);
+    const timer = window.setTimeout(() => void fetchPage(null, controller.signal), filters.search ? 250 : 0);
     return () => {
       window.clearTimeout(timer);
       controller.abort();
@@ -163,6 +159,17 @@ export function MarketplaceView({ initialSearch = "", initialSkill }: { initialS
   const handleFilterChange = (next: Partial<FilterState>) => {
     setFilters((current) => ({ ...current, ...next }));
   };
+  const goToPage = (next: number) => {
+    const after = next > page ? endCursor : cursors[next] ?? null;
+    if (next > page && !endCursor) return;
+    if (next > page) setCursors([...cursors.slice(0, next), endCursor]);
+    setPage(next);
+    void fetchPage(after);
+    document.getElementById("tasks")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const firstShown = issues.length ? page * pageSize + 1 : 0;
+  const lastShown = page * pageSize + issues.length;
   const resetFilters = () => setFilters({ search: "", category: "", status: "", sortBy: "NEWEST" });
 
   return (
@@ -204,7 +211,7 @@ export function MarketplaceView({ initialSearch = "", initialSkill }: { initialS
                   <span>{requestError}</span>
                   <button
                     type="button"
-                    onClick={() => void fetchPage(null, false)}
+                    onClick={() => void fetchPage(cursors[page] ?? null)}
                     className="btn btn-sm btn-o"
                   >
                     Try again
@@ -228,17 +235,31 @@ export function MarketplaceView({ initialSearch = "", initialSkill }: { initialS
                 )}
               </div>
 
-              {hasNextPage && (
-                <div className="mt-6 flex justify-center">
-                  <button
-                    type="button"
-                    className="btn btn-o"
-                    onClick={() => endCursor && void fetchPage(endCursor, true)}
-                    disabled={isLoadingMore}
-                  >
-                    {isLoadingMore ? "Loading…" : "Load more bounties"}
-                  </button>
-                </div>
+              {totalCount > 0 && (
+                <nav className="pager" aria-label="Bounty pages">
+                  <span className="pager-info">
+                    Showing <span className="mono">{firstShown}–{lastShown}</span> of <span className="mono">{totalCount}</span> bounties
+                  </span>
+                  <div className="pages">
+                    <button type="button" onClick={() => goToPage(page - 1)} disabled={page === 0 || isLoading} data-testid="page-prev">
+                      Prev
+                    </button>
+                    <span className="mono" aria-current="page">{page + 1} / {totalPages}</span>
+                    <button type="button" onClick={() => goToPage(page + 1)} disabled={!hasNextPage || isLoading} data-testid="page-next">
+                      Next
+                    </button>
+                  </div>
+                  <div className="pager-size">
+                    <span>Per page</span>
+                    <div className="seg" role="group" aria-label="Bounties per page">
+                      {PAGE_SIZES.map((size) => (
+                        <button key={size} type="button" className={`mono ${size === pageSize ? "on" : ""}`} aria-pressed={size === pageSize} onClick={() => setPageSize(size)}>
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </nav>
               )}
             </div>
 

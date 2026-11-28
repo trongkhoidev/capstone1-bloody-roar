@@ -11,7 +11,7 @@ import Image from "next/image";
 import { issueStatus } from "@/lib/issue-status";
 import { canWriteIssueChat } from "@/lib/chat-access";
 import { AlertTriangle, ArrowLeft, Eye, MessageSquare, ShieldCheck, Users, ExternalLink, Clock } from "lucide-react";
-import { graphqlRequest } from "@/lib/graphql-client";
+import { GraphQLRequestError, graphqlRequest } from "@/lib/graphql-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { IssueChatRoom as ChatRoom } from "@/components/chat/chat-room";
@@ -163,6 +163,9 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const [draftSaves, setDraftSaves] = useState(0);
   const [preparedSubmit, setPreparedSubmit] = useState<PreparedStep | null>(null);
   const [txIntents, setTxIntents] = useState<string[] | null>(null);
+  const [releaseTarget, setReleaseTarget] = useState<Submission | null>(null);
+  const [seenLatestId, setSeenLatestId] = useState<string | null>(null);
+  const [deliveryChanged, setDeliveryChanged] = useState(false);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [deliveryDescription, setDeliveryDescription] = useState("");
   const [pullRequestUrl, setPullRequestUrl] = useState("");
@@ -278,14 +281,22 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     void load("initial");
   }, [issueId, load, queryClient, user?.id, setError]);
 
+  const refreshSubmissions = useCallback(async () => {
+    const refreshed = await graphqlRequest<SubmissionResponse>(SUBMISSIONS_QUERY, { issueId });
+    setSubmissions(refreshed.submissions);
+  }, [issueId]);
+  useEffect(() => { setSeenLatestId(null); setDeliveryChanged(false); setReleaseTarget(null); }, [issueId]);
+  const latestDelivery = submissions[0];
+  useEffect(() => { if (latestDelivery) setSeenLatestId((seen) => seen ?? latestDelivery.id); }, [latestDelivery]);
+
   // Live refresh: the server emits escrow:invalidate to the task room when a confirmed transaction changes the escrow.
   useEffect(() => {
     if (!user) return;
     const socket = io({ withCredentials: true, transports: ["websocket"] });
     socket.emit("task:join", issueId);
-    socket.on("escrow:invalidate", () => { stopChain(); void load(); });
+    socket.on("escrow:invalidate", () => { stopChain(); void load(); void refreshSubmissions().catch(() => undefined); });
     return () => { socket.disconnect(); };
-  }, [user, issueId, load, stopChain]);
+  }, [user, issueId, load, stopChain, refreshSubmissions]);
 
   // Fallback after an on-chain action: refresh every 4 seconds, up to 30 times, while the chain confirms.
   const [chainPending, setChainPending] = useState(false);
@@ -415,12 +426,22 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
         await graphqlRequest(REQUEST_CHANGES, { id: submissionId, notes: reviewNotes.trim() });
         setNotice("Changes requested. The developer has been notified.");
       }
-      const refreshed = await graphqlRequest<SubmissionResponse>(SUBMISSIONS_QUERY, { issueId });
-      setSubmissions(refreshed.submissions); setReviewNotes("");
+      await refreshSubmissions(); setReviewNotes("");
       await load();
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not review delivery."); }
+    } catch (reason) {
+      if (reason instanceof GraphQLRequestError && reason.code === "DELIVERY_CHANGED") {
+        setDeliveryChanged(true);
+        await refreshSubmissions().catch(() => undefined);
+      } else setError(reason instanceof Error ? reason.message : "Could not review delivery.");
+    }
     finally { setIsWorking(false); }
   };
+  const confirmRelease = () => {
+    const target = releaseTarget;
+    setReleaseTarget(null);
+    if (target?.deliveryHash) void reviewDelivery(target.id, true, target.deliveryHash);
+  };
+  const openNewVersion = () => { setSeenLatestId(latestDelivery?.id ?? null); setDeliveryChanged(false); };
 
   // Runs one prepare mutation from ESCROW_ACTIONS: the server builds the call, the wallet sends it.
   const runEscrowAction = async (action: (typeof ESCROW_ACTIONS)[number], percent?: string) => {
@@ -615,6 +636,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const reusePrice = formatTokenAmount(reuseRaw, issue.bountyDecimals);
   const reuseDeposit = formatTokenAmount(depositTotal(reuseRaw, PLATFORM_FEE_BPS), issue.bountyDecimals);
   const feePercent = `${PLATFORM_FEE_BPS / 100}%`;
+  const newVersion = isClient && (deliveryChanged || Boolean(seenLatestId && latestDelivery && latestDelivery.id !== seenLatestId));
 
   const statusInfo = issueStatus(issue.status);
 
@@ -1057,6 +1079,14 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                       <span className="badge b-mut" style={{ marginLeft: "auto" }}>{submissions.length} total</span>
                     </div>
                     <div className="card-b">
+                      {newVersion && (
+                        <div className="banner bn-warn" role="alert">
+                          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                            <b>The developer submitted a new version. Review it before releasing.</b>
+                            <button type="button" className="btn btn-o btn-sm" onClick={openNewVersion}>Open the new version</button>
+                          </div>
+                        </div>
+                      )}
                       {submissions.length === 0 ? (
                         <p style={{ color: "var(--ink-3)", margin: 0 }}>No delivery submitted yet.</p>
                       ) : (
@@ -1079,6 +1109,11 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                               </span>
                               <span className="badge b-open">{sub.status.replaceAll("_", " ")}</span>
                             </div>
+                            {sub.deliveryHash && (
+                              <p className="mono" style={{ margin: 0, fontSize: 12, color: "var(--ink-3)", wordBreak: "break-all" }}>
+                                deliveryHash <span style={{ color: "var(--ink-2)" }}>{sub.deliveryHash}</span>
+                              </p>
+                            )}
 
                             {sub.pullRequestUrl && (
                               <div className="pr">
@@ -1094,7 +1129,10 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                               </p>
                             )}
 
-                            {requiresTests && <TestRunPanel issueId={issueId} submissionId={sub.id} />}
+                            {requiresTests && <>
+                              <TestRunPanel issueId={issueId} submissionId={sub.id} />
+                              <p className="mut" style={{ margin: 0, fontSize: 12 }}>Automated checks are a signal, not a guarantee.</p>
+                            </>}
                             {sub.reviewNotes && (
                               <div style={{ background: "var(--surface-2)", padding: 10, borderRadius: 6, fontSize: 12.5, color: "var(--ink-2)" }}>
                                 <b>Review notes:</b> {sub.reviewNotes}
@@ -1125,14 +1163,15 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                                   <button
                                     type="button"
                                     className="btn btn-ok btn-sm"
-                                    disabled={isWorking || !actionEnabled("releaseFunds") || !sub.deliveryHash}
+                                    disabled={isWorking || newVersion || !actionEnabled("releaseFunds") || !sub.deliveryHash}
                                     title={actionOf("releaseFunds")?.reasonDisabled ?? undefined}
-                                    onClick={() => { if (sub.deliveryHash) void reviewDelivery(sub.id, true, sub.deliveryHash); }}
+                                    onClick={() => setReleaseTarget(sub)}
                                   >
-                                    Approve delivery
+                                    Release
                                   </button>
                                   {reasonLine("releaseFunds")}
                                 </div>
+                                <p className="mut" style={{ margin: 0, fontSize: 12 }}>Change requests are saved on Bloody-Roar only. Nothing is sent on-chain.</p>
                               </div>
                             )}
                           </div>
@@ -1140,6 +1179,35 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                       )}
                     </div>
                   </section>
+                  {releaseTarget?.deliveryHash && (
+                    <div
+                      role="presentation"
+                      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60"
+                      onClick={(e) => { if (e.target === e.currentTarget) setReleaseTarget(null); }}
+                      onKeyDown={(e) => { if (e.key === "Escape") setReleaseTarget(null); }}
+                    >
+                      <div className="modal" role="dialog" aria-modal="true" aria-labelledby="release-t">
+                        <div className="mh">
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <h2 id="release-t" style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Release payment</h2>
+                            <p style={{ fontSize: 12, color: "var(--ink-3)", margin: "2px 0 0" }}>You are approving this exact delivery. A release cannot be undone.</p>
+                          </div>
+                        </div>
+                        <div className="mb">
+                          <dl className="kv">
+                            <dt>Delivery</dt><dd className="mono">{`${releaseTarget.deliveryHash.slice(0, 10)}…${releaseTarget.deliveryHash.slice(-6)}`}</dd>
+                            <dt>Developer receives</dt><dd className="mono" data-testid="release-developer">{devShare} {issue.token.symbol}</dd>
+                            <dt>Platform fee ({feePercent})</dt><dd className="mono" data-testid="release-fee">{platformFee} {issue.token.symbol}</dd>
+                            <dt>Paid from your escrow</dt><dd className="mono" data-testid="release-total">{clientTotal} {issue.token.symbol}</dd>
+                          </dl>
+                          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                            <button type="button" className="btn btn-o btn-sm" onClick={() => setReleaseTarget(null)}>Cancel</button>
+                            <button type="button" className="btn btn-ok btn-sm" onClick={confirmRelease}>Confirm release</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
 

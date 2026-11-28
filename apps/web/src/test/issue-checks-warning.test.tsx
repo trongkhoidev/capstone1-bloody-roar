@@ -168,6 +168,6 @@ describe("approving a delivery", () => {
     await showIssue();
     await screen.findByText("Fix addition");
     await act(async () => { fireEvent.click(screen.getByRole("tab", { name: /delivery/i })); });
-    expect(await screen.findByRole("button", { name: "Approve delivery" })).toBeDisabled();
+    expect(await screen.findByRole("button", { name: "Release" })).toBeDisabled();
   });
 });

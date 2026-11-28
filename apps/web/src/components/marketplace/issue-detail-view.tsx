@@ -15,6 +15,7 @@ import { useAuthStore } from "@/lib/store/use-auth-store";
 import { IssueChatRoom as ChatRoom } from "@/components/chat/chat-room";
 import { SourcePanel } from "@/components/issues/source-panel";
 import { TestRunPanel } from "@/components/issues/test-run-panel";
+import { TransactionStatus } from "@/components/escrow/transaction-status";
 import { TestCasePanel } from "@/components/issues/test-case-panel";
 import { IssueComments } from "@/components/marketplace/issue-comments";
 import { Button } from "@/components/ui/button";
@@ -157,6 +158,9 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const checksRequired = useRef(false);
   const viewed = useRef<string | null>(null);
   const [testsPassed, setTestsPassed] = useState(false);
+  const [draftSaves, setDraftSaves] = useState(0);
+  const [preparedSubmit, setPreparedSubmit] = useState<PreparedStep | null>(null);
+  const [txIntents, setTxIntents] = useState<string[] | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [deliveryDescription, setDeliveryDescription] = useState("");
   const [pullRequestUrl, setPullRequestUrl] = useState("");
@@ -336,6 +340,11 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
   const recordTx = async (intentId: string, txHash: string) => {
     await graphqlRequest(RECORD_TX, { id: intentId, hash: txHash });
   };
+  const sendTracked = async (steps: PreparedStep[]) => {
+    setTxIntents(steps.map((step) => step.intentId));
+    await sendPreparedCalls(steps, recordTx, user!.walletAddress).catch((reason: unknown) => { setTxIntents(null); throw reason; });
+  };
+  const onTxSettled = useCallback(() => { stopChain(); void load(); }, [stopChain, load]);
 
   // Uploads one file for this task and returns its attachment id; the server checks the uploader's role in the task.
   const attachFile = async (file: File, purpose: "DELIVERY" | "EVIDENCE") => {
@@ -352,16 +361,37 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
 
   const saveDraft = async () => {
     const draft = await graphqlRequest<{ createSubmissionDraft: { id: string } }>(CREATE_DRAFT, { issue: issueId, submission: draftId, description: deliveryDescription.trim(), pullRequestUrl: pullRequestUrl.trim() || null, commitSha: commitSha.trim() || null, files: deliveryFiles });
+    setTestsPassed(false); setPreparedSubmit(null); setDraftSaves((value) => value + 1);
     setDraftId(draft.createSubmissionDraft.id); return draft.createSubmissionDraft.id;
   };
-  useEffect(() => { setDraftId(null); setTestsPassed(false); }, [issueId, deliveryDescription, pullRequestUrl, commitSha, deliveryFiles]);
+  useEffect(() => { setDraftId(null); setTestsPassed(false); setPreparedSubmit(null); }, [issueId, deliveryDescription, pullRequestUrl, commitSha, deliveryFiles]);
+
+  const hasDelivery = Boolean(deliveryDescription.trim() || pullRequestUrl.trim() || deliveryFiles.length);
+  const deliverySteps = [
+    { label: "Upload patch", done: requiresTests ? Boolean(draftId) : hasDelivery },
+    { label: requiresTests ? "Run tests" : "Run tests (not required)", done: !requiresTests || testsPassed },
+    { label: "Prepare", done: Boolean(preparedSubmit) },
+    { label: "Sign", done: false },
+  ];
+  const currentStep = deliverySteps.findIndex((step) => !step.done);
+
+  const prepareDelivery = async () => {
+    setIsWorking(true); setError(null);
+    try {
+      const id = requiresTests && draftId ? draftId : await saveDraft();
+      const prepared = await graphqlRequest<{ prepareSubmitWork: PreparedStep }>(PREPARE_SUBMIT, { id });
+      setPreparedSubmit(prepared.prepareSubmitWork);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not prepare the submission."); }
+    finally { setIsWorking(false); }
+  };
 
   const submitDelivery = async (event: React.FormEvent) => {
-    event.preventDefault(); setIsWorking(true); setError(null); setNotice(null);
+    event.preventDefault();
+    if (!preparedSubmit) return;
+    setIsWorking(true); setError(null); setNotice(null);
     try {
-      const id = await saveDraft();
-      const prepared = await graphqlRequest<{ prepareSubmitWork: PreparedStep }>(PREPARE_SUBMIT, { id });
-      await sendPreparedCalls([prepared.prepareSubmitWork], recordTx, user!.walletAddress);
+      await sendTracked([preparedSubmit]);
+      setPreparedSubmit(null);
       setDeliveryDescription(""); setPullRequestUrl(""); setCommitSha(""); setDeliveryFiles([]); setUploadStatus(null);
       const refreshed = await graphqlRequest<SubmissionResponse>(SUBMISSIONS_QUERY, { issueId });
       setSubmissions(refreshed.submissions);
@@ -376,7 +406,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     try {
       if (approved) {
         const prepared = await graphqlRequest<{ prepareReleaseFunds: PreparedStep }>(PREPARE_RELEASE, { id: issueId, deliveryHash });
-        await sendPreparedCalls([prepared.prepareReleaseFunds], recordTx, user!.walletAddress);
+        await sendTracked([prepared.prepareReleaseFunds]);
         setNotice("Escrow released on-chain. The developer can claim the payout.");
         awaitChain();
       } else {
@@ -398,7 +428,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
         ? { issue: issueId, bps: Math.round(Number(percent) * 100) }
         : { issue: issueId };
       const prepared = await graphqlRequest<Record<string, PreparedStep>>(action.mutation, variables);
-      await sendPreparedCalls([prepared[action.field]!], recordTx, user!.walletAddress);
+      await sendTracked([prepared[action.field]!]);
       setNotice(`${action.label}: sent on-chain.`);
       awaitChain();
     } catch (reason) { setError(reason instanceof Error ? reason.message : `Could not ${action.label.toLowerCase()}.`); }
@@ -410,7 +440,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     try {
       const evidence = await graphqlRequest<{ createEvidenceManifest: { id: string } }>(CREATE_EVIDENCE, { issue: issueId, statement: counterStatement.trim(), files: [] });
       const prepared = await graphqlRequest<{ prepareSubmitCounterpartyEvidence: PreparedStep }>(SUBMIT_COUNTERPARTY, { issue: issueId, manifest: evidence.createEvidenceManifest.id });
-      await sendPreparedCalls([prepared.prepareSubmitCounterpartyEvidence], recordTx, user!.walletAddress);
+      await sendTracked([prepared.prepareSubmitCounterpartyEvidence]);
       setCounterStatement(""); setNotice("Counterparty evidence sent on-chain."); awaitChain();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not submit evidence."); }
     finally { setIsWorking(false); }
@@ -514,7 +544,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
       const intent = await signFundingIntent(reservation, reservation.clientWallet, reservation.developerWallet);
       await graphqlRequest(SUBMIT_FUNDING_INTENT, { id: reservation.id, signature: intent.signature, nonce: intent.nonce, expiry: intent.intentExpiry });
       const prepared = await graphqlRequest<{ prepareEscrowDeposit: { steps: PreparedStep[] } }>(PREPARE_DEPOSIT, { id: reservation.id });
-      await sendPreparedCalls(prepared.prepareEscrowDeposit.steps, recordTx, user!.walletAddress);
+      await sendTracked(prepared.prepareEscrowDeposit.steps);
       setReservationId(null);
       setNotice("Escrow funded. The developer can start the work.");
       awaitChain();
@@ -549,7 +579,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
     try {
       const evidence = await graphqlRequest<{ createEvidenceManifest: { id: string } }>(CREATE_EVIDENCE, { issue: issueId, statement: disputeReason.trim(), files: evidenceFiles });
       const prepared = await graphqlRequest<{ prepareRaiseDispute: PreparedStep }>(PREPARE_RAISE_DISPUTE, { issue: issueId, manifest: evidence.createEvidenceManifest.id });
-      await sendPreparedCalls([prepared.prepareRaiseDispute], recordTx, user!.walletAddress);
+      await sendTracked([prepared.prepareRaiseDispute]);
       setNotice("Dispute opened on-chain. The arbiter will review the evidence.");
       setShowDisputeForm(false); setDisputeReason(""); setEvidenceFiles([]); setUploadStatus(null); awaitChain();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not open dispute."); }
@@ -691,7 +721,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
           </div>
 
           {/* Notices & Banners */}
-          {chainPending && <div className="banner bn-info"><div>Waiting for chain confirmation</div></div>}
+          {txIntents ? <TransactionStatus intentIds={txIntents} onSettled={onTxSettled} /> : chainPending && <div className="banner bn-info"><div>Waiting for chain confirmation</div></div>}
 
           {/* Main 2-column Grid */}
           <div className="cols">
@@ -940,7 +970,12 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                         <p style={{ color: "var(--ink-2)", fontSize: "13px", margin: 0 }}>
                           Submit your pull request link and verification notes. The client will review against the contract terms.
                         </p>
-                        <form onSubmit={submitDelivery} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                        <form onSubmit={submitDelivery} aria-label="Submit your delivery" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                          <ol className="stepper" aria-label="Submission steps">
+                            {deliverySteps.map((step, index) => (
+                              <li key={step.label} className={step.done ? "done" : index === currentStep ? "on" : ""}><span className="n mono">{index + 1}</span>{step.label}</li>
+                            ))}
+                          </ol>
                           <FormField label="Summary of changes" hint="What changed and how the client can verify it.">
                             <textarea
                               aria-label="Summary of changes"
@@ -990,20 +1025,26 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                             {deliveryFiles.length > 0 && <span className="mut"> {deliveryFiles.length} file(s) attached</span>}
                           </FormField>
                           {uploadStatus && <p className="mut" style={{ fontSize: 12 }}>{uploadStatus}</p>}
-                          <button
-                            type="submit"
-                            className="btn btn-p"
-                            style={{ alignSelf: "flex-start" }}
-                            disabled={isWorking || (requiresTests && !testsPassed) || !actionEnabled("submitWork") || (!deliveryDescription.trim() && !pullRequestUrl.trim() && deliveryFiles.length === 0)}
-                            title={actionOf("submitWork")?.reasonDisabled ?? undefined}
-                          >
-                            Submit for review
-                          </button>
                           {requiresTests && <>
-                            <Button type="button" variant="outline" disabled={isWorking} onClick={() => { setIsWorking(true); void saveDraft().catch((e) => setError(e.message)).finally(() => setIsWorking(false)); }}>Save draft to run tests</Button>
-                            {draftId && <TestRunPanel key={draftId} issueId={issueId} submissionId={draftId} canRun onPassed={setTestsPassed} />}
-                            {!testsPassed && <p className="text-sm">Pass the approved tests before submitting.</p>}
+                            <Button type="button" variant="outline" style={{ alignSelf: "flex-start" }} disabled={isWorking || !hasDelivery} onClick={() => { setIsWorking(true); void saveDraft().catch((e) => setError(e.message)).finally(() => setIsWorking(false)); }}>Save draft to run tests</Button>
+                            {draftId && <TestRunPanel key={`${draftId}:${draftSaves}`} issueId={issueId} submissionId={draftId} canRun onPassed={setTestsPassed} />}
+                            {!testsPassed && <p className="text-sm">Pass the approved tests on this draft before you prepare the submission.</p>}
                           </>}
+                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end" }}>
+                            <button
+                              type="button"
+                              className="btn btn-o"
+                              disabled={isWorking || !hasDelivery || Boolean(preparedSubmit) || (requiresTests && (!draftId || !testsPassed)) || !actionEnabled("submitWork")}
+                              title={actionOf("submitWork")?.reasonDisabled ?? undefined}
+                              onClick={() => void prepareDelivery()}
+                            >
+                              Prepare submission
+                            </button>
+                            <button type="submit" className="btn btn-p" disabled={isWorking || !preparedSubmit}>
+                              Submit for review
+                            </button>
+                          </div>
+                          {preparedSubmit && <p className="banner bn-warn" style={{ margin: 0 }}>You cannot change this delivery after you sign.</p>}
                           {reasonLine("submitWork")}
                         </form>
                       </div>

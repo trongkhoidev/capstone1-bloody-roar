@@ -79,6 +79,7 @@ test("E32: client funds, developer delivers, client releases, developer claims, 
     appendFileSync(uiLog, `[dump] no delivery textarea. Page text:\n${(await developer.locator("body").innerText().catch(() => "")).slice(0, 2000)}\n`);
     throw error;
   }
+  await developer.getByRole("button", { name: "Prepare submission" }).click();
   await developer.getByRole("button", { name: "Submit for review" }).click();
   await waitFor(async () => (await f.prisma.submission.findFirst({ where: { issueId: f.issueId, status: "SUBMITTED" } })) !== null);
   await expectNoError(developer);

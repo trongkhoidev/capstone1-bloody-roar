@@ -4,6 +4,7 @@ import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { assertTestDatabase } from "@bloody-roar/database/test-guard";
 import { rpc } from "./harness/chain";
+import { stopProcess } from "./harness/process";
 import { waitFor } from "./harness/waitFor";
 
 const rpcPort = Number(process.env.E2E_RPC_PORT ?? "18545");
@@ -19,9 +20,7 @@ const stop = () => stopping ??= (async () => {
   for (const { pidPath, child, log } of [...children].reverse()) {
     const saved = await readFile(pidPath, "utf8").catch(() => "");
     if (saved.trim() === String(child.pid) && child.exitCode === null) {
-      child.kill("SIGTERM");
-      await Promise.race([child.exited, Bun.sleep(10_000)]);
-      if (child.exitCode === null) { child.kill("SIGKILL"); await child.exited; }
+      await stopProcess(child);
     }
     if (saved.trim() === String(child.pid)) await unlink(pidPath).catch(() => {});
     closeSync(log);

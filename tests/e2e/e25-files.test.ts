@@ -4,6 +4,7 @@ import { assertTestDatabase } from "@bloody-roar/database/test-guard";
 import { createEvidence, raiseDispute, waitForPhase } from "./harness/dispute";
 import { fixture } from "./harness/fixture";
 import { fund, walletOf } from "./harness/funding";
+import { submitWork } from "./harness/work";
 import { login } from "./harness/wallet";
 
 beforeAll(() => assertTestDatabase(process.env.TEST_DATABASE_URL));
@@ -56,6 +57,7 @@ test("E25: delivery files reach only the task's parties, evidence reaches an adm
   const evidenceBytes = new TextEncoder().encode(`evidence ${randomUUID()}`);
   const evidenceFile = await upload(clientCookie, "EVIDENCE", f.issueId, evidenceBytes);
   const manifest = await createEvidence(f, f.client, statement, [evidenceFile.attachmentId]);
+  await submitWork(f, "Delivered files under dispute");
   await raiseDispute(f, f.client, manifest.id);
   await waitForPhase(f, "DISPUTED");
 

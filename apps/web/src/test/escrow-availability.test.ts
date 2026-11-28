@@ -13,6 +13,13 @@ describe("availableActions", () => {
     const p = { ...base, deliveryHash: "0x1" }; expect(get(p).releaseFunds?.reasonDisabled).toBeNull();
     expect(get(p).claimReviewTimeout?.reasonDisabled).not.toBeNull(); expect(get(p, p.reviewDeadline).claimReviewTimeout?.reasonDisabled).toBeNull();
   });
+  it("opens disputes only for a delivery inside the review window", () => {
+    expect(get(base).raiseDispute?.reasonDisabled).toBe("No delivery on-chain yet");
+    const p = { ...base, deliveryHash: "0x1" };
+    expect(get(p).raiseDispute?.reasonDisabled).toBeNull();
+    expect(get(p, new Date(p.reviewDeadline.getTime() - 1)).raiseDispute?.reasonDisabled).toBeNull();
+    expect(get(p, p.reviewDeadline).raiseDispute?.reasonDisabled).toBe("The review window has closed");
+  });
   it("enables evidence until 72 hours and arbiter timeout at 30 days", () => {
     const p = { ...base, phase: "DISPUTED" as const, disputeRaisedAt: now };
     expect(get(p).submitCounterpartyEvidence?.reasonDisabled).toBeNull();

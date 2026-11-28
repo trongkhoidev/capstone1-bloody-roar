@@ -41,6 +41,7 @@ export const UserRef = builder.prismaObject("User", {
     location: t.exposeString("location", { nullable: true }),
     reputationScore: t.exposeFloat("reputationScore"),
     completedTaskCount: t.exposeInt("completedTaskCount"),
+    disputesLost: t.exposeInt("disputesLost", { description: "Disputes this user raised and lost outright" }),
     attestations: t.field({
       type: [AttestationRef],
       resolve: (user, _args, ctx) => ctx.db.attestation.findMany({

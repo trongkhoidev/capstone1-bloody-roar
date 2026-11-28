@@ -31,7 +31,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("dispute evidence on test databa
     tokenId = (await prisma.token.create({ data: { name: "Evidence", symbol: "EVD", address: hex(20), decimals: 6, chainId: 31337 } })).id;
     issueId = (await prisma.issue.create({ data: { title: "Evidence issue", description: "Dispute evidence test", category: "BUG_FIX", status: "IN_PROGRESS", clientId: client.id, developerId: developer.id, tokenId, bountyAmount: "100", requiredSkills: [] } })).id;
     escrowIdHash = hex(32);
-    await prisma.escrowProjection.create({ data: { issueId, escrowKey: `evidence-${issueId}`, escrowIdHash, chainId: 31337, contractAddress: contract, client: client.walletAddress, developer: developer.walletAddress, arbiter: hex(20), feeRecipient: hex(20), amountRaw: "100000000", depositedAt: clock.now, deliveryDeadline: clock.now, reviewDeadline: clock.now, termsHash: hex(32), phase: "FUNDED", lastProjectedBlock: 1n } });
+    await prisma.escrowProjection.create({ data: { issueId, escrowKey: `evidence-${issueId}`, escrowIdHash, chainId: 31337, contractAddress: contract, client: client.walletAddress, developer: developer.walletAddress, arbiter: hex(20), feeRecipient: hex(20), amountRaw: "100000000", depositedAt: clock.now, deliveryDeadline: clock.now, reviewDeadline: new Date(clock.now.getTime() + 7 * 86_400_000), deliveryHash: hex(32), termsHash: hex(32), phase: "FUNDED", lastProjectedBlock: 1n } });
     attachmentId = (await prisma.attachment.create({ data: { issueId, uploaderId: client.id, fileName: "proof.txt", fileUrl: "/proof.txt", fileSize: 5, fileMime: "text/plain", purpose: "EVIDENCE", status: "ATTACHED", sha256: hash("proof") } })).id;
     invalidId = (await prisma.attachment.create({ data: { issueId, uploaderId: developer.id, fileName: "wrong.txt", fileUrl: "/wrong.txt", fileSize: 5, fileMime: "text/plain", purpose: "EVIDENCE", status: "ATTACHED", sha256: hash("proof") } })).id;
     const conversation = await prisma.conversation.create({ data: { issueId, kind: "ISSUE_WORK", participants: { create: [{ userId: client.id, role: "CLIENT" }, { userId: developer.id, role: "DEVELOPER" }] } } });
@@ -75,7 +75,14 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("dispute evidence on test databa
     expect(await readFile(localUploadPath(output.storageKey)!.destination, "utf8")).toBe(canonicalJson(manifest));
     const duplicate = await call(client, statement, [attachmentId], variables);
     expect((duplicate.data?.createEvidenceManifest as { id: string }).id).toBe(output.id);
-    const prep = await execute(PREPARE("prepareRaiseDispute"), { user: client, db: prisma }, { issue: issueId, manifest: output.id });
+    const prepare = () => execute(PREPARE("prepareRaiseDispute"), { user: client, db: prisma }, { issue: issueId, manifest: output.id });
+    const delivered = await prisma.escrowProjection.findUniqueOrThrow({ where: { escrowIdHash } });
+    await prisma.escrowProjection.update({ where: { escrowIdHash }, data: { deliveryHash: null } });
+    expect((await prepare()).errors?.[0]?.extensions?.code).toBe("NO_DELIVERY");
+    await prisma.escrowProjection.update({ where: { escrowIdHash }, data: { deliveryHash: delivered.deliveryHash, reviewDeadline: clock.now } });
+    expect((await prepare()).errors?.[0]?.extensions?.code).toBe("REVIEW_WINDOW_CLOSED");
+    await prisma.escrowProjection.update({ where: { escrowIdHash }, data: { reviewDeadline: delivered.reviewDeadline } });
+    const prep = await prepare();
     expect(prep.errors).toBeUndefined();
     expect((prep.data?.prepareRaiseDispute as { method: string }).method).toBe("raiseDispute");
     expect((await execute(PREPARE("prepareRaiseDispute"), { user: developer, db: prisma }, { issue: issueId, manifest: output.id })).errors?.[0]?.extensions?.code).toBe("FORBIDDEN");

@@ -46,7 +46,7 @@ const ISSUE_QUERY = `
       reservation @include(if: $initial) { id status amountRaw }
       ownerApplications @include(if: $includeApplications) {
         id status message createdAt reuseOfIssueId
-        developer { id name avatar walletAddress reputationScore isGithubVerified skills }
+        developer { id name avatar walletAddress reputationScore disputesLost isGithubVerified skills }
       }
       viewerApplication @include(if: $includeApplications) { id status message }
       viewerSubmissions @include(if: $initial) {
@@ -110,7 +110,7 @@ type ReservationRow = { id: string; status: string; chainId: number; contractAdd
 
 type ViewerCapabilities = { canApply?: boolean; canSelect: boolean; canFund: boolean; canSubmit: boolean; canRelease: boolean; canRequestChanges: boolean; canDispute: boolean; canProposeSettlement: boolean; canRevokeSettlement: boolean; canAcceptSettlement: boolean; canSubmitEvidence: boolean; canChallengeRuling: boolean; canFinalizeRuling: boolean; canFinalizeArbiterTimeoutSplit: boolean; canClaimMissedDeliveryRefund: boolean; canClaimReviewTimeout: boolean; similarFixIssueId?: string | null };
 type IssueDetail = IssueItem & { noExecutableTests: boolean; githubRepo?: string | null; bountyRaw: string; bountyDecimals: number; clientId: string; developerId?: string | null; developer?: IssueItem["client"] | null; viewerCapabilities?: ViewerCapabilities | null; escrow?: { amountRaw?: string; availableActions?: Array<{ action: string; reasonDisabled: string | null }> } | null };
-type Application = { id: string; status: string; message?: string | null; createdAt: string; reuseOfIssueId?: string | null; developer: IssueItem["client"] & { skills?: string[] } };
+type Application = { id: string; status: string; message?: string | null; createdAt: string; reuseOfIssueId?: string | null; developer: IssueItem["client"] & { skills?: string[]; disputesLost?: number } };
 
 type DetailResponse = { issue: (Omit<IssueDetail, "bountyAmount" | "bountyRaw" | "bountyDecimals"> & {
   bountyAmount: { formatted: string; raw: string; decimals: number };
@@ -872,6 +872,7 @@ export function IssueDetailView({ issueId }: { issueId: string }) {
                                 {app.developer.isGithubVerified && <ShieldCheck className="ico" style={{ color: "var(--ok)", width: 15, height: 15 }} />}
                                 <span className="mono" style={{ fontSize: 12, color: "var(--ink-3)" }}>
                                   {app.developer.reputationScore} rep
+                                  {!!app.developer.disputesLost && ` · ${app.developer.disputesLost} dispute${app.developer.disputesLost === 1 ? "" : "s"} lost`}
                                 </span>
                                 {app.status === "REJECTED" && (
                                   <span className="badge b-closed" style={{ fontSize: 11 }}>Rejected</span>

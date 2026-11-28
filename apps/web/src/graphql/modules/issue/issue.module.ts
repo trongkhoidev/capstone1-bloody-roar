@@ -364,6 +364,7 @@ const CreateIssueSchema = z.object({
       message: "expiresAt must be in the future",
     })
     .nullish(),
+  isDraft: z.boolean().nullish(),
   githubRepo: z
     .string()
     .url()
@@ -612,6 +613,7 @@ builder.mutationField("createIssue", (t) =>
       expiresAt: t.input.string({ required: false }),
       deliveryDeadline: t.input.string({ required: false }),
       githubRepo: t.input.string({ required: false }),
+      isDraft: t.input.boolean({ required: false, description: "Keep the bounty private until publishIssue (default false)" }),
     },
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
@@ -649,12 +651,49 @@ builder.mutationField("createIssue", (t) =>
           ...(input.githubRepo != null ? { githubRepo: input.githubRepo } : {}),
           clientId: user.id,
           status: IssueStatus.OPEN,
-          publishedAt: new Date(),
+          isDraft: input.isDraft ?? false,
+          publishedAt: input.isDraft ? null : new Date(),
         },
         include: ISSUE_INCLUDE,
       });
-      detectSimilarIssuesInBackground(ctx.db, created.id, user);
+      if (!created.isDraft) detectSimilarIssuesInBackground(ctx.db, created.id, user);
       return created;
+    },
+  }),
+);
+
+const PUBLISH_BLOCK_MESSAGES = {
+  NOT_FOUND: "Bounty not found",
+  ISSUE_NOT_DRAFT: "This bounty is already published",
+  ISSUE_EXPIRED: "This bounty has expired. Change its expiry date before publishing",
+} as const;
+
+export function publishBlockReason(
+  issue: { clientId: string; isDraft: boolean; expiresAt: Date | null },
+  userId: string | undefined,
+  now: Date,
+): keyof typeof PUBLISH_BLOCK_MESSAGES | null {
+  if (issue.clientId !== userId) return "NOT_FOUND";
+  if (!issue.isDraft) return "ISSUE_NOT_DRAFT";
+  if (issue.expiresAt && issue.expiresAt <= now) return "ISSUE_EXPIRED";
+  return null;
+}
+
+builder.mutationField("publishIssue", (t) =>
+  t.field({
+    description: "Owner publishes a draft bounty to the marketplace",
+    type: IssueRef,
+    args: { id: t.arg.id({ required: true }) },
+    resolve: async (_root, args, ctx) => {
+      const user = requireAuth(ctx);
+      const id = String(args.id);
+      const issue = await ctx.db.issue.findUnique({ where: { id }, select: { clientId: true, isDraft: true, expiresAt: true } });
+      const reason = issue ? publishBlockReason(issue, user.id, new Date()) : "NOT_FOUND";
+      if (reason) throw gqlError(PUBLISH_BLOCK_MESSAGES[reason], reason);
+      const published = await ctx.db.issue.updateMany({ where: { id, clientId: user.id, isDraft: true }, data: { isDraft: false, publishedAt: new Date() } });
+      if (published.count !== 1) throw gqlError(PUBLISH_BLOCK_MESSAGES.ISSUE_NOT_DRAFT, "ISSUE_NOT_DRAFT");
+      detectSimilarIssuesInBackground(ctx.db, id, user);
+      return ctx.db.issue.findUniqueOrThrow({ where: { id }, include: ISSUE_INCLUDE });
     },
   }),
 );

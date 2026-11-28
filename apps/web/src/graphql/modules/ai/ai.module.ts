@@ -203,13 +203,31 @@ builder.mutationField("generateTestCases", (t) =>
 );
 
 // Lock the issue before editing criteria so selection cannot commit stale terms.
+const CRITERIA_BLOCK_MESSAGES = {
+  NOT_FOUND: "Task not found",
+  FORBIDDEN: "Only the task owner can review acceptance criteria",
+  ISSUE_NOT_EDITABLE: "Acceptance criteria are locked after assignment",
+} as const;
+
+export function criteriaBlockReason(
+  issue: { clientId: string; status: IssueStatus } | null,
+  userId: string,
+  activeReservation: boolean,
+): keyof typeof CRITERIA_BLOCK_MESSAGES | null {
+  if (!issue) return "NOT_FOUND";
+  if (issue.clientId !== userId) return "FORBIDDEN";
+  if (issue.status !== IssueStatus.OPEN || activeReservation) return "ISSUE_NOT_EDITABLE";
+  return null;
+}
+
 export async function lockCriteriaIssue(tx: Prisma.TransactionClient, issueId: string, userId: string) {
   await tx.$queryRaw`SELECT id FROM issues WHERE id = ${issueId} FOR UPDATE`;
-  const issue = await tx.issue.findUnique({ where: { id: issueId }, select: { clientId: true, status: true } });
-  if (!issue) throw gqlError("Task not found", "NOT_FOUND");
-  if (issue.clientId !== userId) throw gqlError("Only the task owner can review acceptance criteria", "FORBIDDEN");
-  const active = await tx.fundingReservation.findFirst({ where: { issueId, status: { in: ["AWAITING_FUNDING", "FUNDED"] } }, select: { id: true } });
-  if (issue.status !== IssueStatus.OPEN || active) throw gqlError("Acceptance criteria are locked after assignment", "ISSUE_NOT_EDITABLE");
+  const [issue, active] = await Promise.all([
+    tx.issue.findUnique({ where: { id: issueId }, select: { clientId: true, status: true } }),
+    tx.fundingReservation.findFirst({ where: { issueId, status: { in: ["AWAITING_FUNDING", "FUNDED"] } }, select: { id: true } }),
+  ]);
+  const reason = criteriaBlockReason(issue, userId, !!active);
+  if (reason) throw gqlError(CRITERIA_BLOCK_MESSAGES[reason], reason);
 }
 
 const UpdateTestCaseSchema = z.object({

@@ -232,6 +232,7 @@ model User {
   // Reputation
   reputationScore    Float  @default(0) // Off-chain aggregate (from Review)
   completedTaskCount Int    @default(0)
+  disputesLost       Int    @default(0) // Disputes this user raised and lost outright (US-50)
   passportScore      Float? // Gitcoin Passport score (anti-Sybil, v2)
 
   // Platform admin flags

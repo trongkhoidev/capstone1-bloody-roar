@@ -128,13 +128,18 @@ builder.mutationField("checkIssueScope", (t) => t.field({
   },
 }));
 
+const TestgenFocusSchema = z.object({
+  focusFiles: z.array(z.string().min(1)).max(3).refine((files) => new Set(files).size === files.length, "Duplicate focus files").nullish(),
+  hint: z.string().trim().max(500).nullish(),
+});
+
 builder.mutationField("generateTestCases", (t) =>
   t.field({
     type: [TestCaseRef],
-    args: { issueId: t.arg.string({ required: true }) },
+    args: { issueId: t.arg.string({ required: true }), focusFiles: t.arg.stringList(), hint: t.arg.string() },
     resolve: async (_root, args, ctx) => {
       const user = requireAuth(ctx);
-      aiRateLimit(user);
+      const { focusFiles, hint } = parseOrThrow(TestgenFocusSchema, { focusFiles: args.focusFiles, hint: args.hint });
 
       const issue = await ctx.db.issue.findUnique({
         where: { id: args.issueId },
@@ -146,6 +151,14 @@ builder.mutationField("generateTestCases", (t) =>
 
       const source = await ctx.db.sourceSnapshot.findUnique({ where: { issueId: issue.id } });
       const executable = source?.status === "READY";
+      if (focusFiles?.length) {
+        const tree = new Set(((source?.fileTree ?? []) as Array<{ path: string }>).map((file) => file.path));
+        if (!executable) throw gqlError("Focus files need a ready source snapshot", "BAD_USER_INPUT");
+        const missing = focusFiles.filter((file) => !tree.has(file));
+        if (missing.length) throw gqlError("Focus files are not in the source snapshot", "BAD_USER_INPUT", { missing });
+      }
+      // Rate-limit only after input checks so rejected requests do not use AI quota.
+      aiRateLimit(user);
       const safeTask = scanAndMask(JSON.stringify({
         title: issue.title,
         description: issue.description,
@@ -153,6 +166,8 @@ builder.mutationField("generateTestCases", (t) =>
         requiredSkills: issue.requiredSkills,
         githubRepo: issue.githubRepo,
         ...(executable ? { framework: source.framework, context: sanitizeSourceContext(source.context ?? "") } : {}),
+        ...(focusFiles?.length ? { focusFiles } : {}),
+        ...(hint ? { clientHint: hint } : {}),
       })).content;
 
       try {

@@ -11,6 +11,7 @@ import { graphqlRequest } from "@/lib/graphql-client";
 import { useAuthStore } from "@/lib/store/use-auth-store";
 import { Button } from "@/components/ui/button";
 import type { ChatMessagePayload } from "@bloody-roar/shared/types";
+import { ChatCatchUp } from "./chat-catch-up";
 
 const CHAT_QUERY = `
   query TaskMessages($conversationId: ID!, $after: String) {
@@ -95,11 +96,13 @@ export function ChatRoom({
   conversationId,
   issueTitle,
   readOnly = false,
+  kind,
 }: {
   issueId: string;
   conversationId: string;
   issueTitle?: string;
   readOnly?: boolean;
+  kind?: "ISSUE_WORK" | "APPLICATION";
 }) {
   const user = useAuthStore((state) => state.user);
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -266,6 +269,7 @@ export function ChatRoom({
         </div>
         <span title="Messages are saved to the task and can only be read by its participants." className="flex items-center gap-1.5 text-xs text-[hsl(var(--foreground-muted))]"><ShieldCheck className="h-4 w-4" /> Protected chat</span>
       </header>
+      {kind === "ISSUE_WORK" && <ChatCatchUp conversationId={conversationId} />}
 
       <div
         ref={scrollContainerRef}
@@ -322,5 +326,5 @@ export function IssueChatRoom({ issueId, ...props }: { issueId: string; issueTit
   const [id, setId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => { let active = true; setId(null); setError(null); void graphqlRequest<{ workConversation: string }>(`mutation WorkRoom($issue: ID!) { workConversation(issueId: $issue) }`, { issue: issueId }).then((r) => { if (active) setId(r.workConversation); }).catch((e) => { if (active) setError(e.message); }); return () => { active = false; }; }, [issueId]);
-  return id ? <ChatRoom key={id} issueId={issueId} conversationId={id} {...props} /> : <p role={error ? "alert" : "status"}>{error ?? "Loading conversation…"}</p>;
+  return id ? <ChatRoom key={id} issueId={issueId} conversationId={id} kind="ISSUE_WORK" {...props} /> : <p role={error ? "alert" : "status"}>{error ?? "Loading conversation…"}</p>;
 }
